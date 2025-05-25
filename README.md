@@ -1,46 +1,68 @@
-# Welcome to your Convex + Next.js + Convex Auth app
+# 📬 ImpacInbox — Drag & Drop Email Builder SaaS
 
-This is a [Convex](https://convex.dev/) project created with [`npm create convex`](https://www.npmjs.com/package/create-convex).
+**ImpacInbox** is a powerful and intuitive SaaS platform that lets users design beautiful, responsive email templates through a drag-and-drop builder. With built-in contact list management, campaign tools, and a public marketplace for templates, ImpacInbox empowers users to create, send, and manage impactful email campaigns — all from one place.
 
-After the initial setup (<2 minutes) you'll have a working full-stack app using:
+## 🚀 Features
 
-- Convex as your backend (database, server logic)
-- [React](https://react.dev/) as your frontend (web page interactivity)
-- [Next.js](https://nextjs.org/) for optimized web hosting and page routing
-- [Tailwind](https://tailwindcss.com/) for building great looking accessible UI
-- [Convex Auth](https://labs.convex.dev/auth) for authentication
+- 🔧 **Drag & Drop Email Builder**  
+  Build responsive email templates using a component-based interface — text blocks, lists, buttons, links, images, and more.
 
-## Get started
+- 📁 **Template Management**  
+  Save personal templates, browse public templates, and even buy or sell templates in the marketplace.
 
-If you just cloned this codebase and didn't use `npm create convex`, run:
+- 👥 **Contact Lists & Audience Segmentation**  
+  Create and manage contact lists for targeted email campaigns.
 
-```
-npm install
-npm run dev
-```
+- 📤 **Email Campaigns**  
+  Send newsletters and campaign emails to your audiences. (Powered by [Resend](https://resend.com) and optionally [react-email](https://react.email))
 
-If you're reading this README on GitHub and want to use this template, run:
+- 🧩 **Public Marketplace**  
+  Browse, share, and monetize professionally designed email templates.
 
-```
-npm create convex@latest -- -t nextjs-convexauth
-```
+- 💳 **Subscription Plans**  
+  Pricing tiers based on number of clients, templates, and monthly email sends.
 
-## Learn more
+## 🏗️ Tech Stack
 
-To learn more about developing your project with Convex, check out:
+- **Frontend**: [Next.js](https://nextjs.org/)
+- **Backend & Database**: [Convex](https://www.convex.dev/)
+- **Authentication**: Convex Auth
+- **File Storage**: Convex File Storage
+- **Email Sending**: [Resend](https://resend.com) (planned)
+- **Email Rendering**: [react-email](https://react.email) (optional)
+- **Styling**: [Tailwind CSS](https://tailwindcss.com/)
+- **UI Components**: [shadcn/ui](https://ui.shadcn.dev/)
 
-- The [Tour of Convex](https://docs.convex.dev/get-started) for a thorough introduction to Convex principles.
-- The rest of [Convex docs](https://docs.convex.dev/) to learn about all Convex features.
-- [Stack](https://stack.convex.dev/) for in-depth articles on advanced topics.
-- [Convex Auth docs](https://labs.convex.dev/auth) for documentation on the Convex Auth library.
+## 🧠 AI Instructions
 
-## Configuring other authentication methods
+This app should support:
 
-To configure different authentication methods, see [Configuration](https://labs.convex.dev/auth/config) in the Convex Auth docs.
+- Component selection and styling inside the drag-and-drop email builder.
+- Contact management with tagging and segmentation.
+- Email campaign creation using templates and selected contacts.
+- Dynamic rendering of templates via react-email (optional).
+- Integration with Resend for sending emails.
+- Public and private template storage with pricing control (free, paid).
+- Tiered subscription logic based on usage (contacts, templates, emails/month).
 
-## Join the community
+## 📦 Project Structure (suggested)
 
-Join thousands of developers building full-stack apps with Convex:
+- `/app`: Next.js app directory
+- `/components`: Shared and builder-specific components (drag blocks, style controls, etc.)
+- `/lib`: Convex client helpers, auth utils, subscription logic
+- `/convex`: Convex schema and functions (auth, templates, contacts, campaigns)
+- `/emails`: Template definitions (react-email)
 
-- Join the [Convex Discord community](https://convex.dev/community) to get help in real-time.
-- Follow [Convex on GitHub](https://github.com/get-convex/), star and contribute to the open-source implementation of Convex.
+## 🗓 Roadmap Highlights
+
+- [ ] Authentication and authorization
+- [ ] MVP of drag-and-drop builder
+- [ ] Contact import and list features
+- [ ] Email campaign UI and backend logic
+- [ ] Resend integration
+- [ ] Public template marketplace
+- [ ] Subscription billing and usage limits
+
+## 💡 Inspiration
+
+ImpacInbox is built for creators, marketers, and businesses that want powerful email capabilities without the usual complexity. Whether you're sending a weekly newsletter or launching a full campaign, ImpacInbox gives you the tools to do it beautifully and efficiently.
