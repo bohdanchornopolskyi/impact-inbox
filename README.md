@@ -55,7 +55,7 @@ This app should support:
 
 ## 🗓 Roadmap Highlights
 
-- [ ] Authentication and authorization
+- [x] Authentication and authorization
 - [ ] MVP of drag-and-drop builder
 - [ ] Contact import and list features
 - [ ] Email campaign UI and backend logic
