@@ -25,7 +25,10 @@ export class ErrorBoundary extends Component<Props, State> {
 
     // 1. Check if it's the specific Convex validation error.
     // The error message from Convex will contain "ArgumentValidationError".
-    if (error.message.includes("ArgumentValidationError")) {
+    if (
+      error.message.includes("ArgumentValidationError") ||
+      error.message.includes("NotFoundError")
+    ) {
       // 2. If it is, perform the redirect.
       window.location.href = "/templates?error=not_found";
     }
