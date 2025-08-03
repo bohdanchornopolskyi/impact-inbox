@@ -1,4 +1,4 @@
-import { Layers, Component, FolderOpen } from "lucide-react";
+import { Layers, FolderOpen } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Tooltip,
@@ -6,7 +6,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { LayersTab } from "@/components/LayersTab";
-import { ComponentsTab } from "@/components/componentsTab";
+// import { ComponentsTab } from "@/components/componentsTab";
 import { AssetsTab } from "@/components/assetsTab";
 
 export function SidebarTabs() {
@@ -27,7 +27,7 @@ export function SidebarTabs() {
           </Tooltip>
           <Layers className="h-4 w-4" />
         </TabsTrigger>
-        <TabsTrigger
+        {/* <TabsTrigger
           value="components"
           className="relative cursor-pointer hover:shadow flex items-center gap-2 data-[state=active]:bg-sidebar-accent"
         >
@@ -40,8 +40,8 @@ export function SidebarTabs() {
             </TooltipContent>
           </Tooltip>
           <Component className="h-4 w-4" />
-          {/* <span className="hidden sm:inline">Components</span> */}
-        </TabsTrigger>
+            <span className="hidden sm:inline">Components</span>
+        </TabsTrigger> */}
         <TabsTrigger
           value="assets"
           className="relative cursor-pointer hover:shadow flex items-center gap-2 data-[state=active]:bg-sidebar-accent"
@@ -63,9 +63,9 @@ export function SidebarTabs() {
         <LayersTab />
       </TabsContent>
 
-      <TabsContent value="components" className="mt-0">
+      {/* <TabsContent value="components" className="mt-0">
         <ComponentsTab />
-      </TabsContent>
+      </TabsContent> */}
 
       <TabsContent value="assets" className="mt-0">
         <AssetsTab />
