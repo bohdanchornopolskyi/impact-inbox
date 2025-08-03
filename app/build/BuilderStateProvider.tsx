@@ -8,7 +8,6 @@ import { useHistory } from "@/hooks/useHistory";
 import { AnyBlock } from "@/lib/types";
 import { buildLayerTree } from "@/lib/utils";
 import { BuilderContext } from "@/app/build/BuilderContext";
-import { TemplateNotFound } from "@/components/TemplateNotFound";
 
 export function BuilderStateProvider({
   templateId,
@@ -42,7 +41,7 @@ export function BuilderStateProvider({
   }
 
   if (templateData === null) {
-    return <TemplateNotFound />;
+    throw new Error("NotFoundError");
   }
 
   const value = { blocks, setBlocks, canRedo, canUndo, redo, undo };
