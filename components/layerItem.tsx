@@ -7,7 +7,7 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
-import { getLayerIcon } from "@/components/layerIcons";
+import { getLayerIcon } from "@/components/LayerIcons";
 import { AnyBlock, AnyUiBlock } from "@/lib/types";
 import { cn } from "@/lib/utils";
 

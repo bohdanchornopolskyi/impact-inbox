@@ -1,5 +1,5 @@
-import BuildHeader from "@/components/buildHeader";
-import { LeftSidebar } from "@/components/leftSidebar";
+import BuildHeader from "@/components/BuildHeader";
+import { LeftSidebar } from "@/components/LeftSidebar";
 import { BuilderStateProvider } from "@/app/build/BuilderStateProvider";
 import { Id } from "@/convex/_generated/dataModel";
 import { ErrorBoundary } from "@/components/ErrorBoundary";

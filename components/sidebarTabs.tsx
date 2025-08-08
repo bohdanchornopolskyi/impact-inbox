@@ -7,7 +7,7 @@ import {
 } from "@/components/ui/tooltip";
 import { LayersTab } from "@/components/LayersTab";
 // import { ComponentsTab } from "@/components/componentsTab";
-import { AssetsTab } from "@/components/assetsTab";
+import { AssetsTab } from "@/components/AssetsTab";
 
 export function SidebarTabs() {
   return (

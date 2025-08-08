@@ -1,4 +1,4 @@
-import AddBlock from "@/components/addBlock";
+import AddBlock from "@/components/AddBlock";
 
 function Builder() {
   return (

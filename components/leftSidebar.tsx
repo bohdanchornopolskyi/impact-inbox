@@ -6,7 +6,7 @@ import {
   SidebarContent,
   SidebarHeader,
 } from "@/components/ui/sidebar";
-import { SidebarTabs } from "./sidebarTabs";
+import { SidebarTabs } from "./SidebarTabs";
 
 export function LeftSidebar({
   ...props
