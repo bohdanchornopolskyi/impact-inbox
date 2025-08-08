@@ -5,7 +5,7 @@ import { useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
 import { useHistory } from "@/hooks/useHistory";
-import { AnyBlock } from "@/lib/types";
+import { AnyBlock, ROOT_CONTAINER_ID } from "@/lib/types";
 import { buildLayerTree } from "@/lib/utils";
 import { BuilderContext } from "@/app/build/BuilderContext";
 
@@ -27,6 +27,9 @@ export function BuilderStateProvider({
   } = useHistory<AnyBlock[]>([]);
   const [isStateInitialized, setIsStateInitialized] = useState(false);
 
+  const [selectedBlockId, setSelectedBlockId] =
+    useState<string>(ROOT_CONTAINER_ID);
+
   useEffect(() => {
     const flatBlocksFromDb = templateData?.content;
     if (flatBlocksFromDb && !isStateInitialized) {
@@ -44,7 +47,16 @@ export function BuilderStateProvider({
     throw new Error("NotFoundError");
   }
 
-  const value = { blocks, setBlocks, canRedo, canUndo, redo, undo };
+  const value = {
+    blocks,
+    setBlocks,
+    canRedo,
+    canUndo,
+    redo,
+    undo,
+    selectedBlockId,
+    setSelectedBlockId,
+  };
 
   return (
     <BuilderContext.Provider value={value}>{children}</BuilderContext.Provider>

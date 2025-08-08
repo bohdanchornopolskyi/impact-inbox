@@ -95,7 +95,6 @@ export type ListBlockType = BaseBlock & {
 
 export type ContainerBlockType = BaseBlock & {
   type: "container";
-  children?: AnyBlock[];
 };
 
 // --- Union of All Possible Block Types ---
@@ -106,6 +105,40 @@ export type AnyBlock =
   | ImageBlockType
   | ContainerBlockType;
 
+export type BaseUiBlock = {
+  id: string;
+  name: string;
+  parentId: string;
+  styles: BlockStyles;
+};
+
+export type ContainerUiBlock = BaseUiBlock & {
+  type: "container";
+  children: AnyUiBlock[];
+};
+
+export type TextUiBlock = BaseUiBlock & { type: "text"; content: string };
+
+export type ButtonUiBlock = BaseUiBlock & {
+  type: "button";
+  content: string;
+  href: string;
+};
+
+export type ImageUiBlock = BaseUiBlock & {
+  type: "image";
+  src: string;
+  alt: string;
+  href?: string;
+};
+
+export type AnyUiBlock =
+  | ContainerUiBlock
+  | TextUiBlock
+  | ButtonUiBlock
+  | ImageUiBlock;
+
+// --- Actions ---
 export type AddBlockAction = {
   type: "ADD_BLOCK";
   payload: {

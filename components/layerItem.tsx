@@ -8,13 +8,16 @@ import {
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 import { getLayerIcon } from "@/components/layerIcons";
-import { AnyBlock } from "@/lib/types";
+import { AnyBlock, AnyUiBlock } from "@/lib/types";
+import { cn } from "@/lib/utils";
 
 interface LayerItemProps {
-  layer: AnyBlock;
+  layer: AnyUiBlock;
   depth?: number;
   expandedState: Record<string, boolean>;
   onToggle: (layerId: string) => void;
+  selectedBlockId: string;
+  setSelectedBlockId: (id: string) => void;
 }
 
 export function LayerItem({
@@ -22,22 +25,32 @@ export function LayerItem({
   depth = 0,
   expandedState,
   onToggle,
+  selectedBlockId,
+  setSelectedBlockId,
 }: LayerItemProps) {
   const isOpen = !!expandedState[layer.id];
   const hasChildren =
     layer.type === "container" && layer.children && layer.children.length > 0;
 
+  const isSelected = selectedBlockId === layer.id;
+
   return (
     <div>
       <Collapsible open={isOpen} onOpenChange={() => onToggle(layer.id)}>
-        <div className="flex items-center group hover:bg-sidebar-accent rounded-sm">
+        <div
+          className={cn(
+            "flex items-center group hover:bg-sidebar-accent rounded-sm",
+            isSelected && "bg-gray-100 hover:bg-gray-200",
+          )}
+          onClick={() => setSelectedBlockId(layer.id)}
+        >
           <div
             className="flex items-center flex-1 py-1 px-2 gap-1"
             style={{ paddingLeft: `${depth * 12 + 8}px` }}
           >
             {hasChildren ? (
               <CollapsibleTrigger asChild>
-                <button className="w-full flex items-center justify-center h-4 hover:bg-sidebar-accent rounded-sm cursor-pointer">
+                <button className="w-full flex items-center justify-center h-4 rounded-sm cursor-pointer">
                   {isOpen ? (
                     <ChevronDown className="h-3 w-3" />
                   ) : (
@@ -70,6 +83,8 @@ export function LayerItem({
                 depth={depth + 1}
                 onToggle={onToggle}
                 expandedState={expandedState}
+                selectedBlockId={selectedBlockId}
+                setSelectedBlockId={setSelectedBlockId}
               />
             ))}
           </CollapsibleContent>

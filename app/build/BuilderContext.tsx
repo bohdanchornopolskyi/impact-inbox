@@ -10,6 +10,9 @@ type BuilderContextType = {
   redo: () => void;
   canUndo: boolean;
   canRedo: boolean;
+
+  selectedBlockId: string;
+  setSelectedBlockId: (id: string) => void;
 };
 
 export const BuilderContext = createContext<BuilderContextType | undefined>(

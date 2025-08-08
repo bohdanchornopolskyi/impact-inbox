@@ -1,16 +1,16 @@
-import { LayerItem } from "@/components/layerItem";
+import { LayerItem } from "@/components/LayerItem";
 import {
   SidebarGroup,
   SidebarGroupContent,
   SidebarGroupLabel,
 } from "@/components/ui/sidebar";
 import { useBuilder } from "@/app/build/BuilderContext";
-// import { layersData } from "@/data/sidebar-data";
-import { AnyBlock } from "@/lib/types";
-import { useCallback, useState } from "react";
+import { AnyUiBlock } from "@/lib/types";
+import { useCallback, useMemo, useState } from "react";
+import { buildLayerTree } from "@/lib/utils";
 
 const getInitialExpandedState = (
-  layers: AnyBlock[],
+  layers: AnyUiBlock[],
   depth = 0,
 ): Record<string, boolean> => {
   let state: Record<string, boolean> = {};
@@ -29,12 +29,12 @@ const getInitialExpandedState = (
 };
 
 export function LayersTab() {
-  const { blocks } = useBuilder();
+  const { blocks, selectedBlockId, setSelectedBlockId } = useBuilder();
 
-  const [layers] = useState<AnyBlock[]>(blocks);
+  const nestedLayers = useMemo(() => buildLayerTree(blocks), [blocks]);
 
   const [expandedState, setExpandedState] = useState<Record<string, boolean>>(
-    () => getInitialExpandedState(layers),
+    () => getInitialExpandedState(nestedLayers),
   );
 
   const handleToggle = useCallback((layerId: string) => {
@@ -49,13 +49,15 @@ export function LayersTab() {
       <SidebarGroupLabel className="text-sm">Layers</SidebarGroupLabel>
       <SidebarGroupContent>
         <div className="space-y-1">
-          {blocks.map((layer) => (
+          {nestedLayers.map((layer) => (
             <LayerItem
               key={layer.id}
               layer={layer}
               depth={0}
               expandedState={expandedState}
               onToggle={handleToggle}
+              selectedBlockId={selectedBlockId}
+              setSelectedBlockId={setSelectedBlockId}
             />
           ))}
         </div>
