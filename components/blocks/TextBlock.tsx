@@ -10,10 +10,11 @@ export function TextBlock({
 }) {
   return (
     <div
+      data-block-id={block.id}
       contentEditable
       suppressContentEditableWarning={true}
       onBlur={(e) => onUpdate(block.id, { content: e.currentTarget.innerText })}
-      className="p-2 outline-none hover:border border-blue-400"
+      className="p-2 outline-none border border-transparent transition-all duration-150 rounded"
       style={block.styles}
     >
       {block.content}

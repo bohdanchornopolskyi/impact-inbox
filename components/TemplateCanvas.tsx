@@ -1,10 +1,9 @@
-// components/canvas/TemplateCanvas.tsx
 "use client";
 
+import { useMemo, useRef, useEffect } from "react";
 import { useBuilder } from "@/app/build/BuilderContext";
 import BlockType from "@/components/blocks/BlockType";
 import { buildLayerTree } from "@/lib/utils";
-import { useMemo, useRef, useEffect } from "react";
 
 function TemplateCanvas() {
   const { blocks } = useBuilder();
@@ -30,20 +29,20 @@ function TemplateCanvas() {
         );
 
         const targetBlock = elementUnderCursor?.closest(
-          '[data-block="container"]',
+          "[data-block-id]",
         ) as HTMLElement | null;
         const previouslyHighlighted = highlightedBlockRef.current;
 
         if (targetBlock === previouslyHighlighted) return;
 
         if (previouslyHighlighted) {
-          previouslyHighlighted.classList.remove("border-blue-400");
-          previouslyHighlighted.classList.add("border-gray-100");
+          previouslyHighlighted.classList.remove("border-block");
+          previouslyHighlighted.classList.add("border-transparent");
         }
 
         if (targetBlock) {
-          targetBlock.classList.add("border-blue-400");
-          targetBlock.classList.remove("border-gray-100");
+          targetBlock.classList.add("border-block");
+          targetBlock.classList.remove("border-transparent");
         }
 
         highlightedBlockRef.current = targetBlock;
@@ -52,8 +51,8 @@ function TemplateCanvas() {
 
     const handlePointerLeave = () => {
       if (highlightedBlockRef.current) {
-        highlightedBlockRef.current.classList.remove("border-blue-400");
-        highlightedBlockRef.current.classList.add("border-gray-100");
+        highlightedBlockRef.current.classList.remove("border-block");
+        highlightedBlockRef.current.classList.add("border-transparent");
         highlightedBlockRef.current = null;
       }
       if (rafIdRef.current) {
