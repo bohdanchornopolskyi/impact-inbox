@@ -5,9 +5,9 @@ import {
   SidebarGroupLabel,
 } from "@/components/ui/sidebar";
 import { useBuilder } from "@/app/build/BuilderContext";
-import { AnyUiBlock } from "@/lib/types";
+import { AnyUiBlock, ROOT_CONTAINER_ID } from "@/lib/types";
 import { useCallback, useMemo, useState } from "react";
-import { buildLayerTree } from "@/lib/utils";
+import { buildLayerTree, cn } from "@/lib/utils";
 
 const getInitialExpandedState = (
   layers: AnyUiBlock[],
@@ -48,7 +48,19 @@ export function LayersTab() {
     <SidebarGroup>
       <SidebarGroupLabel className="text-sm">Layers</SidebarGroupLabel>
       <SidebarGroupContent>
-        <div className="space-y-1">
+        <div
+          onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              setSelectedBlockId(ROOT_CONTAINER_ID);
+            }
+          }}
+          className={cn(
+            selectedBlockId == ROOT_CONTAINER_ID
+              ? "border-border"
+              : "border-transparent",
+            "space-y-1 border rounded py-2 hover:border-border duration-150",
+          )}
+        >
           {nestedLayers.map((layer) => (
             <LayerItem
               key={layer.id}
