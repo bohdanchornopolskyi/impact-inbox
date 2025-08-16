@@ -117,7 +117,7 @@ export const anyBlockValidator = v.union(
 /**
  * Validator for the 'HistoryAction' structure, covering all possible user actions.
  */
-const historyActionValidator = v.union(
+export const historyActionValidator = v.union(
   // Add Block Action
   v.object({
     type: v.literal("ADD_BLOCK"),

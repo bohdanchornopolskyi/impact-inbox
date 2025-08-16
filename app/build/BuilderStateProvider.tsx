@@ -1,73 +1,77 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useMutation, useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
 import { useHistory } from "@/hooks/useHistory";
-import { AnyBlock, ROOT_CONTAINER_ID } from "@/lib/types";
-import { buildLayerTree } from "@/lib/utils";
+import { AnyBlock, HistoryAction, ROOT_CONTAINER_ID } from "@/lib/types";
 import { BuilderContext } from "@/app/build/BuilderContext";
 
 export function BuilderStateProvider({
   templateId,
   children,
 }: {
-  templateId: Id<"emailTemplates">;
+  templateId: string;
   children: React.ReactNode;
 }) {
-  const templateData = useQuery(api.emailTemplates.getById, { templateId });
-  const updateContent = useMutation(api.emailTemplates.updateContent);
-  const {
-    state: blocks,
-    set: setBlocks,
-    canRedo,
-    canUndo,
-    redo,
-    undo,
-  } = useHistory<AnyBlock[]>([]);
-  const [isStateInitialized, setIsStateInitialized] = useState(false);
+  const templateData = useQuery(api.emailTemplates.getById, {
+    templateId: templateId as Id<"emailTemplates">,
+  });
 
+  const createSnapshot = useMutation(api.history.createSnapshot);
+  const saveAction = useMutation(api.history.saveAction);
+
+  const { state: blocks, dispatch, canUndo, canRedo } = useHistory([]);
+
+  const [isStateInitialized, setIsStateInitialized] = useState(false);
   const [selectedBlockId, setSelectedBlockId] =
     useState<string>(ROOT_CONTAINER_ID);
+  const [snapshotId, setSnapshotId] = useState<Id<"templateSnapshots"> | null>(
+    null,
+  );
 
   useEffect(() => {
-    const flatBlocksFromDb = templateData?.content;
-    if (flatBlocksFromDb && !isStateInitialized) {
-      setBlocks(flatBlocksFromDb);
+    if (templateData && !isStateInitialized) {
+      const initialContent = templateData.content || [];
+      dispatch({ type: "SET_INITIAL_STATE", payload: initialContent });
+
+      const createInitialSnapshot = async () => {
+        const newSnapshotId = await createSnapshot({
+          templateId: templateData._id,
+          content: initialContent,
+        });
+        setSnapshotId(newSnapshotId);
+      };
+
+      createInitialSnapshot();
       setIsStateInitialized(true);
     }
-  }, [templateData, isStateInitialized, setBlocks]);
+  }, [templateData, isStateInitialized, dispatch, createSnapshot]);
 
-  useEffect(() => {
-    if (!isStateInitialized || !templateData) return;
+  const dispatchAndLogAction = useCallback(
+    (action: HistoryAction) => {
+      dispatch(action);
+      if (snapshotId) {
+        saveAction({ snapshotId, action });
+      }
+    },
+    [snapshotId, saveAction, dispatch],
+  );
 
-    const timer = setTimeout(() => {
-      console.log("Syncing changes to database...", blocks);
-      updateContent({
-        templateId: templateData._id,
-        content: blocks,
-      });
-    }, 1500);
-
-    return () => clearTimeout(timer);
-  }, [blocks, isStateInitialized, updateContent, templateData]);
-
-  if (templateData === undefined) {
-    return <div>Loading...</div>;
+  if (!isStateInitialized || !snapshotId) {
+    return <div>Initializing Editor...</div>;
   }
 
   if (templateData === null) {
-    throw new Error("NotFoundError");
+    throw new Error("Template not found or permission denied.");
   }
 
   const value = {
     blocks,
-    setBlocks,
-    canRedo,
+    dispatch: dispatchAndLogAction,
     canUndo,
-    redo,
-    undo,
+    canRedo,
     selectedBlockId,
     setSelectedBlockId,
   };

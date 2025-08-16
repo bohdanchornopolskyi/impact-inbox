@@ -42,7 +42,7 @@ const availableBlocks = [
 
 export default function AddBlock() {
   const [isOpen, setIsOpen] = useState(false);
-  const { blocks, setBlocks, selectedBlockId } = useBuilder();
+  const { blocks, dispatch, selectedBlockId } = useBuilder();
 
   const handleAddBlock = (blockType: string) => {
     let newBlock;
@@ -66,7 +66,10 @@ export default function AddBlock() {
         return;
     }
 
-    setBlocks([...blocks, newBlock]);
+    dispatch({
+      type: "ADD_BLOCK",
+      payload: { block: newBlock, index: 0, parentId: selectedBlockId },
+    });
     console.log(blocks);
     setIsOpen(false);
   };

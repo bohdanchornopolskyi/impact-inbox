@@ -1,20 +1,22 @@
-import { useReducer, useCallback } from "react";
+import { useReducer } from "react";
+import { AnyBlock, HistoryAction } from "@/lib/types"; // Your specific block actions
 
-type HistoryState<T> = {
-  past: T[];
-  present: T;
-  future: T[];
+type HistoryState = {
+  past: AnyBlock[][];
+  present: AnyBlock[];
+  future: AnyBlock[][];
 };
 
-type HistoryAction<T> =
+type ReducerAction =
+  | HistoryAction
   | { type: "UNDO" }
   | { type: "REDO" }
-  | { type: "SET"; newPresent: T };
+  | { type: "SET_INITIAL_STATE"; payload: AnyBlock[] };
 
-const historyReducer = <T>(
-  state: HistoryState<T>,
-  action: HistoryAction<T>,
-): HistoryState<T> => {
+const historyReducer = (
+  state: HistoryState,
+  action: ReducerAction,
+): HistoryState => {
   const { past, present, future } = state;
 
   switch (action.type) {
@@ -38,20 +40,35 @@ const historyReducer = <T>(
         future: newFuture,
       };
     }
-    case "SET": {
-      if (action.newPresent === present) return state;
-      return {
-        past: [...past, present],
-        present: action.newPresent,
-        future: [],
-      };
+    case "SET_INITIAL_STATE": {
+      return { ...state, present: action.payload, past: [], future: [] };
     }
+
+    case "ADD_BLOCK": {
+      const newPresent = [...present, action.payload.block];
+      return { past: [...past, present], present: newPresent, future: [] };
+    }
+    case "UPDATE_STYLE": {
+      const newPresent = present.map((block) =>
+        block.id === action.payload.blockId
+          ? { ...block, styles: { ...block.styles, ...action.payload.styles } }
+          : block,
+      );
+      return { past: [...past, present], present: newPresent, future: [] };
+    }
+    case "DELETE_BLOCK": {
+      const newPresent = present.filter(
+        (block) => block.id !== action.payload.blockId,
+      );
+      return { past: [...past, present], present: newPresent, future: [] };
+    }
+
     default:
       return state;
   }
 };
 
-export const useHistory = <T>(initialState: T) => {
+export const useHistory = (initialState: AnyBlock[]) => {
   const [state, dispatch] = useReducer(historyReducer, {
     past: [],
     present: initialState,
@@ -61,12 +78,5 @@ export const useHistory = <T>(initialState: T) => {
   const canUndo = state.past.length > 0;
   const canRedo = state.future.length > 0;
 
-  const undo = useCallback(() => dispatch({ type: "UNDO" }), []);
-  const redo = useCallback(() => dispatch({ type: "REDO" }), []);
-  const set = useCallback(
-    (newPresent: T) => dispatch({ type: "SET", newPresent }),
-    [],
-  );
-
-  return { state: state.present, set, undo, redo, canUndo, canRedo };
+  return { state: state.present, dispatch, canUndo, canRedo };
 };

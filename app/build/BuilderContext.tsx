@@ -1,13 +1,11 @@
 "use client";
 
 import { createContext, useContext } from "react";
-import { AnyBlock } from "@/lib/types";
+import { AnyBlock, HistoryAction } from "@/lib/types";
 
 type BuilderContextType = {
   blocks: AnyBlock[];
-  setBlocks: (newBlocks: AnyBlock[]) => void;
-  undo: () => void;
-  redo: () => void;
+  dispatch: (action: HistoryAction) => void;
   canUndo: boolean;
   canRedo: boolean;
 
