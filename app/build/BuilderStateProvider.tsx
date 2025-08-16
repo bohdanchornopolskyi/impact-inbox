@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useQuery } from "convex/react";
+import { useMutation, useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
 import { useHistory } from "@/hooks/useHistory";
@@ -17,6 +17,7 @@ export function BuilderStateProvider({
   children: React.ReactNode;
 }) {
   const templateData = useQuery(api.emailTemplates.getById, { templateId });
+  const updateContent = useMutation(api.emailTemplates.updateContent);
   const {
     state: blocks,
     set: setBlocks,
@@ -33,11 +34,24 @@ export function BuilderStateProvider({
   useEffect(() => {
     const flatBlocksFromDb = templateData?.content;
     if (flatBlocksFromDb && !isStateInitialized) {
-      const nestedBlocks = buildLayerTree(flatBlocksFromDb);
-      setBlocks(nestedBlocks);
+      setBlocks(flatBlocksFromDb);
       setIsStateInitialized(true);
     }
   }, [templateData, isStateInitialized, setBlocks]);
+
+  useEffect(() => {
+    if (!isStateInitialized || !templateData) return;
+
+    const timer = setTimeout(() => {
+      console.log("Syncing changes to database...", blocks);
+      updateContent({
+        templateId: templateData._id,
+        content: blocks,
+      });
+    }, 1500);
+
+    return () => clearTimeout(timer);
+  }, [blocks, isStateInitialized, updateContent, templateData]);
 
   if (templateData === undefined) {
     return <div>Loading...</div>;

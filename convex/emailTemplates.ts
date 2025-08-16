@@ -66,7 +66,7 @@ export const updateContent = mutation({
     content: v.array(anyBlockValidator),
   },
   handler: async (ctx, args) => {
-    const identity = await ctx.auth.getUserIdentity();
+    const userId = await getAuthUserId(ctx);
     const template = await ctx.db.get(args.templateId);
 
     if (!template) {
@@ -74,7 +74,7 @@ export const updateContent = mutation({
     }
 
     // Security: Prevent users from updating templates they don't own.
-    if (template.ownerId !== identity?.subject) {
+    if (template.ownerId !== userId) {
       throw new Error("You do not have permission to edit this template.");
     }
 
