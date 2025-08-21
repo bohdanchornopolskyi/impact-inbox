@@ -5,7 +5,7 @@ import { AnyUiBlock } from "@/lib/types";
 function BlockType({ block }: { block: AnyUiBlock }) {
   switch (block.type) {
     case "text":
-      return <TextBlock block={block} onUpdate={() => {}} />;
+      return <TextBlock block={block} />;
     case "button":
       break;
     case "image":

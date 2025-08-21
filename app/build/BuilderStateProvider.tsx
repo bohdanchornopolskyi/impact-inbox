@@ -1,12 +1,13 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
-import { useMutation, useQuery } from "convex/react";
+import { useState, useEffect } from "react";
+import { useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
 import { useHistory } from "@/hooks/useHistory";
-import { AnyBlock, HistoryAction, ROOT_CONTAINER_ID } from "@/lib/types";
+import { ROOT_CONTAINER_ID } from "@/lib/types";
 import { BuilderContext } from "@/app/build/BuilderContext";
+import { useBuilderSync } from "@/hooks/useBuilderSync";
 
 export function BuilderStateProvider({
   templateId,
@@ -19,45 +20,27 @@ export function BuilderStateProvider({
     templateId: templateId as Id<"emailTemplates">,
   });
 
-  const createSnapshot = useMutation(api.history.createSnapshot);
-  const saveAction = useMutation(api.history.saveAction);
-
   const { state: blocks, dispatch, canUndo, canRedo } = useHistory([]);
-
   const [isStateInitialized, setIsStateInitialized] = useState(false);
   const [selectedBlockId, setSelectedBlockId] =
     useState<string>(ROOT_CONTAINER_ID);
-  const [snapshotId, setSnapshotId] = useState<Id<"templateSnapshots"> | null>(
-    null,
+
+  // The custom hook now handles all the complex sync logic
+  const { snapshotId, dispatchAndLogAction } = useBuilderSync(
+    templateData,
+    blocks,
+    dispatch,
   );
 
   useEffect(() => {
     if (templateData && !isStateInitialized) {
-      const initialContent = templateData.content || [];
-      dispatch({ type: "SET_INITIAL_STATE", payload: initialContent });
-
-      const createInitialSnapshot = async () => {
-        const newSnapshotId = await createSnapshot({
-          templateId: templateData._id,
-          content: initialContent,
-        });
-        setSnapshotId(newSnapshotId);
-      };
-
-      createInitialSnapshot();
+      dispatch({
+        type: "SET_INITIAL_STATE",
+        payload: templateData.content || [],
+      });
       setIsStateInitialized(true);
     }
-  }, [templateData, isStateInitialized, dispatch, createSnapshot]);
-
-  const dispatchAndLogAction = useCallback(
-    (action: HistoryAction) => {
-      dispatch(action);
-      if (snapshotId) {
-        saveAction({ snapshotId, action });
-      }
-    },
-    [snapshotId, saveAction, dispatch],
-  );
+  }, [templateData, isStateInitialized, dispatch]);
 
   if (!isStateInitialized || !snapshotId) {
     return <div>Initializing Editor...</div>;

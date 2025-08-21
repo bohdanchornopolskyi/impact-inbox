@@ -97,3 +97,31 @@ export const getAll = query({
       .collect();
   },
 });
+
+/**
+ * A generic mutation to update any field on an email template.
+ */
+export const update = mutation({
+  args: {
+    templateId: v.id("emailTemplates"),
+    payload: v.object({
+      name: v.optional(v.string()),
+      description: v.optional(v.string()),
+      content: v.optional(v.array(anyBlockValidator)),
+    }),
+  },
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    const template = await ctx.db.get(args.templateId);
+
+    if (!template) {
+      throw new Error("Template not found.");
+    }
+
+    if (template.ownerId !== userId) {
+      throw new Error("You do not have permission to edit this template.");
+    }
+
+    await ctx.db.patch(args.templateId, args.payload);
+  },
+});

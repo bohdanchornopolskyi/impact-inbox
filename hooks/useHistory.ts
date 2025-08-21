@@ -7,7 +7,7 @@ type HistoryState = {
   future: AnyBlock[][];
 };
 
-type ReducerAction =
+export type ReducerAction =
   | HistoryAction
   | { type: "UNDO" }
   | { type: "REDO" }
@@ -52,6 +52,14 @@ const historyReducer = (
       const newPresent = present.map((block) =>
         block.id === action.payload.blockId
           ? { ...block, styles: { ...block.styles, ...action.payload.styles } }
+          : block,
+      );
+      return { past: [...past, present], present: newPresent, future: [] };
+    }
+    case "UPDATE_CONTENT": {
+      const newPresent = present.map((block) =>
+        block.id === action.payload.blockId
+          ? { ...block, ...action.payload.content }
           : block,
       );
       return { past: [...past, present], present: newPresent, future: [] };
