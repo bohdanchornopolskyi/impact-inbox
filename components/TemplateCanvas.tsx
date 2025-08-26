@@ -1,16 +1,15 @@
 "use client";
 
-import { useMemo, useRef, useEffect } from "react";
 import { useBuilder } from "@/app/build/BuilderContext";
 import BlockType from "@/components/blocks/BlockType";
 import { buildLayerTree } from "@/lib/utils";
+import { useMemo, useRef, useEffect } from "react";
 
 function TemplateCanvas() {
-  const { blocks } = useBuilder();
+  const { blocks, setHoveredBlockId } = useBuilder();
   const nestedBlocks = useMemo(() => buildLayerTree(blocks), [blocks]);
 
   const canvasRef = useRef<HTMLDivElement>(null);
-  const highlightedBlockRef = useRef<HTMLElement | null>(null);
   const rafIdRef = useRef(0);
 
   useEffect(() => {
@@ -21,43 +20,20 @@ function TemplateCanvas() {
       if (rafIdRef.current) {
         cancelAnimationFrame(rafIdRef.current);
       }
-
       rafIdRef.current = requestAnimationFrame(() => {
         const elementUnderCursor = document.elementFromPoint(
           event.clientX,
           event.clientY,
         );
-
         const targetBlock = elementUnderCursor?.closest(
           "[data-block-id]",
         ) as HTMLElement | null;
-        const previouslyHighlighted = highlightedBlockRef.current;
-
-        if (targetBlock === previouslyHighlighted) return;
-
-        if (previouslyHighlighted) {
-          previouslyHighlighted.classList.remove("border-block");
-          previouslyHighlighted.classList.add("border-transparent");
-        }
-
-        if (targetBlock) {
-          targetBlock.classList.add("border-block");
-          targetBlock.classList.remove("border-transparent");
-        }
-
-        highlightedBlockRef.current = targetBlock;
+        setHoveredBlockId(targetBlock?.dataset.blockId ?? null);
       });
     };
 
     const handlePointerLeave = () => {
-      if (highlightedBlockRef.current) {
-        highlightedBlockRef.current.classList.remove("border-block");
-        highlightedBlockRef.current.classList.add("border-transparent");
-        highlightedBlockRef.current = null;
-      }
-      if (rafIdRef.current) {
-        cancelAnimationFrame(rafIdRef.current);
-      }
+      setHoveredBlockId(null);
     };
 
     canvasElement.addEventListener("pointermove", handlePointerMove);
@@ -66,11 +42,9 @@ function TemplateCanvas() {
     return () => {
       canvasElement.removeEventListener("pointermove", handlePointerMove);
       canvasElement.removeEventListener("pointerleave", handlePointerLeave);
-      if (rafIdRef.current) {
-        cancelAnimationFrame(rafIdRef.current);
-      }
+      cancelAnimationFrame(rafIdRef.current);
     };
-  }, []);
+  }, [setHoveredBlockId]);
 
   return (
     <div ref={canvasRef} className="h-full w-full p-4 bg-white">

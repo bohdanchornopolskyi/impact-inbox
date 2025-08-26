@@ -11,6 +11,9 @@ type BuilderContextType = {
 
   selectedBlockId: string;
   setSelectedBlockId: (id: string) => void;
+
+  hoveredBlockId: string | null;
+  setHoveredBlockId: (id: string | null) => void;
 };
 
 export const BuilderContext = createContext<BuilderContextType | undefined>(

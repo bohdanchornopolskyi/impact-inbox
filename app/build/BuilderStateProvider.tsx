@@ -24,6 +24,7 @@ export function BuilderStateProvider({
   const [isStateInitialized, setIsStateInitialized] = useState(false);
   const [selectedBlockId, setSelectedBlockId] =
     useState<string>(ROOT_CONTAINER_ID);
+  const [hoveredBlockId, setHoveredBlockId] = useState<string | null>(null);
 
   // The custom hook now handles all the complex sync logic
   const { snapshotId, dispatchAndLogAction } = useBuilderSync(
@@ -57,6 +58,8 @@ export function BuilderStateProvider({
     canRedo,
     selectedBlockId,
     setSelectedBlockId,
+    hoveredBlockId,
+    setHoveredBlockId,
   };
 
   return (
