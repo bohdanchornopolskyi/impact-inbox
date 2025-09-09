@@ -1,5 +1,5 @@
 import { v } from "convex/values";
-import { mutation } from "./_generated/server";
+import { mutation, query } from "./_generated/server";
 import { anyBlockValidator, historyActionValidator } from "./schema";
 import { getAuthUserId } from "@convex-dev/auth/server";
 
@@ -53,5 +53,44 @@ export const saveAction = mutation({
       authorId: userId,
       timestamp: Date.now(),
     });
+  },
+});
+
+/**
+ * Gets all snapshots for a given template, ordered from newest to oldest.
+ */
+export const getSnapshotsForTemplate = query({
+  args: {
+    templateId: v.id("emailTemplates"),
+  },
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    const template = await ctx.db.get(args.templateId);
+    if (!template || template.ownerId !== userId) {
+      throw new Error("Permission denied.");
+    }
+
+    return await ctx.db
+      .query("templateSnapshots")
+      .withIndex("by_template", (q) => q.eq("templateId", args.templateId))
+      .order("desc")
+      .collect();
+  },
+});
+
+/**
+ * Gets all actions for a specific snapshot.
+ * This can be used to "replay" a session if needed.
+ */
+export const getActionsForSnapshot = query({
+  args: {
+    snapshotId: v.id("templateSnapshots"),
+  },
+  handler: async (ctx, args) => {
+    // You might add authorization here as well
+    return await ctx.db
+      .query("templateActions")
+      .withIndex("by_snapshot", (q) => q.eq("snapshotId", args.snapshotId))
+      .collect();
   },
 });

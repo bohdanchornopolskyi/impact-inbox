@@ -25,39 +25,29 @@ export function BuilderStateProvider({
   templateId: string;
   children: React.ReactNode;
 }) {
-  // Template data management
   const { templateData, isInitialized, initialBlocks } =
     useTemplateData(templateId);
 
-  // Selection and hover state management
   const { selectedBlockId, hoveredBlockId, selectBlock, hoverBlock } =
     useSelectionState();
 
-  // History and sync management
-  const { blocks, dispatch, canUndo, canRedo, snapshotId } = useBuilderHistory(
-    templateData,
-    initialBlocks,
-    isInitialized,
-  );
+  const { blocks, dispatch, canUndo, canRedo, undo, redo, snapshotId } =
+    useBuilderHistory(templateData, initialBlocks, isInitialized);
 
-  // Loading state management
   const { isLoading, hasError, isReady } = useBuilderLoadingState(
     templateData,
     isInitialized,
     snapshotId,
   );
 
-  // Show loading state
   if (isLoading) {
     return <div>Initializing Editor...</div>;
   }
 
-  // Handle error state
   if (hasError) {
     throw new Error("Template not found or permission denied.");
   }
 
-  // Don't render until everything is ready
   if (!isReady) {
     return null;
   }
@@ -67,6 +57,8 @@ export function BuilderStateProvider({
     dispatch,
     canUndo,
     canRedo,
+    undo,
+    redo,
     selectedBlockId,
     setSelectedBlockId: selectBlock,
     hoveredBlockId,

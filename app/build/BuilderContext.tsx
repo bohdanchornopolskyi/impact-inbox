@@ -22,6 +22,8 @@ export interface BuilderContextType {
   // History management
   canUndo: boolean;
   canRedo: boolean;
+  undo: () => void;
+  redo: () => void;
 
   // Selection state
   selectedBlockId: string;

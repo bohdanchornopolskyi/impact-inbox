@@ -3,7 +3,7 @@
 import { useEffect } from "react";
 import { useHistory } from "./useHistory";
 import { useBuilderSync } from "./useBuilderSync";
-import { AnyBlock, HistoryAction } from "@/lib/types";
+import { AnyBlock } from "@/lib/types";
 import { Doc } from "@/convex/_generated/dataModel";
 
 /**
@@ -23,7 +23,6 @@ export function useBuilderHistory(
     dispatch,
   );
 
-  // Initialize blocks when template data is ready
   useEffect(() => {
     if (isTemplateInitialized && initialBlocks.length > 0) {
       dispatch({
@@ -33,11 +32,21 @@ export function useBuilderHistory(
     }
   }, [isTemplateInitialized, initialBlocks, dispatch]);
 
+  const undo = () => {
+    dispatch({ type: "UNDO" });
+  };
+
+  const redo = () => {
+    dispatch({ type: "REDO" });
+  };
+
   return {
     blocks,
     dispatch: dispatchAndLogAction,
     canUndo,
     canRedo,
+    undo,
+    redo,
     snapshotId,
   };
 }

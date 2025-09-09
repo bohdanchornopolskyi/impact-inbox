@@ -1,3 +1,4 @@
+import { HistoryNavigation } from "@/components/HistoryNavigation";
 import Link from "next/link";
 import React from "react";
 
@@ -7,7 +8,9 @@ function BuildHeader() {
       <Link href="/" className="flex items-center gap-2">
         <div className="text-xl font-bold">Impact Inbox</div>
       </Link>
-      <div className="flex gap-2"></div>
+      <div className="flex gap-2">
+        <HistoryNavigation />
+      </div>
     </header>
   );
 }
