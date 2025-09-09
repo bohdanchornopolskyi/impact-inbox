@@ -1,14 +1,23 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useQuery } from "convex/react";
-import { api } from "@/convex/_generated/api";
-import { Id } from "@/convex/_generated/dataModel";
-import { useHistory } from "@/hooks/useHistory";
-import { ROOT_CONTAINER_ID } from "@/lib/types";
 import { BuilderContext } from "@/app/build/BuilderContext";
-import { useBuilderSync } from "@/hooks/useBuilderSync";
+import { useTemplateData } from "@/hooks/useTemplateData";
+import { useSelectionState } from "@/hooks/useSelectionState";
+import { useBuilderLoadingState } from "@/hooks/useBuilderLoadingState";
+import { useBuilderHistory } from "@/hooks/useBuilderHistory";
 
+/**
+ * BuilderStateProvider - Main state provider for the email template builder
+ *
+ * This component orchestrates multiple focused hooks to manage:
+ * - Template data fetching and initialization
+ * - Block history and undo/redo functionality
+ * - Selection and hover state management
+ * - Loading states and error handling
+ *
+ * The provider follows the Single Responsibility Principle by delegating
+ * specific concerns to dedicated custom hooks.
+ */
 export function BuilderStateProvider({
   templateId,
   children,
@@ -16,53 +25,57 @@ export function BuilderStateProvider({
   templateId: string;
   children: React.ReactNode;
 }) {
-  const templateData = useQuery(api.emailTemplates.getById, {
-    templateId: templateId as Id<"emailTemplates">,
-  });
+  // Template data management
+  const { templateData, isInitialized, initialBlocks } =
+    useTemplateData(templateId);
 
-  const { state: blocks, dispatch, canUndo, canRedo } = useHistory([]);
-  const [isStateInitialized, setIsStateInitialized] = useState(false);
-  const [selectedBlockId, setSelectedBlockId] =
-    useState<string>(ROOT_CONTAINER_ID);
-  const [hoveredBlockId, setHoveredBlockId] = useState<string | null>(null);
+  // Selection and hover state management
+  const { selectedBlockId, hoveredBlockId, selectBlock, hoverBlock } =
+    useSelectionState();
 
-  // The custom hook now handles all the complex sync logic
-  const { snapshotId, dispatchAndLogAction } = useBuilderSync(
+  // History and sync management
+  const { blocks, dispatch, canUndo, canRedo, snapshotId } = useBuilderHistory(
     templateData,
-    blocks,
-    dispatch,
+    initialBlocks,
+    isInitialized,
   );
 
-  useEffect(() => {
-    if (templateData && !isStateInitialized) {
-      dispatch({
-        type: "SET_INITIAL_STATE",
-        payload: templateData.content || [],
-      });
-      setIsStateInitialized(true);
-    }
-  }, [templateData, isStateInitialized, dispatch]);
+  // Loading state management
+  const { isLoading, hasError, isReady } = useBuilderLoadingState(
+    templateData,
+    isInitialized,
+    snapshotId,
+  );
 
-  if (!isStateInitialized || !snapshotId) {
+  // Show loading state
+  if (isLoading) {
     return <div>Initializing Editor...</div>;
   }
 
-  if (templateData === null) {
+  // Handle error state
+  if (hasError) {
     throw new Error("Template not found or permission denied.");
   }
 
-  const value = {
+  // Don't render until everything is ready
+  if (!isReady) {
+    return null;
+  }
+
+  const contextValue = {
     blocks,
-    dispatch: dispatchAndLogAction,
+    dispatch,
     canUndo,
     canRedo,
     selectedBlockId,
-    setSelectedBlockId,
+    setSelectedBlockId: selectBlock,
     hoveredBlockId,
-    setHoveredBlockId,
+    setHoveredBlockId: hoverBlock,
   };
 
   return (
-    <BuilderContext.Provider value={value}>{children}</BuilderContext.Provider>
+    <BuilderContext.Provider value={contextValue}>
+      {children}
+    </BuilderContext.Provider>
   );
 }
