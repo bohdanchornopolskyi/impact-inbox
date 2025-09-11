@@ -16,7 +16,7 @@ const BuildPageLayout = async ({
     <ErrorBoundary>
       <BuilderStateProvider templateId={templateId}>
         <div className="flex flex-col h-screen w-full">
-          <BuildHeader />
+          <BuildHeader templateId={templateId} />
           <div className="flex">
             <LeftSidebar />
             {children}
