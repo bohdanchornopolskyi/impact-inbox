@@ -1,5 +1,6 @@
 import BuildHeader from "@/components/BuildHeader";
 import { LeftSidebar } from "@/components/LeftSidebar";
+import RightSidebar from "@/components/RightSidebar";
 import { BuilderStateProvider } from "@/app/build/BuilderStateProvider";
 import { Id } from "@/convex/_generated/dataModel";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
@@ -20,6 +21,7 @@ const BuildPageLayout = async ({
           <div className="flex">
             <LeftSidebar />
             {children}
+            <RightSidebar />
           </div>
         </div>
       </BuilderStateProvider>

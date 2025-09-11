@@ -190,3 +190,15 @@ export type HistoryAction =
   | UpdateContentAction
   | DeleteBlockAction
   | MoveBlockAction;
+
+type StyleKey = keyof BlockStyles;
+
+export type StyleField = {
+  key: StyleKey;
+  label: string;
+  type: "number" | "text" | "color" | "checkbox" | "select";
+  options?: { label: string; value: string }[];
+  min?: number;
+  max?: number;
+  step?: number;
+};
