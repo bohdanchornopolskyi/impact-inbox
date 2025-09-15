@@ -1,5 +1,33 @@
 export const ROOT_CONTAINER_ID = "ROOT";
 
+export type BorderSide = {
+  width?: number;
+  style?: "solid" | "dotted" | "dashed";
+  color?: string;
+};
+
+export type Border = {
+  // Global border properties (apply to all sides)
+  width?: number;
+  style?: "solid" | "dotted" | "dashed";
+  color?: string;
+  // Individual side properties
+  top?: BorderSide;
+  right?: BorderSide;
+  bottom?: BorderSide;
+  left?: BorderSide;
+};
+
+export type BorderRadius = {
+  // Global radius (applies to all corners)
+  radius?: number;
+  // Individual corner properties
+  topLeft?: number;
+  topRight?: number;
+  bottomLeft?: number;
+  bottomRight?: number;
+};
+
 export type BlockStyles = {
   // Layout & Spacing
   paddingTop?: number;
@@ -13,10 +41,8 @@ export type BlockStyles = {
   backgroundColor?: string;
 
   // Borders
-  borderWidth?: number;
-  borderStyle?: "solid" | "dotted" | "dashed";
-  borderColor?: string;
-  borderRadius?: number;
+  border?: Border;
+  borderRadius?: BorderRadius;
 
   // Typography
   fontFamily?: string;
@@ -40,10 +66,7 @@ export type BlockStyles = {
   heightPx?: number; // Only used if heightMode is 'fixed'
   alignment?: "left" | "center" | "right";
 
-  // Divider/Spacer Specific
-  borderTopWidth?: number; // Divider thickness
-  borderTopStyle?: "solid" | "dotted" | "dashed";
-  borderTopColor?: string;
+  // Divider/Spacer Specific (now handled by individual border sides above)
 
   // List-specific styles
   listType?: "unordered" | "ordered";
@@ -191,7 +214,28 @@ export type HistoryAction =
   | DeleteBlockAction
   | MoveBlockAction;
 
-type StyleKey = keyof BlockStyles;
+type StyleKey =
+  | keyof BlockStyles
+  | "border.width"
+  | "border.style"
+  | "border.color"
+  | "border.top.width"
+  | "border.top.style"
+  | "border.top.color"
+  | "border.right.width"
+  | "border.right.style"
+  | "border.right.color"
+  | "border.bottom.width"
+  | "border.bottom.style"
+  | "border.bottom.color"
+  | "border.left.width"
+  | "border.left.style"
+  | "border.left.color"
+  | "borderRadius.radius"
+  | "borderRadius.topLeft"
+  | "borderRadius.topRight"
+  | "borderRadius.bottomLeft"
+  | "borderRadius.bottomRight";
 
 export type StyleField = {
   key: StyleKey;

@@ -9,6 +9,47 @@ import { authTables } from "@convex-dev/auth/server";
 // ==================================================================
 
 /**
+ * Validator for individual border side properties.
+ */
+const borderSideValidator = v.object({
+  width: v.optional(v.number()),
+  style: v.optional(
+    v.union(v.literal("solid"), v.literal("dotted"), v.literal("dashed")),
+  ),
+  color: v.optional(v.string()),
+});
+
+/**
+ * Validator for the complete border object with all sides.
+ */
+const borderValidator = v.object({
+  // Global border properties (apply to all sides)
+  width: v.optional(v.number()),
+  style: v.optional(
+    v.union(v.literal("solid"), v.literal("dotted"), v.literal("dashed")),
+  ),
+  color: v.optional(v.string()),
+  // Individual side properties
+  top: v.optional(borderSideValidator),
+  right: v.optional(borderSideValidator),
+  bottom: v.optional(borderSideValidator),
+  left: v.optional(borderSideValidator),
+});
+
+/**
+ * Validator for border radius with individual corner support.
+ */
+const borderRadiusValidator = v.object({
+  // Global radius (applies to all corners)
+  radius: v.optional(v.number()),
+  // Individual corner properties
+  topLeft: v.optional(v.number()),
+  topRight: v.optional(v.number()),
+  bottomLeft: v.optional(v.number()),
+  bottomRight: v.optional(v.number()),
+});
+
+/**
  * Validator for the shared 'styles' object used by all blocks.
  */
 const stylesValidator = v.object({
@@ -21,12 +62,8 @@ const stylesValidator = v.object({
   marginBottom: v.optional(v.number()),
   // Background & Borders
   backgroundColor: v.optional(v.string()),
-  borderWidth: v.optional(v.number()),
-  borderStyle: v.optional(
-    v.union(v.literal("solid"), v.literal("dotted"), v.literal("dashed")),
-  ),
-  borderColor: v.optional(v.string()),
-  borderRadius: v.optional(v.number()),
+  border: v.optional(borderValidator),
+  borderRadius: v.optional(borderRadiusValidator),
   // Typography
   fontFamily: v.optional(v.string()),
   fontSize: v.optional(v.number()),
@@ -44,6 +81,10 @@ const stylesValidator = v.object({
       v.literal("line-through"),
     ),
   ),
+  textWrap: v.optional(v.union(v.literal("wrap"), v.literal("nowrap"))),
+  // Link Specific
+  linkColor: v.optional(v.string()),
+  linkUnderline: v.optional(v.boolean()),
   // Sizing & Alignment
   widthMode: v.optional(v.union(v.literal("fill"), v.literal("fixed"))),
   widthPx: v.optional(v.number()),
@@ -52,6 +93,7 @@ const stylesValidator = v.object({
   alignment: v.optional(
     v.union(v.literal("left"), v.literal("center"), v.literal("right")),
   ),
+  // Divider/Spacer Specific (now handled by individual border sides above)
   // List Specific
   listType: v.optional(v.union(v.literal("unordered"), v.literal("ordered"))),
   listStyleType: v.optional(
@@ -107,11 +149,11 @@ export const anyBlockValidator = v.union(
     alt: v.string(),
     href: v.optional(v.string()),
   }),
-  // v.object({
-  //   ...baseBlockValidator,
-  //   type: v.literal("list"),
-  //   items: v.array(v.string()),
-  // }),
+  v.object({
+    ...baseBlockValidator,
+    type: v.literal("list"),
+    items: v.array(v.string()),
+  }),
 );
 
 /**
@@ -151,7 +193,6 @@ export const historyActionValidator = v.union(
           alt: v.optional(v.string()),
           href: v.optional(v.string()),
         }),
-        v.object({ items: v.optional(v.array(v.string())) }),
       ),
     }),
   }),

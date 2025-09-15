@@ -45,7 +45,7 @@ export const createButtonBlock = (
     color: "#ffffff",
     textAlign: "center",
     fontWeight: "bold",
-    borderRadius: 8,
+    borderRadius: { radius: 0 },
     widthMode: "fixed",
     widthPx: 150,
   },
