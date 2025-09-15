@@ -6,13 +6,23 @@ import { HistoryList } from "@/components/HistoryList";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
+import { useBuilder } from "@/app/build/BuilderContext";
+import { AnyBlock } from "@/lib/types";
 
 export default function HistoryPage() {
   const params = useParams();
   const templateId = params.templateId as string;
 
-  const { snapshots, isLoading, error, restoreToSnapshot } =
-    useTemplateHistory(templateId);
+  const { snapshots, isLoading } = useTemplateHistory(templateId);
+
+  const { dispatch } = useBuilder();
+
+  const restoreToSnapshot = async (content: AnyBlock[]) => {
+    dispatch({
+      type: "SET_INITIAL_STATE",
+      payload: content,
+    });
+  };
 
   if (isLoading) {
     return (
@@ -20,22 +30,6 @@ export default function HistoryPage() {
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto mb-4"></div>
           <p>Loading history...</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <p className="text-red-600 mb-4">Error loading history: {error}</p>
-          <Link href={`/build/${templateId}`}>
-            <Button variant="outline">
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Back to Editor
-            </Button>
-          </Link>
         </div>
       </div>
     );

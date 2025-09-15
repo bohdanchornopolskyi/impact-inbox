@@ -149,11 +149,6 @@ export const anyBlockValidator = v.union(
     alt: v.string(),
     href: v.optional(v.string()),
   }),
-  v.object({
-    ...baseBlockValidator,
-    type: v.literal("list"),
-    items: v.array(v.string()),
-  }),
 );
 
 /**
@@ -209,6 +204,12 @@ export const historyActionValidator = v.union(
       newParentId: v.string(),
       newIndex: v.number(),
     }),
+  }),
+
+  // Set Initial State Action
+  v.object({
+    type: v.literal("SET_INITIAL_STATE"),
+    payload: v.array(anyBlockValidator),
   }),
 );
 

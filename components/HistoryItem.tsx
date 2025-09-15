@@ -12,15 +12,8 @@ import { useState } from "react";
 import { useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { Clock, RotateCcw, CheckCircle, ChevronDown } from "lucide-react";
-import { HistoryAction } from "@/lib/types";
-
-interface Snapshot {
-  _id: Id<"templateSnapshots">;
-  templateId: Id<"emailTemplates">;
-  content: any[];
-  version: number;
-  createdAt: number;
-}
+import { AnyBlock, HistoryAction } from "@/lib/types";
+import { Snapshot } from "@/lib/types";
 
 interface HistoryItemProps {
   snapshot: Snapshot;

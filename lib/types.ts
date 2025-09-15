@@ -1,3 +1,5 @@
+import { Doc } from "@/convex/_generated/dataModel";
+
 export const ROOT_CONTAINER_ID = "ROOT";
 
 export type BorderSide = {
@@ -207,12 +209,18 @@ export type MoveBlockAction = {
   };
 };
 
+export type SetInitialState = {
+  type: "SET_INITIAL_STATE";
+  payload: AnyBlock[];
+};
+
 export type HistoryAction =
   | AddBlockAction
   | UpdateStyleAction
   | UpdateContentAction
   | DeleteBlockAction
-  | MoveBlockAction;
+  | MoveBlockAction
+  | SetInitialState;
 
 type StyleKey =
   | keyof BlockStyles
@@ -246,3 +254,5 @@ export type StyleField = {
   max?: number;
   step?: number;
 };
+
+export type Snapshot = Doc<"templateSnapshots">;

@@ -5,21 +5,11 @@ import { Id } from "@/convex/_generated/dataModel";
 import { HistoryItem } from "./HistoryItem";
 import { Button } from "@/components/ui/button";
 import { Clock, RotateCcw } from "lucide-react";
-
-interface Snapshot {
-  _id: Id<"templateSnapshots">;
-  templateId: Id<"emailTemplates">;
-  content: any[];
-  version: number;
-  createdAt: number;
-}
+import { AnyBlock, Snapshot } from "@/lib/types";
 
 interface HistoryListProps {
   snapshots: Snapshot[];
-  onRestore: (
-    snapshotId: Id<"templateSnapshots">,
-    content: any[],
-  ) => Promise<void>;
+  onRestore: (content: AnyBlock[]) => Promise<void>;
   templateId: string;
 }
 
@@ -32,13 +22,10 @@ export function HistoryList({
     useState<Id<"templateSnapshots"> | null>(null);
   const [isRestoring, setIsRestoring] = useState(false);
 
-  const handleRestore = async (
-    snapshotId: Id<"templateSnapshots">,
-    content: any[],
-  ) => {
+  const handleRestore = async (content: AnyBlock[]) => {
     setIsRestoring(true);
     try {
-      await onRestore(snapshotId, content);
+      await onRestore(content);
       setSelectedSnapshot(null);
     } catch (error) {
       console.error("Failed to restore snapshot:", error);
@@ -86,7 +73,7 @@ export function HistoryList({
                   (s) => s._id === selectedSnapshot,
                 );
                 if (snapshot) {
-                  handleRestore(snapshot._id, snapshot.content);
+                  handleRestore(snapshot.content);
                 }
               }}
               disabled={isRestoring}
@@ -107,7 +94,7 @@ export function HistoryList({
             isSelected={selectedSnapshot === snapshot._id}
             isLatest={index === 0}
             onSelect={() => setSelectedSnapshot(snapshot._id)}
-            onRestore={() => handleRestore(snapshot._id, snapshot.content)}
+            onRestore={() => handleRestore(snapshot.content)}
             isRestoring={isRestoring}
           />
         ))}
