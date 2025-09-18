@@ -30,7 +30,7 @@ export type BorderRadius = {
   bottomRight?: number;
 };
 
-export type BlockStyles = {
+export type BaseBlockStyles = {
   // Layout & Spacing
   paddingTop?: number;
   paddingBottom?: number;
@@ -45,32 +45,29 @@ export type BlockStyles = {
   // Borders
   border?: Border;
   borderRadius?: BorderRadius;
+};
 
-  // Typography
+export type TypographyStyles = {
   fontFamily?: string;
   fontSize?: number;
   fontWeight?: "normal" | "bold";
-  lineHeight?: number; // e.g., 1.5
+  lineHeight?: number;
   letterSpacing?: number;
-  color?: string; // Text color
+  color?: string;
   textAlign?: "left" | "center" | "right";
   textDecoration?: "none" | "underline" | "line-through";
   textWrap?: "wrap" | "nowrap";
+};
 
-  // Link Specific
-  linkColor?: string;
-  linkUnderline?: boolean;
-
-  // Sizing & Alignment (for Button/Image/Divider)
+export type SizingStyles = {
   widthMode?: "fill" | "fixed";
-  widthPx?: number; // Only used if widthMode is 'fixed'
+  widthPx?: number;
   heightMode?: "fill" | "fixed";
-  heightPx?: number; // Only used if heightMode is 'fixed'
+  heightPx?: number;
   alignment?: "left" | "center" | "right";
+};
 
-  // Divider/Spacer Specific (now handled by individual border sides above)
-
-  // List-specific styles
+export type ListStyles = {
   listType?: "unordered" | "ordered";
   listStyleType?:
     | "disc"
@@ -85,6 +82,11 @@ export type BlockStyles = {
   markerColor?: string;
 };
 
+export type BlockStyles = BaseBlockStyles &
+  TypographyStyles &
+  SizingStyles &
+  ListStyles;
+
 // Base properties common to all blocks
 export type BaseBlock = {
   id: string;
@@ -98,12 +100,14 @@ export type BaseBlock = {
 export type TextBlockType = BaseBlock & {
   type: "text";
   content: string;
+  styles: BaseBlockStyles & TypographyStyles;
 };
 
 export type ButtonBlockType = BaseBlock & {
   type: "button";
   content: string;
   href: string;
+  styles: BaseBlockStyles & TypographyStyles & SizingStyles;
 };
 
 export type ImageBlockType = BaseBlock & {
@@ -111,19 +115,15 @@ export type ImageBlockType = BaseBlock & {
   src: string;
   alt: string;
   href?: string;
-};
-
-export type ListBlockType = BaseBlock & {
-  type: "list";
-  items: string[];
+  styles: BaseBlockStyles & SizingStyles;
 };
 
 export type ContainerBlockType = BaseBlock & {
   type: "container";
+  styles: BaseBlockStyles;
 };
 
 // --- Union of All Possible Block Types ---
-
 export type AnyBlock =
   | TextBlockType
   | ButtonBlockType
@@ -142,12 +142,17 @@ export type ContainerUiBlock = BaseUiBlock & {
   children: AnyUiBlock[];
 };
 
-export type TextUiBlock = BaseUiBlock & { type: "text"; content: string };
+export type TextUiBlock = BaseUiBlock & {
+  type: "text";
+  content: string;
+  styles: BaseBlockStyles & TypographyStyles;
+};
 
 export type ButtonUiBlock = BaseUiBlock & {
   type: "button";
   content: string;
   href: string;
+  styles: BaseBlockStyles & TypographyStyles & SizingStyles;
 };
 
 export type ImageUiBlock = BaseUiBlock & {
@@ -155,6 +160,7 @@ export type ImageUiBlock = BaseUiBlock & {
   src: string;
   alt: string;
   href?: string;
+  styles: BaseBlockStyles & SizingStyles;
 };
 
 export type AnyUiBlock =
@@ -189,7 +195,6 @@ export type UpdateContentAction = {
       | Partial<Pick<TextBlockType, "content">>
       | Partial<Pick<ButtonBlockType, "content" | "href">>
       | Partial<Pick<ImageBlockType, "src" | "alt" | "href">>;
-    // | Partial<Pick<ListBlockType, "items">>;
   };
 };
 
