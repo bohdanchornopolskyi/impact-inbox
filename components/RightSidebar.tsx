@@ -11,9 +11,9 @@ import {
 } from "@/lib/types";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { STYLE_FIELDS } from "@/lib/constants";
+import { getStyleFieldsForBlockType } from "@/lib/constants";
+import StyleControls from "./StyleControls";
 
 function useSelectedBlock(blocks: AnyBlock[], selectedId: string) {
   return useMemo(
@@ -107,112 +107,12 @@ export default function RightSidebar() {
                 <TabsTrigger value="content">Content</TabsTrigger>
               </TabsList>
 
-              <TabsContent value="styles" className="px-4 my-4 space-y-3">
-                {STYLE_FIELDS.map((field) => {
-                  // Handle nested property access
-                  const getNestedValue = (obj: any, key: string) => {
-                    if (!key.includes(".")) {
-                      return obj[key];
-                    }
-                    const keys = key.split(".");
-                    let current = obj;
-                    for (const k of keys) {
-                      if (current && typeof current === "object") {
-                        current = current[k];
-                      } else {
-                        return undefined;
-                      }
-                    }
-                    return current;
-                  };
-
-                  const value = getNestedValue(selectedBlock.styles, field.key);
-                  const id = `style-${String(field.key)}`;
-                  if (field.type === "number") {
-                    return (
-                      <div key={field.key} className="space-y-1">
-                        <Label htmlFor={id}>{field.label}</Label>
-                        <Input
-                          id={id}
-                          type="number"
-                          value={typeof value === "number" ? value : ""}
-                          onChange={(e) =>
-                            handleStyleChange(
-                              field.key,
-                              e.target.value === ""
-                                ? undefined
-                                : Number(e.target.value),
-                            )
-                          }
-                          min={field.min}
-                          step={field.step}
-                        />
-                      </div>
-                    );
-                  }
-                  if (field.type === "text" || field.type === "color") {
-                    return (
-                      <div key={field.key} className="space-y-1">
-                        <Label htmlFor={id}>{field.label}</Label>
-                        <Input
-                          id={id}
-                          value={(value as string) ?? ""}
-                          onChange={(e) =>
-                            handleStyleChange(
-                              field.key,
-                              e.target.value === ""
-                                ? undefined
-                                : e.target.value,
-                            )
-                          }
-                        />
-                      </div>
-                    );
-                  }
-                  if (field.type === "checkbox") {
-                    return (
-                      <div key={field.key} className="flex items-center gap-2">
-                        <input
-                          id={id}
-                          type="checkbox"
-                          checked={Boolean(value)}
-                          onChange={(e) =>
-                            handleStyleChange(field.key, e.target.checked)
-                          }
-                        />
-                        <Label htmlFor={id}>{field.label}</Label>
-                      </div>
-                    );
-                  }
-                  if (field.type === "select" && field.options) {
-                    return (
-                      <div key={field.key} className="space-y-1">
-                        <Label htmlFor={id}>{field.label}</Label>
-                        <select
-                          id={id}
-                          className="h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm"
-                          value={(value as string) ?? ""}
-                          onChange={(e) =>
-                            handleStyleChange(
-                              field.key,
-                              e.target.value === ""
-                                ? undefined
-                                : e.target.value,
-                            )
-                          }
-                        >
-                          <option value=""></option>
-                          {field.options.map((opt) => (
-                            <option key={opt.value} value={opt.value}>
-                              {opt.label}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-                    );
-                  }
-                  return null;
-                })}
+              <TabsContent value="styles" className="px-4 mt-4 mb-24">
+                <StyleControls
+                  selectedBlock={selectedBlock}
+                  fields={getStyleFieldsForBlockType(selectedBlock.type)}
+                  onStyleChange={handleStyleChange}
+                />
               </TabsContent>
               <TabsContent value="content" className="px-4 mt-4 space-y-3">
                 {selectedBlock.type === "text" && (

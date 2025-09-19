@@ -58,8 +58,6 @@ const stylesValidator = v.object({
   paddingBottom: v.optional(v.number()),
   paddingLeft: v.optional(v.number()),
   paddingRight: v.optional(v.number()),
-  marginTop: v.optional(v.number()),
-  marginBottom: v.optional(v.number()),
   // Background & Borders
   backgroundColor: v.optional(v.string()),
   border: v.optional(borderValidator),
@@ -93,21 +91,7 @@ const stylesValidator = v.object({
   alignment: v.optional(
     v.union(v.literal("left"), v.literal("center"), v.literal("right")),
   ),
-  // Divider/Spacer Specific (now handled by individual border sides above)
-  // List Specific
-  listType: v.optional(v.union(v.literal("unordered"), v.literal("ordered"))),
-  listStyleType: v.optional(
-    v.union(
-      v.literal("disc"),
-      v.literal("circle"),
-      v.literal("square"),
-      v.literal("decimal"),
-      v.literal("lower-alpha"),
-      v.literal("upper-alpha"),
-      v.literal("lower-roman"),
-      v.literal("upper-roman"),
-    ),
-  ),
+
   itemSpacing: v.optional(v.number()),
   markerColor: v.optional(v.string()),
 });

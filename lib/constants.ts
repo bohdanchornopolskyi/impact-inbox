@@ -10,6 +10,313 @@ export const FONT_FAMILY_OPTIONS = [
   { label: "Verdana", value: "Verdana, sans-serif" },
 ];
 
+// Layout & Spacing Fields
+export const LAYOUT_FIELDS: StyleField[] = [
+  { key: "paddingTop", label: "Padding Top", type: "number", min: 0, step: 1 },
+  {
+    key: "paddingBottom",
+    label: "Padding Bottom",
+    type: "number",
+    min: 0,
+    step: 1,
+  },
+  {
+    key: "paddingLeft",
+    label: "Padding Left",
+    type: "number",
+    min: 0,
+    step: 1,
+  },
+  {
+    key: "paddingRight",
+    label: "Padding Right",
+    type: "number",
+    min: 0,
+    step: 1,
+  },
+  { key: "backgroundColor", label: "Background Color", type: "color" },
+];
+
+// Typography Fields
+export const TYPOGRAPHY_FIELDS: StyleField[] = [
+  { key: "fontFamily", label: "Font Family", type: "text" },
+  { key: "fontSize", label: "Font Size", type: "number", min: 1, step: 1 },
+  {
+    key: "fontWeight",
+    label: "Font Weight",
+    type: "select",
+    options: [
+      { label: "Normal", value: "normal" },
+      { label: "Bold", value: "bold" },
+    ],
+  },
+  {
+    key: "lineHeight",
+    label: "Line Height",
+    type: "number",
+    min: 0.5,
+    step: 0.1,
+  },
+  { key: "letterSpacing", label: "Letter Spacing", type: "number", step: 0.1 },
+  { key: "color", label: "Text Color", type: "text" },
+  {
+    key: "textAlign",
+    label: "Text Align",
+    type: "select",
+    options: [
+      { label: "Left", value: "left" },
+      { label: "Center", value: "center" },
+      { label: "Right", value: "right" },
+    ],
+  },
+  {
+    key: "textDecoration",
+    label: "Text Decoration",
+    type: "select",
+    options: [
+      { label: "None", value: "none" },
+      { label: "Underline", value: "underline" },
+      { label: "Line-through", value: "line-through" },
+    ],
+  },
+  {
+    key: "textWrap",
+    label: "Text Wrap",
+    type: "select",
+    options: [
+      { label: "Wrap", value: "wrap" },
+      { label: "No Wrap", value: "nowrap" },
+    ],
+  },
+];
+
+// Border Fields
+export const BORDER_FIELDS: StyleField[] = [
+  // Global Border Properties
+  {
+    key: "border.width",
+    label: "Border Width",
+    type: "number",
+    min: 0,
+    step: 1,
+  },
+  {
+    key: "border.style",
+    label: "Border Style",
+    type: "select",
+    options: [
+      { label: "Solid", value: "solid" },
+      { label: "Dotted", value: "dotted" },
+      { label: "Dashed", value: "dashed" },
+    ],
+  },
+  { key: "border.color", label: "Border Color", type: "color" },
+  // Individual Border Sides
+  {
+    key: "border.top.width",
+    label: "Top Border Width",
+    type: "number",
+    min: 0,
+    step: 1,
+  },
+  {
+    key: "border.top.style",
+    label: "Top Border Style",
+    type: "select",
+    options: [
+      { label: "Solid", value: "solid" },
+      { label: "Dotted", value: "dotted" },
+      { label: "Dashed", value: "dashed" },
+    ],
+  },
+  { key: "border.top.color", label: "Top Border Color", type: "color" },
+  {
+    key: "border.right.width",
+    label: "Right Border Width",
+    type: "number",
+    min: 0,
+    step: 1,
+  },
+  {
+    key: "border.right.style",
+    label: "Right Border Style",
+    type: "select",
+    options: [
+      { label: "Solid", value: "solid" },
+      { label: "Dotted", value: "dotted" },
+      { label: "Dashed", value: "dashed" },
+    ],
+  },
+  { key: "border.right.color", label: "Right Border Color", type: "color" },
+  {
+    key: "border.bottom.width",
+    label: "Bottom Border Width",
+    type: "number",
+    min: 0,
+    step: 1,
+  },
+  {
+    key: "border.bottom.style",
+    label: "Bottom Border Style",
+    type: "select",
+    options: [
+      { label: "Solid", value: "solid" },
+      { label: "Dotted", value: "dotted" },
+      { label: "Dashed", value: "dashed" },
+    ],
+  },
+  { key: "border.bottom.color", label: "Bottom Border Color", type: "color" },
+  {
+    key: "border.left.width",
+    label: "Left Border Width",
+    type: "number",
+    min: 0,
+    step: 1,
+  },
+  {
+    key: "border.left.style",
+    label: "Left Border Style",
+    type: "select",
+    options: [
+      { label: "Solid", value: "solid" },
+      { label: "Dotted", value: "dotted" },
+      { label: "Dashed", value: "dashed" },
+    ],
+  },
+  { key: "border.left.color", label: "Left Border Color", type: "color" },
+];
+
+// Border Radius Fields
+export const BORDER_RADIUS_FIELDS: StyleField[] = [
+  {
+    key: "borderRadius.radius",
+    label: "Border Radius",
+    type: "number",
+    min: 0,
+    step: 1,
+  },
+  {
+    key: "borderRadius.topLeft",
+    label: "Top Left Radius",
+    type: "number",
+    min: 0,
+    step: 1,
+  },
+  {
+    key: "borderRadius.topRight",
+    label: "Top Right Radius",
+    type: "number",
+    min: 0,
+    step: 1,
+  },
+  {
+    key: "borderRadius.bottomLeft",
+    label: "Bottom Left Radius",
+    type: "number",
+    min: 0,
+    step: 1,
+  },
+  {
+    key: "borderRadius.bottomRight",
+    label: "Bottom Right Radius",
+    type: "number",
+    min: 0,
+    step: 1,
+  },
+];
+
+// Sizing Fields
+export const SIZING_FIELDS: StyleField[] = [
+  {
+    key: "widthMode",
+    label: "Width Mode",
+    type: "select",
+    options: [
+      { label: "Fill", value: "fill" },
+      { label: "Fixed", value: "fixed" },
+    ],
+  },
+  { key: "widthPx", label: "Width (px)", type: "number", min: 0, step: 1 },
+  {
+    key: "heightMode",
+    label: "Height Mode",
+    type: "select",
+    options: [
+      { label: "Fill", value: "fill" },
+      { label: "Fixed", value: "fixed" },
+    ],
+  },
+  { key: "heightPx", label: "Height (px)", type: "number", min: 0, step: 1 },
+  {
+    key: "alignment",
+    label: "Alignment",
+    type: "select",
+    options: [
+      { label: "Left", value: "left" },
+      { label: "Center", value: "center" },
+      { label: "Right", value: "right" },
+    ],
+  },
+];
+
+// Link Fields
+export const LINK_FIELDS: StyleField[] = [
+  { key: "linkColor", label: "Link Color", type: "color" },
+  { key: "linkUnderline", label: "Underline Links", type: "checkbox" },
+];
+
+// Field combinations for different block types
+export const BLOCK_STYLE_FIELDS = {
+  container: [...LAYOUT_FIELDS, ...BORDER_FIELDS, ...BORDER_RADIUS_FIELDS],
+  text: [
+    ...LAYOUT_FIELDS,
+    ...TYPOGRAPHY_FIELDS,
+    ...BORDER_FIELDS,
+    ...BORDER_RADIUS_FIELDS,
+    ...LINK_FIELDS,
+  ],
+  button: [
+    ...LAYOUT_FIELDS,
+    ...TYPOGRAPHY_FIELDS,
+    ...BORDER_FIELDS,
+    ...BORDER_RADIUS_FIELDS,
+    ...SIZING_FIELDS,
+  ],
+  image: [
+    ...LAYOUT_FIELDS,
+    ...BORDER_FIELDS,
+    ...BORDER_RADIUS_FIELDS,
+    ...SIZING_FIELDS,
+  ],
+};
+
+// Utility function to get fields for a specific block type
+export function getStyleFieldsForBlockType(blockType: string): StyleField[] {
+  return BLOCK_STYLE_FIELDS[blockType as keyof typeof BLOCK_STYLE_FIELDS] || [];
+}
+
+// Utility function to create custom field combinations
+export function createStyleFieldCombination(
+  ...fieldGroups: StyleField[][]
+): StyleField[] {
+  return fieldGroups.flat();
+}
+
+// Utility function to get fields by category
+export function getFieldsByCategory(category: string): StyleField[] {
+  const categoryMap: Record<string, StyleField[]> = {
+    layout: LAYOUT_FIELDS,
+    typography: TYPOGRAPHY_FIELDS,
+    border: BORDER_FIELDS,
+    borderRadius: BORDER_RADIUS_FIELDS,
+    sizing: SIZING_FIELDS,
+    link: LINK_FIELDS,
+  };
+
+  return categoryMap[category] || [];
+}
+
+// Legacy export for backward compatibility
 export const STYLE_FIELDS: StyleField[] = [
   { key: "paddingTop", label: "Padding Top", type: "number", min: 0, step: 1 },
   {
@@ -33,15 +340,7 @@ export const STYLE_FIELDS: StyleField[] = [
     min: 0,
     step: 1,
   },
-  { key: "marginTop", label: "Margin Top", type: "number", min: 0, step: 1 },
-  {
-    key: "marginBottom",
-    label: "Margin Bottom",
-    type: "number",
-    min: 0,
-    step: 1,
-  },
-  { key: "backgroundColor", label: "Background Color", type: "text" },
+  { key: "backgroundColor", label: "Background Color", type: "color" },
   // Border - Global Properties
   {
     key: "border.width",
@@ -60,7 +359,7 @@ export const STYLE_FIELDS: StyleField[] = [
       { label: "Dashed", value: "dashed" },
     ],
   },
-  { key: "border.color", label: "Border Color", type: "text" },
+  { key: "border.color", label: "Border Color", type: "color" },
   // Border - Individual Sides
   {
     key: "border.top.width",
@@ -79,7 +378,7 @@ export const STYLE_FIELDS: StyleField[] = [
       { label: "Dashed", value: "dashed" },
     ],
   },
-  { key: "border.top.color", label: "Top Border Color", type: "text" },
+  { key: "border.top.color", label: "Top Border Color", type: "color" },
   {
     key: "border.right.width",
     label: "Right Border Width",
@@ -97,7 +396,7 @@ export const STYLE_FIELDS: StyleField[] = [
       { label: "Dashed", value: "dashed" },
     ],
   },
-  { key: "border.right.color", label: "Right Border Color", type: "text" },
+  { key: "border.right.color", label: "Right Border Color", type: "color" },
   {
     key: "border.bottom.width",
     label: "Bottom Border Width",
@@ -115,7 +414,7 @@ export const STYLE_FIELDS: StyleField[] = [
       { label: "Dashed", value: "dashed" },
     ],
   },
-  { key: "border.bottom.color", label: "Bottom Border Color", type: "text" },
+  { key: "border.bottom.color", label: "Bottom Border Color", type: "color" },
   {
     key: "border.left.width",
     label: "Left Border Width",
@@ -133,7 +432,7 @@ export const STYLE_FIELDS: StyleField[] = [
       { label: "Dashed", value: "dashed" },
     ],
   },
-  { key: "border.left.color", label: "Left Border Color", type: "text" },
+  { key: "border.left.color", label: "Left Border Color", type: "color" },
   // Border Radius - Global Properties
   {
     key: "borderRadius.radius",
@@ -190,7 +489,7 @@ export const STYLE_FIELDS: StyleField[] = [
     step: 0.1,
   },
   { key: "letterSpacing", label: "Letter Spacing", type: "number", step: 0.1 },
-  { key: "color", label: "Text Color", type: "text" },
+  { key: "color", label: "Text Color", type: "color" },
   {
     key: "textAlign",
     label: "Text Align",
@@ -220,7 +519,7 @@ export const STYLE_FIELDS: StyleField[] = [
       { label: "No Wrap", value: "nowrap" },
     ],
   },
-  { key: "linkColor", label: "Link Color", type: "text" },
+  { key: "linkColor", label: "Link Color", type: "color" },
   { key: "linkUnderline", label: "Underline Links", type: "checkbox" },
   {
     key: "widthMode",
@@ -252,36 +551,4 @@ export const STYLE_FIELDS: StyleField[] = [
       { label: "Right", value: "right" },
     ],
   },
-  {
-    key: "listType",
-    label: "List Type",
-    type: "select",
-    options: [
-      { label: "Unordered", value: "unordered" },
-      { label: "Ordered", value: "ordered" },
-    ],
-  },
-  {
-    key: "listStyleType",
-    label: "List Marker",
-    type: "select",
-    options: [
-      { label: "Disc", value: "disc" },
-      { label: "Circle", value: "circle" },
-      { label: "Square", value: "square" },
-      { label: "Decimal", value: "decimal" },
-      { label: "Lower Alpha", value: "lower-alpha" },
-      { label: "Upper Alpha", value: "upper-alpha" },
-      { label: "Lower Roman", value: "lower-roman" },
-      { label: "Upper Roman", value: "upper-roman" },
-    ],
-  },
-  {
-    key: "itemSpacing",
-    label: "Item Spacing",
-    type: "number",
-    min: 0,
-    step: 1,
-  },
-  { key: "markerColor", label: "Marker Color", type: "text" },
 ];

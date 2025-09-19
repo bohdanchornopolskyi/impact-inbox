@@ -36,9 +36,6 @@ export type BaseBlockStyles = {
   paddingBottom?: number;
   paddingLeft?: number;
   paddingRight?: number;
-  marginTop?: number;
-  marginBottom?: number;
-
   // Background
   backgroundColor?: string;
 
@@ -67,25 +64,15 @@ export type SizingStyles = {
   alignment?: "left" | "center" | "right";
 };
 
-export type ListStyles = {
-  listType?: "unordered" | "ordered";
-  listStyleType?:
-    | "disc"
-    | "circle"
-    | "square"
-    | "decimal"
-    | "lower-alpha"
-    | "upper-alpha"
-    | "lower-roman"
-    | "upper-roman";
-  itemSpacing?: number;
-  markerColor?: string;
+export type LinkStyles = {
+  linkColor?: string;
+  linkUnderline?: boolean;
 };
 
 export type BlockStyles = BaseBlockStyles &
   TypographyStyles &
   SizingStyles &
-  ListStyles;
+  LinkStyles;
 
 // Base properties common to all blocks
 export type BaseBlock = {
@@ -100,7 +87,7 @@ export type BaseBlock = {
 export type TextBlockType = BaseBlock & {
   type: "text";
   content: string;
-  styles: BaseBlockStyles & TypographyStyles;
+  styles: BaseBlockStyles & TypographyStyles & LinkStyles;
 };
 
 export type ButtonBlockType = BaseBlock & {
