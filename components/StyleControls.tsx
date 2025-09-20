@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ColorPicker } from "@/components/StyleControls/ColorPicker";
 import { TypographyControl } from "@/components/StyleControls/Typography/TypographyControls";
+import { PaddingControls } from "@/components/StyleControls/Padding/PaddingControls";
 
 interface StyleControlsProps {
   selectedBlock: AnyBlock;
@@ -57,6 +58,12 @@ export default function StyleControls({
     ].includes(field.key),
   );
 
+  const hasPaddingFields = fields.some((field) =>
+    ["paddingTop", "paddingBottom", "paddingLeft", "paddingRight"].includes(
+      field.key,
+    ),
+  );
+
   const nonTypographyFields = fields.filter(
     (field) =>
       ![
@@ -69,11 +76,22 @@ export default function StyleControls({
         "textAlign",
         "textDecoration",
         "textWrap",
+        "paddingTop",
+        "paddingBottom",
+        "paddingLeft",
+        "paddingRight",
       ].includes(field.key),
   );
 
   return (
     <div className="space-y-3">
+      {hasPaddingFields && (
+        <PaddingControls
+          value={selectedBlock.styles}
+          onChange={onStyleChange}
+        />
+      )}
+
       {hasTypographyFields &&
         (selectedBlock.type === "text" || selectedBlock.type === "button") && (
           <TypographyControl

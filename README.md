@@ -66,3 +66,7 @@ This app should support:
 ## 💡 Inspiration
 
 ImpacInbox is built for creators, marketers, and businesses that want powerful email capabilities without the usual complexity. Whether you're sending a weekly newsletter or launching a full campaign, ImpacInbox gives you the tools to do it beautifully and efficiently.
+
+## Future Tasks
+
+- [ ] Add drag-to-edit input for number fields
