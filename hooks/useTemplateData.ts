@@ -1,20 +1,14 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useQuery } from "convex/react";
-import { api } from "@/convex/_generated/api";
-import { Id } from "@/convex/_generated/dataModel";
+import { Doc } from "@/convex/_generated/dataModel";
 import { AnyBlock } from "@/lib/types";
 
 /**
- * Custom hook for managing template data fetching and initialization
+ * Custom hook for managing template data initialization
  * Handles the initial state setup when template data is loaded
  */
-export function useTemplateData(templateId: string) {
-  const templateData = useQuery(api.emailTemplates.getById, {
-    templateId: templateId as Id<"emailTemplates">,
-  });
-
+export function useTemplateData(templateData: Doc<"emailTemplates">) {
   const [isInitialized, setIsInitialized] = useState(false);
   const [initialBlocks, setInitialBlocks] = useState<AnyBlock[]>([]);
 
@@ -26,7 +20,6 @@ export function useTemplateData(templateId: string) {
   }, [templateData, isInitialized]);
 
   return {
-    templateData,
     isInitialized,
     initialBlocks,
   };

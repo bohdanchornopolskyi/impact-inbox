@@ -5,6 +5,7 @@ import { useTemplateData } from "@/hooks/useTemplateData";
 import { useSelectionState } from "@/hooks/useSelectionState";
 import { useBuilderLoadingState } from "@/hooks/useBuilderLoadingState";
 import { useBuilderHistory } from "@/hooks/useBuilderHistory";
+import { Doc } from "@/convex/_generated/dataModel";
 
 /**
  * BuilderStateProvider - Main state provider for the email template builder
@@ -20,37 +21,23 @@ import { useBuilderHistory } from "@/hooks/useBuilderHistory";
  */
 export function BuilderStateProvider({
   templateId,
+  templateData,
   children,
 }: {
   templateId: string;
+  templateData: Doc<"emailTemplates">;
   children: React.ReactNode;
 }) {
-  const { templateData, isInitialized, initialBlocks } =
-    useTemplateData(templateId);
+  const { isInitialized, initialBlocks } = useTemplateData(templateData);
 
   const { selectedBlockId, hoveredBlockId, selectBlock, hoverBlock } =
     useSelectionState();
 
-  const { blocks, dispatch, canUndo, canRedo, undo, redo, snapshotId } =
-    useBuilderHistory(templateData, initialBlocks, isInitialized);
-
-  const { isLoading, hasError, isReady } = useBuilderLoadingState(
+  const { blocks, dispatch, canUndo, canRedo, undo, redo } = useBuilderHistory(
     templateData,
+    initialBlocks,
     isInitialized,
-    snapshotId,
   );
-
-  if (isLoading) {
-    return <div>Initializing Editor...</div>;
-  }
-
-  if (hasError) {
-    throw new Error("Template not found or permission denied.");
-  }
-
-  if (!isReady) {
-    return null;
-  }
 
   const contextValue = {
     blocks,
