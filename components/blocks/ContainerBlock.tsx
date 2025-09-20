@@ -3,12 +3,18 @@
 import { useBuilder } from "@/app/build/BuilderContext";
 import BlockType from "@/components/blocks/BlockType";
 import { ContainerUiBlock } from "@/lib/types";
-import { cn } from "@/lib/utils";
+import { cn, convertComplexStylesToCSS } from "@/lib/utils";
 
 function ContainerBlock({ block }: { block: ContainerUiBlock }) {
   const { selectedBlockId, setSelectedBlockId, hoveredBlockId } = useBuilder();
   const isSelected = selectedBlockId === block.id;
   const isHovered = hoveredBlockId === block.id;
+
+  // Only convert complex styles (borders, border radius) - padding works fine as-is
+  const complexStyles = convertComplexStylesToCSS(block.styles);
+  const { border, borderRadius, ...simpleStyles } = block.styles;
+  const styles = { ...simpleStyles, ...complexStyles };
+
   return (
     <div
       data-block-id={block.id}
@@ -25,7 +31,7 @@ function ContainerBlock({ block }: { block: ContainerUiBlock }) {
             ? "border-block"
             : "border-transparent",
       )}
-      style={block.styles}
+      style={styles}
     >
       {block.children.map((childBlock) => (
         <BlockType key={childBlock.id} block={childBlock} />

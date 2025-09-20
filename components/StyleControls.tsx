@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { ColorPicker } from "@/components/StyleControls/ColorPicker";
 import { TypographyControl } from "@/components/StyleControls/Typography/TypographyControls";
 import { PaddingControls } from "@/components/StyleControls/Padding/PaddingControls";
+import { BorderControls } from "@/components/StyleControls/Border/BorderControls";
 
 interface StyleControlsProps {
   selectedBlock: AnyBlock;
@@ -64,6 +65,10 @@ export default function StyleControls({
     ),
   );
 
+  const hasBorderFields = fields.some((field) =>
+    field.key.startsWith("border"),
+  );
+
   const nonTypographyFields = fields.filter(
     (field) =>
       ![
@@ -80,7 +85,7 @@ export default function StyleControls({
         "paddingBottom",
         "paddingLeft",
         "paddingRight",
-      ].includes(field.key),
+      ].includes(field.key) && !field.key.startsWith("border"),
   );
 
   return (
@@ -90,6 +95,10 @@ export default function StyleControls({
           value={selectedBlock.styles}
           onChange={onStyleChange}
         />
+      )}
+
+      {hasBorderFields && (
+        <BorderControls value={selectedBlock.styles} onChange={onStyleChange} />
       )}
 
       {hasTypographyFields &&
