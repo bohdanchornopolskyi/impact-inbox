@@ -8,6 +8,7 @@ import { ColorPicker } from "@/components/StyleControls/ColorPicker";
 import { TypographyControl } from "@/components/StyleControls/Typography/TypographyControls";
 import { PaddingControls } from "@/components/StyleControls/Padding/PaddingControls";
 import { BorderControls } from "@/components/StyleControls/Border/BorderControls";
+import { Checkbox } from "@/components/ui/checkbox";
 
 interface StyleControlsProps {
   selectedBlock: AnyBlock;
@@ -166,11 +167,16 @@ export default function StyleControls({
         if (field.type === "checkbox") {
           return (
             <div key={field.key} className="flex items-center gap-2">
-              <input
+              {/* <input
                 id={id}
                 type="checkbox"
                 checked={Boolean(value)}
                 onChange={(e) => onStyleChange(field.key, e.target.checked)}
+              /> */}
+              <Checkbox
+                id={id}
+                checked={Boolean(value)}
+                onCheckedChange={(checked) => onStyleChange(field.key, checked)}
               />
               <Label htmlFor={id}>{field.label}</Label>
             </div>
