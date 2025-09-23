@@ -52,31 +52,27 @@ export function convertComplexStylesToCSS(styles: BlockStyles) {
     if (border.style) css.borderStyle = border.style;
     if (border.color) css.borderColor = border.color;
 
-    // Individual side borders
-    if (border.top) {
-      if (border.top.width !== undefined)
-        css.borderTopWidth = `${border.top.width}px`;
-      if (border.top.style) css.borderTopStyle = border.top.style;
-      if (border.top.color) css.borderTopColor = border.top.color;
-    }
-    if (border.right) {
-      if (border.right.width !== undefined)
-        css.borderRightWidth = `${border.right.width}px`;
-      if (border.right.style) css.borderRightStyle = border.right.style;
-      if (border.right.color) css.borderRightColor = border.right.color;
-    }
-    if (border.bottom) {
-      if (border.bottom.width !== undefined)
-        css.borderBottomWidth = `${border.bottom.width}px`;
-      if (border.bottom.style) css.borderBottomStyle = border.bottom.style;
-      if (border.bottom.color) css.borderBottomColor = border.bottom.color;
-    }
-    if (border.left) {
-      if (border.left.width !== undefined)
-        css.borderLeftWidth = `${border.left.width}px`;
-      if (border.left.style) css.borderLeftStyle = border.left.style;
-      if (border.left.color) css.borderLeftColor = border.left.color;
-    }
+    // Individual side borders - inherit from global if not set individually
+    const sides = [
+      { side: "top", cssProp: "borderTop" },
+      { side: "right", cssProp: "borderRight" },
+      { side: "bottom", cssProp: "borderBottom" },
+      { side: "left", cssProp: "borderLeft" },
+    ] as const;
+
+    sides.forEach(({ side, cssProp }) => {
+      const sideBorder = border[side];
+
+      // Use individual side values if they exist, otherwise fall back to global values
+      const width =
+        sideBorder?.width !== undefined ? sideBorder.width : border.width;
+      const style = sideBorder?.style || border.style;
+      const color = sideBorder?.color || border.color;
+
+      if (width !== undefined) css[`${cssProp}Width`] = `${width}px`;
+      if (style) css[`${cssProp}Style`] = style;
+      if (color) css[`${cssProp}Color`] = color;
+    });
   }
 
   // Handle border radius
@@ -104,4 +100,32 @@ export function convertComplexStylesToCSS(styles: BlockStyles) {
   }
 
   return css;
+}
+
+export function syncBorderProperties(border: Border): Border {
+  const syncedBorder = { ...border };
+
+  // If global properties are set, ensure they're applied to individual sides
+  if (border.width !== undefined || border.style || border.color) {
+    const sides = ["top", "right", "bottom", "left"] as const;
+
+    sides.forEach((side) => {
+      if (!syncedBorder[side]) {
+        syncedBorder[side] = {};
+      }
+
+      // Always update individual side properties with global values when syncing
+      if (border.width !== undefined) {
+        syncedBorder[side]!.width = border.width;
+      }
+      if (border.style) {
+        syncedBorder[side]!.style = border.style;
+      }
+      if (border.color) {
+        syncedBorder[side]!.color = border.color;
+      }
+    });
+  }
+
+  return syncedBorder;
 }

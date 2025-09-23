@@ -17,6 +17,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { syncBorderProperties } from "@/lib/utils";
 
 interface BorderControlsProps {
   value: Partial<BlockStyles>;
@@ -26,6 +27,16 @@ interface BorderControlsProps {
 export function BorderControls({ value, onChange }: BorderControlsProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [isLinked, setIsLinked] = useState(true);
+
+  const handleModeChange = (newIsLinked: boolean) => {
+    setIsLinked(newIsLinked);
+
+    // When switching to individual mode, sync global properties to individual sides
+    if (!newIsLinked && value.border) {
+      const syncedBorder = syncBorderProperties(value.border);
+      onChange("border", syncedBorder);
+    }
+  };
 
   return (
     <div className="border border-gray-200 rounded-lg">
@@ -46,7 +57,7 @@ export function BorderControls({ value, onChange }: BorderControlsProps) {
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => setIsLinked(!isLinked)}
+                onClick={() => handleModeChange(!isLinked)}
                 className="h-6 w-6 p-0"
               >
                 {isLinked ? (
