@@ -1,3 +1,5 @@
+"use client";
+
 import {
   SidebarGroup,
   SidebarGroupContent,
@@ -5,30 +7,61 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-} from "@/components/ui/sidebar"
-import { assetsData } from "@/data/sidebar-data"
+} from "@/components/ui/sidebar";
+import { api } from "@/convex/_generated/api";
+import { useQuery } from "convex/react";
+import { UploadImageModal } from "@/components/UploadImageModal";
+import { ImageItem } from "@/components/ImageItem";
+import { Button } from "@/components/ui/button";
+import { Upload, Image as ImageIcon } from "lucide-react";
 
 export function AssetsTab() {
+  const images = useQuery(api.images.listImages);
+
   return (
     <SidebarGroup>
       <SidebarGroupLabel>Project Assets</SidebarGroupLabel>
       <SidebarGroupContent>
-        <SidebarMenu>
-          {assetsData.map((asset) => (
-            <SidebarMenuItem key={asset.id}>
-              <SidebarMenuButton>
-                <div className="flex flex-col items-start w-full">
-                  <span className="font-medium truncate w-full">{asset.name}</span>
-                  <div className="flex justify-between w-full text-xs text-muted-foreground">
-                    <span>{asset.type}</span>
-                    <span>{asset.size}</span>
-                  </div>
-                </div>
+        <SidebarMenu className="space-y-2">
+          <SidebarMenuItem>
+            <UploadImageModal>
+              <Button
+                variant="outline"
+                size="sm"
+                className="w-full cursor-pointer"
+              >
+                <Upload className="w-4 h-4" />
+                <span>Upload Image</span>
+              </Button>
+            </UploadImageModal>
+          </SidebarMenuItem>
+
+          {images === undefined && (
+            <SidebarMenuItem>
+              <SidebarMenuButton disabled>
+                <ImageIcon className="w-4 h-4" />
+                <span>Loading...</span>
               </SidebarMenuButton>
             </SidebarMenuItem>
-          ))}
+          )}
+
+          {images && images.length === 0 && (
+            <SidebarMenuItem>
+              <SidebarMenuButton disabled>
+                <ImageIcon className="w-4 h-4" />
+                <span>No images found</span>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          )}
+
+          {images &&
+            images.map((asset) => (
+              <SidebarMenuItem key={asset._id}>
+                <ImageItem image={asset} />
+              </SidebarMenuItem>
+            ))}
         </SidebarMenu>
       </SidebarGroupContent>
     </SidebarGroup>
-  )
+  );
 }

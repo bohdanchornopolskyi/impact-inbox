@@ -218,6 +218,13 @@ export default defineSchema({
     email: v.string(),
   }).index("by_list", ["listId"]),
 
+  images: defineTable({
+    ownerId: v.id("users"),
+    type: v.string(),
+    name: v.string(),
+    storageId: v.id("_storage"),
+  }).index("by_owner", ["ownerId"]),
+
   /**
    * Main table for email templates. The `content` field now uses
    * our strong validator instead of `v.any()`.

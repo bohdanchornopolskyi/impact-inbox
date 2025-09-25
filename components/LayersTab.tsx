@@ -1,3 +1,5 @@
+"use client";
+
 import { LayerItem } from "@/components/LayerItem";
 import {
   SidebarGroup,
