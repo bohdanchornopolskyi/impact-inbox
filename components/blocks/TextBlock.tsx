@@ -2,9 +2,9 @@
 
 import { useBuilder } from "@/app/build/BuilderContext";
 import { TextUiBlock } from "@/lib/types";
-import { cn } from "@/lib/utils";
+import { cn, convertComplexStylesToCSS } from "@/lib/utils";
 
-export function TextBlock({ block }: { block: TextUiBlock }) {
+export default function TextBlock({ block }: { block: TextUiBlock }) {
   const { dispatch, selectedBlockId, setSelectedBlockId, hoveredBlockId } =
     useBuilder();
   const isSelected = selectedBlockId === block.id;
@@ -16,6 +16,8 @@ export function TextBlock({ block }: { block: TextUiBlock }) {
       payload: { blockId: block.id, content: update },
     });
   }
+
+  const styles = convertComplexStylesToCSS(block.styles);
 
   return (
     <div
@@ -36,7 +38,7 @@ export function TextBlock({ block }: { block: TextUiBlock }) {
             ? "border-block"
             : "border-transparent",
       )}
-      style={block.styles}
+      style={styles}
     >
       {block.content}
     </div>

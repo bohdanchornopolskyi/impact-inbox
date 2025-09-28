@@ -59,11 +59,23 @@ export const createImageBlock = (
   parentId,
   name: "Image",
   type: "image",
-  // @TODO: Add a default image
-  src: "https://via.placeholder.com/600x400",
-  alt: "Placeholder image",
+  src: "",
+  alt: "",
   styles: {
     widthMode: "fill",
+    widthPx: 200,
+    heightMode: "fixed",
+    heightPx: 150,
+    paddingTop: 0,
+    paddingBottom: 0,
+    paddingLeft: 0,
+    paddingRight: 0,
+    border: {
+      color: "#ffffff",
+      width: 0,
+      style: undefined,
+    },
+    borderRadius: { radius: 0 },
   },
 });
 

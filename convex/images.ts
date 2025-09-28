@@ -30,10 +30,18 @@ export const listImages = query({
     if (!userId) {
       throw new Error("User not found");
     }
-    return await ctx.db
+    const images = await ctx.db
       .query("images")
       .filter((q) => q.eq(q.field("ownerId"), userId))
       .collect();
+
+    // Add URLs to each image
+    return await Promise.all(
+      images.map(async (image) => ({
+        ...image,
+        url: await ctx.storage.getUrl(image.storageId),
+      })),
+    );
   },
 });
 

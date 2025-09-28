@@ -1,5 +1,6 @@
 import ContainerBlock from "@/components/blocks/ContainerBlock";
-import { TextBlock } from "@/components/blocks/TextBlock";
+import TextBlock from "@/components/blocks/TextBlock";
+import ImageBlock from "@/components/blocks/ImageBlock";
 import { AnyUiBlock } from "@/lib/types";
 
 function BlockType({ block }: { block: AnyUiBlock }) {
@@ -9,7 +10,7 @@ function BlockType({ block }: { block: AnyUiBlock }) {
     case "button":
       break;
     case "image":
-      break;
+      return <ImageBlock block={block} />;
     case "container":
       return <ContainerBlock block={block} />;
     default:

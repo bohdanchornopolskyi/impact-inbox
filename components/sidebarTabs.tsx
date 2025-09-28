@@ -9,7 +9,13 @@ import { LayersTab } from "@/components/LayersTab";
 // import { ComponentsTab } from "@/components/componentsTab";
 import { AssetsTab } from "@/components/AssetsTab";
 
-export function SidebarTabs() {
+import { Id } from "@/convex/_generated/dataModel";
+
+interface SidebarTabsProps {
+  onImageSelect?: (storageId: Id<"_storage">) => void;
+}
+
+export function SidebarTabs({ onImageSelect }: SidebarTabsProps) {
   return (
     <Tabs defaultValue="layers" className="w-full">
       <TabsList className="grid w-full grid-cols-3 gap-2 h-12 bg-sidebar-accent/50 p-2">
@@ -68,7 +74,7 @@ export function SidebarTabs() {
       </TabsContent> */}
 
       <TabsContent value="assets" className="mt-0">
-        <AssetsTab />
+        <AssetsTab onImageSelect={onImageSelect} />
       </TabsContent>
     </Tabs>
   );

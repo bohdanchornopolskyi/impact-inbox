@@ -9,13 +9,18 @@ import {
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
 import { api } from "@/convex/_generated/api";
+import { Id } from "@/convex/_generated/dataModel";
 import { useQuery } from "convex/react";
 import { UploadImageModal } from "@/components/UploadImageModal";
 import { ImageItem } from "@/components/ImageItem";
 import { Button } from "@/components/ui/button";
 import { Upload, Image as ImageIcon } from "lucide-react";
 
-export function AssetsTab() {
+interface AssetsTabProps {
+  onImageSelect?: (storageId: Id<"_storage">) => void;
+}
+
+export function AssetsTab({ onImageSelect }: AssetsTabProps) {
   const images = useQuery(api.images.listImages);
 
   return (
@@ -57,7 +62,11 @@ export function AssetsTab() {
           {images &&
             images.map((asset) => (
               <SidebarMenuItem key={asset._id}>
-                <ImageItem image={asset} />
+                <ImageItem
+                  image={asset}
+                  onSelect={onImageSelect}
+                  draggable={true}
+                />
               </SidebarMenuItem>
             ))}
         </SidebarMenu>

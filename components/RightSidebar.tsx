@@ -14,6 +14,7 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { getStyleFieldsForBlockType } from "@/lib/constants";
 import StyleControls from "./StyleControls";
+import { ImageSelector } from "@/components/ImageSelector";
 
 function useSelectedBlock(blocks: AnyBlock[], selectedId: string) {
   return useMemo(
@@ -153,34 +154,32 @@ export default function RightSidebar() {
                 )}
                 {selectedBlock.type === "image" && (
                   <>
+                    <ImageSelector
+                      value={(selectedBlock as ImageBlockType).src}
+                      onChange={(src) => handleContentChange({ src })}
+                      label="Image Source"
+                      placeholder="Enter image URL or select from assets..."
+                    />
                     <div className="space-y-1">
-                      <Label htmlFor="img-src">Src</Label>
-                      <Input
-                        id="img-src"
-                        value={(selectedBlock as ImageBlockType).src}
-                        onChange={(e) =>
-                          handleContentChange({ src: e.target.value })
-                        }
-                      />
-                    </div>
-                    <div className="space-y-1">
-                      <Label htmlFor="img-alt">Alt</Label>
+                      <Label htmlFor="img-alt">Alt Text</Label>
                       <Input
                         id="img-alt"
                         value={(selectedBlock as ImageBlockType).alt}
                         onChange={(e) =>
                           handleContentChange({ alt: e.target.value })
                         }
+                        placeholder="Describe the image for accessibility"
                       />
                     </div>
                     <div className="space-y-1">
-                      <Label htmlFor="img-href">Href (optional)</Label>
+                      <Label htmlFor="img-href">Link URL (optional)</Label>
                       <Input
                         id="img-href"
                         value={(selectedBlock as ImageBlockType).href ?? ""}
                         onChange={(e) =>
                           handleContentChange({ href: e.target.value })
                         }
+                        placeholder="https://example.com"
                       />
                     </div>
                   </>

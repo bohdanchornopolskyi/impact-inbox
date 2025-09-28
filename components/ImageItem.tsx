@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useMutation } from "convex/react";
-import { Edit2, Trash2, Check, X } from "lucide-react";
+import { Edit2, Trash2, Check, X, ImageIcon } from "lucide-react";
 import NextImage from "next/image";
 
 import { api } from "@/convex/_generated/api";
@@ -17,10 +17,17 @@ interface ImageItemProps {
     storageId: Id<"_storage">;
     name: string;
     type: string;
+    url: string | null;
   };
+  onSelect?: (storageId: Id<"_storage">) => void;
+  draggable?: boolean;
 }
 
-export function ImageItem({ image }: ImageItemProps) {
+export function ImageItem({
+  image,
+  onSelect,
+  draggable = false,
+}: ImageItemProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [newName, setNewName] = useState(image.name);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -70,17 +77,49 @@ export function ImageItem({ image }: ImageItemProps) {
     }
   };
 
+  const handleDragStart = (e: React.DragEvent) => {
+    if (draggable) {
+      e.dataTransfer.setData(
+        "application/json",
+        JSON.stringify({
+          type: "image",
+          storageId: image.storageId,
+          name: image.name,
+          url: `/api/images/${image.storageId}`,
+        }),
+      );
+      e.dataTransfer.effectAllowed = "copy";
+    }
+  };
+
+  const handleClick = () => {
+    if (onSelect) {
+      onSelect(image.storageId);
+    }
+  };
+
   return (
-    <SidebarMenuButton className="group">
+    <SidebarMenuButton
+      className="group cursor-pointer"
+      draggable={draggable}
+      onDragStart={handleDragStart}
+      onClick={handleClick}
+    >
       <div className="flex items-center gap-3 w-full pr-16">
         <div className="h-full rounded border overflow-hidden flex-shrink-0">
-          <NextImage
-            src={`/api/images/${image.storageId}`}
-            alt={image.name}
-            width={32}
-            height={32}
-            className="w-full h-full object-cover"
-          />
+          {image.url ? (
+            <NextImage
+              src={image.url}
+              alt={image.name}
+              width={32}
+              height={32}
+              className="w-full h-full object-cover"
+            />
+          ) : (
+            <div className="w-full h-full bg-gray-200 flex items-center justify-center">
+              <ImageIcon className="w-4 h-4 text-gray-400" />
+            </div>
+          )}
         </div>
         <div className="flex flex-col items-start flex-1 min-w-0">
           {isEditing ? (
