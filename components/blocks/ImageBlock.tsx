@@ -20,10 +20,8 @@ function ImageBlock({ block }: { block: ImageBlockType & SizingStyles }) {
   return (
     <div
       data-block-id={block.id}
-      onClick={(e) => {
-        if (e.target === e.currentTarget) {
-          setSelectedBlockId(block.id);
-        }
+      onClick={() => {
+        setSelectedBlockId(block.id);
       }}
       className={cn(
         "border transition-all duration-150 rounded p-2 flex items-center justify-center",
