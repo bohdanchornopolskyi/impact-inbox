@@ -23,6 +23,10 @@ export const createTextBlock = (
     fontSize: 16,
     lineHeight: 1.5,
     textAlign: "left",
+    fontFamily: "Arial, sans-serif",
+    fontWeight: "normal",
+    textDecoration: "none",
+    textWrap: "wrap",
   },
 });
 
@@ -48,6 +52,13 @@ export const createButtonBlock = (
     borderRadius: { radius: 0 },
     widthMode: "fixed",
     widthPx: 150,
+    heightMode: "fill",
+    alignment: "center",
+    fontFamily: "Arial, sans-serif",
+    fontSize: 16,
+    lineHeight: 1.5,
+    textDecoration: "none",
+    textWrap: "wrap",
   },
 });
 
@@ -73,9 +84,10 @@ export const createImageBlock = (
     border: {
       color: "#ffffff",
       width: 0,
-      style: undefined,
+      style: "solid",
     },
     borderRadius: { radius: 0 },
+    alignment: "left",
   },
 });
 
@@ -92,5 +104,11 @@ export const createContainerBlock = (
     paddingBottom: 10,
     paddingLeft: 10,
     paddingRight: 10,
+    border: {
+      color: "#e5e7eb",
+      width: 0,
+      style: "solid",
+    },
+    borderRadius: { radius: 0 },
   },
 });

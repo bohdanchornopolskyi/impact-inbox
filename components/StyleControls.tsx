@@ -8,6 +8,7 @@ import { ColorPicker } from "@/components/StyleControls/ColorPicker";
 import { TypographyControl } from "@/components/StyleControls/Typography/TypographyControls";
 import { PaddingControls } from "@/components/StyleControls/Padding/PaddingControls";
 import { BorderControls } from "@/components/StyleControls/Border/BorderControls";
+import { SizeControls } from "@/components/StyleControls/Size/SizeControls";
 import { Checkbox } from "@/components/ui/checkbox";
 
 interface StyleControlsProps {
@@ -70,6 +71,12 @@ export default function StyleControls({
     field.key.startsWith("border"),
   );
 
+  const hasSizeFields = fields.some((field) =>
+    ["widthMode", "widthPx", "heightMode", "heightPx", "alignment"].includes(
+      field.key,
+    ),
+  );
+
   const nonTypographyFields = fields.filter(
     (field) =>
       ![
@@ -86,6 +93,11 @@ export default function StyleControls({
         "paddingBottom",
         "paddingLeft",
         "paddingRight",
+        "widthMode",
+        "widthPx",
+        "heightMode",
+        "heightPx",
+        "alignment",
       ].includes(field.key) && !field.key.startsWith("border"),
   );
 
@@ -100,6 +112,10 @@ export default function StyleControls({
 
       {hasBorderFields && (
         <BorderControls value={selectedBlock.styles} onChange={onStyleChange} />
+      )}
+
+      {hasSizeFields && (
+        <SizeControls value={selectedBlock.styles} onChange={onStyleChange} />
       )}
 
       {hasTypographyFields &&
