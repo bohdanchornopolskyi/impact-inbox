@@ -99,6 +99,11 @@ export function convertComplexStylesToCSS(styles: BlockStyles) {
     }
   }
 
+  // Handle alignment
+  if (styles.alignment) {
+    css.textAlign = styles.alignment;
+  }
+
   return css;
 }
 
@@ -128,4 +133,20 @@ export function syncBorderProperties(border: Border): Border {
   }
 
   return syncedBorder;
+}
+
+export function getAlignmentClasses(alignment?: string, widthMode?: string) {
+  if (widthMode === "fixed") {
+    switch (alignment) {
+      case "left":
+        return "flex justify-start items-center";
+      case "center":
+        return "flex justify-center items-center";
+      case "right":
+        return "flex justify-end items-center";
+      default:
+        return "flex justify-center items-center";
+    }
+  }
+  return "flex justify-center items-center";
 }

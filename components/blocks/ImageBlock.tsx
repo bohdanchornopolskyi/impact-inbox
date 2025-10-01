@@ -2,7 +2,11 @@
 
 import { useBuilder } from "@/app/build/BuilderContext";
 import { ImageBlockType, SizingStyles } from "@/lib/types";
-import { cn, convertComplexStylesToCSS } from "@/lib/utils";
+import {
+  cn,
+  convertComplexStylesToCSS,
+  getAlignmentClasses,
+} from "@/lib/utils";
 import { ImageIcon } from "lucide-react";
 import NextImage from "next/image";
 
@@ -20,17 +24,7 @@ function ImageBlock({ block }: { block: ImageBlockType & SizingStyles }) {
   return (
     <div
       className={cn(
-        "border transition-all duration-150 rounded",
-        block.styles.widthMode === "fill"
-          ? "w-full"
-          : block.styles.widthMode === "fixed"
-            ? "w-fit"
-            : "w-auto",
-        block.styles.heightMode === "fill"
-          ? "h-full"
-          : block.styles.heightMode === "fixed"
-            ? "h-fit"
-            : "h-auto",
+        "border transition-all duration-150 rounded w-full h-full",
         isSelected
           ? "border-block"
           : isHovered
@@ -44,7 +38,10 @@ function ImageBlock({ block }: { block: ImageBlockType & SizingStyles }) {
         onClick={() => {
           setSelectedBlockId(block.id);
         }}
-        className="p-2 flex items-center justify-center w-full h-full"
+        className={cn(
+          "p-2 w-full h-full",
+          getAlignmentClasses(block.styles.alignment, block.styles.widthMode),
+        )}
         style={styles}
       >
         {hasImage ? (
