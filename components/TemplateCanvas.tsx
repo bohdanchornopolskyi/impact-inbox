@@ -4,10 +4,13 @@ import { useBuilder } from "@/app/build/BuilderContext";
 import BlockType from "@/components/blocks/BlockType";
 import { buildLayerTree } from "@/lib/utils";
 import { useMemo, useRef, useEffect } from "react";
+import { useKeyboardDelete } from "@/hooks/useKeyboardDelete";
 
 function TemplateCanvas() {
   const { blocks, setHoveredBlockId } = useBuilder();
   const nestedBlocks = useMemo(() => buildLayerTree(blocks), [blocks]);
+
+  useKeyboardDelete();
 
   const canvasRef = useRef<HTMLDivElement>(null);
   const rafIdRef = useRef(0);
@@ -47,7 +50,7 @@ function TemplateCanvas() {
   }, [setHoveredBlockId]);
 
   return (
-    <div ref={canvasRef} className="h-full w-full p-4 bg-white">
+    <div ref={canvasRef} className="h-full w-full p-4 isolate">
       {nestedBlocks.map((block) => (
         <BlockType key={block.id} block={block} />
       ))}

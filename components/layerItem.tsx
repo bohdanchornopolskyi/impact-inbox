@@ -10,6 +10,7 @@ import {
 import { getLayerIcon } from "@/components/LayerIcons";
 import { AnyBlock, AnyUiBlock } from "@/lib/types";
 import { cn } from "@/lib/utils";
+import { BlockContextMenu } from "@/components/BlockContextMenu";
 
 interface LayerItemProps {
   layer: AnyUiBlock;
@@ -37,42 +38,44 @@ export function LayerItem({
   return (
     <div>
       <Collapsible open={isOpen} onOpenChange={() => onToggle(layer.id)}>
-        <div
-          className={cn(
-            "flex items-center group hover:bg-sidebar-accent rounded-sm",
-            isSelected && "bg-gray-100 hover:bg-gray-200",
-          )}
-          onClick={() => setSelectedBlockId(layer.id)}
-        >
+        <BlockContextMenu blockId={layer.id} blockName={layer.name}>
           <div
-            className="flex items-center flex-1 py-1 px-2 gap-1"
-            style={{ paddingLeft: `${depth * 12 + 8}px` }}
+            className={cn(
+              "flex items-center group hover:bg-sidebar-accent rounded-sm",
+              isSelected && "bg-gray-100 hover:bg-gray-200",
+            )}
+            onClick={() => setSelectedBlockId(layer.id)}
           >
-            {hasChildren ? (
-              <CollapsibleTrigger asChild>
-                <button className="w-full flex items-center justify-center h-4 rounded-sm cursor-pointer">
-                  {isOpen ? (
-                    <ChevronDown className="h-3 w-3" />
-                  ) : (
-                    <ChevronRight className="h-3 w-3" />
-                  )}
+            <div
+              className="flex items-center flex-1 py-1 px-2 gap-1"
+              style={{ paddingLeft: `${depth * 12 + 8}px` }}
+            >
+              {hasChildren ? (
+                <CollapsibleTrigger asChild>
+                  <button className="w-full flex items-center justify-center h-4 rounded-sm cursor-pointer">
+                    {isOpen ? (
+                      <ChevronDown className="h-3 w-3" />
+                    ) : (
+                      <ChevronRight className="h-3 w-3" />
+                    )}
+                    <div className="flex items-center gap-2 flex-1 min-w-0">
+                      {getLayerIcon(layer.type)}
+                      <span className="text-sm truncate">{layer.name}</span>
+                    </div>
+                  </button>
+                </CollapsibleTrigger>
+              ) : (
+                <>
+                  <div className="w-4 h-4" />
                   <div className="flex items-center gap-2 flex-1 min-w-0">
                     {getLayerIcon(layer.type)}
                     <span className="text-sm truncate">{layer.name}</span>
                   </div>
-                </button>
-              </CollapsibleTrigger>
-            ) : (
-              <>
-                <div className="w-4 h-4" />
-                <div className="flex items-center gap-2 flex-1 min-w-0">
-                  {getLayerIcon(layer.type)}
-                  <span className="text-sm truncate">{layer.name}</span>
-                </div>
-              </>
-            )}
+                </>
+              )}
+            </div>
           </div>
-        </div>
+        </BlockContextMenu>
 
         {hasChildren && (
           <CollapsibleContent>
