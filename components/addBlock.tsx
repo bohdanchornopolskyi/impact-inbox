@@ -23,6 +23,7 @@ import {
   createContainerBlock,
   createImageBlock,
 } from "@/lib/blockFactory";
+import { ROOT_CONTAINER_ID } from "@/lib/types";
 
 const availableBlocks = [
   {
@@ -44,33 +45,45 @@ export default function AddBlock() {
   const [isOpen, setIsOpen] = useState(false);
   const { blocks, dispatch, selectedBlockId } = useBuilder();
 
+  const selectedBlock = blocks.find((b) => b.id === selectedBlockId);
+
+  const getParentContainerId = (): string => {
+    if (!selectedBlock) {
+      return ROOT_CONTAINER_ID;
+    }
+
+    if (selectedBlock.type === "container") {
+      return selectedBlockId;
+    }
+
+    return selectedBlock.parentId;
+  };
+
   const handleAddBlock = (blockType: string) => {
+    const parentId = getParentContainerId();
+
     let newBlock;
     switch (blockType) {
       case "text":
-        newBlock = createTextBlock(selectedBlockId);
+        newBlock = createTextBlock(parentId);
         break;
       case "button":
-        newBlock = createButtonBlock(selectedBlockId);
+        newBlock = createButtonBlock(parentId);
         break;
       case "image":
-        newBlock = createImageBlock(selectedBlockId);
+        newBlock = createImageBlock(parentId);
         break;
       case "container":
-        newBlock = createContainerBlock(selectedBlockId);
+        newBlock = createContainerBlock(parentId);
         break;
-      // case "list":
-      //   newBlock = createListBlock(selectedBlockId);
-      //   break;
       default:
         return;
     }
 
     dispatch({
       type: "ADD_BLOCK",
-      payload: { block: newBlock, index: 0, parentId: selectedBlockId },
+      payload: { block: newBlock, index: 0, parentId },
     });
-    console.log(blocks);
     setIsOpen(false);
   };
 
