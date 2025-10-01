@@ -10,7 +10,7 @@ interface BuildHeaderProps {
 
 function BuildHeader({ templateId }: BuildHeaderProps) {
   return (
-    <header className="h-[10vh] fixed top-0 flex justify-between items-center px-2 w-full bg-sidebar border-b border-border">
+    <header className="h-[10vh] fixed z-[1] top-0 flex justify-between items-center px-2 w-full bg-sidebar border-b border-border">
       <Link href="/" className="flex items-center gap-2">
         <div className="text-xl font-bold">Impact Inbox</div>
       </Link>
