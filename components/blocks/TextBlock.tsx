@@ -21,26 +21,30 @@ export default function TextBlock({ block }: { block: TextUiBlock }) {
 
   return (
     <div
-      data-block-id={block.id}
-      contentEditable
-      suppressContentEditableWarning={true}
-      onBlur={(e) => handleUpdate({ content: e.currentTarget.innerText })}
-      onClick={(e) => {
-        if (e.target === e.currentTarget) {
-          setSelectedBlockId(block.id);
-        }
-      }}
       className={cn(
-        "p-2 outline-none border border-transparent transition-all duration-150 rounded",
+        "border transition-all duration-150 rounded",
         isSelected
           ? "border-block"
           : isHovered
             ? "border-block"
             : "border-transparent",
       )}
-      style={styles}
     >
-      {block.content}
+      <div
+        data-block-id={block.id}
+        contentEditable
+        suppressContentEditableWarning={true}
+        onBlur={(e) => handleUpdate({ content: e.currentTarget.innerText })}
+        onClick={(e) => {
+          if (e.target === e.currentTarget) {
+            setSelectedBlockId(block.id);
+          }
+        }}
+        className="p-2 outline-none w-full h-full"
+        style={styles}
+      >
+        {block.content}
+      </div>
     </div>
   );
 }

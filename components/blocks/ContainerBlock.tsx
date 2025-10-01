@@ -10,32 +10,35 @@ function ContainerBlock({ block }: { block: ContainerUiBlock }) {
   const isSelected = selectedBlockId === block.id;
   const isHovered = hoveredBlockId === block.id;
 
-  // Only convert complex styles (borders, border radius) - padding works fine as-is
   const complexStyles = convertComplexStylesToCSS(block.styles);
   const { border, borderRadius, ...simpleStyles } = block.styles;
   const styles = { ...simpleStyles, ...complexStyles };
 
   return (
     <div
-      data-block-id={block.id}
-      onClick={(e) => {
-        if (e.target === e.currentTarget) {
-          setSelectedBlockId(block.id);
-        }
-      }}
       className={cn(
-        "w-full min-h-16 border transition-all duration-150 rounded p-2",
+        "w-full min-h-16 border transition-all duration-150 rounded",
         isSelected
           ? "border-block"
           : isHovered
             ? "border-block"
             : "border-transparent",
       )}
-      style={styles}
     >
-      {block.children.map((childBlock) => (
-        <BlockType key={childBlock.id} block={childBlock} />
-      ))}
+      <div
+        data-block-id={block.id}
+        onClick={(e) => {
+          if (e.target === e.currentTarget) {
+            setSelectedBlockId(block.id);
+          }
+        }}
+        className="w-full h-full p-2"
+        style={styles}
+      >
+        {block.children.map((childBlock) => (
+          <BlockType key={childBlock.id} block={childBlock} />
+        ))}
+      </div>
     </div>
   );
 }

@@ -19,12 +19,8 @@ function ImageBlock({ block }: { block: ImageBlockType & SizingStyles }) {
 
   return (
     <div
-      data-block-id={block.id}
-      onClick={() => {
-        setSelectedBlockId(block.id);
-      }}
       className={cn(
-        "border transition-all duration-150 rounded p-2 flex items-center justify-center",
+        "border transition-all duration-150 rounded",
         block.styles.widthMode === "fill"
           ? "w-full"
           : block.styles.widthMode === "fixed"
@@ -42,30 +38,38 @@ function ImageBlock({ block }: { block: ImageBlockType & SizingStyles }) {
             : "border-transparent",
         !hasImage && "min-h-16",
       )}
-      style={styles}
     >
-      {hasImage ? (
-        <NextImage
-          src={block.src}
-          alt={block.alt}
-          width={block.styles.widthPx || 200}
-          height={block.styles.heightPx || 150}
-          style={{
-            width: block.styles.widthMode === "fill" ? "100%" : "auto",
-            height: block.styles.heightMode === "fill" ? "100%" : "auto",
-          }}
-        />
-      ) : (
-        <div className="flex flex-col items-center justify-center text-gray-400">
-          <ImageIcon className="h-8 w-8 mb-2" />
-          <span className="text-sm">No image</span>
-        </div>
-      )}
-      {block.href && (
-        <a href={block.href} target="_blank" rel="noopener noreferrer">
-          {block.href}
-        </a>
-      )}
+      <div
+        data-block-id={block.id}
+        onClick={() => {
+          setSelectedBlockId(block.id);
+        }}
+        className="p-2 flex items-center justify-center w-full h-full"
+        style={styles}
+      >
+        {hasImage ? (
+          <NextImage
+            src={block.src}
+            alt={block.alt}
+            width={block.styles.widthPx || 200}
+            height={block.styles.heightPx || 150}
+            style={{
+              width: block.styles.widthMode === "fill" ? "100%" : "auto",
+              height: block.styles.heightMode === "fill" ? "100%" : "auto",
+            }}
+          />
+        ) : (
+          <div className="flex flex-col items-center justify-center text-gray-400">
+            <ImageIcon className="h-8 w-8 mb-2" />
+            <span className="text-sm">No image</span>
+          </div>
+        )}
+        {block.href && (
+          <a href={block.href} target="_blank" rel="noopener noreferrer">
+            {block.href}
+          </a>
+        )}
+      </div>
     </div>
   );
 }
