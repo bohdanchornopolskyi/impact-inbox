@@ -1,0 +1,24 @@
+{
+  "name": "@repo/email-renderer",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "dev": "email dev",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@react-email/components": "^0.0.34",
+    "react-email": "^3.0.0",
+    "react": "^19.0.0"
+  },
+  "devDependencies": {
+    "@repo/typescript-config": "workspace:*",
+    "@types/react": "^19.0.0",
+    "typescript": "^5.7.0",
+    "vitest": "^3.0.0"
+  }
+}
