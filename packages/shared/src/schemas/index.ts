@@ -1,3 +1,4 @@
 import { workspaceRoleSchema } from "./workspace";
+import { createUserSchema } from "./users";
 
-export { workspaceRoleSchema };
+export { createUserSchema, workspaceRoleSchema };
