@@ -1,3 +1,5 @@
-import { users } from "./users.js";
+import { users } from "./users";
+import { sessions } from "./sessions";
+import { accounts } from "./accounts";
 
-export { users };
+export { users, sessions, accounts };
