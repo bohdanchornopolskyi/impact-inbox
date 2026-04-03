@@ -1,1 +1,3 @@
-export {};
+import { workspaceRoleSchema } from "./workspace";
+
+export { workspaceRoleSchema };

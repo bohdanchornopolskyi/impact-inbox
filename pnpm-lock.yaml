@@ -194,6 +194,9 @@ importers:
 
   packages/db:
     dependencies:
+      '@repo/shared':
+        specifier: workspace:*
+        version: link:../shared
       drizzle-kit:
         specifier: ^0.31.10
         version: 0.31.10
