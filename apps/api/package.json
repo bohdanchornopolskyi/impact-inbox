@@ -27,6 +27,7 @@
     "@nestjs/platform-express": "^11.0.1",
     "@repo/db": "workspace:*",
     "@repo/shared": "workspace:*",
+    "argon2": "^0.44.0",
     "drizzle-orm": "0.39.3",
     "nestjs-zod": "^5.2.1",
     "reflect-metadata": "^0.2.2",
