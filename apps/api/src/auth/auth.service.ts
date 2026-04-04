@@ -123,4 +123,24 @@ export class AuthService {
       return { token: createdSession.token };
     });
   }
+
+  async signIn(singInDTO: SignInDto) {
+    const { email, password } = singInDTO;
+    const user = await this.usersService.getUserByEmail({ email });
+    const account = await this.accountsService.getAccountByUserId(user.id);
+    if (!account.password) {
+      throw new UnauthorizedException("Invalid email or password");
+    }
+    const passwordsMatch = await argon2.verify(account.password, password);
+    if (!passwordsMatch) {
+      throw new UnauthorizedException("Invalid email or password");
+    }
+    const token = randomUUID();
+    const createdSession = await this.createSession({
+      userId: user.id,
+      token,
+      expiresAt: new Date(Date.now() + SESSION_EXPIRES_AT),
+    });
+    return { token: createdSession.token };
+  }
 }

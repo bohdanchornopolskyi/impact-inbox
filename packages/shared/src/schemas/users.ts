@@ -7,6 +7,10 @@ export const createUserSchema = z.object({
   role: z.string().optional(),
 }) satisfies z.ZodType<Omit<UsersInsert, "id" | "createdAt">>;
 
+export const getUserByEmailSchema = z.object({
+  email: z.string().email(),
+});
+
 export const updateUserSchema = createUserSchema.partial();
 
 export type CreateUserInput = z.infer<typeof createUserSchema>;
