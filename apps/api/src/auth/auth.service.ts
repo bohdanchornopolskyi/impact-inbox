@@ -82,6 +82,7 @@ export class AuthService {
   async validateSession(token: string) {
     const session = await this.getSessionByToken(token);
     if (session.expiresAt < new Date()) {
+      await this.deleteSession(session.id);
       throw new UnauthorizedException("Session expired");
     }
     const user = await this.usersService.getUserById(session.userId);
@@ -142,5 +143,10 @@ export class AuthService {
       expiresAt: new Date(Date.now() + SESSION_EXPIRES_AT),
     });
     return { token: createdSession.token };
+  }
+
+  async signOut(token: string) {
+    const session = await this.deleteSession(token);
+    return session;
   }
 }
