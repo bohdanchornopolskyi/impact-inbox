@@ -66,10 +66,10 @@ export class AuthService {
     return userSessions;
   }
 
-  async deleteSession(id: string) {
+  async deleteSession(token: string) {
     const [deletedSession] = await db
       .delete(sessions)
-      .where(eq(sessions.id, id))
+      .where(eq(sessions.token, token))
       .returning();
 
     if (!deletedSession) {
@@ -82,7 +82,7 @@ export class AuthService {
   async validateSession(token: string) {
     const session = await this.getSessionByToken(token);
     if (session.expiresAt < new Date()) {
-      await this.deleteSession(session.id);
+      await this.deleteSession(session.token);
       throw new UnauthorizedException("Session expired");
     }
     const user = await this.usersService.getUserById(session.userId);
