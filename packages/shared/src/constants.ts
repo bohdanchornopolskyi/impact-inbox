@@ -1,3 +1,5 @@
 const WORKSPACE_ROLES = ["owner", "admin", "member"] as const;
 
-export { WORKSPACE_ROLES };
+const SESSION_EXPIRES_AT = 1000 * 60 * 60 * 24 * 30;
+
+export { WORKSPACE_ROLES, SESSION_EXPIRES_AT };
