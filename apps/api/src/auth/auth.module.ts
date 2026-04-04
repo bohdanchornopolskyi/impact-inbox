@@ -7,5 +7,6 @@ import { AccountsService } from "src/accounts/accounts.service";
 @Module({
   controllers: [AuthController],
   providers: [AuthService, UsersService, AccountsService],
+  exports: [AuthService],
 })
 export class AuthModule {}
