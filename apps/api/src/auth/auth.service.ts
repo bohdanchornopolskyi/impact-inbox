@@ -1,5 +1,6 @@
 import {
   ConflictException,
+  Inject,
   Injectable,
   InternalServerErrorException,
   NotFoundException,
@@ -8,22 +9,28 @@ import {
 import { UsersService } from "src/users/users.service";
 import { AccountsService } from "src/accounts/accounts.service";
 import { CreateSessionDto } from "src/auth/dto/create-session.dto";
-import { db, sessions, Transaction, users } from "@repo/db";
+import { sessions, Transaction, users } from "@repo/db";
 import { eq } from "drizzle-orm";
 import { SignInDto } from "src/auth/dto/sign-in.dto";
 import { SignUpDto } from "src/auth/dto/sign-up.dto";
 import { randomUUID } from "crypto";
 import * as argon2 from "argon2";
 import { SESSION_EXPIRES_AT } from "@repo/shared";
+import { DATABASE_TOKEN } from "src/database/database.constants";
+import type { Database, SessionsSelect } from "@repo/db";
 
 @Injectable()
 export class AuthService {
   constructor(
     private readonly usersService: UsersService,
     private readonly accountsService: AccountsService,
+    @Inject(DATABASE_TOKEN) private readonly db: Database,
   ) {}
-  async createSession(session: CreateSessionDto, tx?: Transaction) {
-    const [createdSession] = await (tx ?? db)
+  async createSession(
+    session: CreateSessionDto,
+    tx?: Transaction,
+  ): Promise<SessionsSelect> {
+    const [createdSession] = await (tx ?? this.db)
       .insert(sessions)
       .values(session)
       .returning();
@@ -34,7 +41,7 @@ export class AuthService {
   }
 
   async getSessionById(id: string) {
-    const [session] = await db
+    const [session] = await this.db
       .select()
       .from(sessions)
       .where(eq(sessions.id, id));
@@ -45,7 +52,7 @@ export class AuthService {
   }
 
   async getSessionsByUserId(userId: string) {
-    const userSessions = await db
+    const userSessions = await this.db
       .select()
       .from(sessions)
       .where(eq(sessions.userId, userId));
@@ -55,8 +62,8 @@ export class AuthService {
     return userSessions;
   }
 
-  async getSessionByToken(token: string) {
-    const [userSessions] = await db
+  async getSessionByToken(token: string): Promise<SessionsSelect> {
+    const [userSessions] = await this.db
       .select()
       .from(sessions)
       .where(eq(sessions.token, token));
@@ -66,8 +73,8 @@ export class AuthService {
     return userSessions;
   }
 
-  async deleteSession(token: string) {
-    const [deletedSession] = await db
+  async deleteSession(token: string): Promise<SessionsSelect> {
+    const [deletedSession] = await this.db
       .delete(sessions)
       .where(eq(sessions.token, token))
       .returning();
@@ -80,7 +87,7 @@ export class AuthService {
   }
 
   async validateSession(token: string) {
-    const session = await this.getSessionByToken(token);
+    const session: SessionsSelect = await this.getSessionByToken(token);
     if (session.expiresAt < new Date()) {
       await this.deleteSession(session.token);
       throw new UnauthorizedException("Session expired");
@@ -92,7 +99,7 @@ export class AuthService {
 
   async SignUp(signUpDTO: SignUpDto) {
     const { email, password, name } = signUpDTO;
-    const [userExist] = await db
+    const [userExist] = await this.db
       .select()
       .from(users)
       .where(eq(users.email, email));
@@ -101,7 +108,7 @@ export class AuthService {
     }
     const token = randomUUID();
     const passwordHash = await argon2.hash(password);
-    return db.transaction(async (tx) => {
+    return this.db.transaction(async (tx) => {
       const createdUser = await this.usersService.createUser(
         { name, email },
         tx,
@@ -146,7 +153,7 @@ export class AuthService {
   }
 
   async signOut(token: string) {
-    const session = await this.deleteSession(token);
+    const session: SessionsSelect = await this.deleteSession(token);
     return session;
   }
 }

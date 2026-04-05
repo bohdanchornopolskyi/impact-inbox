@@ -1,5 +1,8 @@
 import { InferInsertModel, InferSelectModel } from "drizzle-orm";
 import { accounts, sessions, users, workspaces } from "./schema";
+import { db } from "./index";
+
+export type Database = typeof db;
 
 type UsersSelect = InferSelectModel<typeof users>;
 type UsersInsert = InferInsertModel<typeof users>;
