@@ -1,12 +1,14 @@
-import { Body, Controller, Post, Headers } from "@nestjs/common";
+import { Body, Controller, Post } from "@nestjs/common";
 import { AuthService } from "./auth.service";
 import { SignInDto } from "src/auth/dto/sign-in.dto";
 import { SignUpDto } from "src/auth/dto/sign-up.dto";
 import { Public } from "src/auth/decorators/public.decorator";
+import { Token } from "src/auth/decorators/token.decorator";
 
 @Controller("auth")
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
+
   @Public()
   @Post("sign-in")
   async signIn(@Body() signInDTO: SignInDto) {
@@ -22,8 +24,7 @@ export class AuthController {
   }
 
   @Post("sign-out")
-  async signOut(@Headers("authorization") authorization: string) {
-    const token = authorization.replace("Bearer ", "");
+  async signOut(@Token() token: string) {
     return await this.authService.signOut(token);
   }
 }
