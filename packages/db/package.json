@@ -2,13 +2,15 @@
   "name": "@repo/db",
   "version": "0.0.0",
   "private": true,
-  "type": "module",
+  "main": "./dist/index.js",
   "exports": {
-    ".": "./src/index.ts",
-    "./schema": "./src/schema.ts",
-    "./types": "./src/types.ts"
+    ".": "./dist/index.js",
+    "./schema": "./dist/schema.js",
+    "./types": "./dist/types.js"
   },
   "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
     "db:push": "drizzle-kit push",

@@ -2,15 +2,18 @@
   "name": "@repo/shared",
   "version": "0.0.0",
   "private": true,
-  "type": "module",
+  "main": "./dist/index.js",
   "exports": {
-    ".": "./src/index.ts",
-    "./schemas": "./src/schemas/index.ts",
-    "./constants": "./src/constants.ts"
+    ".": "./dist/index.js",
+    "./schemas": "./dist/schemas/index.js",
+    "./constants": "./dist/constants.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch"
   },
   "dependencies": {
-    "zod": "^3.24.0",
-    "@repo/db": "workspace:*"
+    "zod": "^3.24.0"
   },
   "devDependencies": {
     "@repo/typescript-config": "workspace:*",

@@ -53,6 +53,9 @@ importers:
       rxjs:
         specifier: ^7.8.1
         version: 7.8.2
+      zod:
+        specifier: ^3.24.0
+        version: 3.25.76
     devDependencies:
       '@eslint/eslintrc':
         specifier: ^3.2.0
@@ -298,9 +301,6 @@ importers:
 
   packages/shared:
     dependencies:
-      '@repo/db':
-        specifier: workspace:*
-        version: link:../db
       zod:
         specifier: ^3.24.0
         version: 3.25.76

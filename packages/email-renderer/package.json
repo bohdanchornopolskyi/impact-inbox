@@ -2,12 +2,14 @@
   "name": "@repo/email-renderer",
   "version": "0.0.0",
   "private": true,
-  "type": "module",
+  "main": "./dist/index.js",
   "exports": {
-    ".": "./src/index.ts"
+    ".": "./dist/index.js"
   },
   "scripts": {
-    "dev": "email dev",
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "dev:email": "email dev",
     "test": "vitest run"
   },
   "dependencies": {
