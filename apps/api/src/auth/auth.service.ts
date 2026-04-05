@@ -97,7 +97,7 @@ export class AuthService {
     return { session, user };
   }
 
-  async SignUp(signUpDTO: SignUpDto) {
+  async signUp(signUpDTO: SignUpDto) {
     const { email, password, name } = signUpDTO;
     const [userExist] = await this.db
       .select()

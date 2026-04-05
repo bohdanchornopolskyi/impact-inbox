@@ -19,7 +19,7 @@ export class AuthController {
   @Public()
   @Post("sign-up")
   async signUp(@Body() signUpDTO: SignUpDto) {
-    const { token } = await this.authService.SignUp(signUpDTO);
+    const { token } = await this.authService.signUp(signUpDTO);
     return { token };
   }
 
