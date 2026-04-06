@@ -5,7 +5,7 @@ import {
   NotFoundException,
   UnauthorizedException,
 } from "@nestjs/common";
-import { type Database, Transaction, users } from "@repo/db";
+import { type Database, Transaction, users, UsersSelect } from "@repo/db";
 import { eq } from "drizzle-orm";
 import { DATABASE_TOKEN } from "src/database/database.constants";
 import { CreateUserDto } from "src/users/dto/create-user.dto";
@@ -29,7 +29,7 @@ export class UsersService {
       .from(users)
       .where(eq(users.email, email));
 
-    if (!user) throw new UnauthorizedException("Invalid email or password");
+    if (!user) throw new NotFoundException("User not found");
 
     return user;
   }
