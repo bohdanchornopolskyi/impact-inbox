@@ -29,7 +29,7 @@ export class UsersService {
       .from(users)
       .where(eq(users.email, email));
 
-    if (!user) throw new NotFoundException("User not found");
+    if (!user) throw new NotFoundException("Invalid email or password");
 
     return user;
   }
