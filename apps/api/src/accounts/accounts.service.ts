@@ -24,13 +24,18 @@ export class AccountsService {
   }
 
   async getAccountByUserId(userId: string, tx?: Transaction) {
+    const account = await this.findAccountByUserId(userId, tx);
+    if (!account) {
+      throw new NotFoundException("Account not found.");
+    }
+    return account;
+  }
+
+  async findAccountByUserId(userId: string, tx?: Transaction) {
     const [account] = await (tx ?? this.db)
       .select()
       .from(accounts)
       .where(eq(accounts.userId, userId));
-    if (!account) {
-      throw new NotFoundException("Account not found.");
-    }
     return account;
   }
 }

@@ -16,6 +16,7 @@ import { SignUpDto } from "src/auth/dto/sign-up.dto";
 import { randomUUID } from "crypto";
 import * as argon2 from "argon2";
 import {
+  INVALID_CREDENTIALS_MESSAGE,
   SESSION_EXPIRES_AT,
   type AuthTokenData,
   type SignOutData,
@@ -136,17 +137,22 @@ export class AuthService {
     });
   }
 
-  async signIn(singInDTO: SignInDto): Promise<AuthTokenData> {
-    const { email, password } = singInDTO;
-    const user = await this.usersService.getUserByEmail({ email });
-    const account = await this.accountsService.getAccountByUserId(user.id);
-    if (!account.password) {
-      throw new UnauthorizedException("Invalid email or password");
+  async signIn(signInDTO: SignInDto): Promise<AuthTokenData> {
+    const { email, password } = signInDTO;
+    const user = await this.usersService.findUserByEmail({ email });
+    const account = user
+      ? await this.accountsService.findAccountByUserId(user.id)
+      : undefined;
+
+    if (!user || !account?.password) {
+      throw new UnauthorizedException(INVALID_CREDENTIALS_MESSAGE);
     }
+
     const passwordsMatch = await argon2.verify(account.password, password);
     if (!passwordsMatch) {
-      throw new UnauthorizedException("Invalid email or password");
+      throw new UnauthorizedException(INVALID_CREDENTIALS_MESSAGE);
     }
+
     const token = randomUUID();
     const createdSession = await this.createSession({
       userId: user.id,

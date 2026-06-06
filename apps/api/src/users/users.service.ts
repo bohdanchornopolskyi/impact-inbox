@@ -3,9 +3,8 @@ import {
   Injectable,
   InternalServerErrorException,
   NotFoundException,
-  UnauthorizedException,
 } from "@nestjs/common";
-import { type Database, Transaction, users, UsersSelect } from "@repo/db";
+import { type Database, Transaction, users } from "@repo/db";
 import { eq } from "drizzle-orm";
 import { DATABASE_TOKEN } from "src/database/database.constants";
 import { CreateUserDto } from "src/users/dto/create-user.dto";
@@ -22,14 +21,15 @@ export class UsersService {
     return user;
   }
 
-  async getUserByEmail(getUserByEmailDTO: getUserByEmailDto, tx?: Transaction) {
+  async findUserByEmail(
+    getUserByEmailDTO: getUserByEmailDto,
+    tx?: Transaction,
+  ) {
     const { email } = getUserByEmailDTO;
     const [user] = await (tx ?? this.db)
       .select()
       .from(users)
       .where(eq(users.email, email));
-
-    if (!user) throw new NotFoundException("Invalid email or password");
 
     return user;
   }
