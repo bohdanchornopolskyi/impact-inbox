@@ -1,4 +1,5 @@
 import {
+  ConflictException,
   Inject,
   Injectable,
   InternalServerErrorException,
@@ -8,6 +9,7 @@ import { type Database, Transaction, users } from "@repo/db";
 import { eq } from "drizzle-orm";
 import { DATABASE_TOKEN } from "src/database/database.constants";
 import { CreateUserDto } from "src/users/dto/create-user.dto";
+import { UpdateProfileDto } from "src/users/dto/update-profile.dto";
 import { getUserByEmailDto } from "src/users/dto/user-email.dto";
 
 @Injectable()
@@ -43,5 +45,72 @@ export class UsersService {
       throw new InternalServerErrorException("User creation failed.");
     }
     return createdUser;
+  }
+
+  async updateUser(userId: string, dto: UpdateProfileDto, tx?: Transaction) {
+    if (dto.email) {
+      const [existing] = await (tx ?? this.db)
+        .select({ id: users.id })
+        .from(users)
+        .where(eq(users.email, dto.email));
+
+      if (existing && existing.id !== userId) {
+        throw new ConflictException("Email already in use");
+      }
+    }
+
+    const updates: {
+      name?: string;
+      email?: string;
+      emailVerifiedAt?: Date | null;
+    } = {};
+
+    if (dto.name !== undefined) {
+      updates.name = dto.name;
+    }
+
+    if (dto.email !== undefined) {
+      updates.email = dto.email;
+      updates.emailVerifiedAt = null;
+    }
+
+    const [updatedUser] = await (tx ?? this.db)
+      .update(users)
+      .set(updates)
+      .where(eq(users.id, userId))
+      .returning();
+
+    if (!updatedUser) {
+      throw new NotFoundException(`User #${userId} not found`);
+    }
+
+    return updatedUser;
+  }
+
+  async verifyEmail(userId: string, tx?: Transaction) {
+    const [updatedUser] = await (tx ?? this.db)
+      .update(users)
+      .set({ emailVerifiedAt: new Date() })
+      .where(eq(users.id, userId))
+      .returning();
+
+    if (!updatedUser) {
+      throw new NotFoundException(`User #${userId} not found`);
+    }
+
+    return updatedUser;
+  }
+
+  async deleteUser(userId: string, tx?: Transaction) {
+    const [deletedUser] = await (tx ?? this.db)
+      .delete(users)
+      .where(eq(users.id, userId))
+      .returning();
+
+    if (!deletedUser) {
+      throw new NotFoundException(`User #${userId} not found`);
+    }
+
+    return deletedUser;
   }
 }

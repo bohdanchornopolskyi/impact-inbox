@@ -14,11 +14,13 @@ import {
   type WorkspacesSelect,
   workspaceMembers,
   workspaces,
+  users,
 } from "@repo/db";
 import {
   type WorkspaceDetailData,
   type WorkspaceListItemData,
   type WorkspaceMemberData,
+  type WorkspaceMemberWithUserData,
 } from "@repo/shared";
 import { DATABASE_TOKEN } from "src/database/database.constants";
 import { UsersService } from "src/users/users.service";
@@ -216,6 +218,94 @@ export class WorkspacesService {
 
     if (membership.role === "owner") {
       throw new ForbiddenException("Cannot remove a workspace owner");
+    }
+
+    await this.db
+      .delete(workspaceMembers)
+      .where(eq(workspaceMembers.id, membership.id));
+  }
+
+  async listMembers(
+    workspaceId: string,
+  ): Promise<WorkspaceMemberWithUserData[]> {
+    await this.getWorkspaceById(workspaceId);
+
+    const rows = await this.db
+      .select({
+        id: workspaceMembers.id,
+        workspaceId: workspaceMembers.workspaceId,
+        userId: workspaceMembers.userId,
+        role: workspaceMembers.role,
+        name: users.name,
+        email: users.email,
+      })
+      .from(workspaceMembers)
+      .innerJoin(users, eq(workspaceMembers.userId, users.id))
+      .where(eq(workspaceMembers.workspaceId, workspaceId));
+
+    return rows;
+  }
+
+  async updateMemberRole(
+    workspaceId: string,
+    targetUserId: string,
+    role: WorkspaceMemberData["role"],
+  ): Promise<WorkspaceMemberData> {
+    const workspace = await this.getWorkspaceById(workspaceId);
+
+    if (workspace.ownerId === targetUserId) {
+      throw new ForbiddenException("Cannot change the workspace owner's role");
+    }
+
+    const [membership] = await this.db
+      .select()
+      .from(workspaceMembers)
+      .where(
+        and(
+          eq(workspaceMembers.workspaceId, workspaceId),
+          eq(workspaceMembers.userId, targetUserId),
+        ),
+      );
+
+    if (!membership) {
+      throw new NotFoundException("Member not found");
+    }
+
+    const [updatedMembership] = await this.db
+      .update(workspaceMembers)
+      .set({ role })
+      .where(eq(workspaceMembers.id, membership.id))
+      .returning();
+
+    if (!updatedMembership) {
+      throw new InternalServerErrorException("Member role update failed.");
+    }
+
+    return updatedMembership;
+  }
+
+  async deleteWorkspace(workspaceId: string, userId: string): Promise<void> {
+    const workspace = await this.getWorkspaceById(workspaceId);
+
+    if (workspace.ownerId !== userId) {
+      throw new ForbiddenException("Only the workspace owner can delete it");
+    }
+
+    await this.db.delete(workspaces).where(eq(workspaces.id, workspaceId));
+  }
+
+  async leaveWorkspace(workspaceId: string, userId: string): Promise<void> {
+    const workspace = await this.getWorkspaceById(workspaceId);
+
+    if (workspace.ownerId === userId) {
+      throw new ForbiddenException(
+        "Workspace owners must transfer ownership before leaving",
+      );
+    }
+
+    const membership = await this.getMembership(workspaceId, userId);
+    if (!membership) {
+      throw new NotFoundException("You are not a member of this workspace");
     }
 
     await this.db

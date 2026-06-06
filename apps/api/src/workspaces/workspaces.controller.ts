@@ -10,15 +10,18 @@ import {
 } from "@nestjs/common";
 import { UsersSelect } from "@repo/db";
 import {
+  type SuccessData,
   type WorkspaceDetailData,
   type WorkspaceListItemData,
   type WorkspaceMemberData,
+  type WorkspaceMemberWithUserData,
 } from "@repo/shared";
 import { CurrentUser } from "src/auth/decorators/current-user.decorator";
 import { WorkspaceRoles } from "src/workspaces/decorators/workspace-roles.decorator";
 import { CreateWorkspaceDto } from "src/workspaces/dto/create-workspace.dto";
 import { InviteMemberDto } from "src/workspaces/dto/invite-member.dto";
 import { UpdateWorkspaceDto } from "src/workspaces/dto/update-workspace.dto";
+import { UpdateMemberRoleDto } from "src/workspaces/dto/update-member-role.dto";
 import { WorkspaceGuard } from "src/workspaces/guards/workspace.guard";
 import { WorkspacesService } from "src/workspaces/workspaces.service";
 
@@ -59,6 +62,35 @@ export class WorkspacesController {
     return this.workspacesService.updateWorkspace(user.id, workspaceId, dto);
   }
 
+  @Delete(":id")
+  @UseGuards(WorkspaceGuard)
+  @WorkspaceRoles("owner")
+  async delete(
+    @CurrentUser() user: UsersSelect,
+    @Param("id") workspaceId: string,
+  ): Promise<SuccessData> {
+    await this.workspacesService.deleteWorkspace(workspaceId, user.id);
+    return { success: true };
+  }
+
+  @Post(":id/leave")
+  @UseGuards(WorkspaceGuard)
+  async leave(
+    @CurrentUser() user: UsersSelect,
+    @Param("id") workspaceId: string,
+  ): Promise<SuccessData> {
+    await this.workspacesService.leaveWorkspace(workspaceId, user.id);
+    return { success: true };
+  }
+
+  @Get(":id/members")
+  @UseGuards(WorkspaceGuard)
+  listMembers(
+    @Param("id") workspaceId: string,
+  ): Promise<WorkspaceMemberWithUserData[]> {
+    return this.workspacesService.listMembers(workspaceId);
+  }
+
   @Post(":id/members")
   @UseGuards(WorkspaceGuard)
   @WorkspaceRoles("admin", "owner")
@@ -69,13 +101,28 @@ export class WorkspacesController {
     return this.workspacesService.addMember(workspaceId, dto);
   }
 
+  @Patch(":id/members/:userId")
+  @UseGuards(WorkspaceGuard)
+  @WorkspaceRoles("admin", "owner")
+  updateMemberRole(
+    @Param("id") workspaceId: string,
+    @Param("userId") userId: string,
+    @Body() dto: UpdateMemberRoleDto,
+  ): Promise<WorkspaceMemberData> {
+    return this.workspacesService.updateMemberRole(
+      workspaceId,
+      userId,
+      dto.role,
+    );
+  }
+
   @Delete(":id/members/:userId")
   @UseGuards(WorkspaceGuard)
   @WorkspaceRoles("admin", "owner")
   async removeMember(
     @Param("id") workspaceId: string,
     @Param("userId") userId: string,
-  ): Promise<{ success: true }> {
+  ): Promise<SuccessData> {
     await this.workspacesService.removeMember(workspaceId, userId);
     return { success: true };
   }
