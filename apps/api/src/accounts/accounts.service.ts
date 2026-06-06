@@ -38,4 +38,22 @@ export class AccountsService {
       .where(eq(accounts.userId, userId));
     return account;
   }
+
+  async updatePassword(
+    userId: string,
+    passwordHash: string,
+    tx?: Transaction,
+  ) {
+    const [updatedAccount] = await (tx ?? this.db)
+      .update(accounts)
+      .set({ password: passwordHash })
+      .where(eq(accounts.userId, userId))
+      .returning();
+
+    if (!updatedAccount) {
+      throw new NotFoundException("Account not found.");
+    }
+
+    return updatedAccount;
+  }
 }

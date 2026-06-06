@@ -2,6 +2,8 @@ import { Test, TestingModule } from "@nestjs/testing";
 import { UnauthorizedException } from "@nestjs/common";
 import * as argon2 from "argon2";
 import { AuthService } from "./auth.service";
+import { AuthTokensService } from "./auth-tokens.service";
+import { EmailService } from "src/email/email.service";
 import { UsersService } from "src/users/users.service";
 import { AccountsService } from "src/accounts/accounts.service";
 import { WorkspacesService } from "src/workspaces/workspaces.service";
@@ -19,10 +21,21 @@ describe("AuthService", () => {
 
   const mockAccountsService = {
     findAccountByUserId: jest.fn(),
+    getAccountByUserId: jest.fn(),
+    updatePassword: jest.fn(),
   };
 
   const mockWorkspacesService = {
     createDefaultWorkspaceForUser: jest.fn(),
+  };
+
+  const mockAuthTokensService = {
+    createToken: jest.fn(),
+  };
+
+  const mockEmailService = {
+    sendVerificationEmail: jest.fn(),
+    sendPasswordResetEmail: jest.fn(),
   };
 
   const mockDb = {
@@ -37,6 +50,8 @@ describe("AuthService", () => {
         { provide: UsersService, useValue: mockUsersService },
         { provide: AccountsService, useValue: mockAccountsService },
         { provide: WorkspacesService, useValue: mockWorkspacesService },
+        { provide: AuthTokensService, useValue: mockAuthTokensService },
+        { provide: EmailService, useValue: mockEmailService },
         { provide: DATABASE_TOKEN, useValue: mockDb },
       ],
     }).compile();
@@ -98,6 +113,54 @@ describe("AuthService", () => {
       jest.mocked(argon2.verify).mockResolvedValue(false);
 
       await expect(service.signIn(credentials)).rejects.toMatchObject({
+        response: { message: INVALID_CREDENTIALS_MESSAGE, statusCode: 401 },
+      });
+    });
+  });
+
+  describe("changePassword", () => {
+    const user = {
+      id: "user-1",
+      email: "test@example.com",
+      name: "Test",
+      emailVerifiedAt: null,
+    };
+
+    it("updates the password when the current password is valid", async () => {
+      mockAccountsService.getAccountByUserId.mockResolvedValue({
+        password: "hash",
+      });
+      jest.mocked(argon2.verify).mockResolvedValue(true);
+      jest.mocked(argon2.hash).mockResolvedValue("new-hash");
+      mockAccountsService.updatePassword.mockResolvedValue({});
+
+      await expect(
+        service.changePassword(user, {
+          currentPassword: "Password1!",
+          newPassword: "NewPassword1!",
+          confirmNewPassword: "NewPassword1!",
+        }),
+      ).resolves.toEqual({ success: true });
+
+      expect(mockAccountsService.updatePassword).toHaveBeenCalledWith(
+        "user-1",
+        "new-hash",
+      );
+    });
+
+    it("rejects an invalid current password", async () => {
+      mockAccountsService.getAccountByUserId.mockResolvedValue({
+        password: "hash",
+      });
+      jest.mocked(argon2.verify).mockResolvedValue(false);
+
+      await expect(
+        service.changePassword(user, {
+          currentPassword: "wrong",
+          newPassword: "NewPassword1!",
+          confirmNewPassword: "NewPassword1!",
+        }),
+      ).rejects.toMatchObject({
         response: { message: INVALID_CREDENTIALS_MESSAGE, statusCode: 401 },
       });
     });
