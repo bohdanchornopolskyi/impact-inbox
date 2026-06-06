@@ -3,10 +3,20 @@
   "version": "0.0.0",
   "private": true,
   "main": "./dist/index.js",
+  "types": "./src/index.ts",
   "exports": {
-    ".": "./dist/index.js",
-    "./schemas": "./dist/schemas/index.js",
-    "./constants": "./dist/constants.js"
+    ".": {
+      "types": "./src/index.ts",
+      "default": "./dist/index.js"
+    },
+    "./schemas": {
+      "types": "./src/schemas/index.ts",
+      "default": "./dist/schemas/index.js"
+    },
+    "./constants": {
+      "types": "./src/constants.ts",
+      "default": "./dist/constants.js"
+    }
   },
   "scripts": {
     "build": "tsc",

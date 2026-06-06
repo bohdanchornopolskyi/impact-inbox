@@ -15,7 +15,11 @@ import { SignInDto } from "src/auth/dto/sign-in.dto";
 import { SignUpDto } from "src/auth/dto/sign-up.dto";
 import { randomUUID } from "crypto";
 import * as argon2 from "argon2";
-import { SESSION_EXPIRES_AT } from "@repo/shared";
+import {
+  SESSION_EXPIRES_AT,
+  type AuthTokenData,
+  type SignOutData,
+} from "@repo/shared";
 import { DATABASE_TOKEN } from "src/database/database.constants";
 import type { Database, SessionsSelect } from "@repo/db";
 
@@ -97,7 +101,7 @@ export class AuthService {
     return { session, user };
   }
 
-  async signUp(signUpDTO: SignUpDto) {
+  async signUp(signUpDTO: SignUpDto): Promise<AuthTokenData> {
     const { email, password, name } = signUpDTO;
     const [userExist] = await this.db
       .select()
@@ -132,7 +136,7 @@ export class AuthService {
     });
   }
 
-  async signIn(singInDTO: SignInDto) {
+  async signIn(singInDTO: SignInDto): Promise<AuthTokenData> {
     const { email, password } = singInDTO;
     const user = await this.usersService.getUserByEmail({ email });
     const account = await this.accountsService.getAccountByUserId(user.id);
@@ -152,8 +156,8 @@ export class AuthService {
     return { token: createdSession.token };
   }
 
-  async signOut(token: string) {
-    const session: SessionsSelect = await this.deleteSession(token);
-    return session;
+  async signOut(token: string): Promise<SignOutData> {
+    await this.deleteSession(token);
+    return { success: true };
   }
 }
