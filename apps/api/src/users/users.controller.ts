@@ -3,20 +3,12 @@ import { UsersSelect } from "@repo/db";
 import { type UserProfileData, type SuccessData } from "@repo/shared";
 import { CurrentUser } from "src/auth/decorators/current-user.decorator";
 import { AuthService } from "src/auth/auth.service";
-import { AuthTokensService } from "src/auth/auth-tokens.service";
-import { EmailService } from "src/email/email.service";
-import { UsersService } from "src/users/users.service";
 import { UpdateProfileDto } from "src/users/dto/update-profile.dto";
 import { DeleteAccountDto } from "src/users/dto/delete-account.dto";
 
 @Controller("users")
 export class UsersController {
-  constructor(
-    private readonly usersService: UsersService,
-    private readonly authService: AuthService,
-    private readonly authTokensService: AuthTokensService,
-    private readonly emailService: EmailService,
-  ) {}
+  constructor(private readonly authService: AuthService) {}
 
   @Get("me")
   getMe(@CurrentUser() user: UsersSelect): UserProfileData {
@@ -29,29 +21,11 @@ export class UsersController {
   }
 
   @Patch("me")
-  async updateMe(
+  updateMe(
     @CurrentUser() user: UsersSelect,
     @Body() dto: UpdateProfileDto,
   ): Promise<UserProfileData> {
-    const updatedUser = await this.usersService.updateUser(user.id, dto);
-
-    if (dto.email) {
-      const verificationToken = await this.authTokensService.createToken(
-        updatedUser.id,
-        "email_verification",
-      );
-      await this.emailService.sendVerificationEmail(
-        updatedUser.email,
-        verificationToken.token,
-      );
-    }
-
-    return {
-      id: updatedUser.id,
-      email: updatedUser.email,
-      name: updatedUser.name,
-      emailVerifiedAt: updatedUser.emailVerifiedAt,
-    };
+    return this.authService.updateProfile(user, dto);
   }
 
   @Delete("me")
