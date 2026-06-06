@@ -7,6 +7,8 @@ const WORKSPACE_ROLE_RANK = {
 } as const satisfies Record<(typeof WORKSPACE_ROLES)[number], number>;
 
 const SESSION_EXPIRES_AT = 1000 * 60 * 60 * 24 * 30;
+const EMAIL_VERIFICATION_EXPIRES_AT = 1000 * 60 * 60 * 24;
+const PASSWORD_RESET_EXPIRES_AT = 1000 * 60 * 60;
 
 const AUTH_HEADER = "Authorization" as const;
 const AUTH_SCHEME = "Bearer" as const;
@@ -30,6 +32,8 @@ export {
   WORKSPACE_ROLES,
   WORKSPACE_ROLE_RANK,
   SESSION_EXPIRES_AT,
+  EMAIL_VERIFICATION_EXPIRES_AT,
+  PASSWORD_RESET_EXPIRES_AT,
   AUTH_HEADER,
   AUTH_SCHEME,
   INVALID_CREDENTIALS_MESSAGE,

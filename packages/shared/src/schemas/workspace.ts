@@ -32,6 +32,10 @@ export const inviteMemberSchema = z.object({
     .default("member"),
 });
 
+export const updateMemberRoleSchema = z.object({
+  role: workspaceRoleSchema.exclude(["owner"]),
+});
+
 export const listWorkspacesQuerySchema = z.object({});
 
 export const workspaceSchema = z.object({
@@ -50,6 +54,11 @@ export const workspaceMemberSchema = z.object({
   role: workspaceRoleSchema,
 });
 
+export const workspaceMemberWithUserSchema = workspaceMemberSchema.extend({
+  name: z.string(),
+  email: z.string().email(),
+});
+
 export const workspaceListItemSchema = workspaceSchema.extend({
   role: workspaceRoleSchema,
 });
@@ -61,8 +70,12 @@ export const workspaceDetailSchema = workspaceSchema.extend({
 export type CreateWorkspaceInput = z.infer<typeof createWorkspaceSchema>;
 export type UpdateWorkspaceInput = z.infer<typeof updateWorkspaceSchema>;
 export type InviteMemberInput = z.infer<typeof inviteMemberSchema>;
+export type UpdateMemberRoleInput = z.infer<typeof updateMemberRoleSchema>;
 export type ListWorkspacesQuery = z.infer<typeof listWorkspacesQuerySchema>;
 export type WorkspaceData = z.infer<typeof workspaceSchema>;
 export type WorkspaceMemberData = z.infer<typeof workspaceMemberSchema>;
+export type WorkspaceMemberWithUserData = z.infer<
+  typeof workspaceMemberWithUserSchema
+>;
 export type WorkspaceListItemData = z.infer<typeof workspaceListItemSchema>;
 export type WorkspaceDetailData = z.infer<typeof workspaceDetailSchema>;
