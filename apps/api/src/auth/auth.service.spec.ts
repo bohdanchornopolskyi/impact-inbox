@@ -1,19 +1,20 @@
 import { Test, TestingModule } from "@nestjs/testing";
 import { UnauthorizedException } from "@nestjs/common";
 import * as argon2 from "argon2";
-import { AuthService } from "./auth.service";
-import { AuthTokensService } from "./auth-tokens.service";
-import { EmailService } from "src/email/email.service";
+import { CredentialService } from "./credential.service";
+import { SessionsService } from "./sessions.service";
 import { UsersService } from "src/users/users.service";
 import { AccountsService } from "src/accounts/accounts.service";
-import { WorkspacesService } from "src/workspaces/workspaces.service";
+import { AuthTokensService } from "./auth-tokens.service";
+import { EmailService } from "src/email/email.service";
 import { DATABASE_TOKEN } from "src/database/database.constants";
 import { INVALID_CREDENTIALS_MESSAGE } from "@repo/shared";
 
 jest.mock("argon2");
 
-describe("AuthService", () => {
-  let service: AuthService;
+describe("CredentialService", () => {
+  let service: CredentialService;
+  let sessionsService: SessionsService;
 
   const mockUsersService = {
     findUserByEmail: jest.fn(),
@@ -23,10 +24,6 @@ describe("AuthService", () => {
     findAccountByUserId: jest.fn(),
     getAccountByUserId: jest.fn(),
     updatePassword: jest.fn(),
-  };
-
-  const mockWorkspacesService = {
-    createDefaultWorkspaceForUser: jest.fn(),
   };
 
   const mockAuthTokensService = {
@@ -40,23 +37,23 @@ describe("AuthService", () => {
 
   const mockDb = {
     insert: jest.fn(),
-    transaction: jest.fn(),
   };
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
-        AuthService,
+        CredentialService,
+        SessionsService,
         { provide: UsersService, useValue: mockUsersService },
         { provide: AccountsService, useValue: mockAccountsService },
-        { provide: WorkspacesService, useValue: mockWorkspacesService },
         { provide: AuthTokensService, useValue: mockAuthTokensService },
         { provide: EmailService, useValue: mockEmailService },
         { provide: DATABASE_TOKEN, useValue: mockDb },
       ],
     }).compile();
 
-    service = module.get<AuthService>(AuthService);
+    service = module.get<CredentialService>(CredentialService);
+    sessionsService = module.get<SessionsService>(SessionsService);
   });
 
   afterEach(() => {
@@ -75,7 +72,7 @@ describe("AuthService", () => {
         password: "hash",
       });
       jest.mocked(argon2.verify).mockResolvedValue(true);
-      jest.spyOn(service, "createSession").mockResolvedValue({
+      jest.spyOn(sessionsService, "createSession").mockResolvedValue({
         token: "session-token",
       } as never);
 
