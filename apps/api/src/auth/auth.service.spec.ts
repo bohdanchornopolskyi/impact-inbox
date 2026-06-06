@@ -4,6 +4,7 @@ import * as argon2 from "argon2";
 import { AuthService } from "./auth.service";
 import { UsersService } from "src/users/users.service";
 import { AccountsService } from "src/accounts/accounts.service";
+import { WorkspacesService } from "src/workspaces/workspaces.service";
 import { DATABASE_TOKEN } from "src/database/database.constants";
 import { INVALID_CREDENTIALS_MESSAGE } from "@repo/shared";
 
@@ -20,6 +21,10 @@ describe("AuthService", () => {
     findAccountByUserId: jest.fn(),
   };
 
+  const mockWorkspacesService = {
+    createDefaultWorkspaceForUser: jest.fn(),
+  };
+
   const mockDb = {
     insert: jest.fn(),
     transaction: jest.fn(),
@@ -31,6 +36,7 @@ describe("AuthService", () => {
         AuthService,
         { provide: UsersService, useValue: mockUsersService },
         { provide: AccountsService, useValue: mockAccountsService },
+        { provide: WorkspacesService, useValue: mockWorkspacesService },
         { provide: DATABASE_TOKEN, useValue: mockDb },
       ],
     }).compile();

@@ -8,6 +8,7 @@ import {
 } from "@nestjs/common";
 import { UsersService } from "src/users/users.service";
 import { AccountsService } from "src/accounts/accounts.service";
+import { WorkspacesService } from "src/workspaces/workspaces.service";
 import { CreateSessionDto } from "src/auth/dto/create-session.dto";
 import { sessions, Transaction, users } from "@repo/db";
 import { eq } from "drizzle-orm";
@@ -29,6 +30,7 @@ export class AuthService {
   constructor(
     private readonly usersService: UsersService,
     private readonly accountsService: AccountsService,
+    private readonly workspacesService: WorkspacesService,
     @Inject(DATABASE_TOKEN) private readonly db: Database,
   ) {}
   async createSession(
@@ -123,6 +125,11 @@ export class AuthService {
           userId: createdUser.id,
           password: passwordHash,
         },
+        tx,
+      );
+      await this.workspacesService.createDefaultWorkspaceForUser(
+        createdUser.id,
+        createdUser.name,
         tx,
       );
       const createdSession = await this.createSession(

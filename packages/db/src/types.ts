@@ -1,5 +1,5 @@
 import { InferInsertModel, InferSelectModel } from "drizzle-orm";
-import { accounts, sessions, users, workspaces } from "./schema";
+import { accounts, sessions, users, workspaceMembers, workspaces } from "./schema";
 import { db } from "./index";
 
 export type Database = typeof db;
@@ -12,6 +12,8 @@ type AccountsInsert = InferInsertModel<typeof accounts>;
 
 type WorkspacesSelect = InferSelectModel<typeof workspaces>;
 type WorkspacesInsert = InferInsertModel<typeof workspaces>;
+type WorkspaceMembersSelect = InferSelectModel<typeof workspaceMembers>;
+type WorkspaceMembersInsert = InferInsertModel<typeof workspaceMembers>;
 type SessionsSelect = InferSelectModel<typeof sessions>;
 type SessionsInsert = InferInsertModel<typeof sessions>;
 
@@ -24,4 +26,6 @@ export {
   type SessionsSelect,
   type WorkspacesInsert,
   type WorkspacesSelect,
+  type WorkspaceMembersInsert,
+  type WorkspaceMembersSelect,
 };

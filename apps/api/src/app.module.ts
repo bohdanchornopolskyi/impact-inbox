@@ -4,10 +4,11 @@ import { AppService } from "./app.service";
 import { UsersModule } from "./users/users.module";
 import { AccountsModule } from "./accounts/accounts.module";
 import { AuthModule } from "./auth/auth.module";
+import { WorkspacesModule } from "src/workspaces/workspaces.module";
 import { DatabaseModule } from "src/database/database.module";
 
 @Module({
-  imports: [UsersModule, AuthModule, AccountsModule, DatabaseModule],
+  imports: [UsersModule, AuthModule, AccountsModule, WorkspacesModule, DatabaseModule],
   controllers: [AppController],
   providers: [
     AppService,
