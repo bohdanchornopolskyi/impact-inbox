@@ -1,5 +1,12 @@
 import { InferInsertModel, InferSelectModel } from "drizzle-orm";
-import { accounts, sessions, users, workspaceMembers, workspaces } from "./schema";
+import {
+  accounts,
+  authTokens,
+  sessions,
+  users,
+  workspaceMembers,
+  workspaces,
+} from "./schema";
 import { db } from "./index";
 
 export type Database = typeof db;
@@ -9,6 +16,9 @@ type UsersInsert = InferInsertModel<typeof users>;
 
 type AccountsSelect = InferSelectModel<typeof accounts>;
 type AccountsInsert = InferInsertModel<typeof accounts>;
+
+type AuthTokensSelect = InferSelectModel<typeof authTokens>;
+type AuthTokensInsert = InferInsertModel<typeof authTokens>;
 
 type WorkspacesSelect = InferSelectModel<typeof workspaces>;
 type WorkspacesInsert = InferInsertModel<typeof workspaces>;
@@ -22,6 +32,8 @@ export {
   type UsersSelect,
   type AccountsInsert,
   type AccountsSelect,
+  type AuthTokensInsert,
+  type AuthTokensSelect,
   type SessionsInsert,
   type SessionsSelect,
   type WorkspacesInsert,
