@@ -6,7 +6,6 @@ import { type Transaction } from "@repo/db";
 import { type SuccessData } from "@repo/shared";
 import { AuthTokensService } from "src/auth/auth-tokens.service";
 import { EmailService } from "src/email/email.service";
-import { UsersService } from "src/users/users.service";
 import { ConfirmEmailDto } from "src/auth/dto/confirm-email.dto";
 import { type UsersSelect } from "@repo/db";
 
@@ -15,7 +14,6 @@ export class EmailVerificationService {
   constructor(
     private readonly authTokensService: AuthTokensService,
     private readonly emailService: EmailService,
-    private readonly usersService: UsersService,
   ) {}
 
   async requestEmailVerification(
@@ -53,13 +51,11 @@ export class EmailVerificationService {
     return { success: true };
   }
 
-  async confirmEmail(dto: ConfirmEmailDto): Promise<SuccessData> {
+  async consumeEmailVerificationToken(dto: ConfirmEmailDto): Promise<string> {
     const token = await this.authTokensService.consumeToken(
       dto.token,
       "email_verification",
     );
-    await this.usersService.verifyEmail(token.userId);
-
-    return { success: true };
+    return token.userId;
   }
 }

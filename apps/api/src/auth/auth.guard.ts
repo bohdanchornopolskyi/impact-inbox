@@ -5,14 +5,14 @@ import {
   UnauthorizedException,
 } from "@nestjs/common";
 import { Reflector } from "@nestjs/core";
-import { AuthService } from "src/auth/auth.service";
+import { SessionsService } from "src/auth/sessions.service";
 import { Request } from "express";
 import { IS_PUBLIC_KEY } from "./decorators/public.decorator";
 
 @Injectable()
 export class AuthGuard implements CanActivate {
   constructor(
-    private readonly authService: AuthService,
+    private readonly sessionsService: SessionsService,
     private readonly reflector: Reflector,
   ) {}
 
@@ -34,7 +34,7 @@ export class AuthGuard implements CanActivate {
     }
 
     try {
-      const { session, user } = await this.authService.validateSession(token);
+      const { session, user } = await this.sessionsService.validateSession(token);
 
       if (!user || !session) {
         throw new UnauthorizedException();

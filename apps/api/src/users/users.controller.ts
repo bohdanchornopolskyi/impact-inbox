@@ -2,13 +2,13 @@ import { Body, Controller, Delete, Get, Patch } from "@nestjs/common";
 import { UsersSelect } from "@repo/db";
 import { type UserProfileData, type SuccessData } from "@repo/shared";
 import { CurrentUser } from "src/auth/decorators/current-user.decorator";
-import { AuthService } from "src/auth/auth.service";
+import { UserLifecycleService } from "src/users/user-lifecycle.service";
 import { UpdateProfileDto } from "src/users/dto/update-profile.dto";
 import { DeleteAccountDto } from "src/users/dto/delete-account.dto";
 
 @Controller("users")
 export class UsersController {
-  constructor(private readonly authService: AuthService) {}
+  constructor(private readonly userLifecycleService: UserLifecycleService) {}
 
   @Get("me")
   getMe(@CurrentUser() user: UsersSelect): UserProfileData {
@@ -25,7 +25,7 @@ export class UsersController {
     @CurrentUser() user: UsersSelect,
     @Body() dto: UpdateProfileDto,
   ): Promise<UserProfileData> {
-    return this.authService.updateProfile(user, dto);
+    return this.userLifecycleService.updateProfile(user, dto);
   }
 
   @Delete("me")
@@ -33,6 +33,6 @@ export class UsersController {
     @CurrentUser() user: UsersSelect,
     @Body() dto: DeleteAccountDto,
   ): Promise<SuccessData> {
-    return this.authService.deleteAccount(user, dto);
+    return this.userLifecycleService.deleteAccount(user, dto);
   }
 }

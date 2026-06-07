@@ -20,7 +20,6 @@ import {
 import { ChangePasswordDto } from "src/auth/dto/change-password.dto";
 import { ForgotPasswordDto } from "src/auth/dto/forgot-password.dto";
 import { ResetPasswordDto } from "src/auth/dto/reset-password.dto";
-import { DeleteAccountDto } from "src/users/dto/delete-account.dto";
 import { type UsersSelect } from "@repo/db";
 
 @Injectable()
@@ -109,29 +108,6 @@ export class CredentialService {
       "password_reset",
     );
     await this.accountsService.setPassword(token.userId, dto.newPassword);
-
-    return { success: true };
-  }
-
-  async deleteAccount(
-    user: UsersSelect,
-    dto: DeleteAccountDto,
-  ): Promise<SuccessData> {
-    const account = await this.accountsService.getAccountByUserId(user.id);
-
-    if (!account.password) {
-      throw new BadRequestException("Password authentication is not available");
-    }
-
-    const passwordsMatch = await this.accountsService.verifyPassword(
-      user.id,
-      dto.password,
-    );
-    if (!passwordsMatch) {
-      throw new UnauthorizedException(INVALID_CREDENTIALS_MESSAGE);
-    }
-
-    await this.usersService.deleteUser(user.id);
 
     return { success: true };
   }

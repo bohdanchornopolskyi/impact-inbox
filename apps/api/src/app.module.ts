@@ -8,10 +8,14 @@ import { WorkspacesModule } from "src/workspaces/workspaces.module";
 import { DatabaseModule } from "src/database/database.module";
 
 @Module({
-  imports: [UsersModule, AuthModule, AccountsModule, WorkspacesModule, DatabaseModule],
-  controllers: [AppController],
-  providers: [
-    AppService,
+  imports: [
+    DatabaseModule,
+    UsersModule,
+    AccountsModule,
+    WorkspacesModule,
+    AuthModule,
   ],
+  controllers: [AppController],
+  providers: [AppService],
 })
 export class AppModule {}

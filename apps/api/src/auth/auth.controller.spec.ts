@@ -1,31 +1,38 @@
 import { Test } from "@nestjs/testing";
 import { AuthController } from "./auth.controller";
-import { AuthService } from "./auth.service";
+import { CredentialService } from "./credential.service";
+import { SessionsService } from "./sessions.service";
+import { RegistrationService } from "src/onboarding/registration.service";
+import { EmailVerificationService } from "./email-verification.service";
+import { UsersService } from "src/users/users.service";
 
 describe("AuthController", () => {
   let controller: AuthController;
-  let authService: AuthService;
+  let registrationService: RegistrationService;
 
-  const mockAuthService = {
-    signUp: jest.fn(),
+  const mockCredentialService = {
     signIn: jest.fn(),
     signOut: jest.fn(),
-    validateSession: jest.fn(),
+  };
+
+  const mockRegistrationService = {
+    signUp: jest.fn(),
   };
 
   beforeEach(async () => {
     const module = await Test.createTestingModule({
       controllers: [AuthController],
       providers: [
-        {
-          provide: AuthService,
-          useValue: mockAuthService,
-        },
+        { provide: CredentialService, useValue: mockCredentialService },
+        { provide: SessionsService, useValue: {} },
+        { provide: RegistrationService, useValue: mockRegistrationService },
+        { provide: EmailVerificationService, useValue: {} },
+        { provide: UsersService, useValue: {} },
       ],
     }).compile();
 
     controller = module.get(AuthController);
-    authService = module.get(AuthService);
+    registrationService = module.get(RegistrationService);
   });
 
   afterEach(() => {
@@ -41,11 +48,11 @@ describe("AuthController", () => {
         name: "Test User",
       };
 
-      mockAuthService.signUp.mockResolvedValue({ token: "jwt-token" });
+      mockRegistrationService.signUp.mockResolvedValue({ token: "jwt-token" });
 
       const result = await controller.signUp(dto);
 
-      expect(authService.signUp).toHaveBeenCalledWith(dto);
+      expect(registrationService.signUp).toHaveBeenCalledWith(dto);
       expect(result).toEqual({ token: "jwt-token" });
     });
   });
