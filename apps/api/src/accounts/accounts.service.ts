@@ -6,12 +6,14 @@ import {
 } from "@nestjs/common";
 import { accounts, Transaction, type Database } from "@repo/db";
 import { eq } from "drizzle-orm";
+import * as argon2 from "argon2";
 import { CreateAccountDto } from "src/accounts/dto/create-account.dto";
 import { DATABASE_TOKEN } from "src/database/database.constants";
 
 @Injectable()
 export class AccountsService {
   constructor(@Inject(DATABASE_TOKEN) private readonly db: Database) {}
+
   async createAccount(createAccountDTO: CreateAccountDto, tx?: Transaction) {
     const [createdAccount] = await (tx ?? this.db)
       .insert(accounts)
@@ -39,11 +41,20 @@ export class AccountsService {
     return account;
   }
 
-  async updatePassword(
+  async verifyPassword(
     userId: string,
-    passwordHash: string,
+    plainPassword: string,
     tx?: Transaction,
-  ) {
+  ): Promise<boolean> {
+    const account = await this.findAccountByUserId(userId, tx);
+    if (!account?.password) {
+      return false;
+    }
+    return argon2.verify(account.password, plainPassword);
+  }
+
+  async setPassword(userId: string, plainPassword: string, tx?: Transaction) {
+    const passwordHash = await argon2.hash(plainPassword);
     const [updatedAccount] = await (tx ?? this.db)
       .update(accounts)
       .set({ password: passwordHash })

@@ -1,6 +1,7 @@
 import { Test, TestingModule } from "@nestjs/testing";
 import { WorkspacesController } from "./workspaces.controller";
 import { WorkspacesService } from "./workspaces.service";
+import { WorkspaceGuard } from "./guards/workspace.guard";
 
 describe("WorkspacesController", () => {
   let controller: WorkspacesController;
@@ -20,7 +21,10 @@ describe("WorkspacesController", () => {
       providers: [
         { provide: WorkspacesService, useValue: mockWorkspacesService },
       ],
-    }).compile();
+    })
+      .overrideGuard(WorkspaceGuard)
+      .useValue({ canActivate: () => true })
+      .compile();
 
     controller = module.get<WorkspacesController>(WorkspacesController);
   });

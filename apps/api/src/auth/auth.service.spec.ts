@@ -1,6 +1,5 @@
 import { Test, TestingModule } from "@nestjs/testing";
 import { UnauthorizedException } from "@nestjs/common";
-import * as argon2 from "argon2";
 import { CredentialService } from "./credential.service";
 import { SessionsService } from "./sessions.service";
 import { UsersService } from "src/users/users.service";
@@ -9,8 +8,6 @@ import { AuthTokensService } from "./auth-tokens.service";
 import { EmailService } from "src/email/email.service";
 import { DATABASE_TOKEN } from "src/database/database.constants";
 import { INVALID_CREDENTIALS_MESSAGE } from "@repo/shared";
-
-jest.mock("argon2");
 
 describe("CredentialService", () => {
   let service: CredentialService;
@@ -21,9 +18,9 @@ describe("CredentialService", () => {
   };
 
   const mockAccountsService = {
-    findAccountByUserId: jest.fn(),
+    verifyPassword: jest.fn(),
     getAccountByUserId: jest.fn(),
-    updatePassword: jest.fn(),
+    setPassword: jest.fn(),
   };
 
   const mockAuthTokensService = {
@@ -68,10 +65,7 @@ describe("CredentialService", () => {
 
     it("returns a token for valid credentials", async () => {
       mockUsersService.findUserByEmail.mockResolvedValue({ id: "user-1" });
-      mockAccountsService.findAccountByUserId.mockResolvedValue({
-        password: "hash",
-      });
-      jest.mocked(argon2.verify).mockResolvedValue(true);
+      mockAccountsService.verifyPassword.mockResolvedValue(true);
       jest.spyOn(sessionsService, "createSession").mockResolvedValue({
         token: "session-token",
       } as never);
@@ -79,6 +73,10 @@ describe("CredentialService", () => {
       await expect(service.signIn(credentials)).resolves.toEqual({
         token: "session-token",
       });
+      expect(mockAccountsService.verifyPassword).toHaveBeenCalledWith(
+        "user-1",
+        "Password1!",
+      );
     });
 
     it("throws the same unauthorized error when the user does not exist", async () => {
@@ -87,27 +85,12 @@ describe("CredentialService", () => {
       await expect(service.signIn(credentials)).rejects.toMatchObject({
         response: { message: INVALID_CREDENTIALS_MESSAGE, statusCode: 401 },
       });
-      expect(mockAccountsService.findAccountByUserId).not.toHaveBeenCalled();
-    });
-
-    it("throws the same unauthorized error when the account is missing", async () => {
-      mockUsersService.findUserByEmail.mockResolvedValue({ id: "user-1" });
-      mockAccountsService.findAccountByUserId.mockResolvedValue(undefined);
-
-      await expect(service.signIn(credentials)).rejects.toBeInstanceOf(
-        UnauthorizedException,
-      );
-      await expect(service.signIn(credentials)).rejects.toMatchObject({
-        response: { message: INVALID_CREDENTIALS_MESSAGE, statusCode: 401 },
-      });
+      expect(mockAccountsService.verifyPassword).not.toHaveBeenCalled();
     });
 
     it("throws the same unauthorized error when the password is wrong", async () => {
       mockUsersService.findUserByEmail.mockResolvedValue({ id: "user-1" });
-      mockAccountsService.findAccountByUserId.mockResolvedValue({
-        password: "hash",
-      });
-      jest.mocked(argon2.verify).mockResolvedValue(false);
+      mockAccountsService.verifyPassword.mockResolvedValue(false);
 
       await expect(service.signIn(credentials)).rejects.toMatchObject({
         response: { message: INVALID_CREDENTIALS_MESSAGE, statusCode: 401 },
@@ -127,9 +110,8 @@ describe("CredentialService", () => {
       mockAccountsService.getAccountByUserId.mockResolvedValue({
         password: "hash",
       });
-      jest.mocked(argon2.verify).mockResolvedValue(true);
-      jest.mocked(argon2.hash).mockResolvedValue("new-hash");
-      mockAccountsService.updatePassword.mockResolvedValue({});
+      mockAccountsService.verifyPassword.mockResolvedValue(true);
+      mockAccountsService.setPassword.mockResolvedValue({});
 
       await expect(
         service.changePassword(user, {
@@ -139,9 +121,9 @@ describe("CredentialService", () => {
         }),
       ).resolves.toEqual({ success: true });
 
-      expect(mockAccountsService.updatePassword).toHaveBeenCalledWith(
+      expect(mockAccountsService.setPassword).toHaveBeenCalledWith(
         "user-1",
-        "new-hash",
+        "NewPassword1!",
       );
     });
 
@@ -149,7 +131,7 @@ describe("CredentialService", () => {
       mockAccountsService.getAccountByUserId.mockResolvedValue({
         password: "hash",
       });
-      jest.mocked(argon2.verify).mockResolvedValue(false);
+      mockAccountsService.verifyPassword.mockResolvedValue(false);
 
       await expect(
         service.changePassword(user, {

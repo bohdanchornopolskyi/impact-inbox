@@ -10,7 +10,6 @@ import { SessionsService } from "src/auth/sessions.service";
 import { EmailVerificationService } from "src/auth/email-verification.service";
 import { SignUpDto } from "src/auth/dto/sign-up.dto";
 import { randomUUID } from "crypto";
-import * as argon2 from "argon2";
 import { SESSION_EXPIRES_AT, type AuthTokenData } from "@repo/shared";
 import { DATABASE_TOKEN } from "src/database/database.constants";
 import type { Database } from "@repo/db";
@@ -34,7 +33,6 @@ export class RegistrationService {
     }
 
     const token = randomUUID();
-    const passwordHash = await argon2.hash(password);
 
     const { sessionToken, verificationToken, userEmail } =
       await this.db.transaction(async (tx) => {
@@ -43,12 +41,10 @@ export class RegistrationService {
           tx,
         );
         await this.accountsService.createAccount(
-          {
-            userId: createdUser.id,
-            password: passwordHash,
-          },
+          { userId: createdUser.id },
           tx,
         );
+        await this.accountsService.setPassword(createdUser.id, password, tx);
         await this.workspacesService.createDefaultWorkspaceForUser(
           createdUser.id,
           createdUser.name,

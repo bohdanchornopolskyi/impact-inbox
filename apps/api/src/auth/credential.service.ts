@@ -10,7 +10,6 @@ import { AuthTokensService } from "src/auth/auth-tokens.service";
 import { EmailService } from "src/email/email.service";
 import { SignInDto } from "src/auth/dto/sign-in.dto";
 import { randomUUID } from "crypto";
-import * as argon2 from "argon2";
 import {
   INVALID_CREDENTIALS_MESSAGE,
   SESSION_EXPIRES_AT,
@@ -37,15 +36,15 @@ export class CredentialService {
   async signIn(signInDTO: SignInDto): Promise<AuthTokenData> {
     const { email, password } = signInDTO;
     const user = await this.usersService.findUserByEmail({ email });
-    const account = user
-      ? await this.accountsService.findAccountByUserId(user.id)
-      : undefined;
 
-    if (!user || !account?.password) {
+    if (!user) {
       throw new UnauthorizedException(INVALID_CREDENTIALS_MESSAGE);
     }
 
-    const passwordsMatch = await argon2.verify(account.password, password);
+    const passwordsMatch = await this.accountsService.verifyPassword(
+      user.id,
+      password,
+    );
     if (!passwordsMatch) {
       throw new UnauthorizedException(INVALID_CREDENTIALS_MESSAGE);
     }
@@ -74,16 +73,15 @@ export class CredentialService {
       throw new BadRequestException("Password authentication is not available");
     }
 
-    const passwordsMatch = await argon2.verify(
-      account.password,
+    const passwordsMatch = await this.accountsService.verifyPassword(
+      user.id,
       dto.currentPassword,
     );
     if (!passwordsMatch) {
       throw new UnauthorizedException(INVALID_CREDENTIALS_MESSAGE);
     }
 
-    const passwordHash = await argon2.hash(dto.newPassword);
-    await this.accountsService.updatePassword(user.id, passwordHash);
+    await this.accountsService.setPassword(user.id, dto.newPassword);
 
     return { success: true };
   }
@@ -110,8 +108,7 @@ export class CredentialService {
       dto.token,
       "password_reset",
     );
-    const passwordHash = await argon2.hash(dto.newPassword);
-    await this.accountsService.updatePassword(token.userId, passwordHash);
+    await this.accountsService.setPassword(token.userId, dto.newPassword);
 
     return { success: true };
   }
@@ -126,7 +123,10 @@ export class CredentialService {
       throw new BadRequestException("Password authentication is not available");
     }
 
-    const passwordsMatch = await argon2.verify(account.password, dto.password);
+    const passwordsMatch = await this.accountsService.verifyPassword(
+      user.id,
+      dto.password,
+    );
     if (!passwordsMatch) {
       throw new UnauthorizedException(INVALID_CREDENTIALS_MESSAGE);
     }
