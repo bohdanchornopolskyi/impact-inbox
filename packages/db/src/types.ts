@@ -4,6 +4,7 @@ import {
   authTokens,
   sessions,
   users,
+  templates,
   workspaceMembers,
   workspaces,
 } from "./schema";
@@ -27,6 +28,9 @@ type WorkspaceMembersInsert = InferInsertModel<typeof workspaceMembers>;
 type SessionsSelect = InferSelectModel<typeof sessions>;
 type SessionsInsert = InferInsertModel<typeof sessions>;
 
+type TemplatesSelect = InferSelectModel<typeof templates>;
+type TemplatesInsert = InferInsertModel<typeof templates>;
+
 export {
   type UsersInsert,
   type UsersSelect,
@@ -40,4 +44,6 @@ export {
   type WorkspacesSelect,
   type WorkspaceMembersInsert,
   type WorkspaceMembersSelect,
+  type TemplatesInsert,
+  type TemplatesSelect,
 };

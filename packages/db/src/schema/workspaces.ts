@@ -4,6 +4,7 @@ import { users } from "./users";
 import { timestamps } from "./_helpers";
 
 import { type WorkspaceRole } from "@repo/shared";
+import { templates } from "./templates";
 
 export const workspaces = pgTable("workspaces", {
   id: uuid("id").primaryKey().defaultRandom(),
@@ -21,6 +22,7 @@ export const workspacesRelations = relations(workspaces, ({ one, many }) => ({
     references: [users.id],
   }),
   members: many(workspaceMembers),
+  templates: many(templates),
 }));
 
 export const workspaceMembers = pgTable(
