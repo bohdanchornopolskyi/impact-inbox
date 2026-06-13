@@ -1,5 +1,15 @@
 const WORKSPACE_ROLES = ["owner", "admin", "member"] as const;
 
+const TEMPLATE_STATUSES = ["draft", "published", "archived"] as const;
+
+const DEFAULT_TEMPLATE_CONTENT: {
+  version: 1;
+  blocks: { id: string; type: string; props: Record<string, unknown> }[];
+} = {
+  version: 1,
+  blocks: [],
+};
+
 const WORKSPACE_ROLE_RANK = {
   owner: 3,
   admin: 2,
@@ -30,6 +40,8 @@ function hasWorkspaceRoleAtLeast(
 
 export {
   WORKSPACE_ROLES,
+  TEMPLATE_STATUSES,
+  DEFAULT_TEMPLATE_CONTENT,
   WORKSPACE_ROLE_RANK,
   SESSION_EXPIRES_AT,
   EMAIL_VERIFICATION_EXPIRES_AT,
