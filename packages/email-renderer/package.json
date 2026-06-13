@@ -13,6 +13,7 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@repo/shared": "workspace:*",
     "@react-email/components": "^0.0.34",
     "react-email": "^3.0.0",
     "react": "^19.0.0"
