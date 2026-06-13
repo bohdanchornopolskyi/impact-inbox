@@ -5,6 +5,7 @@ import { UsersModule } from "./users/users.module";
 import { AccountsModule } from "./accounts/accounts.module";
 import { AuthModule } from "./auth/auth.module";
 import { WorkspacesModule } from "src/workspaces/workspaces.module";
+import { TemplatesModule } from "src/templates/templates.module";
 import { DatabaseModule } from "src/database/database.module";
 
 @Module({
@@ -13,6 +14,7 @@ import { DatabaseModule } from "src/database/database.module";
     UsersModule,
     AccountsModule,
     WorkspacesModule,
+    TemplatesModule,
     AuthModule,
   ],
   controllers: [AppController],

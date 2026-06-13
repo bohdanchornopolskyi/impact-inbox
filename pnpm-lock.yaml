@@ -35,6 +35,9 @@ importers:
       '@repo/db':
         specifier: workspace:*
         version: link:../../packages/db
+      '@repo/email-renderer':
+        specifier: workspace:*
+        version: link:../../packages/email-renderer
       '@repo/shared':
         specifier: workspace:*
         version: link:../../packages/shared
@@ -243,6 +246,9 @@ importers:
       '@react-email/components':
         specifier: ^0.0.34
         version: 0.0.34(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
+      '@repo/shared':
+        specifier: workspace:*
+        version: link:../shared
       react:
         specifier: ^19.0.0
         version: 19.2.4
