@@ -2,6 +2,9 @@
 
 Email builder + email marketing platform. Monorepo, contract-first API, workspace-scoped multi-tenancy.
 
+**Domain language:** [CONTEXT.md](../CONTEXT.md)  
+**Recorded decisions:** [docs/adr/](adr/) (auth seam, workspace access, template render, block registry)
+
 ---
 
 ## 1. Product vision
