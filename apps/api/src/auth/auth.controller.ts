@@ -1,6 +1,5 @@
 import { Body, Controller, Delete, Get, Param, Post } from "@nestjs/common";
-import { UsersSelect } from "@repo/db";
-import { type SessionData, type SuccessData } from "@repo/shared";
+import { type SessionData, type SuccessData, type UserProfileData } from "@repo/shared";
 import { CredentialService } from "./credential.service";
 import { SessionsService } from "./sessions.service";
 import { EmailVerificationService } from "./email-verification.service";
@@ -47,7 +46,7 @@ export class AuthController {
 
   @Post("change-password")
   changePassword(
-    @CurrentUser() user: UsersSelect,
+    @CurrentUser() user: UserProfileData,
     @Body() dto: ChangePasswordDto,
   ): Promise<SuccessData> {
     return this.credentialService.changePassword(user, dto);
@@ -75,13 +74,13 @@ export class AuthController {
   }
 
   @Post("resend-verification")
-  resendVerification(@CurrentUser() user: UsersSelect): Promise<SuccessData> {
+  resendVerification(@CurrentUser() user: UserProfileData): Promise<SuccessData> {
     return this.emailVerificationService.resendVerification(user);
   }
 
   @Get("sessions")
   listSessions(
-    @CurrentUser() user: UsersSelect,
+    @CurrentUser() user: UserProfileData,
     @Token() token: string,
   ): Promise<SessionData[]> {
     return this.sessionsService.listSessions(user.id, token);
@@ -89,7 +88,7 @@ export class AuthController {
 
   @Delete("sessions/:id")
   revokeSession(
-    @CurrentUser() user: UsersSelect,
+    @CurrentUser() user: UserProfileData,
     @Token() token: string,
     @Param("id") sessionId: string,
   ): Promise<SuccessData> {

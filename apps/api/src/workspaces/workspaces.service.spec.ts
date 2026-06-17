@@ -2,6 +2,7 @@ import { ForbiddenException } from "@nestjs/common";
 import { Test, TestingModule } from "@nestjs/testing";
 import { DATABASE_TOKEN } from "src/database/database.constants";
 import { UsersService } from "src/users/users.service";
+import { WorkspaceAccessService } from "./workspace-access.service";
 import { WorkspacesService } from "./workspaces.service";
 
 describe("WorkspacesService", () => {
@@ -9,6 +10,10 @@ describe("WorkspacesService", () => {
 
   const mockUsersService = {
     findUserByEmail: jest.fn(),
+  };
+
+  const mockWorkspaceAccessService = {
+    resolve: jest.fn(),
   };
 
   const mockSelect = jest.fn();
@@ -43,6 +48,10 @@ describe("WorkspacesService", () => {
         WorkspacesService,
         { provide: DATABASE_TOKEN, useValue: mockDb },
         { provide: UsersService, useValue: mockUsersService },
+        {
+          provide: WorkspaceAccessService,
+          useValue: mockWorkspaceAccessService,
+        },
       ],
     }).compile();
 

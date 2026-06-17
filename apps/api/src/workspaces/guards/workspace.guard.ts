@@ -6,19 +6,15 @@ import {
   NotFoundException,
 } from "@nestjs/common";
 import { Reflector } from "@nestjs/core";
-import { and, eq } from "drizzle-orm";
-import { workspaceMembers, workspaces } from "@repo/db";
 import { hasWorkspaceRoleAtLeast, type WorkspaceRole } from "@repo/shared";
-import { DATABASE_TOKEN } from "src/database/database.constants";
-import type { Database } from "@repo/db";
-import { Inject } from "@nestjs/common";
 import { WORKSPACE_ROLES_KEY } from "src/workspaces/decorators/workspace-roles.decorator";
+import { WorkspaceAccessService } from "src/workspaces/workspace-access.service";
 
 @Injectable()
 export class WorkspaceGuard implements CanActivate {
   constructor(
     private readonly reflector: Reflector,
-    @Inject(DATABASE_TOKEN) private readonly db: Database,
+    private readonly workspaceAccessService: WorkspaceAccessService,
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
@@ -34,28 +30,10 @@ export class WorkspaceGuard implements CanActivate {
       throw new NotFoundException("Workspace not found");
     }
 
-    const [workspace] = await this.db
-      .select()
-      .from(workspaces)
-      .where(eq(workspaces.id, workspaceId));
-
-    if (!workspace) {
-      throw new NotFoundException("Workspace not found");
-    }
-
-    const [membership] = await this.db
-      .select()
-      .from(workspaceMembers)
-      .where(
-        and(
-          eq(workspaceMembers.workspaceId, workspaceId),
-          eq(workspaceMembers.userId, user.id),
-        ),
-      );
-
-    if (!membership) {
-      throw new ForbiddenException("You are not a member of this workspace");
-    }
+    const workspaceContext = await this.workspaceAccessService.resolve(
+      workspaceId,
+      user.id,
+    );
 
     const requiredRoles = this.reflector.getAllAndOverride<
       WorkspaceRole[] | undefined
@@ -63,13 +41,12 @@ export class WorkspaceGuard implements CanActivate {
 
     if (
       requiredRoles?.length &&
-      !hasWorkspaceRoleAtLeast(membership.role, requiredRoles)
+      !hasWorkspaceRoleAtLeast(workspaceContext.role, requiredRoles)
     ) {
       throw new ForbiddenException("Insufficient workspace permissions");
     }
 
-    request.workspace = workspace;
-    request.workspaceMembership = membership;
+    request.workspaceContext = workspaceContext;
 
     return true;
   }

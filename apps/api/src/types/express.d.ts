@@ -1,16 +1,11 @@
-import type {
-  UsersSelect,
-  WorkspaceMembersSelect,
-  WorkspacesSelect,
-} from "@repo/db";
+import type { AuthenticatedWorkspaceContext, UserProfileData } from "@repo/shared";
 
 declare global {
   namespace Express {
     interface Request {
-      user?: UsersSelect;
+      user?: UserProfileData;
       token?: string;
-      workspace?: WorkspacesSelect;
-      workspaceMembership?: WorkspaceMembersSelect;
+      workspaceContext?: AuthenticatedWorkspaceContext;
     }
   }
 }

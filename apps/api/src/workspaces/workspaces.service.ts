@@ -17,6 +17,7 @@ import {
   users,
 } from "@repo/db";
 import {
+  type AuthenticatedWorkspaceContext,
   type WorkspaceDetailData,
   type WorkspaceListItemData,
   type WorkspaceMemberData,
@@ -27,12 +28,14 @@ import { UsersService } from "src/users/users.service";
 import { CreateWorkspaceDto } from "src/workspaces/dto/create-workspace.dto";
 import { InviteMemberDto } from "src/workspaces/dto/invite-member.dto";
 import { UpdateWorkspaceDto } from "src/workspaces/dto/update-workspace.dto";
+import { WorkspaceAccessService } from "src/workspaces/workspace-access.service";
 
 @Injectable()
 export class WorkspacesService {
   constructor(
     @Inject(DATABASE_TOKEN) private readonly db: Database,
     private readonly usersService: UsersService,
+    private readonly workspaceAccessService: WorkspaceAccessService,
   ) {}
 
   async createWorkspace(
@@ -117,28 +120,24 @@ export class WorkspacesService {
   async getWorkspaceForUser(
     userId: string,
     workspaceId: string,
+    context?: AuthenticatedWorkspaceContext,
   ): Promise<WorkspaceDetailData> {
-    const workspace = await this.getWorkspaceById(workspaceId);
-    const membership = await this.getMembership(workspaceId, userId);
+    const resolved =
+      context ??
+      (await this.workspaceAccessService.resolve(workspaceId, userId));
 
-    if (!membership) {
-      throw new ForbiddenException("You are not a member of this workspace");
-    }
-
-    return this.toWorkspaceDetail(workspace, membership.role);
+    return this.toWorkspaceDetail(resolved.workspace, resolved.role);
   }
 
   async updateWorkspace(
     userId: string,
     workspaceId: string,
     dto: UpdateWorkspaceDto,
+    context?: AuthenticatedWorkspaceContext,
   ): Promise<WorkspaceDetailData> {
-    await this.getWorkspaceById(workspaceId);
-    const membership = await this.getMembership(workspaceId, userId);
-
-    if (!membership) {
-      throw new ForbiddenException("You are not a member of this workspace");
-    }
+    const resolved =
+      context ??
+      (await this.workspaceAccessService.resolve(workspaceId, userId));
 
     if (dto.slug) {
       const [existing] = await this.db
@@ -161,7 +160,7 @@ export class WorkspacesService {
       throw new InternalServerErrorException("Workspace update failed.");
     }
 
-    return this.toWorkspaceDetail(updatedWorkspace, membership.role);
+    return this.toWorkspaceDetail(updatedWorkspace, resolved.role);
   }
 
   async addMember(
@@ -344,16 +343,11 @@ export class WorkspacesService {
   }
 
   private toWorkspaceDetail(
-    workspace: WorkspacesSelect,
+    workspace: WorkspacesSelect | AuthenticatedWorkspaceContext["workspace"],
     role: WorkspaceMembersSelect["role"],
   ): WorkspaceDetailData {
     return {
-      id: workspace.id,
-      name: workspace.name,
-      slug: workspace.slug,
-      ownerId: workspace.ownerId,
-      createdAt: workspace.createdAt,
-      updatedAt: workspace.updatedAt,
+      ...workspace,
       role,
     };
   }

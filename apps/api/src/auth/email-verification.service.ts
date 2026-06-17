@@ -7,7 +7,7 @@ import { type SuccessData } from "@repo/shared";
 import { AuthTokensService } from "src/auth/auth-tokens.service";
 import { EmailService } from "src/email/email.service";
 import { ConfirmEmailDto } from "src/auth/dto/confirm-email.dto";
-import { type UsersSelect } from "@repo/db";
+import { type UserProfileData } from "@repo/shared";
 
 @Injectable()
 export class EmailVerificationService {
@@ -41,7 +41,7 @@ export class EmailVerificationService {
     await this.emailService.sendVerificationEmail(email, token);
   }
 
-  async resendVerification(user: UsersSelect): Promise<SuccessData> {
+  async resendVerification(user: UserProfileData): Promise<SuccessData> {
     if (user.emailVerifiedAt) {
       throw new BadRequestException("Email is already verified");
     }

@@ -4,12 +4,13 @@ import {
   Injectable,
   UnauthorizedException,
 } from "@nestjs/common";
-import { type Database, type UsersSelect } from "@repo/db";
+import { type Database } from "@repo/db";
 import {
   INVALID_CREDENTIALS_MESSAGE,
   type SuccessData,
   type UserProfileData,
 } from "@repo/shared";
+import { toUserProfile } from "src/common/mappers/user.mapper";
 import { AccountsService } from "src/accounts/accounts.service";
 import { EmailVerificationService } from "src/auth/email-verification.service";
 import { UsersService } from "src/users/users.service";
@@ -27,7 +28,7 @@ export class UserLifecycleService {
   ) {}
 
   async updateProfile(
-    user: UsersSelect,
+    user: UserProfileData,
     dto: UpdateProfileDto,
   ): Promise<UserProfileData> {
     if (dto.email) {
@@ -51,25 +52,15 @@ export class UserLifecycleService {
         updatedUser.email,
         verificationToken,
       );
-      return {
-        id: updatedUser.id,
-        email: updatedUser.email,
-        name: updatedUser.name,
-        emailVerifiedAt: updatedUser.emailVerifiedAt,
-      };
+      return toUserProfile(updatedUser);
     }
 
     const updatedUser = await this.usersService.updateUser(user.id, dto);
-    return {
-      id: updatedUser.id,
-      email: updatedUser.email,
-      name: updatedUser.name,
-      emailVerifiedAt: updatedUser.emailVerifiedAt,
-    };
+    return toUserProfile(updatedUser);
   }
 
   async deleteAccount(
-    user: UsersSelect,
+    user: UserProfileData,
     dto: DeleteAccountDto,
   ): Promise<SuccessData> {
     const account = await this.accountsService.getAccountByUserId(user.id);

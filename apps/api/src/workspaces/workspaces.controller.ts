@@ -8,15 +8,17 @@ import {
   Post,
   UseGuards,
 } from "@nestjs/common";
-import { UsersSelect } from "@repo/db";
 import {
+  type AuthenticatedWorkspaceContext,
   type SuccessData,
+  type UserProfileData,
   type WorkspaceDetailData,
   type WorkspaceListItemData,
   type WorkspaceMemberData,
   type WorkspaceMemberWithUserData,
 } from "@repo/shared";
 import { CurrentUser } from "src/auth/decorators/current-user.decorator";
+import { CurrentWorkspace } from "src/workspaces/decorators/current-workspace.decorator";
 import { WorkspaceRoles } from "src/workspaces/decorators/workspace-roles.decorator";
 import { CreateWorkspaceDto } from "src/workspaces/dto/create-workspace.dto";
 import { InviteMemberDto } from "src/workspaces/dto/invite-member.dto";
@@ -31,42 +33,53 @@ export class WorkspacesController {
 
   @Post()
   create(
-    @CurrentUser() user: UsersSelect,
+    @CurrentUser() user: UserProfileData,
     @Body() dto: CreateWorkspaceDto,
   ): Promise<WorkspaceDetailData> {
     return this.workspacesService.createWorkspace(user.id, dto);
   }
 
   @Get()
-  list(@CurrentUser() user: UsersSelect): Promise<WorkspaceListItemData[]> {
+  list(@CurrentUser() user: UserProfileData): Promise<WorkspaceListItemData[]> {
     return this.workspacesService.listWorkspacesForUser(user.id);
   }
 
   @Get(":id")
   @UseGuards(WorkspaceGuard)
   getById(
-    @CurrentUser() user: UsersSelect,
+    @CurrentUser() user: UserProfileData,
     @Param("id") workspaceId: string,
+    @CurrentWorkspace() context: AuthenticatedWorkspaceContext,
   ): Promise<WorkspaceDetailData> {
-    return this.workspacesService.getWorkspaceForUser(user.id, workspaceId);
+    return this.workspacesService.getWorkspaceForUser(
+      user.id,
+      workspaceId,
+      context,
+    );
   }
 
   @Patch(":id")
   @UseGuards(WorkspaceGuard)
   @WorkspaceRoles("admin", "owner")
   update(
-    @CurrentUser() user: UsersSelect,
+    @CurrentUser() user: UserProfileData,
     @Param("id") workspaceId: string,
     @Body() dto: UpdateWorkspaceDto,
+    @CurrentWorkspace() context: AuthenticatedWorkspaceContext,
   ): Promise<WorkspaceDetailData> {
-    return this.workspacesService.updateWorkspace(user.id, workspaceId, dto);
+    return this.workspacesService.updateWorkspace(
+      user.id,
+      workspaceId,
+      dto,
+      context,
+    );
   }
 
   @Delete(":id")
   @UseGuards(WorkspaceGuard)
   @WorkspaceRoles("owner")
   async delete(
-    @CurrentUser() user: UsersSelect,
+    @CurrentUser() user: UserProfileData,
     @Param("id") workspaceId: string,
   ): Promise<SuccessData> {
     await this.workspacesService.deleteWorkspace(workspaceId, user.id);
@@ -76,7 +89,7 @@ export class WorkspacesController {
   @Post(":id/leave")
   @UseGuards(WorkspaceGuard)
   async leave(
-    @CurrentUser() user: UsersSelect,
+    @CurrentUser() user: UserProfileData,
     @Param("id") workspaceId: string,
   ): Promise<SuccessData> {
     await this.workspacesService.leaveWorkspace(workspaceId, user.id);

@@ -1,9 +1,16 @@
 import { createParamDecorator, ExecutionContext } from "@nestjs/common";
-import { type WorkspacesSelect } from "@repo/db";
+import {
+  type AuthenticatedWorkspaceContext,
+  type WorkspaceData,
+} from "@repo/shared";
 
 export const CurrentWorkspace = createParamDecorator(
-  (_data: unknown, context: ExecutionContext): WorkspacesSelect => {
+  (
+    data: "workspace" | undefined,
+    context: ExecutionContext,
+  ): AuthenticatedWorkspaceContext | WorkspaceData => {
     const request = context.switchToHttp().getRequest();
-    return request.workspace;
+    const workspaceContext = request.workspaceContext as AuthenticatedWorkspaceContext;
+    return data === "workspace" ? workspaceContext.workspace : workspaceContext;
   },
 );

@@ -20,7 +20,7 @@ import {
 import { ChangePasswordDto } from "src/auth/dto/change-password.dto";
 import { ForgotPasswordDto } from "src/auth/dto/forgot-password.dto";
 import { ResetPasswordDto } from "src/auth/dto/reset-password.dto";
-import { type UsersSelect } from "@repo/db";
+import { type UserProfileData } from "@repo/shared";
 
 @Injectable()
 export class CredentialService {
@@ -63,7 +63,7 @@ export class CredentialService {
   }
 
   async changePassword(
-    user: UsersSelect,
+    user: UserProfileData,
     dto: ChangePasswordDto,
   ): Promise<SuccessData> {
     const account = await this.accountsService.getAccountByUserId(user.id);

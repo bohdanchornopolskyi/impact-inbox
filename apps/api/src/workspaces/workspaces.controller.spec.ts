@@ -34,7 +34,12 @@ describe("WorkspacesController", () => {
   });
 
   it("lists workspaces for the current user", async () => {
-    const user = { id: "user-1", email: "test@example.com", name: "Test" };
+    const user = {
+      id: "user-1",
+      email: "test@example.com",
+      name: "Test",
+      emailVerifiedAt: null,
+    };
     const workspaces = [{ id: "ws-1", name: "Test Workspace", role: "owner" }];
     mockWorkspacesService.listWorkspacesForUser.mockResolvedValue(workspaces);
 

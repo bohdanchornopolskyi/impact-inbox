@@ -6,6 +6,7 @@ import {
 } from "@nestjs/common";
 import { Reflector } from "@nestjs/core";
 import { SessionsService } from "src/auth/sessions.service";
+import { toUserProfile } from "src/common/mappers/user.mapper";
 import { Request } from "express";
 import { IS_PUBLIC_KEY } from "./decorators/public.decorator";
 
@@ -40,7 +41,7 @@ export class AuthGuard implements CanActivate {
         throw new UnauthorizedException();
       }
 
-      request.user = user;
+      request.user = toUserProfile(user);
       request.token = token;
 
       return true;
