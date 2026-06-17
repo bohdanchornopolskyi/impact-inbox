@@ -236,6 +236,7 @@ export type HtmlBlock = z.infer<typeof htmlBlockSchema>;
 export type TableBlock = z.infer<typeof tableBlockSchema>;
 export type ShapeBlock = z.infer<typeof shapeBlockSchema>;
 export type ContentBlock = z.infer<typeof contentBlockSchema>;
+export type ContentBlockType = ContentBlock["type"];
 export type SocialPlatform = z.infer<typeof socialPlatformSchema>;
 export type SocialLink = z.infer<typeof socialLinkSchema>;
 export type TableColumn = z.infer<typeof tableColumnSchema>;

@@ -20,6 +20,7 @@ import {
   type WorkspaceMemberWithUserData,
   type WorkspaceListItemData,
   type WorkspaceDetailData,
+  type AuthenticatedWorkspaceContext,
 } from "./workspace";
 import {
   createUserSchema,
@@ -89,6 +90,7 @@ import {
   type TemplateSettings,
   type BlockStyles,
   type ContentBlock,
+  type ContentBlockType,
   type SectionBlock,
   type RowBlock,
   type ColumnBlock,
@@ -145,6 +147,7 @@ export {
   type WorkspaceMemberWithUserData,
   type WorkspaceListItemData,
   type WorkspaceDetailData,
+  type AuthenticatedWorkspaceContext,
   workspaceRoleSchema,
   createTemplateSchema,
   updateTemplateSchema,
@@ -182,6 +185,7 @@ export {
   type TemplateSettings,
   type BlockStyles,
   type ContentBlock,
+  type ContentBlockType,
   type SectionBlock,
   type RowBlock,
   type ColumnBlock,

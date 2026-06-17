@@ -79,3 +79,8 @@ export type WorkspaceMemberWithUserData = z.infer<
 >;
 export type WorkspaceListItemData = z.infer<typeof workspaceListItemSchema>;
 export type WorkspaceDetailData = z.infer<typeof workspaceDetailSchema>;
+
+export type AuthenticatedWorkspaceContext = {
+  workspace: WorkspaceData;
+  role: z.infer<typeof workspaceRoleSchema>;
+};

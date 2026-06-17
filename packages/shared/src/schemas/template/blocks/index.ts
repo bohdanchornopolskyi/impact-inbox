@@ -31,6 +31,7 @@ export {
   type ShapeBlock,
   type ShapeType,
   type ContentBlock,
+  type ContentBlockType,
 } from "./content";
 
 export {
