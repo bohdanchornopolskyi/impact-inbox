@@ -32,15 +32,15 @@ import type {
   TableBlock,
   TableColumn,
   TemplateContentData,
-  TemplateSettings,
   TextBlock,
 } from "@repo/shared";
 import { blockStylesToCss } from "../styles";
+import {
+  registerContentBlockRenderer,
+  renderContentBlockHtml,
+  type RenderContext,
+} from "./content-block-registry";
 import { renderContentBlockText } from "./plain-text";
-
-type RenderContext = {
-  settings: TemplateSettings;
-};
 
 function renderHeadingBlock(block: HeadingBlock, context: RenderContext) {
   const { text, level, color, fontSize, fontWeight } = block.props;
@@ -365,31 +365,20 @@ function renderShapeBlock(block: ShapeBlock) {
   );
 }
 
+registerContentBlockRenderer("heading", { html: renderHeadingBlock });
+registerContentBlockRenderer("text", { html: renderTextBlock });
+registerContentBlockRenderer("richtext", { html: renderRichtextBlock });
+registerContentBlockRenderer("button", { html: renderButtonBlock });
+registerContentBlockRenderer("image", { html: renderImageBlock });
+registerContentBlockRenderer("divider", { html: renderDividerBlock });
+registerContentBlockRenderer("spacer", { html: renderSpacerBlock });
+registerContentBlockRenderer("social", { html: renderSocialBlock });
+registerContentBlockRenderer("html", { html: renderHtmlBlock });
+registerContentBlockRenderer("table", { html: renderTableBlock });
+registerContentBlockRenderer("shape", { html: renderShapeBlock });
+
 export function renderContentBlock(block: ContentBlock, context: RenderContext) {
-  switch (block.type) {
-    case "heading":
-      return renderHeadingBlock(block, context);
-    case "text":
-      return renderTextBlock(block, context);
-    case "richtext":
-      return renderRichtextBlock(block, context);
-    case "button":
-      return renderButtonBlock(block, context);
-    case "image":
-      return renderImageBlock(block);
-    case "divider":
-      return renderDividerBlock(block);
-    case "spacer":
-      return renderSpacerBlock(block);
-    case "social":
-      return renderSocialBlock(block, context);
-    case "html":
-      return renderHtmlBlock(block);
-    case "table":
-      return renderTableBlock(block, context);
-    case "shape":
-      return renderShapeBlock(block);
-  }
+  return renderContentBlockHtml(block, context);
 }
 
 function renderColumnBlock(column: ColumnBlock, context: RenderContext) {
