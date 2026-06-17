@@ -6,6 +6,7 @@ import {
 } from "@nestjs/common";
 import { and, eq } from "drizzle-orm";
 import { type TemplatesSelect, templates } from "@repo/db";
+import { renderTemplate } from "@repo/email-renderer";
 import {
   DEFAULT_TEMPLATE_CONTENT,
   type CreateTemplateInput,
@@ -17,14 +18,10 @@ import {
 } from "@repo/shared";
 import { DATABASE_TOKEN } from "src/database/database.constants";
 import type { Database } from "@repo/db";
-import { TemplateRendererService } from "src/templates/template-renderer.service";
 
 @Injectable()
 export class TemplatesService {
-  constructor(
-    @Inject(DATABASE_TOKEN) private readonly db: Database,
-    private readonly templateRendererService: TemplateRendererService,
-  ) {}
+  constructor(@Inject(DATABASE_TOKEN) private readonly db: Database) {}
 
   async listTemplates(
     workspaceId: string,
@@ -116,13 +113,13 @@ export class TemplatesService {
     templateId: string,
   ): Promise<TemplatePreviewData> {
     const template = await this.findTemplate(workspaceId, templateId);
-    return this.templateRendererService.render(template.content);
+    return renderTemplate(template.content);
   }
 
   async previewContent(
     content: TemplateContentData,
   ): Promise<TemplatePreviewData> {
-    return this.templateRendererService.render(content);
+    return renderTemplate(content);
   }
 
   private async findTemplate(
