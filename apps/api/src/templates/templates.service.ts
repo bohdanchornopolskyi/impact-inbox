@@ -1,10 +1,12 @@
 import {
+  BadRequestException,
   Inject,
   Injectable,
   InternalServerErrorException,
   NotFoundException,
 } from "@nestjs/common";
 import { and, eq } from "drizzle-orm";
+import { ZodError } from "zod";
 import { type TemplatesSelect, templates } from "@repo/db";
 import { renderTemplate } from "@repo/email-renderer";
 import {
@@ -15,9 +17,17 @@ import {
   type TemplateData,
   type TemplatePreviewData,
   type UpdateTemplateInput,
+  templateContentSchema,
 } from "@repo/shared";
 import { DATABASE_TOKEN } from "src/database/database.constants";
 import type { Database } from "@repo/db";
+
+function formatZodIssueDetails(issues: ZodError["issues"]): string[] {
+  return issues.map((issue) => {
+    const field = issue.path.map(String).join(".");
+    return field.length > 0 ? `${field}: ${issue.message}` : issue.message;
+  });
+}
 
 @Injectable()
 export class TemplatesService {
@@ -113,13 +123,38 @@ export class TemplatesService {
     templateId: string,
   ): Promise<TemplatePreviewData> {
     const template = await this.findTemplate(workspaceId, templateId);
-    return renderTemplate(template.content);
+    return this.renderValidatedContent(template.content);
   }
 
   async previewContent(
     content: TemplateContentData,
   ): Promise<TemplatePreviewData> {
-    return renderTemplate(content);
+    return this.renderValidatedContent(content);
+  }
+
+  private parseTemplateContent(content: unknown): TemplateContentData {
+    const result = templateContentSchema.safeParse(content);
+
+    if (!result.success) {
+      throw new BadRequestException({
+        message: "Invalid template content",
+        details: formatZodIssueDetails(result.error.issues),
+      });
+    }
+
+    return result.data;
+  }
+
+  private async renderValidatedContent(
+    content: unknown,
+  ): Promise<TemplatePreviewData> {
+    const validated = this.parseTemplateContent(content);
+
+    try {
+      return await renderTemplate(validated);
+    } catch {
+      throw new BadRequestException("Template rendering failed");
+    }
   }
 
   private async findTemplate(

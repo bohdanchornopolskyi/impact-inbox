@@ -13,7 +13,7 @@ import type { ApiError } from "@repo/shared";
 
 function isExceptionBody(
   body: string | object,
-): body is { message?: string | string[] } {
+): body is { message?: string | string[]; details?: string[] } {
   return typeof body === "object" && body !== null && "message" in body;
 }
 
@@ -100,7 +100,7 @@ export class HttpExceptionFilter implements ExceptionFilter {
       return { code, message: exception.message };
     }
 
-    const { message } = body;
+    const { message, details } = body;
 
     if (Array.isArray(message)) {
       return {
@@ -111,7 +111,16 @@ export class HttpExceptionFilter implements ExceptionFilter {
     }
 
     if (typeof message === "string" && message.length > 0) {
-      return { code, message };
+      const errorCode =
+        status === HttpStatus.BAD_REQUEST && details?.length
+          ? "VALIDATION_ERROR"
+          : code;
+
+      return {
+        code: errorCode,
+        message,
+        ...(details?.length ? { details } : {}),
+      };
     }
 
     return { code, message: exception.message };

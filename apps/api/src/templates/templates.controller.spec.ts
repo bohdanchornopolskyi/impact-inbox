@@ -53,4 +53,64 @@ describe("TemplatesController", () => {
       dto,
     );
   });
+
+  it("gets a template by id", async () => {
+    const template = { id: "tpl-1", name: "Welcome" };
+    mockTemplatesService.getTemplate.mockResolvedValue(template);
+
+    await expect(controller.getById("ws-1", "tpl-1")).resolves.toEqual(template);
+    expect(mockTemplatesService.getTemplate).toHaveBeenCalledWith(
+      "ws-1",
+      "tpl-1",
+    );
+  });
+
+  it("updates a template", async () => {
+    const dto = { name: "Updated" };
+    const updated = { id: "tpl-1", ...dto };
+    mockTemplatesService.updateTemplate.mockResolvedValue(updated);
+
+    await expect(controller.update("ws-1", "tpl-1", dto)).resolves.toEqual(
+      updated,
+    );
+    expect(mockTemplatesService.updateTemplate).toHaveBeenCalledWith(
+      "ws-1",
+      "tpl-1",
+      dto,
+    );
+  });
+
+  it("deletes a template", async () => {
+    mockTemplatesService.deleteTemplate.mockResolvedValue(undefined);
+
+    await expect(controller.delete("ws-1", "tpl-1")).resolves.toEqual({
+      success: true,
+    });
+    expect(mockTemplatesService.deleteTemplate).toHaveBeenCalledWith(
+      "ws-1",
+      "tpl-1",
+    );
+  });
+
+  it("previews stored template content", async () => {
+    const preview = { html: "<html></html>", text: "Hello" };
+    mockTemplatesService.previewTemplate.mockResolvedValue(preview);
+
+    await expect(controller.preview("ws-1", "tpl-1")).resolves.toEqual(preview);
+    expect(mockTemplatesService.previewTemplate).toHaveBeenCalledWith(
+      "ws-1",
+      "tpl-1",
+    );
+  });
+
+  it("previews arbitrary content", async () => {
+    const content = { version: 1 as const, settings: { width: 600 }, body: [] };
+    const preview = { html: "<html></html>", text: "" };
+    mockTemplatesService.previewContent.mockResolvedValue(preview);
+
+    await expect(controller.previewContent({ content })).resolves.toEqual(
+      preview,
+    );
+    expect(mockTemplatesService.previewContent).toHaveBeenCalledWith(content);
+  });
 });
