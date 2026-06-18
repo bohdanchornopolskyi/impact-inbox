@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 
 export type RenderContext = {
   settings: TemplateSettings;
+  qrImages: Map<string, string>;
 };
 
 type HtmlRenderer<T extends ContentBlock = ContentBlock> = (

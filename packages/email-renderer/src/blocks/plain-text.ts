@@ -2,15 +2,19 @@ import type {
   ButtonBlock,
   ContentBlock,
   DividerBlock,
+  FooterBlock,
   HeadingBlock,
   HtmlBlock,
   ImageBlock,
+  LogoBlock,
+  QrBlock,
   RichtextBlock,
   ShapeBlock,
   SocialBlock,
   SpacerBlock,
   TableBlock,
   TextBlock,
+  VideoBlock,
 } from "@repo/shared";
 import {
   registerContentBlockRenderer,
@@ -39,6 +43,47 @@ function renderButtonBlockText(block: ButtonBlock): string {
 
 function renderImageBlockText(block: ImageBlock): string {
   return block.props.alt ?? block.props.src;
+}
+
+function renderLogoBlockText(block: LogoBlock): string {
+  return block.props.alt ?? "Logo";
+}
+
+function renderVideoBlockText(block: VideoBlock): string {
+  const label = block.props.playLabel ?? "Watch Video";
+  return `${label}: ${block.props.videoUrl}`;
+}
+
+function renderFooterBlockText(block: FooterBlock): string {
+  const lines: string[] = [];
+
+  if (block.props.companyName) {
+    lines.push(block.props.companyName);
+  }
+
+  if (block.props.address) {
+    lines.push(block.props.address);
+  }
+
+  for (const link of block.props.links ?? []) {
+    lines.push(`${link.text}: ${link.href}`);
+  }
+
+  if (block.props.unsubscribeUrl) {
+    lines.push(
+      `${block.props.unsubscribeLabel ?? "Unsubscribe"}: ${block.props.unsubscribeUrl}`,
+    );
+  }
+
+  if (block.props.copyright) {
+    lines.push(block.props.copyright);
+  }
+
+  return lines.join("\n");
+}
+
+function renderQrBlockText(block: QrBlock): string {
+  return block.props.data;
 }
 
 function renderDividerBlockText(): string {
@@ -74,12 +119,16 @@ registerContentBlockRenderer("text", { text: renderTextBlockText });
 registerContentBlockRenderer("richtext", { text: renderRichtextBlockText });
 registerContentBlockRenderer("button", { text: renderButtonBlockText });
 registerContentBlockRenderer("image", { text: renderImageBlockText });
+registerContentBlockRenderer("logo", { text: renderLogoBlockText });
+registerContentBlockRenderer("video", { text: renderVideoBlockText });
 registerContentBlockRenderer("divider", { text: renderDividerBlockText });
 registerContentBlockRenderer("spacer", { text: renderSpacerBlockText });
 registerContentBlockRenderer("social", { text: renderSocialBlockText });
 registerContentBlockRenderer("html", { text: renderHtmlBlockText });
 registerContentBlockRenderer("table", { text: renderTableBlockText });
 registerContentBlockRenderer("shape", { text: renderShapeBlockText });
+registerContentBlockRenderer("footer", { text: renderFooterBlockText });
+registerContentBlockRenderer("qr", { text: renderQrBlockText });
 
 export function renderContentBlockText(block: ContentBlock): string | null {
   return renderContentBlockTextDispatch(block);

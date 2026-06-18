@@ -65,5 +65,9 @@ export function blockStylesToCss(styles?: BlockStyles): CSSProperties {
     css.verticalAlign = styles.verticalAlign;
   }
 
+  if (styles.letterSpacing !== undefined) {
+    css.letterSpacing = `${styles.letterSpacing}px`;
+  }
+
   return css;
 }
