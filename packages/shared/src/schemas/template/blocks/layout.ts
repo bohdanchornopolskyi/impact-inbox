@@ -29,12 +29,25 @@ export const rowBlockSchema = layoutBaseSchema.extend({
   children: z.array(columnBlockSchema).min(1),
 });
 
+export const backgroundSizeSchema = z.enum(["cover", "contain", "auto"]);
+
+export const backgroundRepeatSchema = z.enum([
+  "no-repeat",
+  "repeat",
+  "repeat-x",
+  "repeat-y",
+]);
+
 export const sectionBlockSchema = layoutBaseSchema.extend({
   type: z.literal("section"),
   props: z
     .object({
       fullWidth: z.boolean().optional(),
       reverseColumnsOnMobile: z.boolean().optional(),
+      backgroundImage: z.string().url().optional(),
+      backgroundSize: backgroundSizeSchema.optional(),
+      backgroundPosition: z.string().max(100).optional(),
+      backgroundRepeat: backgroundRepeatSchema.optional(),
     })
     .strict(),
   children: z.array(rowBlockSchema),
@@ -50,3 +63,5 @@ export type ColumnBlock = z.infer<typeof columnBlockSchema>;
 export type RowBlock = z.infer<typeof rowBlockSchema>;
 export type SectionBlock = z.infer<typeof sectionBlockSchema>;
 export type LayoutBlock = z.infer<typeof layoutBlockSchema>;
+export type BackgroundSize = z.infer<typeof backgroundSizeSchema>;
+export type BackgroundRepeat = z.infer<typeof backgroundRepeatSchema>;

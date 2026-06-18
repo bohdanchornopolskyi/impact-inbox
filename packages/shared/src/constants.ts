@@ -14,12 +14,16 @@ const CONTENT_BLOCK_TYPES = [
   "richtext",
   "button",
   "image",
+  "logo",
+  "video",
   "divider",
   "spacer",
   "social",
   "html",
   "table",
   "shape",
+  "footer",
+  "qr",
 ] as const;
 
 const TEMPLATE_BLOCK_TYPES = [
@@ -96,6 +100,20 @@ const TEMPLATE_BLOCK_DEFINITIONS = {
     description: "Image with optional link",
     allowedParents: ["column"],
   },
+  logo: {
+    type: "logo",
+    category: "content",
+    label: "Logo",
+    description: "Brand logo with optional link",
+    allowedParents: ["column"],
+  },
+  video: {
+    type: "video",
+    category: "content",
+    label: "Video",
+    description: "Video thumbnail linked to external player",
+    allowedParents: ["column"],
+  },
   divider: {
     type: "divider",
     category: "content",
@@ -136,6 +154,20 @@ const TEMPLATE_BLOCK_DEFINITIONS = {
     category: "content",
     label: "Shape",
     description: "Decorative shape element",
+    allowedParents: ["column"],
+  },
+  footer: {
+    type: "footer",
+    category: "content",
+    label: "Footer",
+    description: "Footer with company info and unsubscribe link",
+    allowedParents: ["column"],
+  },
+  qr: {
+    type: "qr",
+    category: "content",
+    label: "QR Code",
+    description: "Scannable QR code image",
     allowedParents: ["column"],
   },
 } as const satisfies Record<

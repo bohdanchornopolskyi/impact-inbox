@@ -73,11 +73,13 @@ export {
   borderStyleSchema,
   textAlignSchema,
   verticalAlignSchema,
+  blockAlignSchema,
   blockStylesSchema,
   type Spacing,
   type BorderStyle,
   type TextAlign,
   type VerticalAlign,
+  type BlockAlign,
   type BlockStyles,
 } from "./styles";
 

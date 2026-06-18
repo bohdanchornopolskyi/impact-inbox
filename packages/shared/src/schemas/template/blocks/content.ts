@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { blockStylesSchema } from "../styles";
+import { blockAlignSchema, blockStylesSchema } from "../styles";
 
 const blockBaseSchema = z.object({
   id: z.string().min(1),
@@ -98,6 +98,75 @@ export const imageBlockSchema = blockBaseSchema.extend({
       width: z.union([z.number().min(1), z.literal("100%")]).optional(),
       height: z.number().min(1).optional(),
       borderRadius: z.number().min(0).optional(),
+      align: blockAlignSchema.optional(),
+    })
+    .strict(),
+});
+
+export const logoBlockSchema = blockBaseSchema.extend({
+  type: z.literal("logo"),
+  props: z
+    .object({
+      src: z.string().url(),
+      alt: z.string().optional(),
+      href: z.string().url().optional(),
+      width: z.number().min(1).max(600).optional(),
+      maxHeight: z.number().min(1).max(300).optional(),
+      borderRadius: z.number().min(0).optional(),
+      align: blockAlignSchema.optional(),
+    })
+    .strict(),
+});
+
+export const videoBlockSchema = blockBaseSchema.extend({
+  type: z.literal("video"),
+  props: z
+    .object({
+      thumbnailSrc: z.string().url(),
+      videoUrl: z.string().url(),
+      alt: z.string().optional(),
+      width: z.union([z.number().min(1), z.literal("100%")]).optional(),
+      borderRadius: z.number().min(0).optional(),
+      align: blockAlignSchema.optional(),
+      playButtonColor: z.string().optional(),
+      playLabel: z.string().optional(),
+    })
+    .strict(),
+});
+
+export const footerLinkSchema = z
+  .object({
+    text: z.string().min(1),
+    href: z.string().url(),
+  })
+  .strict();
+
+export const footerBlockSchema = blockBaseSchema.extend({
+  type: z.literal("footer"),
+  props: z
+    .object({
+      companyName: z.string().optional(),
+      address: z.string().optional(),
+      copyright: z.string().optional(),
+      unsubscribeUrl: z.string().url().optional(),
+      unsubscribeLabel: z.string().optional(),
+      links: z.array(footerLinkSchema).optional(),
+      textColor: z.string().optional(),
+      fontSize: z.number().min(8).max(24).optional(),
+      align: blockAlignSchema.optional(),
+    })
+    .strict(),
+});
+
+export const qrBlockSchema = blockBaseSchema.extend({
+  type: z.literal("qr"),
+  props: z
+    .object({
+      data: z.string().min(1).max(2000),
+      size: z.number().min(64).max(512).optional(),
+      foregroundColor: z.string().optional(),
+      backgroundColor: z.string().optional(),
+      align: blockAlignSchema.optional(),
     })
     .strict(),
 });
@@ -216,12 +285,16 @@ export const contentBlockSchema = z.discriminatedUnion("type", [
   richtextBlockSchema,
   buttonBlockSchema,
   imageBlockSchema,
+  logoBlockSchema,
+  videoBlockSchema,
   dividerBlockSchema,
   spacerBlockSchema,
   socialBlockSchema,
   htmlBlockSchema,
   tableBlockSchema,
   shapeBlockSchema,
+  footerBlockSchema,
+  qrBlockSchema,
 ]);
 
 export type HeadingBlock = z.infer<typeof headingBlockSchema>;
@@ -229,6 +302,11 @@ export type TextBlock = z.infer<typeof textBlockSchema>;
 export type RichtextBlock = z.infer<typeof richtextBlockSchema>;
 export type ButtonBlock = z.infer<typeof buttonBlockSchema>;
 export type ImageBlock = z.infer<typeof imageBlockSchema>;
+export type LogoBlock = z.infer<typeof logoBlockSchema>;
+export type VideoBlock = z.infer<typeof videoBlockSchema>;
+export type FooterBlock = z.infer<typeof footerBlockSchema>;
+export type FooterLink = z.infer<typeof footerLinkSchema>;
+export type QrBlock = z.infer<typeof qrBlockSchema>;
 export type DividerBlock = z.infer<typeof dividerBlockSchema>;
 export type SpacerBlock = z.infer<typeof spacerBlockSchema>;
 export type SocialBlock = z.infer<typeof socialBlockSchema>;

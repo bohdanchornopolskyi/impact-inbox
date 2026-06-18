@@ -23,6 +23,8 @@ export const textAlignSchema = z.enum(["left", "center", "right", "justify"]);
 
 export const verticalAlignSchema = z.enum(["top", "middle", "bottom"]);
 
+export const blockAlignSchema = z.enum(["left", "center", "right"]);
+
 export const blockStylesSchema = z
   .object({
     padding: spacingSchema.optional(),
@@ -36,6 +38,7 @@ export const blockStylesSchema = z
     width: z.union([z.number().min(0), z.literal("100%")]).optional(),
     height: z.number().min(0).optional(),
     verticalAlign: verticalAlignSchema.optional(),
+    letterSpacing: z.number().min(-5).max(20).optional(),
   })
   .strict()
   .partial();
@@ -44,4 +47,5 @@ export type Spacing = z.infer<typeof spacingSchema>;
 export type BorderStyle = z.infer<typeof borderStyleSchema>;
 export type TextAlign = z.infer<typeof textAlignSchema>;
 export type VerticalAlign = z.infer<typeof verticalAlignSchema>;
+export type BlockAlign = z.infer<typeof blockAlignSchema>;
 export type BlockStyles = z.infer<typeof blockStylesSchema>;
