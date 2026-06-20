@@ -1,32 +1,32 @@
 import { INestApplication } from "@nestjs/common";
-import { Test, TestingModule } from "@nestjs/testing";
 import request from "supertest";
 import { App } from "supertest/types";
-import { ZodValidationPipe } from "nestjs-zod";
-import { AppModule } from "./../src/app.module";
-import { HttpExceptionFilter } from "./../src/common/filters/http-exception.filter";
-import { ResponseInterceptor } from "./../src/common/interceptors/response.interceptor";
+import { createE2eApp } from "./helpers/create-e2e-app";
 
-describe("AppController (e2e)", () => {
+describe("App (e2e)", () => {
   let app: INestApplication<App>;
 
-  beforeEach(async () => {
-    const moduleFixture: TestingModule = await Test.createTestingModule({
-      imports: [AppModule],
-    }).compile();
-
-    app = moduleFixture.createNestApplication();
-    app.setGlobalPrefix("api");
-    app.useGlobalPipes(new ZodValidationPipe());
-    app.useGlobalInterceptors(new ResponseInterceptor());
-    app.useGlobalFilters(new HttpExceptionFilter());
-    await app.init();
+  beforeAll(async () => {
+    app = await createE2eApp();
   });
 
-  it("/api (GET)", () => {
+  afterAll(async () => {
+    await app.close();
+  });
+
+  it("GET /api/health", () => {
     return request(app.getHttpServer())
-      .get("/api")
+      .get("/api/health")
       .expect(200)
-      .expect({ data: "Hello World!" });
+      .expect({ data: { ok: true } });
+  });
+
+  it("allows CORS preflight from the web app origin", () => {
+    return request(app.getHttpServer())
+      .options("/api/health")
+      .set("Origin", process.env.WEB_ORIGIN ?? "http://localhost:3000")
+      .set("Access-Control-Request-Method", "GET")
+      .expect(204)
+      .expect("Access-Control-Allow-Origin", process.env.WEB_ORIGIN ?? "http://localhost:3000");
   });
 });
