@@ -1,25 +1,25 @@
 import { pgTable, uuid, index, text, unique } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
-import { users } from "./users";
-import { timestamps } from "./_helpers";
-
 import { type WorkspaceRole } from "@repo/shared";
+import { organizations } from "./organizations";
+import { users } from "./users";
 import { templates } from "./templates";
+import { timestamps } from "./_helpers";
 
 export const workspaces = pgTable("workspaces", {
   id: uuid("id").primaryKey().defaultRandom(),
+  organizationId: uuid("organization_id")
+    .notNull()
+    .references(() => organizations.id, { onDelete: "cascade" }),
   name: text("name").notNull(),
   slug: text("slug").notNull().unique(),
-  ownerId: uuid("owner_id")
-    .notNull()
-    .references(() => users.id, { onDelete: "cascade" }),
   ...timestamps,
 });
 
 export const workspacesRelations = relations(workspaces, ({ one, many }) => ({
-  owner: one(users, {
-    fields: [workspaces.ownerId],
-    references: [users.id],
+  organization: one(organizations, {
+    fields: [workspaces.organizationId],
+    references: [organizations.id],
   }),
   members: many(workspaceMembers),
   templates: many(templates),
