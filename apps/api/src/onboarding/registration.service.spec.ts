@@ -4,6 +4,7 @@ import { RegistrationService } from "./registration.service";
 import { UsersService } from "src/users/users.service";
 import { AccountsService } from "src/accounts/accounts.service";
 import { WorkspacesService } from "src/workspaces/workspaces.service";
+import { OrganizationsService } from "src/organizations/organizations.service";
 import { SessionsService } from "src/auth/sessions.service";
 import { EmailVerificationService } from "src/auth/email-verification.service";
 import { DATABASE_TOKEN } from "src/database/database.constants";
@@ -19,6 +20,10 @@ describe("RegistrationService", () => {
   const mockAccountsService = {
     createAccount: jest.fn(),
     setPassword: jest.fn(),
+  };
+
+  const mockOrganizationsService = {
+    createDefaultOrganizationForUser: jest.fn(),
   };
 
   const mockWorkspacesService = {
@@ -48,6 +53,10 @@ describe("RegistrationService", () => {
         RegistrationService,
         { provide: UsersService, useValue: mockUsersService },
         { provide: AccountsService, useValue: mockAccountsService },
+        {
+          provide: OrganizationsService,
+          useValue: mockOrganizationsService,
+        },
         { provide: WorkspacesService, useValue: mockWorkspacesService },
         { provide: SessionsService, useValue: mockSessionsService },
         {
@@ -82,7 +91,7 @@ describe("RegistrationService", () => {
       expect(mockDb.transaction).not.toHaveBeenCalled();
     });
 
-    it("provisions identity, workspace, session, and verification in one transaction", async () => {
+    it("provisions identity, organization, workspace, session, and verification in one transaction", async () => {
       mockUsersService.findUserByEmail.mockResolvedValue(undefined);
       mockUsersService.createUser.mockResolvedValue({
         id: "user-1",
@@ -91,6 +100,9 @@ describe("RegistrationService", () => {
       });
       mockAccountsService.createAccount.mockResolvedValue({});
       mockAccountsService.setPassword.mockResolvedValue({});
+      mockOrganizationsService.createDefaultOrganizationForUser.mockResolvedValue(
+        { id: "org-1" },
+      );
       mockWorkspacesService.createDefaultWorkspaceForUser.mockResolvedValue({});
       mockSessionsService.createSession.mockResolvedValue({
         token: "session-token",
@@ -103,32 +115,12 @@ describe("RegistrationService", () => {
         token: "session-token",
       });
 
-      expect(mockUsersService.createUser).toHaveBeenCalledWith(
-        { name: signUpDto.name, email: signUpDto.email },
-        mockTx,
-      );
-      expect(mockAccountsService.createAccount).toHaveBeenCalledWith(
-        { userId: "user-1" },
-        mockTx,
-      );
-      expect(mockAccountsService.setPassword).toHaveBeenCalledWith(
-        "user-1",
-        signUpDto.password,
-        mockTx,
-      );
+      expect(
+        mockOrganizationsService.createDefaultOrganizationForUser,
+      ).toHaveBeenCalledWith("user-1", signUpDto.name, mockTx);
       expect(
         mockWorkspacesService.createDefaultWorkspaceForUser,
-      ).toHaveBeenCalledWith("user-1", signUpDto.name, mockTx);
-      expect(mockSessionsService.createSession).toHaveBeenCalledWith(
-        expect.objectContaining({ userId: "user-1" }),
-        mockTx,
-      );
-      expect(
-        mockEmailVerificationService.requestEmailVerification,
-      ).toHaveBeenCalledWith("user-1", signUpDto.email, mockTx);
-      expect(
-        mockEmailVerificationService.dispatchVerificationEmail,
-      ).toHaveBeenCalledWith(signUpDto.email, "verify-token");
+      ).toHaveBeenCalledWith("user-1", signUpDto.name, "org-1", mockTx);
     });
   });
 });

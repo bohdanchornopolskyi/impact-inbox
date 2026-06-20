@@ -49,6 +49,22 @@ export class WorkspaceAccessService {
     return this.toAuthenticatedContext(workspace, membership);
   }
 
+  async resolveBySlug(
+    slug: string,
+    userId: string,
+  ): Promise<AuthenticatedWorkspaceContext> {
+    const [workspace] = await this.db
+      .select()
+      .from(workspaces)
+      .where(eq(workspaces.slug, slug));
+
+    if (!workspace) {
+      throw new NotFoundException("Workspace not found");
+    }
+
+    return this.resolve(workspace.id, userId);
+  }
+
   private toAuthenticatedContext(
     workspace: WorkspacesSelect,
     membership: WorkspaceMembersSelect,
@@ -56,9 +72,9 @@ export class WorkspaceAccessService {
     return {
       workspace: {
         id: workspace.id,
+        organizationId: workspace.organizationId,
         name: workspace.name,
         slug: workspace.slug,
-        ownerId: workspace.ownerId,
         createdAt: workspace.createdAt,
         updatedAt: workspace.updatedAt,
       },

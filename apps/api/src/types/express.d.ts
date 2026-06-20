@@ -1,4 +1,8 @@
-import type { AuthenticatedWorkspaceContext, UserProfileData } from "@repo/shared";
+import type {
+  AuthenticatedOrganizationContext,
+  AuthenticatedWorkspaceContext,
+  UserProfileData,
+} from "@repo/shared";
 
 declare global {
   namespace Express {
@@ -6,6 +10,7 @@ declare global {
       user?: UserProfileData;
       token?: string;
       workspaceContext?: AuthenticatedWorkspaceContext;
+      organizationContext?: AuthenticatedOrganizationContext;
     }
   }
 }

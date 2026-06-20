@@ -1,4 +1,5 @@
 import { Module } from "@nestjs/common";
+import { OrganizationsModule } from "src/organizations/organizations.module";
 import { AppController } from "./app.controller";
 import { AppService } from "./app.service";
 import { UsersModule } from "./users/users.module";
@@ -11,6 +12,7 @@ import { DatabaseModule } from "src/database/database.module";
 @Module({
   imports: [
     DatabaseModule,
+    OrganizationsModule,
     UsersModule,
     AccountsModule,
     WorkspacesModule,

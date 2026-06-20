@@ -6,6 +6,7 @@ import { UsersService } from "src/users/users.service";
 import { AccountsService } from "src/accounts/accounts.service";
 import { AuthTokensService } from "./auth-tokens.service";
 import { EmailService } from "src/email/email.service";
+import { OrganizationsService } from "src/organizations/organizations.service";
 import { DATABASE_TOKEN } from "src/database/database.constants";
 import { INVALID_CREDENTIALS_MESSAGE } from "@repo/shared";
 
@@ -32,6 +33,10 @@ describe("CredentialService", () => {
     sendPasswordResetEmail: jest.fn(),
   };
 
+  const mockOrganizationsService = {
+    startTrialIfEligible: jest.fn(),
+  };
+
   const mockDb = {
     insert: jest.fn(),
   };
@@ -45,6 +50,10 @@ describe("CredentialService", () => {
         { provide: AccountsService, useValue: mockAccountsService },
         { provide: AuthTokensService, useValue: mockAuthTokensService },
         { provide: EmailService, useValue: mockEmailService },
+        {
+          provide: OrganizationsService,
+          useValue: mockOrganizationsService,
+        },
         { provide: DATABASE_TOKEN, useValue: mockDb },
       ],
     }).compile();
@@ -64,7 +73,10 @@ describe("CredentialService", () => {
     };
 
     it("returns a token for valid credentials", async () => {
-      mockUsersService.findUserByEmail.mockResolvedValue({ id: "user-1" });
+      mockUsersService.findUserByEmail.mockResolvedValue({
+        id: "user-1",
+        emailVerifiedAt: new Date(),
+      });
       mockAccountsService.verifyPassword.mockResolvedValue(true);
       jest.spyOn(sessionsService, "createSession").mockResolvedValue({
         token: "session-token",
@@ -73,9 +85,9 @@ describe("CredentialService", () => {
       await expect(service.signIn(credentials)).resolves.toEqual({
         token: "session-token",
       });
-      expect(mockAccountsService.verifyPassword).toHaveBeenCalledWith(
+      expect(mockOrganizationsService.startTrialIfEligible).toHaveBeenCalledWith(
         "user-1",
-        "Password1!",
+        expect.any(Date),
       );
     });
 

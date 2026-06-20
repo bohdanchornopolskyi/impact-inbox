@@ -10,6 +10,7 @@ import { AuthTokensModule } from "./auth-tokens.module";
 import { EmailVerificationModule } from "./email-verification.module";
 import { SessionsModule } from "./sessions.module";
 import { OnboardingModule } from "src/onboarding/onboarding.module";
+import { OrganizationsModule } from "src/organizations/organizations.module";
 
 @Module({
   imports: [
@@ -20,6 +21,7 @@ import { OnboardingModule } from "src/onboarding/onboarding.module";
     EmailVerificationModule,
     SessionsModule,
     OnboardingModule,
+    OrganizationsModule,
   ],
   controllers: [AuthController],
   providers: [

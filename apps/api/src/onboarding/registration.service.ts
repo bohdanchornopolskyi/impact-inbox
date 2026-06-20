@@ -6,6 +6,7 @@ import {
 import { UsersService } from "src/users/users.service";
 import { AccountsService } from "src/accounts/accounts.service";
 import { WorkspacesService } from "src/workspaces/workspaces.service";
+import { OrganizationsService } from "src/organizations/organizations.service";
 import { SessionsService } from "src/auth/sessions.service";
 import { EmailVerificationService } from "src/auth/email-verification.service";
 import { SignUpDto } from "src/auth/dto/sign-up.dto";
@@ -19,6 +20,7 @@ export class RegistrationService {
   constructor(
     private readonly usersService: UsersService,
     private readonly accountsService: AccountsService,
+    private readonly organizationsService: OrganizationsService,
     private readonly workspacesService: WorkspacesService,
     private readonly sessionsService: SessionsService,
     private readonly emailVerificationService: EmailVerificationService,
@@ -45,9 +47,16 @@ export class RegistrationService {
           tx,
         );
         await this.accountsService.setPassword(createdUser.id, password, tx);
+        const organization =
+          await this.organizationsService.createDefaultOrganizationForUser(
+            createdUser.id,
+            createdUser.name,
+            tx,
+          );
         await this.workspacesService.createDefaultWorkspaceForUser(
           createdUser.id,
           createdUser.name,
+          organization.id,
           tx,
         );
         const createdSession = await this.sessionsService.createSession(

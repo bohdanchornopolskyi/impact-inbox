@@ -44,6 +44,14 @@ export class WorkspacesController {
     return this.workspacesService.listWorkspacesForUser(user.id);
   }
 
+  @Get("by-slug/:slug")
+  getBySlug(
+    @CurrentUser() user: UserProfileData,
+    @Param("slug") slug: string,
+  ): Promise<WorkspaceDetailData> {
+    return this.workspacesService.getWorkspaceBySlugForUser(user.id, slug);
+  }
+
   @Get(":id")
   @UseGuards(WorkspaceGuard)
   getById(

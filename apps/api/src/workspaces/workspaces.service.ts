@@ -24,6 +24,7 @@ import {
   type WorkspaceMemberWithUserData,
 } from "@repo/shared";
 import { DATABASE_TOKEN } from "src/database/database.constants";
+import { OrganizationsService } from "src/organizations/organizations.service";
 import { UsersService } from "src/users/users.service";
 import { CreateWorkspaceDto } from "src/workspaces/dto/create-workspace.dto";
 import { InviteMemberDto } from "src/workspaces/dto/invite-member.dto";
@@ -36,6 +37,7 @@ export class WorkspacesService {
     @Inject(DATABASE_TOKEN) private readonly db: Database,
     private readonly usersService: UsersService,
     private readonly workspaceAccessService: WorkspaceAccessService,
+    private readonly organizationsService: OrganizationsService,
   ) {}
 
   async createWorkspace(
@@ -44,6 +46,13 @@ export class WorkspacesService {
     tx?: Transaction,
   ): Promise<WorkspaceDetailData> {
     const db = tx ?? this.db;
+
+    if (!tx) {
+      await this.organizationsService.assertCanManageWorkspaces(
+        userId,
+        dto.organizationId,
+      );
+    }
 
     if (dto.slug) {
       const [existing] = await db
@@ -61,9 +70,9 @@ export class WorkspacesService {
     const [createdWorkspace] = await db
       .insert(workspaces)
       .values({
+        organizationId: dto.organizationId,
         name: dto.name,
         slug,
-        ownerId: userId,
       })
       .returning();
 
@@ -90,11 +99,12 @@ export class WorkspacesService {
   async createDefaultWorkspaceForUser(
     userId: string,
     userName: string,
+    organizationId: string,
     tx?: Transaction,
   ): Promise<WorkspaceDetailData> {
     return this.createWorkspace(
       userId,
-      { name: `${userName}'s Workspace` },
+      { organizationId, name: `${userName}'s Workspace` },
       tx,
     );
   }
@@ -103,9 +113,9 @@ export class WorkspacesService {
     const rows = await this.db
       .select({
         id: workspaces.id,
+        organizationId: workspaces.organizationId,
         name: workspaces.name,
         slug: workspaces.slug,
-        ownerId: workspaces.ownerId,
         createdAt: workspaces.createdAt,
         updatedAt: workspaces.updatedAt,
         role: workspaceMembers.role,
@@ -127,6 +137,14 @@ export class WorkspacesService {
       (await this.workspaceAccessService.resolve(workspaceId, userId));
 
     return this.toWorkspaceDetail(resolved.workspace, resolved.role);
+  }
+
+  async getWorkspaceBySlugForUser(
+    userId: string,
+    slug: string,
+  ): Promise<WorkspaceDetailData> {
+    const context = await this.workspaceAccessService.resolveBySlug(slug, userId);
+    return this.toWorkspaceDetail(context.workspace, context.role);
   }
 
   async updateWorkspace(
@@ -167,6 +185,7 @@ export class WorkspacesService {
     workspaceId: string,
     dto: InviteMemberDto,
   ): Promise<WorkspaceMemberData> {
+    const workspace = await this.getWorkspaceById(workspaceId);
     const user = await this.usersService.findUserByEmail({ email: dto.email });
 
     if (!user) {
@@ -177,6 +196,11 @@ export class WorkspacesService {
     if (existingMembership) {
       throw new ConflictException("User is already a member of this workspace");
     }
+
+    await this.organizationsService.ensureOrgMember(
+      workspace.organizationId,
+      user.id,
+    );
 
     const [membership] = await this.db
       .insert(workspaceMembers)
@@ -195,21 +219,7 @@ export class WorkspacesService {
   }
 
   async removeMember(workspaceId: string, targetUserId: string): Promise<void> {
-    const workspace = await this.getWorkspaceById(workspaceId);
-
-    if (workspace.ownerId === targetUserId) {
-      throw new ForbiddenException("Cannot remove the workspace owner");
-    }
-
-    const [membership] = await this.db
-      .select()
-      .from(workspaceMembers)
-      .where(
-        and(
-          eq(workspaceMembers.workspaceId, workspaceId),
-          eq(workspaceMembers.userId, targetUserId),
-        ),
-      );
+    const membership = await this.getMembership(workspaceId, targetUserId);
 
     if (!membership) {
       throw new NotFoundException("Member not found");
@@ -250,24 +260,14 @@ export class WorkspacesService {
     targetUserId: string,
     role: WorkspaceMemberData["role"],
   ): Promise<WorkspaceMemberData> {
-    const workspace = await this.getWorkspaceById(workspaceId);
-
-    if (workspace.ownerId === targetUserId) {
-      throw new ForbiddenException("Cannot change the workspace owner's role");
-    }
-
-    const [membership] = await this.db
-      .select()
-      .from(workspaceMembers)
-      .where(
-        and(
-          eq(workspaceMembers.workspaceId, workspaceId),
-          eq(workspaceMembers.userId, targetUserId),
-        ),
-      );
+    const membership = await this.getMembership(workspaceId, targetUserId);
 
     if (!membership) {
       throw new NotFoundException("Member not found");
+    }
+
+    if (membership.role === "owner") {
+      throw new ForbiddenException("Cannot change the workspace owner's role");
     }
 
     const [updatedMembership] = await this.db
@@ -284,9 +284,9 @@ export class WorkspacesService {
   }
 
   async deleteWorkspace(workspaceId: string, userId: string): Promise<void> {
-    const workspace = await this.getWorkspaceById(workspaceId);
+    const membership = await this.getMembership(workspaceId, userId);
 
-    if (workspace.ownerId !== userId) {
+    if (!membership || membership.role !== "owner") {
       throw new ForbiddenException("Only the workspace owner can delete it");
     }
 
@@ -294,17 +294,16 @@ export class WorkspacesService {
   }
 
   async leaveWorkspace(workspaceId: string, userId: string): Promise<void> {
-    const workspace = await this.getWorkspaceById(workspaceId);
+    const membership = await this.getMembership(workspaceId, userId);
 
-    if (workspace.ownerId === userId) {
+    if (!membership) {
+      throw new NotFoundException("You are not a member of this workspace");
+    }
+
+    if (membership.role === "owner") {
       throw new ForbiddenException(
         "Workspace owners must transfer ownership before leaving",
       );
-    }
-
-    const membership = await this.getMembership(workspaceId, userId);
-    if (!membership) {
-      throw new NotFoundException("You are not a member of this workspace");
     }
 
     await this.db

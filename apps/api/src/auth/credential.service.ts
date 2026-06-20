@@ -8,6 +8,7 @@ import { AccountsService } from "src/accounts/accounts.service";
 import { SessionsService } from "src/auth/sessions.service";
 import { AuthTokensService } from "src/auth/auth-tokens.service";
 import { EmailService } from "src/email/email.service";
+import { OrganizationsService } from "src/organizations/organizations.service";
 import { SignInDto } from "src/auth/dto/sign-in.dto";
 import { randomUUID } from "crypto";
 import {
@@ -30,6 +31,7 @@ export class CredentialService {
     private readonly sessionsService: SessionsService,
     private readonly authTokensService: AuthTokensService,
     private readonly emailService: EmailService,
+    private readonly organizationsService: OrganizationsService,
   ) {}
 
   async signIn(signInDTO: SignInDto): Promise<AuthTokenData> {
@@ -54,6 +56,12 @@ export class CredentialService {
       token,
       expiresAt: new Date(Date.now() + SESSION_EXPIRES_AT),
     });
+
+    await this.organizationsService.startTrialIfEligible(
+      user.id,
+      user.emailVerifiedAt,
+    );
+
     return { token: createdSession.token };
   }
 

@@ -7,6 +7,7 @@ import {
 import { Reflector } from "@nestjs/core";
 import { SessionsService } from "src/auth/sessions.service";
 import { toUserProfile } from "src/common/mappers/user.mapper";
+import { OrganizationsService } from "src/organizations/organizations.service";
 import { Request } from "express";
 import { IS_PUBLIC_KEY } from "./decorators/public.decorator";
 
@@ -14,6 +15,7 @@ import { IS_PUBLIC_KEY } from "./decorators/public.decorator";
 export class AuthGuard implements CanActivate {
   constructor(
     private readonly sessionsService: SessionsService,
+    private readonly organizationsService: OrganizationsService,
     private readonly reflector: Reflector,
   ) {}
 
@@ -34,20 +36,22 @@ export class AuthGuard implements CanActivate {
       throw new UnauthorizedException();
     }
 
-    try {
-      const { session, user } = await this.sessionsService.validateSession(token);
+    const { session, user } = await this.sessionsService.validateSession(token);
 
-      if (!user || !session) {
-        throw new UnauthorizedException();
-      }
-
-      request.user = toUserProfile(user);
-      request.token = token;
-
-      return true;
-    } catch {
+    if (!user || !session) {
       throw new UnauthorizedException();
     }
+
+    const profile = toUserProfile(user);
+    request.user = profile;
+    request.token = token;
+
+    await this.organizationsService.startTrialIfEligible(
+      profile.id,
+      profile.emailVerifiedAt,
+    );
+
+    return true;
   }
 
   private extractTokenFromHeader(request: Request): string | undefined {

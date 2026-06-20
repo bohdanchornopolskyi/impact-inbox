@@ -1,6 +1,7 @@
 import { ForbiddenException } from "@nestjs/common";
 import { Test, TestingModule } from "@nestjs/testing";
 import { DATABASE_TOKEN } from "src/database/database.constants";
+import { OrganizationsService } from "src/organizations/organizations.service";
 import { UsersService } from "src/users/users.service";
 import { WorkspaceAccessService } from "./workspace-access.service";
 import { WorkspacesService } from "./workspaces.service";
@@ -14,6 +15,11 @@ describe("WorkspacesService", () => {
 
   const mockWorkspaceAccessService = {
     resolve: jest.fn(),
+  };
+
+  const mockOrganizationsService = {
+    assertCanManageWorkspaces: jest.fn(),
+    ensureOrgMember: jest.fn(),
   };
 
   const mockSelect = jest.fn();
@@ -52,6 +58,10 @@ describe("WorkspacesService", () => {
           provide: WorkspaceAccessService,
           useValue: mockWorkspaceAccessService,
         },
+        {
+          provide: OrganizationsService,
+          useValue: mockOrganizationsService,
+        },
       ],
     }).compile();
 
@@ -66,12 +76,10 @@ describe("WorkspacesService", () => {
     it("prevents removing the workspace owner", async () => {
       mockWhere.mockResolvedValueOnce([
         {
-          id: "ws-1",
-          ownerId: "owner-1",
-          name: "Workspace",
-          slug: "workspace",
-          createdAt: new Date(),
-          updatedAt: new Date(),
+          id: "member-1",
+          workspaceId: "ws-1",
+          userId: "owner-1",
+          role: "owner" as const,
         },
       ]);
 
