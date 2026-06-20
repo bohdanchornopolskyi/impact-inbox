@@ -5,7 +5,7 @@ import {
   InternalServerErrorException,
   NotFoundException,
 } from "@nestjs/common";
-import { and, eq } from "drizzle-orm";
+import { and, eq, isNotNull, isNull } from "drizzle-orm";
 import { ZodError } from "zod";
 import { type TemplatesSelect, templates } from "@repo/db";
 import { renderTemplate } from "@repo/email-renderer";
@@ -39,8 +39,10 @@ export class TemplatesService {
   ): Promise<TemplateData[]> {
     const conditions = [eq(templates.workspaceId, workspaceId)];
 
-    if (query.status) {
-      conditions.push(eq(templates.status, query.status));
+    if (query.archived === true) {
+      conditions.push(isNotNull(templates.archivedAt));
+    } else {
+      conditions.push(isNull(templates.archivedAt));
     }
 
     const rows = await this.db
@@ -69,7 +71,6 @@ export class TemplatesService {
         workspaceId,
         name: dto.name,
         content: dto.content ?? DEFAULT_TEMPLATE_CONTENT,
-        status: dto.status ?? "draft",
       })
       .returning();
 
@@ -87,9 +88,23 @@ export class TemplatesService {
   ): Promise<TemplateData> {
     await this.findTemplate(workspaceId, templateId);
 
+    const updates: Partial<typeof templates.$inferInsert> = {};
+
+    if (dto.name !== undefined) {
+      updates.name = dto.name;
+    }
+
+    if (dto.content !== undefined) {
+      updates.content = dto.content;
+    }
+
+    if (dto.archived !== undefined) {
+      updates.archivedAt = dto.archived ? new Date() : null;
+    }
+
     const [updatedTemplate] = await this.db
       .update(templates)
-      .set(dto)
+      .set(updates)
       .where(
         and(
           eq(templates.id, templateId),
@@ -184,7 +199,7 @@ export class TemplatesService {
       workspaceId: template.workspaceId,
       name: template.name,
       content: template.content,
-      status: template.status,
+      archivedAt: template.archivedAt,
       createdAt: template.createdAt,
       updatedAt: template.updatedAt,
     };

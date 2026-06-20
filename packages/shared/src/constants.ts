@@ -2,8 +2,6 @@ import type { TemplateContentData } from "./schemas/template/content";
 
 const WORKSPACE_ROLES = ["owner", "admin", "member"] as const;
 
-const TEMPLATE_STATUSES = ["draft", "published", "archived"] as const;
-
 const TEMPLATE_CONTENT_VERSION = 1 as const;
 
 const LAYOUT_BLOCK_TYPES = ["section", "row", "column"] as const;
@@ -215,7 +213,6 @@ function hasWorkspaceRoleAtLeast(
 
 export {
   WORKSPACE_ROLES,
-  TEMPLATE_STATUSES,
   TEMPLATE_CONTENT_VERSION,
   LAYOUT_BLOCK_TYPES,
   CONTENT_BLOCK_TYPES,

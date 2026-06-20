@@ -31,7 +31,7 @@ describe("TemplatesService", () => {
     workspaceId: "ws-1",
     name: "Welcome",
     content: DEFAULT_TEMPLATE_CONTENT,
-    status: "draft" as const,
+    archivedAt: null,
     createdAt: new Date("2024-01-01"),
     updatedAt: new Date("2024-01-01"),
   };
@@ -133,6 +133,40 @@ describe("TemplatesService", () => {
 
       expect(result.name).toBe("Welcome");
       expect(result.content).toEqual(DEFAULT_TEMPLATE_CONTENT);
+      expect(result.archivedAt).toBeNull();
+    });
+  });
+
+  describe("listTemplates", () => {
+    it("returns active templates by default", async () => {
+      mockWhere.mockResolvedValueOnce([templateRow]);
+
+      await service.listTemplates("ws-1", {});
+
+      expect(mockSelect).toHaveBeenCalled();
+    });
+  });
+
+  describe("updateTemplate", () => {
+    it("archives a template", async () => {
+      mockWhere.mockResolvedValueOnce([templateRow]);
+      const archivedRow = {
+        ...templateRow,
+        archivedAt: new Date("2024-06-01"),
+      };
+      mockUpdate.mockReturnValue({
+        set: jest.fn().mockReturnValue({
+          where: jest.fn().mockReturnValue({
+            returning: jest.fn().mockResolvedValue([archivedRow]),
+          }),
+        }),
+      });
+
+      const result = await service.updateTemplate("ws-1", "tpl-1", {
+        archived: true,
+      });
+
+      expect(result.archivedAt).toEqual(archivedRow.archivedAt);
     });
   });
 });
