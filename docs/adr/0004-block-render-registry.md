@@ -4,4 +4,4 @@ Email block rendering uses a type-keyed registry in `@repo/email-renderer`, not 
 
 **Considered:** Codegen from Zod schema. Deferred — registry + tests give enough drift protection for current block count.
 
-**Consequences:** Adding a block type requires: Zod schema in `@repo/shared`, registry entry in email-renderer, test fixture. See `CONTEXT.md` → **Block type**.
+**Consequences:** Adding a block type requires: Zod schema in `@repo/shared`, registry entry in email-renderer, test fixture. See `CONTEXT.md` → **Block type**. v1 includes an HTML block for raw-markup escape hatches — not a full HTML import path.

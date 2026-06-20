@@ -1,9 +1,9 @@
 # Impact Inbox — Architecture & Roadmap
 
-Email builder + email marketing platform. Monorepo, contract-first API, workspace-scoped multi-tenancy.
+Email marketing platform (builder, campaigns, newsletters). Monorepo, contract-first API, **organization + workspace** multi-tenancy.
 
 **Domain language:** [CONTEXT.md](../CONTEXT.md)  
-**Recorded decisions:** [docs/adr/](adr/) (auth seam, workspace access, template render, block registry)
+**Recorded decisions:** [docs/adr/](adr/) — auth seam, workspace access, template render, block registry, [email product domain model](adr/0005-email-product-domain-model.md), [organization billing](adr/0006-organization-billing-model.md)
 
 ---
 
@@ -11,11 +11,12 @@ Email builder + email marketing platform. Monorepo, contract-first API, workspac
 
 | Layer | Responsibility |
 |-------|----------------|
-| **Web** (`apps/web`) | Builder UI, campaign management, analytics dashboards |
-| **API** (`apps/api`) | Auth, tenancy, business rules, orchestration |
+| **Web** (`apps/web`) | Builder UI, campaigns, analytics, public unsubscribe preference pages |
+| **API** (`apps/api`) | Auth, org/workspace tenancy, business rules, queue processors (v1), webhooks |
 | **Shared** (`packages/shared`) | Zod schemas, API types, constants — single contract for API + web |
 | **DB** (`packages/db`) | Drizzle schema, migrations, typed queries |
-| **Workers** (future) | Campaign sends, webhooks, analytics ingestion |
+| **Queue** (`packages/queue`) | Job names + payload schemas only — no Redis/BullMQ client |
+| **Workers** (later) | Extract queue processors from API when load requires |
 
 ---
 
@@ -37,20 +38,25 @@ flowchart TB
   subgraph packages["Packages"]
     SHARED["@repo/shared<br/>Zod + API types"]
     DB["@repo/db<br/>Drizzle + Postgres"]
+    QUEUE_PKG["@repo/queue<br/>job contracts"]
   end
 
-  subgraph infra["Infrastructure (planned)"]
+  subgraph infra["Infrastructure"]
   PG[(Postgres)]
   REDIS[(Redis / Queue)]
-  ESP[Email Provider<br/>Resend / SES]
+  ESP[Send providers<br/>Resend / Mailchimp / SMTP]
+  BILLING[Billing provider<br/>Stripe / Paddle / Polar]
   end
 
   WEB -->|"Bearer token<br/>/api/*"| CTRL
+  WEB -->|"Public<br/>/u/:token"| CTRL
   SVC --> SHARED
   SVC --> DB
+  SVC --> QUEUE_PKG
   DB --> PG
-  SVC -.->|"Phase 3+"| REDIS
-  SVC -.->|"Phase 2+"| ESP
+  SVC --> REDIS
+  SVC --> ESP
+  SVC --> BILLING
 ```
 
 ---
@@ -75,7 +81,7 @@ flowchart LR
 
   subgraph onboarding["Onboarding"]
     RS["RegistrationService<br/>transactional sign-up"]
-    RS --> Users & Accounts & Workspaces & Sessions & EVS
+    RS --> Users & Accounts & Orgs & Workspaces & Sessions & EVS
   end
 
   subgraph identity["Identity"]
@@ -124,6 +130,7 @@ erDiagram
   users ||--o{ sessions : "has"
   users ||--o{ auth_tokens : "has"
   users ||--o{ workspaces : "owns"
+  workspaces ||--o{ templates : "has"
   users ||--o{ workspace_members : "member of"
   workspaces ||--o{ workspace_members : "has"
 
@@ -169,7 +176,17 @@ erDiagram
     uuid user_id FK
     text role
   }
+
+  templates {
+    uuid id PK
+    uuid workspace_id FK
+    text name
+    jsonb content
+    text status
+  }
 ```
+
+_Planned:_ organizations, template_revisions, remove template draft/published status — see §5 and ADR 0005/0006.
 
 ### 3.3 Request pipeline (every API call)
 
@@ -225,7 +242,7 @@ sequenceDiagram
   C->>AC: POST /api/auth/sign-up
   AC->>RS: signUp(dto)
   RS->>DB: BEGIN TRANSACTION
-  Note over RS,DB: user → account → password → default workspace → session → verify token
+  Note over RS,DB: user → account → organization → default workspace → session → verify token
   RS->>DB: COMMIT
   RS->>EV: dispatchVerificationEmail
   EV->>EM: sendVerificationEmail (stub)
@@ -266,73 +283,133 @@ sequenceDiagram
   API->>Q: enqueue send job
   API-->>C: 202 { data: { jobId } }
 
-  Q->>W: process job
-  W->>DB: load template + contacts
-  loop each recipient
-    W->>ESP: send rendered email
-    W->>DB: insert send + event
+  Q->>W: process job (v1: in API process)
+  W->>DB: load revision + list contacts
+  loop each subscribed recipient
+    W->>W: render + merge tags + wrap links/pixel
+    W->>ESP: send via workspace provider
+    W->>DB: insert recipient_send
   end
 ```
 
 ---
 
-## 5. Target domain model (email product)
+## 5. Target domain model
 
-All business entities are **workspace-scoped**.
+**Organization** owns billing and plan limits. **Workspace** owns product data. See ADR 0005 and ADR 0006.
 
 ```mermaid
 erDiagram
+  organizations ||--o{ organization_members : "has"
+  organizations ||--o{ workspaces : "owns"
+  users ||--o{ organization_members : "member of"
+  workspaces ||--o{ workspace_members : "has"
+  users ||--o{ workspace_members : "member of"
   workspaces ||--o{ templates : "has"
+  templates ||--o{ template_revisions : "history"
+  workspaces ||--o{ send_providers : "has"
   workspaces ||--o{ contact_lists : "has"
   workspaces ||--o{ contacts : "has"
+  workspaces ||--o{ newsletters : "has"
   workspaces ||--o{ campaigns : "has"
-  contact_lists ||--o{ list_contacts : "contains"
-  contacts ||--o{ list_contacts : "in"
-  templates ||--o{ campaigns : "used by"
+  contact_lists ||--o{ list_members : "contains"
+  contacts ||--o{ list_members : "in"
+  template_revisions ||--o{ campaigns : "pinned by"
   contact_lists ||--o{ campaigns : "targets"
-  campaigns ||--o{ campaign_sends : "produces"
-  campaign_sends ||--o{ email_events : "tracks"
+  contact_lists ||--o{ newsletters : "targets"
+  send_providers ||--o{ campaigns : "delivers"
+  newsletters ||--o{ campaigns : "editions"
+  campaigns ||--o{ recipient_sends : "produces"
+  recipient_sends ||--o{ email_events : "tracks"
+
+  organizations {
+    uuid id PK
+    text name
+    text plan_tier
+    timestamp trial_ends_at
+  }
+
+  organization_members {
+    uuid id PK
+    uuid organization_id FK
+    uuid user_id FK
+    text role
+  }
+
+  workspaces {
+    uuid id PK
+    uuid organization_id FK
+    text name
+    text slug UK
+    text physical_address
+  }
 
   templates {
     uuid id PK
     uuid workspace_id FK
     text name
     jsonb content
-    text status
+    timestamp archived_at
+  }
+
+  template_revisions {
+    uuid id PK
+    uuid template_id FK
+    jsonb content
+    timestamp created_at
+  }
+
+  send_providers {
+    uuid id PK
+    uuid workspace_id FK
+    text type
+    jsonb credentials
+    boolean is_default
   }
 
   contacts {
     uuid id PK
     uuid workspace_id FK
     text email
+    text first_name
+    text last_name
     jsonb attributes
+    timestamp global_unsubscribed_at
+    timestamp suppressed_at
   }
 
-  contact_lists {
+  list_members {
     uuid id PK
-    uuid workspace_id FK
-    text name
+    uuid list_id FK
+    uuid contact_id FK
+    text status
+    timestamp unsubscribed_at
   }
 
   campaigns {
     uuid id PK
     uuid workspace_id FK
-    uuid template_id FK
+    uuid template_revision_id FK
     uuid list_id FK
+    uuid send_provider_id FK
+    text subject
+    text physical_address
     text status
     timestamp scheduled_at
   }
 
-  campaign_sends {
+  recipient_sends {
     uuid id PK
     uuid campaign_id FK
     uuid contact_id FK
+    text unsubscribe_token UK
+    text provider_message_id
     text status
   }
 
   email_events {
     uuid id PK
-    uuid send_id FK
+    uuid recipient_send_id FK
     text type
     timestamp occurred_at
   }
@@ -350,60 +427,157 @@ flowchart TB
     USR[users]
     ACC[accounts]
     WS[workspaces]
+    TPL[templates — partial]
     EMAIL_STUB[email — stub]
   end
 
-  subgraph phase2["Phase 2 — Delivery"]
-    EMAIL[email — real provider]
-    TPL[templates]
+  subgraph phase1b["Phase 1b — Org & access"]
+    ORG[organizations]
+    ORG_MEM[org members]
+    SLUG_R[slug redirects]
+  end
+
+  subgraph phase2["Phase 2 — Templates & delivery"]
+    TPL_REV[template revisions]
+    EMAIL[system + send providers]
+    EXPORT[template export]
   end
 
   subgraph phase3["Phase 3 — Audience"]
     CON[contacts]
-    LST[lists]
+    LST[lists + membership status]
+    IMP[contact import]
   end
 
   subgraph phase4["Phase 4 — Campaigns"]
+    NL[newsletters]
     CMP[campaigns]
-    SND[sends]
-    EVT[events / analytics]
+    QUEUE[send queue in API]
+    TRACK[link + open tracking]
   end
 
-  subgraph phase5["Phase 5 — Async"]
-    QUEUE[queue module]
-    WORKER[apps/worker]
-    WH[webhooks]
+  subgraph phase5["Phase 5 — Analytics & webhooks"]
+    WH[ESP webhooks — global ingress]
+    EVT[email events + dashboards]
   end
 
-  WS --> TPL --> CMP
+  subgraph launch["Public launch gate"]
+    BILL[billing + plan limits]
+    TRIAL[trial + template access mode]
+  end
+
+  ORG --> WS
+  WS --> TPL --> TPL_REV --> CMP
   WS --> CON --> LST --> CMP
-  CMP --> SND --> EVT
-  SND --> QUEUE --> WORKER
-  WORKER --> EMAIL
-  ESP[ESP webhooks] --> WH --> EVT
+  NL --> CMP
+  CMP --> QUEUE --> EMAIL
+  WH --> EVT
+  BILL --> ORG
+  QUEUE -.->|"later"| WORKER[apps/worker]
 ```
 
-**Dependency rule:** feature modules import `WorkspacesModule` (or use `WorkspaceGuard`). They never query across workspaces without an explicit `workspaceId` from the route.
+**Dependency rules:**
+
+- Product routes stay under `/api/workspaces/:workspaceId/*` (templates, contacts, campaigns, etc.). Organization routes live separately at `/api/organizations/:orgId/*` (members, billing, create workspace). Web uses workspace slug in URLs; API continues to use workspace id — org id is not nested in every product path.
+- Feature modules use `WorkspaceGuard`; queries filter by `workspace_id` from the route. `WorkspaceGuard` resolves the workspace’s `organization_id` for limit checks.
+- Org-scoped routes use `OrganizationGuard` (org membership + role).
+- Org limits enforced at organization scope before send, workspace create, or admin invite.
+- Job payloads live in `@repo/queue`; API enqueues, processors run in API v1.
 
 ---
 
 ## 7. Shared contract strategy
 
 ```
-packages/shared
-├── schemas/          # Zod input validation
-├── auth-responses.ts # Response DTO shapes
-├── api.ts            # ApiResponse, error codes
-└── constants.ts      # roles, TTLs, enums
+packages/shared/src/
+├── schemas/                    # Zod — one folder per domain
+│   ├── auth/                   # sign-in, sessions, tokens
+│   ├── organization/           # org, members, billing inputs
+│   ├── workspace/              # workspace, members (migrate from workspace.ts)
+│   ├── template/               # content, blocks, settings, revisions
+│   ├── contact/                # contacts, lists, import (Phase 3)
+│   ├── campaign/               # campaigns, newsletters (Phase 4)
+│   ├── api.ts                  # ApiResponse, error codes
+│   └── index.ts                # barrel — only public import surface
+├── constants/                  # enums, TTLs, plan caps — split by domain
+│   ├── auth.ts
+│   ├── organization.ts
+│   ├── billing.ts
+│   ├── template.ts
+│   └── index.ts
+├── auth-responses.ts           # migrate → schemas/auth/responses.ts
+└── index.ts                      # re-export schemas + constants
 ```
+
+**Rules:**
+
+- **Domain folders** — mirror API modules and CONTEXT vocabulary (`organization`, `workspace`, `template`, not generic `utils`).
+- **Barrel exports** — apps import from `@repo/shared` only; no deep paths like `@repo/shared/schemas/template/blocks/content`.
+- **Single package** — no `@repo/contracts` split until shared becomes a genuine bottleneck.
+- **Migrate incrementally** — flat files (`workspace.ts`, monolithic `constants.ts`) move into domain folders as each phase lands; old paths re-export from barrels until callers updated.
 
 | Consumer | Uses shared for |
 |----------|-----------------|
 | `apps/api` | DTOs via `createZodDto`, response types |
 | `apps/web` | Form validation, fetch response typing |
-| `packages/db` | Enums (`WorkspaceRole`, token types) |
+| `packages/db` | Enums aligned with constants (e.g. `WorkspaceRole`, org roles) |
+| `packages/queue` | Job payload schemas (Phase 4) |
 
 **Convention:** every public endpoint has a Zod schema + exported inferred type in `@repo/shared` before the web app calls it.
+
+**Web API client:** per-domain modules under `apps/web/src/lib/api/` (e.g. `auth-api.ts`, `templates-api.ts`) wrapping shared `apiRequest`. Client components may add TanStack Query hooks that call these modules; RSC and server actions import the same modules directly.
+
+### DB schema layout (`packages/db`)
+
+```
+packages/db/src/schema/
+├── auth/              # users, accounts, sessions, auth_tokens
+├── organization/      # organizations, organization_members
+├── workspace/         # workspaces, workspace_members, slug_redirects
+├── template/          # templates, template_revisions
+├── contact/           # contacts, contact_lists, list_members (Phase 3)
+├── campaign/          # campaigns, newsletters, recipient_sends (Phase 4)
+├── analytics/         # email_events (Phase 5)
+├── _helpers.ts
+└── index.ts           # barrel — single schema export for Drizzle
+```
+
+One table per file inside each domain folder. Migrate existing flat files (`workspaces.ts`, `templates.ts`, etc.) into domain folders incrementally. Migrations committed under `packages/db/drizzle/`.
+
+### API module layout (`apps/api`)
+
+```
+apps/api/src/
+├── auth/              # sessions, credentials, tokens, guards
+├── onboarding/        # RegistrationService orchestrator
+├── users/
+├── accounts/          # internal only — no HTTP controller
+├── organizations/     # OrganizationGuard, billing hooks (Phase 1b / 6)
+├── workspaces/        # WorkspaceGuard
+├── templates/
+├── contacts/          # Phase 3
+├── campaigns/         # campaigns, newsletters, send queue processors (Phase 4)
+├── webhooks/          # global ESP ingress (Phase 5)
+├── billing/           # provider adapter, PlanLimitsService, usage meters (Phase 6)
+├── email/             # system email deliver interface
+└── database/
+```
+
+One NestJS module per domain folder (controller + service + guards + dto). Processors for the send queue live in `campaigns/` for v1; extract to `apps/worker` later without changing `@repo/queue` payloads.
+
+**Plan limits:** central `PlanLimitsService` in `billing/` — single place for tier caps, trial/template-access mode, and usage meters. Domain modules (`workspaces`, `contacts`, `campaigns`) call assert helpers (`assertCanSend`, `assertCanImport`, `assertCanAddWorkspace`, etc.); no duplicated cap logic in each service.
+
+### Queue contracts (`packages/queue`)
+
+```
+packages/queue/src/
+├── jobs/                  # one file per job type
+│   ├── send-campaign.ts   # name constant + payload Zod schema
+│   └── import-contacts.ts
+└── index.ts               # barrel
+```
+
+Contracts only — job names, payload Zod schemas, inferred types. No Redis/BullMQ connection or processors; those live in `apps/api/src/campaigns/` (v1) and later `apps/worker`. API and worker import the same payloads so extraction does not change job shape.
 
 ---
 
@@ -411,11 +585,12 @@ packages/shared
 
 ### Phase 0 — Foundation ✅ (mostly done)
 
-- [x] Monorepo + NestJS + Drizzle + Postgres
+- [x] Monorepo + NestJS + Drizzle + Postgres + Redis (docker-compose)
 - [x] Global `/api` prefix, `{ data }` / `{ error }` envelope
 - [x] Auth: sessions, sign-up/in/out, password flows, email verification tokens
 - [x] Users: `/users/me`, profile, delete account
 - [x] Workspaces: CRUD, members, roles, `WorkspaceGuard`
+- [x] Templates module (partial — no revisions yet; remove draft/published status)
 - [x] Transactional registration (user + account + workspace + session)
 - [ ] CORS for `apps/web`
 - [ ] `GET /api/health`
@@ -424,71 +599,79 @@ packages/shared
 
 ### Phase 1 — Web shell (2–3 weeks)
 
-Goal: web app can authenticate and navigate workspaces.
+Goal: authenticate, org/workspace navigation, slug URLs.
 
 | Task | API | Web |
 |------|-----|-----|
 | API client + token storage | — | `lib/api-client.ts` |
 | Login / sign-up pages | existing routes | forms + Zod from shared |
-| Session bootstrap | `GET /users/me`, `GET /workspaces` | layout + redirect |
-| Workspace switcher | `GET /workspaces` | context / URL `:workspaceSlug` |
+| Session bootstrap | `GET /users/me` | layout + redirect |
+| Org + workspace switcher | list orgs + workspaces | URL `/[workspaceSlug]/…` |
 | Error handling | stable error codes | toast / form errors |
 
-```mermaid
-flowchart LR
-  LOGIN[Login] --> ME[GET /users/me]
-  ME --> WS_LIST[GET /workspaces]
-  WS_LIST --> DASH[Workspace dashboard shell]
-```
+### Phase 1b — Organizations (1–2 weeks)
 
-### Phase 2 — Email delivery + templates (3–4 weeks)
+- [ ] `organizations`, `organization_members` tables
+- [ ] Registration creates org + default workspace; trial clock on first login post-verify
+- [ ] GitLab-style invites: org member → workspace assignment
+- [ ] Workspace slug change with redirects table
+- [ ] Org roles: owner, org admin, member
+
+### Phase 2 — Templates & delivery (3–4 weeks)
 
 | Task | Notes |
 |------|-------|
-| Integrate ESP (Resend recommended) | Replace `EmailService` stub |
-| `templates` table + module | `workspace_id`, name, `content` JSON, status |
-| Template CRUD API | All routes under `/workspaces/:id/templates` |
-| Builder storage format | Define JSON schema for blocks (separate from HTML) |
-| Render pipeline | JSON → HTML (server-side for sends) |
-| Template preview endpoint | `POST …/preview` returns HTML |
+| `template_revisions` table + Save/restore | Working copy vs revision (ADR 0005) |
+| Remove `TEMPLATE_STATUSES` draft/published | `archivedAt` only |
+| System `EmailService` (Resend) | Verification, reset, double opt-in |
+| Workspace `send_providers` module | Resend/Mailchimp/SMTP; multi + default |
+| Template export API | HTML + plain text bundle |
+| Template preview | existing routes |
 
 ### Phase 3 — Contacts & lists (2–3 weeks)
 
 | Task | Notes |
 |------|-------|
-| `contacts`, `contact_lists`, `list_contacts` tables | Unique `(workspace_id, email)` |
-| Import CSV endpoint | Async job later; sync MVP first |
-| List CRUD + add/remove contacts | |
-| Unsubscribe flag on contact | Required before real sends |
+| `contacts`, `contact_lists`, `list_members` | `subscribed` / `pending` / unsubscribed |
+| Import CSV | Sync under cap; async above; merge duplicates |
+| Unsubscribe model | List + global; preference page on web |
+| Double opt-in per list | Confirm via system email |
 
 ### Phase 4 — Campaigns & sends (4–5 weeks)
 
 | Task | Notes |
 |------|-------|
-| `campaigns` table | draft → scheduled → sending → sent |
-| Campaign CRUD | Link template + list |
-| `campaign_sends` + status tracking | per recipient |
-| Queue + worker app | `apps/worker` or BullMQ in API |
-| Send endpoint returns `202` | Job id for polling |
-| Rate limiting + batch size | Protect ESP quotas |
+| `campaigns`, `newsletters`, `recipient_sends` | Pin `template_revision_id` at execution |
+| Send queue (`@repo/queue` + BullMQ in API) | `202` on send; v1 processors in API |
+| Merge tags + test send | Sample or pick contact |
+| Unsubscribe footer + address overrides | Token per recipient send |
+| Link redirect + open pixel | Platform domain v1 |
+| Campaign duplicate | New draft from existing |
 
-### Phase 5 — Analytics & webhooks (3–4 weeks)
+### Phase 5 — Analytics & webhooks (2–3 weeks)
 
 | Task | Notes |
 |------|-------|
-| `email_events` table | delivered, opened, clicked, bounced |
-| ESP webhook ingress | `POST /webhooks/esp` (public, signed) |
-| Campaign stats API | aggregates per campaign |
-| Web dashboard charts | opens, clicks, bounces over time |
+| `email_events` table | Per recipient send |
+| Global `POST /webhooks/esp` | Route by provider message id |
+| Campaign + template analytics APIs | Per-link breakdown later |
+| Web dashboards | Opens, clicks, bounces |
 
-### Phase 6 — Senior polish (ongoing)
+### Phase 6 — Public launch gate (required before users)
 
-- [ ] Structured logging + request IDs
-- [ ] Rate limits on `/auth/*`
-- [ ] OpenAPI spec from Nest decorators
-- [ ] Integration tests (Testcontainers)
-- [ ] Observability (health, metrics)
-- [ ] Feature flags per workspace (billing later)
+- [ ] Billing provider adapter (Stripe / Paddle / Polar)
+- [ ] Plan tiers + usage meters (sends, workspaces, seats)
+- [ ] Hard limits + send top-ups
+- [ ] 7-day trial → template access mode (5 exports/mo)
+- [ ] Org owner billing portal
+
+### Phase 7 — Polish (ongoing)
+
+- [ ] Extract `apps/worker` from queue processors
+- [ ] Custom tracking domains (paid)
+- [ ] Newsletter automated cadence
+- [ ] Workspace transfer between orgs
+- [ ] OpenAPI, observability, rate limits
 
 ---
 
@@ -499,11 +682,13 @@ flowchart TB
   subgraph next["apps/web"]
     RSC["Server Components<br/>initial data, layouts"]
     CC["Client Components<br/>builder, forms"]
-    CTX["WorkspaceContext<br/>active workspace"]
-    API_CLIENT["apiClient<br/>@repo/shared types"]
-    RSC --> API_CLIENT
-    CC --> API_CLIENT
+    CTX["OrgContext + WorkspaceContext"]
+    API_MODULES["lib/api/*-api.ts<br/>typed fetch wrappers"]
+    API_CLIENT["apiRequest<br/>@repo/shared types"]
+    RSC --> API_MODULES
+    CC --> API_MODULES
     CC --> CTX
+    API_MODULES --> API_CLIENT
   end
 
   API_CLIENT -->|"Bearer token"| API["apps/api"]
@@ -511,12 +696,18 @@ flowchart TB
 
 | Route group | Purpose |
 |-------------|---------|
-| `(auth)/login`, `sign-up` | Public |
+| `(auth)/sign-in`, `sign-up` | Public |
+| `(public)/u/[token]` | Unsubscribe preference page |
 | `(app)/[workspaceSlug]/` | Workspace-scoped app |
-| `(app)/[workspaceSlug]/templates` | Builder |
+| `(app)/[workspaceSlug]/templates` | Builder + revision history + export |
 | `(app)/[workspaceSlug]/contacts` | Audience |
-| `(app)/[workspaceSlug]/campaigns` | Campaigns |
-| `(app)/[workspaceSlug]/settings` | Workspace + members |
+| `(app)/[workspaceSlug]/campaigns` | Campaigns + newsletters |
+| `(app)/[workspaceSlug]/settings` | Workspace, providers, members |
+| `(app)/org/[orgId]/settings` | Org members, billing (owner) |
+
+Org-scoped pages include `orgId` in the URL — no server-side “active org” on the session. Workspace pages infer organization from the workspace record. Org switcher navigates between org URLs.
+
+**Slug → id:** `(app)/[workspaceSlug]/layout.tsx` resolves slug via `GET /api/workspaces/by-slug/:slug` (only slug-based API route). `WorkspaceContext` holds `id` + `slug`; all other API calls use `/api/workspaces/:id/*`.
 
 ---
 
@@ -528,7 +719,12 @@ flowchart TB
 4. **Guards** — authz only; no business logic.
 5. **`@repo/shared`** — every public request/response shape.
 6. **`AccountsService`** — never exposed via HTTP directly.
-7. **Workspace scope** — every query filters by `workspace_id` from guard, never from body alone.
+7. **Workspace scope** — product queries filter by `workspace_id` from guard, never from body alone.
+8. **Organization scope** — billing, trial, and plan limits resolve at organization level. Org routes: `/api/organizations/:orgId/*`. Product routes: `/api/workspaces/:workspaceId/*` (no org id in path).
+9. **Organization guard** — org-scoped endpoints use `OrganizationGuard` (membership + role); workspace endpoints use `WorkspaceGuard`.
+10. **Billing provider** — swappable adapter; domain code never imports vendor SDK types.
+11. **Plan limits** — enforced via central `PlanLimitsService` in `billing/`; not duplicated per module.
+12. **Public launch** — billing + limit enforcement ship with first public release.
 
 ---
 
@@ -536,27 +732,28 @@ flowchart TB
 
 | Milestone | Demo-able outcome |
 |-----------|-------------------|
-| **M1** | Sign up → land in default workspace |
-| **M2** | Create template in builder, save, preview |
-| **M3** | Import contacts, create list |
-| **M4** | Create campaign, send to list, see delivery status |
-| **M5** | View open/click analytics |
-| **M6** | Invite teammate, role-restricted actions |
+| **M1** | Sign up → org + default workspace → 7-day trial starts on first login |
+| **M2** | Build template, Save revision, preview, export HTML+text |
+| **M3** | Import contacts, create list, double opt-in optional |
+| **M4** | Campaign send to list via workspace provider; recipient status |
+| **M5** | Campaign + template analytics; click/open tracking |
+| **M6** | Org invite, workspace roles, billing + limits at launch |
 
 ---
 
 ## 12. What to build next (recommended order)
 
 ```
-1. CORS + health + E2E tests          ← close Phase 0
-2. Real EmailService (Resend)         ← unblocks all email flows
-3. Templates module (API first)       ← first product domain
-4. Web: auth + workspace shell        ← parallel once #1 done
-5. Contacts → Lists → Campaigns       ← core product loop
-6. Queue + worker                       ← before bulk send
-7. Webhooks + analytics                 ← complete the loop
+1. Close Phase 0 (CORS, health, migrations, E2E)
+2. Phase 1 web shell + Phase 1b organizations
+3. Template revisions + remove draft/published status
+4. System email + workspace send providers
+5. Contacts → lists → campaigns + send queue (in API)
+6. Tracking + webhooks + analytics
+7. Billing + trial + template access mode  ← public launch gate
+8. Extract apps/worker when needed
 ```
 
 ---
 
-*Last updated: reflects codebase through auth, onboarding, users, workspaces, and stub email delivery.*
+*Last updated: reflects grilling decisions in CONTEXT.md, ADR 0005, ADR 0006, and codebase through auth, workspaces, templates (partial).*

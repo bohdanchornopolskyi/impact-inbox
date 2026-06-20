@@ -4,4 +4,4 @@ HTTP handlers must never depend on `@repo/db` row types. `Express.Request.user` 
 
 **Considered:** Keep `UsersSelect` on the request for convenience. Rejected — column renames and internal fields leak into every controller.
 
-**Consequences:** `CurrentUser()` decorator returns `UserProfileData`. Credential and lifecycle flows that need password hashes continue to load accounts/users through services, not the request.
+**Consequences:** `CurrentUser()` decorator returns `UserProfileData`. Credential and lifecycle flows that need password hashes continue to load accounts/users through services, not the request. Platform **System email** (verification, reset, double opt-in) uses the same delivery abstraction as marketing sends at the infrastructure layer — see ADR 0005.
