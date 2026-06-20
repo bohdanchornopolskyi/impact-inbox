@@ -10,6 +10,7 @@ export const workspaceSlugSchema = z
   .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/);
 
 export const createWorkspaceSchema = z.object({
+  organizationId: z.string().uuid(),
   name: z.string().min(1).max(255),
   slug: workspaceSlugSchema.optional(),
 });
@@ -40,9 +41,9 @@ export const listWorkspacesQuerySchema = z.object({});
 
 export const workspaceSchema = z.object({
   id: z.string().uuid(),
+  organizationId: z.string().uuid(),
   name: z.string(),
   slug: z.string(),
-  ownerId: z.string().uuid(),
   createdAt: z.coerce.date(),
   updatedAt: z.coerce.date(),
 });
