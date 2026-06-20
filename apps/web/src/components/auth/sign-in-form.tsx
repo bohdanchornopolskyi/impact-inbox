@@ -5,10 +5,14 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { signInSchema } from "@repo/shared";
 import { useForm } from "react-hook-form";
 import type { SignInInput } from "@repo/shared";
-import { AuthShell } from "@/components/auth/auth-shell";
-import { FormError } from "@/components/ui/form-error";
-import { FormField } from "@/components/ui/form-field";
-import { inputProps, submitButtonClassName } from "@/components/ui/form-styles";
+import {
+  AuthShell,
+  Button,
+  Input,
+  PasswordInput,
+  authShellLinkClass,
+} from "@repo/ui/client";
+import { ApiFormError } from "@/components/ui/api-form-error";
 import { useSignIn } from "@/lib/auth-hooks";
 
 export function SignInForm() {
@@ -27,64 +31,53 @@ export function SignInForm() {
 
   return (
     <AuthShell
-      title="Sign in"
-      description="Welcome back. Enter your account details."
+      title="Welcome back"
+      description="Sign in to your workspace."
+      logoHref="/"
       footer={
         <>
-          Don&apos;t have an account?{" "}
-          <Link
-            href="/sign-up"
-            className="font-medium text-zinc-950 underline-offset-4 hover:underline dark:text-zinc-50"
-          >
-            Sign up
+          New to Impact Inbox?{" "}
+          <Link href="/sign-up" className={authShellLinkClass()}>
+            Create an account
           </Link>
         </>
       }
     >
       <form
-        className="space-y-5"
         onSubmit={handleSubmit((values) => signInMutation.mutate(values))}
         noValidate
       >
-        <FormField
+        <Input
           id="email"
           label="Email"
+          type="email"
+          autoComplete="email"
+          placeholder="you@company.com"
           error={errors.email?.message}
-        >
-          <input
-            id="email"
-            type="email"
-            autoComplete="email"
-            {...register("email")}
-            {...inputProps(Boolean(errors.email))}
-          />
-        </FormField>
+          {...register("email")}
+        />
 
-        <FormField
+        <PasswordInput
           id="password"
           label="Password"
+          autoComplete="current-password"
+          placeholder="••••••••"
           error={errors.password?.message}
-        >
-          <input
-            id="password"
-            type="password"
-            autoComplete="current-password"
-            {...register("password")}
-            {...inputProps(Boolean(errors.password))}
-          />
-        </FormField>
+          {...register("password")}
+        />
 
-        <FormError error={signInMutation.error} />
+        <ApiFormError error={signInMutation.error} />
 
-        <button
+        <Button
           type="submit"
+          variant="primary"
+          size="lg"
+          fullWidth
+          className="mt-1"
           disabled={isSubmitting || signInMutation.isPending}
-          className={submitButtonClassName(
-            isSubmitting || signInMutation.isPending,
-          )}
         >
           {signInMutation.isPending ? "Signing in..." : "Sign in"}
-        </button>
+        </Button>
       </form>
     </AuthShell>
   );

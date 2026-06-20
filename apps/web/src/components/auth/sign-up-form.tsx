@@ -5,10 +5,14 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { signUpSchema } from "@repo/shared";
 import { useForm } from "react-hook-form";
 import type { SignUpInput } from "@repo/shared";
-import { AuthShell } from "@/components/auth/auth-shell";
-import { FormError } from "@/components/ui/form-error";
-import { FormField } from "@/components/ui/form-field";
-import { inputProps, submitButtonClassName } from "@/components/ui/form-styles";
+import {
+  AuthShell,
+  Button,
+  Input,
+  PasswordInput,
+  authShellLinkClass,
+} from "@repo/ui/client";
+import { ApiFormError } from "@/components/ui/api-form-error";
 import { useSignUp } from "@/lib/auth-hooks";
 
 export function SignUpForm() {
@@ -29,85 +33,77 @@ export function SignUpForm() {
 
   return (
     <AuthShell
-      title="Create account"
-      description="Start building email templates with your workspace."
+      title="Create your account"
+      description="Start a free 7-day trial — no card required."
+      logoHref="/"
       footer={
         <>
           Already have an account?{" "}
-          <Link
-            href="/sign-in"
-            className="font-medium text-zinc-950 underline-offset-4 hover:underline dark:text-zinc-50"
-          >
+          <Link href="/sign-in" className={authShellLinkClass()}>
             Sign in
           </Link>
         </>
       }
     >
       <form
-        className="space-y-5"
         onSubmit={handleSubmit((values) => signUpMutation.mutate(values))}
         noValidate
       >
-        <FormField id="name" label="Name" error={errors.name?.message}>
-          <input
-            id="name"
-            type="text"
-            autoComplete="name"
-            {...register("name")}
-            {...inputProps(Boolean(errors.name))}
-          />
-        </FormField>
+        <Input
+          id="name"
+          label="Full name"
+          type="text"
+          autoComplete="name"
+          placeholder="Maya Chen"
+          error={errors.name?.message}
+          {...register("name")}
+        />
 
-        <FormField id="email" label="Email" error={errors.email?.message}>
-          <input
-            id="email"
-            type="email"
-            autoComplete="email"
-            {...register("email")}
-            {...inputProps(Boolean(errors.email))}
-          />
-        </FormField>
+        <Input
+          id="email"
+          label="Email"
+          type="email"
+          autoComplete="email"
+          placeholder="you@company.com"
+          error={errors.email?.message}
+          {...register("email")}
+        />
 
-        <FormField
+        <PasswordInput
           id="password"
           label="Password"
+          autoComplete="new-password"
+          placeholder="Create a password"
+          hint="At least 8 characters."
           error={errors.password?.message}
-          hint="8-24 characters with upper, lower, number, and special character."
-        >
-          <input
-            id="password"
-            type="password"
-            autoComplete="new-password"
-            {...register("password")}
-            {...inputProps(Boolean(errors.password))}
-          />
-        </FormField>
+          {...register("password")}
+        />
 
-        <FormField
+        <PasswordInput
           id="confirmPassword"
           label="Confirm password"
+          autoComplete="new-password"
+          placeholder="Confirm your password"
           error={errors.confirmPassword?.message}
-        >
-          <input
-            id="confirmPassword"
-            type="password"
-            autoComplete="new-password"
-            {...register("confirmPassword")}
-            {...inputProps(Boolean(errors.confirmPassword))}
-          />
-        </FormField>
+          {...register("confirmPassword")}
+        />
 
-        <FormError error={signUpMutation.error} />
+        <ApiFormError error={signUpMutation.error} />
 
-        <button
+        <Button
           type="submit"
+          variant="primary"
+          size="lg"
+          fullWidth
+          className="mt-1"
           disabled={isSubmitting || signUpMutation.isPending}
-          className={submitButtonClassName(
-            isSubmitting || signUpMutation.isPending,
-          )}
         >
           {signUpMutation.isPending ? "Creating account..." : "Create account"}
-        </button>
+        </Button>
+
+        <p className="mt-4 text-center text-ui-xs leading-normal text-text-muted">
+          By creating an account you agree to the Terms and Privacy Policy.
+        </p>
       </form>
     </AuthShell>
   );
