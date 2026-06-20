@@ -1,0 +1,155 @@
+@theme inline {
+  --font-sans: var(--font-geist-sans, "Geist"), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono, "Geist Mono"), ui-monospace, monospace;
+
+  --color-neutral-0: #ffffff;
+  --color-neutral-25: #fafafa;
+  --color-neutral-50: #f6f6f7;
+  --color-neutral-100: #f1f1f3;
+  --color-neutral-150: #ececee;
+  --color-neutral-200: #e4e4e7;
+  --color-neutral-300: #d4d4d8;
+  --color-neutral-400: #a1a1aa;
+  --color-neutral-500: #71717a;
+  --color-neutral-600: #52525b;
+  --color-neutral-700: #3f3f46;
+  --color-neutral-900: #18181b;
+  --color-canvas-sunken: #ebebed;
+
+  --color-indigo-50: #eef2ff;
+  --color-indigo-100: #e0e3ff;
+  --color-indigo-200: #c7c9ff;
+  --color-indigo-500: #4f46e5;
+  --color-indigo-600: #4338ca;
+  --color-indigo-900: #312e81;
+
+  --color-surface-page: var(--color-neutral-50);
+  --color-surface-card: var(--color-neutral-0);
+  --color-surface-muted: var(--color-neutral-25);
+  --color-surface-sunken: var(--color-canvas-sunken);
+  --color-surface-inset: var(--color-neutral-100);
+
+  --color-border-subtle: var(--color-neutral-100);
+  --color-border-default: var(--color-neutral-150);
+  --color-border-strong: var(--color-neutral-200);
+
+  --color-text-primary: var(--color-neutral-900);
+  --color-text-secondary: var(--color-neutral-600);
+  --color-text-tertiary: var(--color-neutral-500);
+  --color-text-muted: var(--color-neutral-400);
+  --color-text-on-accent: var(--color-neutral-0);
+
+  --color-accent: var(--color-indigo-500);
+  --color-accent-hover: var(--color-indigo-600);
+  --color-accent-deep: var(--color-indigo-900);
+  --color-accent-soft: var(--color-indigo-50);
+  --color-accent-soft-hover: var(--color-indigo-100);
+  --color-accent-border: var(--color-indigo-200);
+  --color-accent-text: var(--color-indigo-500);
+
+  --color-status-success-fg: #16a34a;
+  --color-status-success-bg: #f0fdf4;
+  --color-status-warning-fg: #d97706;
+  --color-status-warning-bg: #fffbeb;
+  --color-status-danger-fg: #dc2626;
+  --color-status-danger-bg: #fef2f2;
+  --color-status-info-fg: #2563eb;
+  --color-status-info-bg: #eff6ff;
+  --color-status-neutral-fg: var(--color-neutral-500);
+  --color-status-neutral-bg: var(--color-neutral-100);
+
+  --text-2xs: 10px;
+  --text-ui-xs: 11px;
+  --text-ui-sm: 12.5px;
+  --text-ui-base: 13px;
+  --text-ui-md: 14px;
+  --text-ui-lg: 15px;
+  --text-ui-xl: 18px;
+  --text-ui-2xl: 21px;
+  --text-ui-3xl: 27px;
+
+  --tracking-snug: -0.01em;
+  --tracking-tight: -0.02em;
+
+  --radius-xs: 4px;
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 9px;
+  --radius-xl: 12px;
+  --radius-2xl: 14px;
+
+  --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.08);
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.08);
+  --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.08), 0 12px 32px rgba(0, 0, 0, 0.07);
+  --shadow-pop: 0 12px 32px rgba(0, 0, 0, 0.14);
+  --shadow-drawer: -10px 0 28px rgba(0, 0, 0, 0.07);
+  --shadow-accent: 0 1px 2px rgba(79, 70, 229, 0.25);
+  --shadow-ring-accent: 0 0 0 3px rgba(79, 70, 229, 0.25);
+  --shadow-ring-danger: 0 0 0 3px rgba(220, 38, 38, 0.2);
+
+  --spacing-topbar: 53px;
+  --spacing-panel-left: 266px;
+  --spacing-panel-right: 302px;
+  --spacing-auth-shell: 400px;
+  --spacing-auth-card-x: 30px;
+  --spacing-auth-card-pt: 30px;
+  --spacing-auth-card-pb: 28px;
+  --spacing-auth-heading: 22px;
+  --spacing-auth-footer: 18px;
+  --spacing-auth-copyright: 22px;
+  --spacing-logo-gap: 26px;
+  --spacing-field-y: 10px;
+  --spacing-toggle-x: 11px;
+  --spacing-button-lg-y: 11px;
+}
+
+@layer base {
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+  }
+
+  body {
+    margin: 0;
+    font-family: var(--font-sans);
+    font-size: var(--text-ui-base);
+    line-height: 1.55;
+    color: var(--color-text-primary);
+    background: var(--color-surface-page);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  button,
+  input,
+  textarea,
+  select {
+    font: inherit;
+  }
+
+  a {
+    color: inherit;
+  }
+
+  input:focus-visible,
+  textarea:focus-visible,
+  select:focus-visible,
+  button:focus-visible {
+    outline: none;
+    box-shadow: var(--shadow-ring-accent);
+  }
+
+  .field-control input:focus-visible,
+  .field-control textarea:focus-visible,
+  .field-control button:focus-visible {
+    box-shadow: none;
+  }
+
+  .field-control input:-webkit-autofill,
+  .field-control input:-webkit-autofill:hover,
+  .field-control input:-webkit-autofill:focus {
+    -webkit-text-fill-color: var(--color-text-primary);
+    box-shadow: 0 0 0 1000px var(--color-surface-card) inset;
+    transition: background-color 9999s ease-out;
+  }
+}
