@@ -3,6 +3,7 @@ import {
   CanActivate,
   ExecutionContext,
   UnauthorizedException,
+  Logger,
 } from "@nestjs/common";
 import { Reflector } from "@nestjs/core";
 import { SessionsService } from "src/auth/sessions.service";
@@ -13,6 +14,8 @@ import { IS_PUBLIC_KEY } from "./decorators/public.decorator";
 
 @Injectable()
 export class AuthGuard implements CanActivate {
+  private readonly logger = new Logger(AuthGuard.name);
+
   constructor(
     private readonly sessionsService: SessionsService,
     private readonly organizationsService: OrganizationsService,
@@ -36,20 +39,35 @@ export class AuthGuard implements CanActivate {
       throw new UnauthorizedException();
     }
 
-    const { session, user } = await this.sessionsService.validateSession(token);
+    try {
+      const { session, user } = await this.sessionsService.validateSession(token);
 
-    if (!user || !session) {
+      if (!user || !session) {
+        throw new UnauthorizedException();
+      }
+
+      const profile = toUserProfile(user);
+      request.user = profile;
+      request.token = token;
+    } catch (error) {
+      if (error instanceof UnauthorizedException) {
+        throw error;
+      }
+
       throw new UnauthorizedException();
     }
 
-    const profile = toUserProfile(user);
-    request.user = profile;
-    request.token = token;
-
-    await this.organizationsService.startTrialIfEligible(
-      profile.id,
-      profile.emailVerifiedAt,
-    );
+    try {
+      await this.organizationsService.startTrialIfEligible(
+        request.user.id,
+        request.user.emailVerifiedAt,
+      );
+    } catch (error) {
+      this.logger.warn(
+        `Failed to start trial for user ${request.user.id}`,
+        error instanceof Error ? error.stack : error,
+      );
+    }
 
     return true;
   }
