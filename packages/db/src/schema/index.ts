@@ -4,6 +4,7 @@ import { accounts } from "./accounts";
 import { authTokens } from "./auth-tokens";
 import { organizations, organizationMembers } from "./organizations";
 import { workspaces, workspaceMembers } from "./workspaces";
+import { workspaceSlugRedirects } from "./workspace-slug-redirects";
 import { templates, templateRevisions } from "./template";
 
 export {
@@ -15,6 +16,7 @@ export {
   organizationMembers,
   workspaces,
   workspaceMembers,
+  workspaceSlugRedirects,
   templates,
   templateRevisions,
 };
