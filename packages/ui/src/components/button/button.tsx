@@ -71,3 +71,10 @@ export function authShellLinkClass(className?: string) {
     className,
   );
 }
+
+export function authInlineLinkClass(className?: string) {
+  return cn(
+    "text-ui-sm font-medium text-accent-text no-underline transition-colors hover:text-accent-deep",
+    className,
+  );
+}
