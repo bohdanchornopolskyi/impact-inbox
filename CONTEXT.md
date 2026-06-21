@@ -61,8 +61,8 @@ Unpaid state after trial expires. Unlimited template read, edit, and revision hi
 _Avoid_: Hard paywall on all app access, unlimited export without pay, deleting user data on trial expiry
 
 **Template export**:
-One export action delivers HTML and plain text together and counts as one toward the monthly cap in template access mode. Unlimited on paid plans. Export checks go through central **Plan limits** enforcement — the export API ships before billing wires real meters.
-_Avoid_: Separate caps for HTML and text, JSON source in unpaid export bundle, ad-hoc export cap logic outside plan limits
+One export action delivers HTML and plain text together and counts as one toward the monthly cap in template access mode. Unlimited on paid plans. Export checks go through central **Plan limits** enforcement — the export API ships before billing wires real meters. Builder download ships a single `.zip` containing `.html` and `.txt`; preview tabs support copy only.
+_Avoid_: Separate caps for HTML and text, JSON source in unpaid export bundle, ad-hoc export cap logic outside plan limits, separate download actions counting as multiple exports
 
 **Template settings**:
 Subject, preheader, width, colors, and fonts on a template — part of the **Working copy** content bundle, snapshotted into each **Template revision** with the block tree. Template width is 480–700px at launch (default 600px).
@@ -73,8 +73,8 @@ A discriminator in the template content tree (e.g. `heading`, `button`). Schema 
 _Avoid_: Switch-per-file block handling without registry entry, full HTML editor as the default builder, HTML-to-blocks import in v1, palette subset that hides registered block types
 
 **Template builder**:
-The visual editor for template **Working copy**. v1: all **Block type** entries from `TEMPLATE_BLOCK_DEFINITIONS` are addable from the palette; property panels may be minimal or schema-driven — polish per block type later. Layout is section → row → column → content blocks. Content blocks reorder via drag-and-drop within and between columns; layout blocks (section, row, column) are managed via a structure panel — not free-form layout drag-and-drop. Preview: desktop canvas at template width (default 600px) and mobile viewport toggle (~375px) — same rendered HTML, no merge-tag sample contact in v1. Template width is configurable in **Template settings** (480–700px). **Working copy** autosaves (debounced); explicit Save creates a **Template revision** for version history.
-_Avoid_: Curated palette that omits registered blocks, bespoke-only editor with no shared block registry, WYSIWYG HTML-as-primary mode, drag-and-drop for section/row/column nesting in v1, desktop-only preview, separate mobile render pipeline, manual save required for working copy, autosave creating revisions, hard-coded 600px with no user override
+The visual editor for template **Working copy**. v1: all **Block type** entries from `TEMPLATE_BLOCK_DEFINITIONS` are addable from the palette; property panels may be minimal or schema-driven — polish per block type later. Layout is section → row → column → content blocks. Content blocks reorder via drag-and-drop within and between columns; layout blocks (section, row, column) are managed via a structure panel — not free-form layout drag-and-drop. Preview: desktop canvas at template width (default 600px) and mobile viewport toggle (~375px) — same rendered HTML, no merge-tag sample contact in v1. Template width is configurable in **Template settings** (480–700px). **Working copy** autosaves (debounced); explicit Save creates a **Template revision** for version history. Phase 2: selection and editing via structure panel + inspector; canvas click-to-select and inline edit deferred (see ADR 0008) — preview HTML keeps `data-block-id` on content blocks for a future iframe bridge.
+_Avoid_: Curated palette that omits registered blocks, bespoke-only editor with no shared block registry, WYSIWYG HTML-as-primary mode, drag-and-drop for section/row/column nesting in v1, desktop-only preview, separate mobile render pipeline, manual save required for working copy, autosave creating revisions, hard-coded 600px with no user override, duplicating block render logic in the builder instead of iframe preview
 
 **Block image source**:
 The URL on Image and Logo blocks. External URL only until platform upload ships; blocks always store a single resolved URL so upload can plug in without changing the content model.
@@ -97,15 +97,15 @@ Platform-level transactional message (email verification, password reset). Sent 
 _Avoid_: Campaign, newsletter edition, workspace-scoped provider for sign-up flows
 
 **Working copy**:
-The live, editable content on a template — block tree plus **Template settings** — updated by autosave and builder edits. Never sent directly; execution snapshots it into a revision first. Version history is separate (see **Template revision**); there is no draft/published gate on the template.
-_Avoid_: Template draft, published template, sent email source
+The live, editable content on a template — block tree plus **Template settings** — updated by autosave and builder edits. Never sent directly; execution snapshots it into a revision first. Version history is separate (see **Template revision**); there is no draft/published gate on the template. Builder autosave status uses working-copy language (e.g. Synced, Unsaved changes) — not draft.
+_Avoid_: Template draft, published template, sent email source, draft in autosave UI copy
 
 **Template revision**:
 A frozen copy of the working copy at a point in time (full content JSON + settings). Stored separately. Created on explicit Save (version history) or automatically at send execution if the working copy changed since the last save. Each campaign pins exactly one revision so “what went out” never changes when the working copy is edited later. Restoring a revision snapshots the current working copy into a new revision first, then replaces the working copy — nothing is lost from history.
 _Avoid_: Version (reserved for the content JSON schema format, e.g. `version: 1` in `templateContentSchema`), revision on every autosave, draft/published status as a stand-in for revisions, restore that overwrites history
 
 **Archived template**:
-A template hidden from pickers and blocked from new campaigns. Working copy and revision history are retained. The only lifecycle flag on a template — not draft or published. Archive is always available; hard delete is allowed only when no campaign references a revision.
+A template hidden from pickers and blocked from new campaigns. Working copy and revision history are retained. The only lifecycle flag on a template — not draft or published. Archive is always available; restore (unarchive) clears `archivedAt` and returns the template to the active list. Hard delete is allowed only when no campaign references a revision.
 _Avoid_: Template status draft, template status published, deleting templates with send history, hard delete exposed before campaign reference guard exists
 
 **Subject line**:
@@ -157,7 +157,7 @@ A temporary delivery failure (mailbox full, provider timeout) recorded as a boun
 _Avoid_: Immediate suppression on first soft bounce, per-campaign soft bounce counter, automatic retry queue in v1
 
 **Merge tag**:
-A placeholder in subject lines and template content using Mustache-style doubles: `{{fieldName}}`. Case-sensitive — must match the exact field or reserved tag name (e.g. `firstName`, not `FirstName`). Resolved per contact at send time from core fields (`firstName`, `lastName`, `email`) and flat keys from contact `attributes` — core fields win on name collision. **Reserved merge tags** are system-injected at send time (not contact data): `unsubscribeUrl`, `physicalAddress`, `listName`, `workspaceName`, `currentYear`. Substituted values are context-aware escaped (HTML-escape in body text, URL-encode in link `href`, plain text in subject) — merge data is never injected as raw HTML. v1: simple string substitution only; missing values render as an empty string. Unknown tags show a non-blocking warning in the builder; send is not blocked.
+A placeholder in subject lines and template content using Mustache-style doubles: `{{fieldName}}`. Case-sensitive — must match the exact field or reserved tag name (e.g. `firstName`, not `FirstName`). Resolved per contact at send time from core fields (`firstName`, `lastName`, `email`) and flat keys from contact `attributes` — core fields win on name collision. **Reserved merge tags** are system-injected at send time (not contact data): `unsubscribeUrl`, `physicalAddress`, `listName`, `workspaceName`, `currentYear`. Substituted values are context-aware escaped (HTML-escape in body text, URL-encode in link `href`, plain text in subject) — merge data is never injected as raw HTML. v1: simple string substitution only; missing values render as an empty string. Unknown tags show a non-blocking warning in the builder; send is not blocked. Phase 2 builder warnings validate against core contact fields and **Reserved merge tag** names only; custom contact **attributes** join the allowlist when contacts ship (Phase 3).
 _Avoid_: Merge field, variable (unless in UI copy), conditional content blocks in v1, blocking sends on missing or unknown tags, case-insensitive matching, raw HTML injection from contact data, namespaced `attributes.` prefix, Mailchimp-style `*|TAG|*` syntax, `viewInBrowserUrl` before hosted email view exists
 
 **Reserved merge tag**:
