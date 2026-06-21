@@ -1,5 +1,5 @@
 import type { ContentBlock, ContentBlockType, TemplateSettings } from "@repo/shared";
-import type { ReactNode } from "react";
+import { createElement, type ReactNode } from "react";
 
 export type RenderContext = {
   settings: TemplateSettings;
@@ -51,7 +51,12 @@ export function renderContentBlockHtml(
   if (!render) {
     throw new Error(`No HTML renderer registered for block type: ${block.type}`);
   }
-  return render(block, context);
+
+  return createElement(
+    "div",
+    { "data-block-id": block.id, key: block.id },
+    render(block, context),
+  );
 }
 
 export function renderContentBlockTextDispatch(
