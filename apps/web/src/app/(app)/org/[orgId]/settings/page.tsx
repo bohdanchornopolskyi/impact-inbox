@@ -8,17 +8,7 @@ import { ApiFormError } from "@/components/ui/api-form-error";
 import { useSession } from "@/contexts/session-context";
 import { isApiErrorCode } from "@/lib/api-error";
 import { getOrganization } from "@/lib/api/organizations-api";
-
-function formatDate(value: Date | null): string {
-  if (!value) {
-    return "—";
-  }
-
-  return new Intl.DateTimeFormat(undefined, {
-    dateStyle: "medium",
-    timeStyle: "short",
-  }).format(value);
-}
+import { formatDateTime } from "@/lib/format-date";
 
 export default function OrganizationSettingsPage() {
   const params = useParams<{ orgId: string }>();
@@ -108,7 +98,7 @@ export default function OrganizationSettingsPage() {
                 Trial ends
               </dt>
               <dd className="mt-1 text-ui-sm text-text-primary">
-                {formatDate(organization.trialEndsAt)}
+                {formatDateTime(organization.trialEndsAt)}
               </dd>
             </div>
             <div>
@@ -124,7 +114,7 @@ export default function OrganizationSettingsPage() {
                 Created
               </dt>
               <dd className="mt-1 text-ui-sm text-text-primary">
-                {formatDate(organization.createdAt)}
+                {formatDateTime(organization.createdAt)}
               </dd>
             </div>
           </dl>
