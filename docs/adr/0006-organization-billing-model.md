@@ -34,6 +34,8 @@ Three **Plan tier** levels at launch — **Starter**, **Growth**, **Agency**. Sa
 
 **Over limit (general):** Block sends, new workspaces, and admin invites; allow read, edit, and analytics. Quota relief via tier upgrade or send top-ups.
 
+**Plan limits interface:** Central module for meter checks (contacts, sends, workspaces, seats, export cap). Template export API calls `canExport(orgId)` from Phase 2 onward; implementation stubs to allow-all until Phase 6 billing wires real enforcement — avoids rewriting export when billing lands.
+
 **Public launch:** Billing and limit enforcement ship with the first public release — not deferred.
 
 **Considered:** Per-workspace billing; per-user billing; permanent freemium with sends; card required at trial start; workspace transfer between orgs in v1; send-only tiers without contact cap; calendar-month quota reset; partial send when over quota; immediate downgrade; contact+send bundled top-up blocks (Mailchimp-style). Rejected or deferred per above.

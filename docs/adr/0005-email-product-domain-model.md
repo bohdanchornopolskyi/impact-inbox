@@ -14,9 +14,13 @@ Bulk sends use a Redis **Send queue** (`packages/queue` job definitions). v1 pro
 
 **Working copy** is live editable content on the template row. **Template revision** is a frozen snapshot for version history and sends. Revisions on explicit Save or at send execution when working copy changed. Campaigns always pin a revision at execution time (including scheduled sends). Restore revision: snapshot current working copy to a new revision first, then apply.
 
-No `draft`/`published` template status — remove `TEMPLATE_STATUSES` draft/published; use **Archived template** only. Hard delete only when no campaign references a revision.
+No `draft`/`published` template status — remove `TEMPLATE_STATUSES` draft/published; use **Archived template** only. Archive is always available in product UI; hard delete only when no campaign references a revision (hard delete not exposed until campaigns exist in Phase 4).
 
-Builder is block-native with an HTML block escape hatch (ADR 0004). All registered block types appear in the builder palette at launch; v1 property editors may be minimal or schema-driven. Content blocks reorder via drag-and-drop; layout blocks (section, row, column) via structure panel. Preview: desktop at template width (default 600px, configurable 480–700px) and mobile viewport toggle. Working copy autosaves; explicit Save creates a template revision. **Subject line** defaults on template settings; campaigns may override. **Template export** = HTML + plain text bundle.
+**Template settings** (subject, preheader, width 480–700px, colors, fonts) live inside working copy content — not separate template columns. Revisions store the full content JSON. **Subject line** defaults from settings; campaigns override per send.
+
+**Block image source:** external URL only in Phase 2; blocks store one resolved URL so platform upload can plug in without changing the content model (see ADR 0007).
+
+Builder is block-native with an HTML block escape hatch (ADR 0004). All registered block types appear in the builder palette at launch; v1 property editors may be minimal or schema-driven. Content blocks reorder via drag-and-drop; layout blocks (section, row, column) via structure panel. Preview: desktop at template width (default 600px, configurable 480–700px) and mobile viewport toggle. Working copy autosaves; explicit Save creates a template revision. **Template export** = HTML + plain text bundle; export authorization goes through **Plan limits** (stub until billing at launch).
 
 ## Campaigns, newsletters, audience
 
@@ -50,4 +54,4 @@ See [ADR 0006](./0006-organization-billing-model.md) for organization, trial, te
 
 **Considered:** Mailchimp export-only; campaign-level aggregates only; revision at schedule time; member sends; cron newsletters v1; ESP-only analytics; workspace transfer v1; namespaced `attributes.` merge tags; Mailchimp `*|TAG|*` syntax; blocking sends on unknown merge tags. Rejected or deferred.
 
-**Consequences:** Domain vocabulary in [CONTEXT.md](../../CONTEXT.md). Phases: template revisions → contacts/lists → send providers + queue → campaigns → webhooks/analytics → billing at public launch.
+**Consequences:** Domain vocabulary in [CONTEXT.md](../../CONTEXT.md). Phases: template revisions + builder (Phase 2, [ADR 0007](./0007-phase-2-templates-scope.md)) → contacts/lists → send providers + queue + campaigns (Phase 4) → webhooks/analytics → billing at public launch.

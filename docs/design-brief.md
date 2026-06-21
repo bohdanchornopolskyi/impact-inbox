@@ -4,7 +4,7 @@
 
 **Source of truth for domain language:** [CONTEXT.md](../CONTEXT.md)  
 **Engineering roadmap:** [architecture-roadmap.md](./architecture-roadmap.md) §8–9  
-**What's already built in code:** auth shell, org/workspace switcher, slug URLs — see [implementation-handoff.md](./implementation-handoff.md)
+**What's already built in code:** auth shell, org/workspace switcher, slug URLs — see [architecture-roadmap.md](./architecture-roadmap.md) §8 Phase 1.
 
 ---
 

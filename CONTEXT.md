@@ -28,6 +28,10 @@ _Avoid_: Per-workspace billing, user-level billing with no org, forcing solo use
 Meters attached to an organization for plan enforcement at launch: **Contact cap** (primary), **Send quota**, workspace count, and admin seats. Admin seats count org owners/admins and any workspace admin or owner; org members with no privileged role do not. Workspace members (view-only) do not. Over limit: block sends, new workspaces, and admin invites; allow read, edit, and analytics. Contact import blocked at contact cap. Quota relief via tier upgrade or one-off send top-ups before the billing period ends.
 _Avoid_: Flat unlimited sends, blocking template editing when send cap hit, provider-specific billing logic in product code, hard stop with no top-up path, counting view-only or unassigned org members as seats, send-only tiers with no contact limit
 
+**Plan limits**:
+Central enforcement of organization **Billable usage** meters — contact cap, send quota, workspace count, admin seats, and template export cap in **Template access mode**. Feature modules call one interface; meters may stub to allow-all until billing ships at public launch.
+_Avoid_: Duplicate limit checks per module, provider-specific enforcement, export or send caps implemented outside plan limits
+
 **Contact cap**:
 Organization-level limit on stored **Contact** records across all workspaces in the organization — every contact counts regardless of list membership status (subscribed, pending, unsubscribed, suppressed). Primary plan tier meter; each tier sets a contact allowance and a **Send quota** at ten times that allowance (industry-standard ratio). Import and manual create blocked at cap; existing contacts are retained.
 _Avoid_: Per-workspace contact pools on paid plans, unlimited contacts with send cap only, deleting contacts automatically when over cap, counting only subscribed contacts toward cap
@@ -57,16 +61,24 @@ Unpaid state after trial expires. Unlimited template read, edit, and revision hi
 _Avoid_: Hard paywall on all app access, unlimited export without pay, deleting user data on trial expiry
 
 **Template export**:
-One export action delivers HTML and plain text together and counts as one toward the monthly cap in template access mode. Unlimited on paid plans.
-_Avoid_: Separate caps for HTML and text, JSON source in unpaid export bundle
+One export action delivers HTML and plain text together and counts as one toward the monthly cap in template access mode. Unlimited on paid plans. Export checks go through central **Plan limits** enforcement — the export API ships before billing wires real meters.
+_Avoid_: Separate caps for HTML and text, JSON source in unpaid export bundle, ad-hoc export cap logic outside plan limits
+
+**Template settings**:
+Subject, preheader, width, colors, and fonts on a template — part of the **Working copy** content bundle, snapshotted into each **Template revision** with the block tree. Template width is 480–700px at launch (default 600px).
+_Avoid_: Settings stored only on revision rows, settings split across separate template columns, width outside 480–700px at launch
 
 **Block type**:
 A discriminator in the template content tree (e.g. `heading`, `button`). Schema lives in `@repo/shared`; render dispatch lives in `@repo/email-renderer` registry. Includes an HTML block for raw markup escape hatches — not the primary editing mode. Every registered block type appears in the **Template builder** palette at launch.
 _Avoid_: Switch-per-file block handling without registry entry, full HTML editor as the default builder, HTML-to-blocks import in v1, palette subset that hides registered block types
 
 **Template builder**:
-The visual editor for template **Working copy**. v1: all **Block type** entries from `TEMPLATE_BLOCK_DEFINITIONS` are addable from the palette; property panels may be minimal or schema-driven — polish per block type later. Layout is section → row → column → content blocks. Content blocks reorder via drag-and-drop within and between columns; layout blocks (section, row, column) are managed via a structure panel — not free-form layout drag-and-drop. Preview: desktop canvas at template width (default 600px) and mobile viewport toggle (~375px) — same rendered HTML, no merge-tag sample contact in v1. Template width is configurable in template settings from launch (sensible min/max, e.g. 480–700px). **Working copy** autosaves (debounced); explicit Save creates a **Template revision** for version history.
+The visual editor for template **Working copy**. v1: all **Block type** entries from `TEMPLATE_BLOCK_DEFINITIONS` are addable from the palette; property panels may be minimal or schema-driven — polish per block type later. Layout is section → row → column → content blocks. Content blocks reorder via drag-and-drop within and between columns; layout blocks (section, row, column) are managed via a structure panel — not free-form layout drag-and-drop. Preview: desktop canvas at template width (default 600px) and mobile viewport toggle (~375px) — same rendered HTML, no merge-tag sample contact in v1. Template width is configurable in **Template settings** (480–700px). **Working copy** autosaves (debounced); explicit Save creates a **Template revision** for version history.
 _Avoid_: Curated palette that omits registered blocks, bespoke-only editor with no shared block registry, WYSIWYG HTML-as-primary mode, drag-and-drop for section/row/column nesting in v1, desktop-only preview, separate mobile render pipeline, manual save required for working copy, autosave creating revisions, hard-coded 600px with no user override
+
+**Block image source**:
+The URL on Image and Logo blocks. External URL only until platform upload ships; blocks always store a single resolved URL so upload can plug in without changing the content model.
+_Avoid_: Separate fields for external vs hosted assets, binary data in content JSON, upload-only with no URL path
 
 **Auth seam**:
 Where session tokens become `Session user` on the request. Only place DB user rows map to shared profile types.
@@ -77,15 +89,15 @@ Membership resolution + role comparison for a workspace id and user id. Single m
 _Avoid_: Duplicate membership queries in guard and service
 
 **Send provider**:
-A workspace-configured delivery backend (Resend, Mailchimp, SMTP/custom) for marketing sends. A workspace may have several; one is the default for new campaigns and newsletters. Each send stores which provider delivered it. Carries default sender identity (`from` name, email, reply-to); campaigns may override. Credentials are editable by workspace admin/owner and org owner.
-_Avoid_: Export-only sync to external ESP, single global provider lock-in, provider as analytics source of truth, auth/verification mail, org members without admin access viewing API keys
+A workspace-configured delivery backend (Resend, Mailchimp, SMTP/custom) for marketing sends. A workspace may have several; one is the default for new campaigns and newsletters. Each send stores which provider delivered it. Carries default sender identity (`from` name, email, reply-to); campaigns may override. Credentials are editable by workspace admin/owner and org owner. Workspace send providers ship with campaigns (Phase 4) — not the template builder phase.
+_Avoid_: Export-only sync to external ESP, single global provider lock-in, provider as analytics source of truth, auth/verification mail, org members without admin access viewing API keys, workspace send providers required before campaigns exist
 
 **System email**:
 Platform-level transactional message (email verification, password reset). Sent via app-level delivery config, not workspace send providers — the recipient may not have a workspace yet.
 _Avoid_: Campaign, newsletter edition, workspace-scoped provider for sign-up flows
 
 **Working copy**:
-The live, editable content on a template — updated by autosave and builder edits. Never sent directly; execution snapshots it into a revision first. Version history is separate (see **Template revision**); there is no draft/published gate on the template.
+The live, editable content on a template — block tree plus **Template settings** — updated by autosave and builder edits. Never sent directly; execution snapshots it into a revision first. Version history is separate (see **Template revision**); there is no draft/published gate on the template.
 _Avoid_: Template draft, published template, sent email source
 
 **Template revision**:
@@ -93,12 +105,12 @@ A frozen copy of the working copy at a point in time (full content JSON + settin
 _Avoid_: Version (reserved for the content JSON schema format, e.g. `version: 1` in `templateContentSchema`), revision on every autosave, draft/published status as a stand-in for revisions, restore that overwrites history
 
 **Archived template**:
-A template hidden from pickers and blocked from new campaigns. Working copy and revision history are retained. The only lifecycle flag on a template — not draft or published. Hard delete is allowed only when no campaign references a revision; otherwise archive.
-_Avoid_: Template status draft, template status published, deleting templates with send history
+A template hidden from pickers and blocked from new campaigns. Working copy and revision history are retained. The only lifecycle flag on a template — not draft or published. Archive is always available; hard delete is allowed only when no campaign references a revision.
+_Avoid_: Template status draft, template status published, deleting templates with send history, hard delete exposed before campaign reference guard exists
 
 **Subject line**:
-Email subject for a send. Default lives on template settings; each campaign may override. Merge tags resolve per contact at send time.
-_Avoid_: Subject only on template, subject only on campaign, subject baked into revision only
+Email subject for a send. Default lives on **Template settings** as part of the working copy; each campaign may override. Merge tags resolve per contact at send time. Revisions snapshot settings with the block tree.
+_Avoid_: Subject as a separate template column outside working copy, subject only on campaign, subject editable only through revision history
 
 **Campaign**:
 A workspace-scoped send that combines a template revision, an audience, and a send provider. One-shot sends and newsletter editions are both campaigns; send history and analytics attach here. Subject line defaults from the template and may be overridden per campaign. Duplicating a campaign creates a new draft with the same settings; send pins the template working copy at execution unless a revision is explicitly chosen.

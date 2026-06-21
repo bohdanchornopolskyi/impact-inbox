@@ -437,10 +437,10 @@ flowchart TB
     SLUG_R[slug redirects]
   end
 
-  subgraph phase2["Phase 2 — Templates & delivery"]
+  subgraph phase2["Phase 2 — Templates & builder"]
     TPL_REV[template revisions]
-    EMAIL[system + send providers]
-    EXPORT[template export]
+    EMAIL[system email Resend]
+    EXPORT[template export + builder UI]
   end
 
   subgraph phase3["Phase 3 — Audience"]
@@ -617,16 +617,19 @@ Goal: authenticate, org/workspace navigation, slug URLs.
 - [ ] Workspace slug change with redirects table
 - [ ] Org roles: owner, org admin, member
 
-### Phase 2 — Templates & delivery (3–4 weeks)
+### Phase 2 — Templates & builder (3–4 weeks)
+
+Goal: M2 — build template, Save revision, preview, export. See [ADR 0007](./adr/0007-phase-2-templates-scope.md).
 
 | Task | Notes |
 |------|-------|
 | `template_revisions` table + Save/restore | Working copy vs revision (ADR 0005) |
-| Remove `TEMPLATE_STATUSES` draft/published | `archivedAt` only |
-| System `EmailService` (Resend) | Verification, reset, double opt-in |
-| Workspace `send_providers` module | Resend/Mailchimp/SMTP; multi + default |
-| Template export API | HTML + plain text bundle |
-| Template preview | existing routes |
+| `templateSettings`: subject, width 480–700 | Part of working copy JSON |
+| System `EmailService` (Resend) | Verification, reset |
+| Template export API | HTML + plain text; `PlanLimitsService.canExport` stub |
+| Template list + builder UI | Full palette, structure panel, autosave, revision history |
+| Archive-only | No hard delete until Phase 4 |
+| Image blocks | External URL only (upload later) |
 
 ### Phase 3 — Contacts & lists (2–3 weeks)
 
@@ -642,6 +645,7 @@ Goal: authenticate, org/workspace navigation, slug URLs.
 | Task | Notes |
 |------|-------|
 | `campaigns`, `newsletters`, `recipient_sends` | Pin `template_revision_id` at execution |
+| Workspace `send_providers` module | Resend/Mailchimp/SMTP; multi + default (deferred from Phase 2) |
 | Send queue (`@repo/queue` + BullMQ in API) | `202` on send; v1 processors in API |
 | Merge tags + test send | Sample or pick contact |
 | Unsubscribe footer + address overrides | Token per recipient send |
@@ -746,11 +750,11 @@ Org-scoped pages include `orgId` in the URL — no server-side “active org” 
 ```
 1. Close Phase 0 (CORS, health, migrations, E2E)
 2. Phase 1 web shell + Phase 1b organizations
-3. Template revisions + remove draft/published status
-4. System email + workspace send providers
-5. Contacts → lists → campaigns + send queue (in API)
-6. Tracking + webhooks + analytics
-7. Billing + trial + template access mode  ← public launch gate
+3. Phase 2 — template revisions, builder, export, system email (ADR 0007)
+4. Contacts → lists (Phase 3)
+5. Campaigns + workspace send providers + send queue (Phase 4)
+6. Tracking + webhooks + analytics (Phase 5)
+7. Billing + trial + template access mode  ← public launch gate (Phase 6)
 8. Extract apps/worker when needed
 ```
 
