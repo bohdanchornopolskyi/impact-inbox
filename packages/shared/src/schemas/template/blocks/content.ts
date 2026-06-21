@@ -148,7 +148,7 @@ export const footerBlockSchema = blockBaseSchema.extend({
       companyName: z.string().optional(),
       address: z.string().optional(),
       copyright: z.string().optional(),
-      unsubscribeUrl: z.string().url().optional(),
+      unsubscribeUrl: z.string().url().or(z.literal("")).optional(),
       unsubscribeLabel: z.string().optional(),
       links: z.array(footerLinkSchema).optional(),
       textColor: z.string().optional(),

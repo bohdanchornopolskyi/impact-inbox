@@ -11,6 +11,8 @@ export const updateTemplateSchema = z
     name: z.string().min(1).max(255),
     content: templateContentSchema,
     archived: z.boolean(),
+    // Optimistic-concurrency token for autosave PATCH (ADR 0010).
+    expectedUpdatedAt: z.string(),
   })
   .partial()
   .refine(
@@ -43,6 +45,20 @@ export const templatePreviewSchema = z.object({
   html: z.string(),
   text: z.string(),
 });
+
+export {
+  templateRevisionSchema,
+  saveTemplateRevisionSchema,
+  restoreTemplateRevisionSchema,
+  type TemplateRevisionData,
+  type SaveTemplateRevisionInput,
+  type RestoreTemplateRevisionInput,
+} from "./revisions";
+
+export {
+  templateExportSchema,
+  type TemplateExportData,
+} from "./export";
 
 export type CreateTemplateInput = z.infer<typeof createTemplateSchema>;
 export type UpdateTemplateInput = z.infer<typeof updateTemplateSchema>;
