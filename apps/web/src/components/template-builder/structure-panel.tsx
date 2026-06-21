@@ -205,11 +205,11 @@ export function StructurePanel() {
     // Dropped onto an empty column droppable: append to that column.
     const overFound = findBlock(content, String(over.id));
     if (overFound && overFound.block.type === "column") {
-      moveBlock(String(active.id), overFound.block.id, 0);
+      const column = overFound.block;
+      moveBlock(String(active.id), column.id, column.children.length);
       return;
     }
 
-    // Dropped onto another content block: take its column + position.
     if (
       !overFound ||
       !isContentBlock(overFound.block) ||
@@ -219,11 +219,18 @@ export function StructurePanel() {
       return;
     }
 
-    moveBlock(
-      String(active.id),
-      overFound.parentColumnId,
-      overFound.path.contentIndex,
-    );
+    const targetColumnId = overFound.parentColumnId;
+    let targetIndex = overFound.path.contentIndex;
+
+    if (
+      activeFound.parentColumnId === targetColumnId &&
+      activeFound.path.contentIndex !== undefined &&
+      activeFound.path.contentIndex < targetIndex
+    ) {
+      targetIndex -= 1;
+    }
+
+    moveBlock(String(active.id), targetColumnId, targetIndex);
   }
 
   function handleAddSection() {

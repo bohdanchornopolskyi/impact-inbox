@@ -118,6 +118,9 @@ export function useSaveTemplateRevision(templateId: string) {
       queryClient.invalidateQueries({
         queryKey: ["template-revisions", workspace.id, templateId],
       });
+      queryClient.invalidateQueries({
+        queryKey: ["templates", workspace.id],
+      });
     },
   });
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useEffect, useRef } from "react";
+import { createContext, useContext, useEffect, useRef, useState } from "react";
 import { createStore, useStore, type StoreApi } from "zustand";
 import type { ContentBlockType, TemplateContentData, TemplateData } from "@repo/shared";
 import {
@@ -22,13 +22,15 @@ import {
   useSaveTemplateRevision,
   useUpdateTemplate,
 } from "@/lib/templates/template-hooks";
+import type { PreviewDevice } from "@/lib/templates/preview-device";
+import { TemplateConflictModal } from "./modals/template-conflict-modal";
+import { useSession } from "@/contexts/session-context";
+import { useWorkspace } from "@/contexts/workspace-context";
+import { getTemplate } from "@/lib/api/templates-api";
 
 export type SaveState = "synced" | "unsaved" | "saving" | "error";
 export type InspectorMode = "block" | "templateSettings";
-export type PreviewDevice = "desktop" | "mobile";
-
-const CONFLICT_MESSAGE =
-  "This template was changed elsewhere. Reload to get the latest version, then try again.";
+export type { PreviewDevice } from "@/lib/templates/preview-device";
 
 function isConflict(error: unknown): boolean {
   return error instanceof ApiClientError && error.code === "CONFLICT";
@@ -52,6 +54,7 @@ type BuilderState = {
   // Persistence
   saveState: SaveState;
   canEdit: boolean;
+  conflictOpen: boolean;
 
   // Actions (stable references)
   init: (template: TemplateData) => void;
@@ -72,6 +75,7 @@ type BuilderState = {
   setRestoreRevisionId: (revisionId: string | null) => void;
   setPreviewDevice: (device: PreviewDevice) => void;
   setSaveState: (saveState: SaveState) => void;
+  setConflictOpen: (open: boolean) => void;
   /** Advance the concurrency token after a successful write without touching the working copy. */
   markSaved: (updatedAt: string) => void;
 };
@@ -102,6 +106,7 @@ function createBuilderStore(canEdit: boolean): BuilderStore {
       previewDevice: "desktop",
       saveState: "synced",
       canEdit,
+      conflictOpen: false,
 
       init: (template) =>
         set({
@@ -184,6 +189,7 @@ function createBuilderStore(canEdit: boolean): BuilderStore {
         set({ restoreRevisionId: revisionId }),
       setPreviewDevice: (device) => set({ previewDevice: device }),
       setSaveState: (saveState) => set({ saveState }),
+      setConflictOpen: (open) => set({ conflictOpen: open }),
       markSaved: (updatedAt) =>
         set((state) => ({
           updatedAt,
@@ -208,6 +214,11 @@ type BuilderProviderProps = {
   canEdit: boolean;
   children: React.ReactNode;
 };
+
+function handleWriteConflict(store: BuilderStore): void {
+  store.getState().setSaveState("error");
+  store.getState().setConflictOpen(true);
+}
 
 export function BuilderProvider({
   template,
@@ -258,8 +269,12 @@ export function BuilderProvider({
       store.getState().markSaved(toToken(result.updatedAt));
       return true;
     } catch (error) {
-      store.getState().setSaveState("error");
-      showError(isConflict(error) ? CONFLICT_MESSAGE : asMessage(error, "Autosave failed"));
+      if (isConflict(error)) {
+        handleWriteConflict(store);
+      } else {
+        store.getState().setSaveState("error");
+        showError(asMessage(error, "Autosave failed"));
+      }
       return false;
     }
   };
@@ -304,7 +319,42 @@ export function BuilderProvider({
   return (
     <BuilderContext.Provider value={valueRef.current}>
       {children}
+      <TemplateConflictHandler store={store} />
     </BuilderContext.Provider>
+  );
+}
+
+function TemplateConflictHandler({ store }: { store: BuilderStore }) {
+  const conflictOpen = useStore(store, (s) => s.conflictOpen);
+  const templateId = useStore(store, (s) => s.templateId);
+  const { token } = useSession();
+  const { workspace } = useWorkspace();
+  const reloadingRef = useRef(false);
+  const [isReloading, setIsReloading] = useState(false);
+
+  async function handleReload() {
+    if (!token || reloadingRef.current) {
+      return;
+    }
+
+    reloadingRef.current = true;
+    setIsReloading(true);
+    try {
+      const template = await getTemplate(token, workspace.id, templateId);
+      store.getState().init(template);
+      store.getState().setConflictOpen(false);
+    } finally {
+      reloadingRef.current = false;
+      setIsReloading(false);
+    }
+  }
+
+  return (
+    <TemplateConflictModal
+      open={conflictOpen}
+      onReload={() => void handleReload()}
+      isReloading={isReloading}
+    />
   );
 }
 
@@ -372,8 +422,12 @@ export function useSaveRevision(): {
       showToast("Revision saved");
       return true;
     } catch (error) {
-      store.getState().setSaveState("error");
-      showError(isConflict(error) ? CONFLICT_MESSAGE : asMessage(error, "Could not save revision"));
+      if (isConflict(error)) {
+        handleWriteConflict(store);
+      } else {
+        store.getState().setSaveState("error");
+        showError(asMessage(error, "Could not save revision"));
+      }
       return false;
     }
   }
@@ -404,7 +458,11 @@ export function useRestoreRevision(): {
       showToast("Revision restored");
       return true;
     } catch (error) {
-      showError(isConflict(error) ? CONFLICT_MESSAGE : asMessage(error, "Could not restore revision"));
+      if (isConflict(error)) {
+        handleWriteConflict(store);
+      } else {
+        showError(asMessage(error, "Could not restore revision"));
+      }
       return false;
     }
   }

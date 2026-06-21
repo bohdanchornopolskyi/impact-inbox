@@ -9,6 +9,7 @@ type RestoreTemplateModalProps = {
   onOpenChange: (open: boolean) => void;
   templateId: string;
   templateName: string;
+  expectedUpdatedAt: string;
   onRestored?: () => void;
 };
 
@@ -17,11 +18,13 @@ export function RestoreTemplateModal({
   onOpenChange,
   templateId,
   templateName,
+  expectedUpdatedAt,
   onRestored,
 }: RestoreTemplateModalProps) {
   const updateTemplate = useUpdateTemplate(templateId);
   const { mutateAsync, isPending } = useToastMutation({
-    mutationFn: () => updateTemplate.mutateAsync({ archived: false }),
+    mutationFn: () =>
+      updateTemplate.mutateAsync({ archived: false, expectedUpdatedAt }),
     successMessage: "Template restored",
     errorMessage: "Could not restore template",
     onSuccess: () => {

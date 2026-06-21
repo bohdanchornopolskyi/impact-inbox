@@ -19,6 +19,10 @@ import { CreateTemplateModal } from "@/components/template-builder/modals/create
 import { RenameTemplateModal } from "@/components/template-builder/modals/rename-template-modal";
 import { RestoreTemplateModal } from "@/components/template-builder/modals/restore-template-modal";
 
+function toUpdatedAtToken(updatedAt: Date | string): string {
+  return updatedAt instanceof Date ? updatedAt.toISOString() : String(updatedAt);
+}
+
 function TemplateThumbnail() {
   return (
     <div
@@ -40,6 +44,7 @@ function TemplateThumbnail() {
 type ActionTarget = {
   id: string;
   name: string;
+  updatedAt: string;
   kind: "rename" | "archive" | "restore";
 };
 
@@ -169,6 +174,7 @@ export function TemplatesListView() {
                                 setActionTarget({
                                   id: template.id,
                                   name: template.name,
+                                  updatedAt: toUpdatedAtToken(template.updatedAt),
                                   kind: "rename" as const,
                                 }),
                             },
@@ -179,6 +185,7 @@ export function TemplatesListView() {
                                 setActionTarget({
                                   id: template.id,
                                   name: template.name,
+                                  updatedAt: toUpdatedAtToken(template.updatedAt),
                                   kind: "archive" as const,
                                 }),
                             },
@@ -190,6 +197,7 @@ export function TemplatesListView() {
                                 setActionTarget({
                                   id: template.id,
                                   name: template.name,
+                                  updatedAt: toUpdatedAtToken(template.updatedAt),
                                   kind: "restore" as const,
                                 }),
                             },
@@ -219,6 +227,7 @@ export function TemplatesListView() {
                     }}
                     templateId={actionTarget.id}
                     currentName={actionTarget.name}
+                    expectedUpdatedAt={actionTarget.updatedAt}
                   />
                 );
               case "archive":
@@ -232,6 +241,7 @@ export function TemplatesListView() {
                     }}
                     templateId={actionTarget.id}
                     templateName={actionTarget.name}
+                    expectedUpdatedAt={actionTarget.updatedAt}
                     onArchived={() => setActionTarget(null)}
                   />
                 );
@@ -246,6 +256,7 @@ export function TemplatesListView() {
                     }}
                     templateId={actionTarget.id}
                     templateName={actionTarget.name}
+                    expectedUpdatedAt={actionTarget.updatedAt}
                     onRestored={() => setActionTarget(null)}
                   />
                 );

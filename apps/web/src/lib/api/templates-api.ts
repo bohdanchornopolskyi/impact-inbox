@@ -23,8 +23,8 @@ export function listTemplates(
   query: ListTemplatesQuery = {},
 ): Promise<TemplateData[]> {
   const params = new URLSearchParams();
-  if (query.archived !== undefined) {
-    params.set("archived", String(query.archived));
+  if (query.archived === true) {
+    params.set("archived", "true");
   }
 
   const search = params.toString();

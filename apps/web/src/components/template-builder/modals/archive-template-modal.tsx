@@ -9,6 +9,7 @@ type ArchiveTemplateModalProps = {
   onOpenChange: (open: boolean) => void;
   templateId: string;
   templateName: string;
+  expectedUpdatedAt: string;
   onArchived?: () => void;
 };
 
@@ -17,11 +18,13 @@ export function ArchiveTemplateModal({
   onOpenChange,
   templateId,
   templateName,
+  expectedUpdatedAt,
   onArchived,
 }: ArchiveTemplateModalProps) {
   const updateTemplate = useUpdateTemplate(templateId);
   const { mutateAsync, isPending } = useToastMutation({
-    mutationFn: () => updateTemplate.mutateAsync({ archived: true }),
+    mutationFn: () =>
+      updateTemplate.mutateAsync({ archived: true, expectedUpdatedAt }),
     successMessage: "Template archived",
     errorMessage: "Could not archive template",
     onSuccess: () => {

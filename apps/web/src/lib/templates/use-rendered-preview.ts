@@ -3,8 +3,7 @@
 import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import type { TemplateContentData, TemplateSettings } from "@repo/shared";
-
-export type PreviewDevice = "desktop" | "mobile";
+import type { PreviewDevice } from "@/lib/templates/preview-device";
 import { useSession } from "@/contexts/session-context";
 import { useWorkspace } from "@/contexts/workspace-context";
 import { previewTemplateContent } from "@/lib/api/templates-api";

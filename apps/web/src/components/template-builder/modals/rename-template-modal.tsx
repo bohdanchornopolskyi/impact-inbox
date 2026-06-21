@@ -10,6 +10,7 @@ type RenameTemplateModalProps = {
   onOpenChange: (open: boolean) => void;
   templateId: string;
   currentName: string;
+  expectedUpdatedAt: string;
 };
 
 export function RenameTemplateModal({
@@ -17,11 +18,15 @@ export function RenameTemplateModal({
   onOpenChange,
   templateId,
   currentName,
+  expectedUpdatedAt,
 }: RenameTemplateModalProps) {
   const updateTemplate = useUpdateTemplate(templateId);
   const rename = useToastMutation({
     mutationFn: (nextName: string) =>
-      updateTemplate.mutateAsync({ name: nextName }),
+      updateTemplate.mutateAsync({
+        name: nextName,
+        expectedUpdatedAt,
+      }),
     successMessage: "Template renamed",
     errorMessage: "Could not rename template",
     onSuccess: () => onOpenChange(false),
