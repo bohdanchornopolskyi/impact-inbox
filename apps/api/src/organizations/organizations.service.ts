@@ -1,4 +1,5 @@
 import {
+  ConflictException,
   ForbiddenException,
   Inject,
   Injectable,
@@ -13,19 +14,27 @@ import {
   type Transaction,
   organizationMembers,
   organizations,
+  users,
 } from "@repo/db";
 import {
   TRIAL_DURATION_MS,
   deriveDefaultOrganizationName,
+  type InviteOrganizationMemberInput,
   type OrganizationDetailData,
   type OrganizationListItemData,
+  type OrganizationMemberData,
+  type OrganizationMemberWithUserData,
   type OrganizationRole,
 } from "@repo/shared";
 import { DATABASE_TOKEN } from "src/database/database.constants";
+import { UsersService } from "src/users/users.service";
 
 @Injectable()
 export class OrganizationsService {
-  constructor(@Inject(DATABASE_TOKEN) private readonly db: Database) {}
+  constructor(
+    @Inject(DATABASE_TOKEN) private readonly db: Database,
+    private readonly usersService: UsersService,
+  ) {}
 
   async createDefaultOrganizationForUser(
     userId: string,
@@ -221,5 +230,116 @@ export class OrganizationsService {
           isNull(organizations.trialEndsAt),
         ),
       );
+  }
+
+  async listMembers(
+    organizationId: string,
+  ): Promise<OrganizationMemberWithUserData[]> {
+    const rows = await this.db
+      .select({
+        id: organizationMembers.id,
+        organizationId: organizationMembers.organizationId,
+        userId: organizationMembers.userId,
+        role: organizationMembers.role,
+        name: users.name,
+        email: users.email,
+      })
+      .from(organizationMembers)
+      .innerJoin(users, eq(organizationMembers.userId, users.id))
+      .where(eq(organizationMembers.organizationId, organizationId));
+
+    return rows;
+  }
+
+  async addMember(
+    organizationId: string,
+    dto: InviteOrganizationMemberInput,
+  ): Promise<OrganizationMemberData> {
+    const user = await this.usersService.findUserByEmail({ email: dto.email });
+
+    if (!user) {
+      throw new NotFoundException("User not found");
+    }
+
+    const existing = await this.getMembership(organizationId, user.id);
+    if (existing) {
+      throw new ConflictException("User is already a member of this organization");
+    }
+
+    const [membership] = await this.db
+      .insert(organizationMembers)
+      .values({
+        organizationId,
+        userId: user.id,
+        role: dto.role,
+      })
+      .returning();
+
+    if (!membership) {
+      throw new InternalServerErrorException("Organization membership creation failed.");
+    }
+
+    return membership;
+  }
+
+  async updateMemberRole(
+    organizationId: string,
+    targetUserId: string,
+    role: OrganizationMemberData["role"],
+  ): Promise<OrganizationMemberData> {
+    const membership = await this.getMembership(organizationId, targetUserId);
+
+    if (!membership) {
+      throw new NotFoundException("Member not found");
+    }
+
+    if (membership.role === "owner") {
+      throw new ForbiddenException("Cannot change the organization owner's role");
+    }
+
+    const [updatedMembership] = await this.db
+      .update(organizationMembers)
+      .set({ role })
+      .where(eq(organizationMembers.id, membership.id))
+      .returning();
+
+    if (!updatedMembership) {
+      throw new InternalServerErrorException("Member role update failed.");
+    }
+
+    return updatedMembership;
+  }
+
+  async removeMember(organizationId: string, targetUserId: string): Promise<void> {
+    const membership = await this.getMembership(organizationId, targetUserId);
+
+    if (!membership) {
+      throw new NotFoundException("Member not found");
+    }
+
+    if (membership.role === "owner") {
+      throw new ForbiddenException("Cannot remove the organization owner");
+    }
+
+    await this.db
+      .delete(organizationMembers)
+      .where(eq(organizationMembers.id, membership.id));
+  }
+
+  async getMembership(
+    organizationId: string,
+    userId: string,
+  ): Promise<OrganizationMembersSelect | undefined> {
+    const [membership] = await this.db
+      .select()
+      .from(organizationMembers)
+      .where(
+        and(
+          eq(organizationMembers.organizationId, organizationId),
+          eq(organizationMembers.userId, userId),
+        ),
+      );
+
+    return membership;
   }
 }
