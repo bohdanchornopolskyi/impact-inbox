@@ -592,10 +592,10 @@ Contracts only — job names, payload Zod schemas, inferred types. No Redis/Bull
 - [x] Workspaces: CRUD, members, roles, `WorkspaceGuard`
 - [x] Templates module (partial — no revisions yet; remove draft/published status)
 - [x] Transactional registration (user + account + workspace + session)
-- [ ] CORS for `apps/web`
-- [ ] `GET /api/health`
-- [ ] Drizzle migrations committed + CI migrate
-- [ ] Auth + workspace E2E tests
+- [x] CORS for `apps/web`
+- [x] `GET /api/health`
+- [ ] Drizzle migrations committed + CI migrate *(optional in local dev — required before production deploy)*
+- [x] Auth + workspace E2E tests
 
 ### Phase 1 — Web shell (2–3 weeks)
 
@@ -611,11 +611,12 @@ Goal: authenticate, org/workspace navigation, slug URLs.
 
 ### Phase 1b — Organizations (1–2 weeks)
 
-- [ ] `organizations`, `organization_members` tables
-- [ ] Registration creates org + default workspace; trial clock on first login post-verify
-- [ ] GitLab-style invites: org member → workspace assignment
-- [ ] Workspace slug change with redirects table
-- [ ] Org roles: owner, org admin, member
+- [x] `organizations`, `organization_members` tables
+- [x] Registration creates org + default workspace; trial clock on first login post-verify
+- [x] GitLab-style invites: workspace invite adds org membership; org member CRUD API
+- [x] Workspace slug change with redirects table
+- [x] Org roles: owner, org admin, member (API + guard)
+- [ ] Org member management UI, create-workspace UI, email invite tokens
 
 ### Phase 2 — Templates & builder (3–4 weeks)
 
@@ -623,13 +624,14 @@ Goal: M2 — build template, Save revision, preview, export. See [ADR 0007](./ad
 
 | Task | Notes |
 |------|-------|
-| `template_revisions` table + Save/restore | Working copy vs revision (ADR 0005) |
-| `templateSettings`: subject, width 480–700 | Part of working copy JSON |
-| System `EmailService` (Resend) | Verification, reset |
-| Template export API | HTML + plain text; `PlanLimitsService.canExport` stub |
-| Template list + builder UI | Full palette, structure panel, autosave, revision history |
-| Archive-only | No hard delete until Phase 4 |
-| Image blocks | External URL only (upload later) |
+| [x] `template_revisions` table + Save/restore | Working copy vs revision (ADR 0005) |
+| [x] `templateSettings`: subject, width 480–700 | Part of working copy JSON |
+| [x] System `EmailService` (Resend) | Verification, reset |
+| [x] Template export API | HTML + plain text; `PlanLimitsService.canExport` stub |
+| [x] Template list + builder UI | Full palette, structure panel, autosave, revision history |
+| [x] Archive-only | No hard delete until Phase 4 |
+| [x] Image blocks | External URL only (upload later) |
+| [x] Optimistic concurrency | ADR 0010 — all template writes guard on `updatedAt` |
 
 ### Phase 3 — Contacts & lists (2–3 weeks)
 

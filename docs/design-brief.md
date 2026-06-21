@@ -1,10 +1,22 @@
-# Impact Inbox — Design Brief for AI Prototyping
+# Impact Inbox — Design Brief (prototyping aid)
 
-**Purpose:** Give an AI designer (v0, Figma AI, Lovable, etc.) enough product context to prototype the web app before engineering fills in backend phases.
+> **Not the product spec.** Domain language, lifecycle rules, and phased scope live in [CONTEXT.md](../CONTEXT.md) and [architecture-roadmap.md](./architecture-roadmap.md) §8. Use those for engineering decisions. This file helps AI design tools prototype screens — it may lag the codebase.
 
-**Source of truth for domain language:** [CONTEXT.md](../CONTEXT.md)  
-**Engineering roadmap:** [architecture-roadmap.md](./architecture-roadmap.md) §8–9  
-**What's already built in code:** auth shell, org/workspace switcher, slug URLs — see [architecture-roadmap.md](./architecture-roadmap.md) §8 Phase 1.
+**Engineering roadmap:** [architecture-roadmap.md](./architecture-roadmap.md) §8–9
+
+---
+
+## What's built in code (as of Phase 2)
+
+| Area | Status |
+|------|--------|
+| Auth shell (sign-in/up, verify, reset) | Done |
+| Session bootstrap, slug URLs, org/workspace switcher | Done |
+| Template list, builder, revisions, export zip | Done |
+| Org settings page | Read-only org info |
+| Org member management UI | Not built (API: list/invite/role/remove) |
+| Workspace settings, create workspace UI | Stubs / API only |
+| Contacts, campaigns, billing | Phase 3+ |
 
 ---
 
@@ -69,7 +81,7 @@ Org-scoped (org id in URL — not nested under workspace)
 | Sign in / Sign up | Email + password; link to other flow; verify-email notice after signup |
 | Workspace overview | Quick stats placeholders, recent campaigns, trial banner, usage summary link to org settings |
 | Org/workspace switcher | Dropdown: org name → list workspaces; switch org navigates to that org's settings or last workspace |
-| Org settings | Plan tier, trial countdown, contact/send/workspace/seat meters, upgrade CTA, billing portal (owner only), member list, create workspace |
+| Org settings | Plan tier, trial countdown, usage meters (future), billing portal (owner only), **member list + invite** (target UI — API exists) |
 | Workspace settings | Name, slug, physical address (CAN-SPAM), send providers, members & roles |
 
 ### P1 — Templates (hero feature)
@@ -77,7 +89,7 @@ Org-scoped (org id in URL — not nested under workspace)
 | Screen | Key elements |
 |--------|----------------|
 | Template list | Grid/list, search, create, archive filter, empty state |
-| Template builder | **Three-panel layout:** block palette (left) · canvas preview (center) · properties (right). Top bar: template name, Save (creates revision), Preview toggle desktop/mobile, Export, back to list |
+| Template builder | **Left sidebar** (Blocks / Structure tabs) · **center** canvas preview · **right** inspector. Top bar: name, working-copy sync badge, Save (revision), Preview, History, Export |
 | Structure panel | Tree: section → row → column → blocks. Add/remove layout nodes here (not drag on canvas) |
 | Revision history | Sidebar or modal: timestamped saves, restore (with confirm) |
 | Preview modes | Desktop ~600px width canvas; mobile ~375px toggle — same HTML |
@@ -90,7 +102,7 @@ Content: Heading, Text, Rich Text, Button, Image, Logo, Video, Divider, Spacer, 
 **Builder rules:**
 - Content blocks: drag-and-drop reorder within/between columns
 - Layout blocks: structure panel only (no free-form section drag in v1)
-- Working copy autosaves (show subtle "Saved" indicator)
+- Working copy autosaves (badge: Synced / Unsaved changes / Syncing…)
 - Explicit Save = new revision in history
 - Merge tag picker: contact fields + reserved tags (`unsubscribeUrl`, `physicalAddress`, `listName`, `workspaceName`, `currentYear`)
 
@@ -232,16 +244,17 @@ Routes: /[workspaceSlug], /org/[orgId]/settings
 ```
 Design the email template builder for Impact Inbox.
 
-Three-panel layout:
-- Left: block palette (Section, Row, Column, Heading, Text, Rich Text, Button, Image, Logo, Video, Divider, Spacer, Social, HTML, Table, Shape, Footer, QR)
-- Center: email canvas preview with desktop (600px) and mobile (375px) toggle
-- Right: properties for selected block
+Layout (matches shipped app):
+- Left sidebar with tabs: Blocks palette | Structure tree (section → row → column → content blocks)
+- Center: iframe canvas preview; desktop/mobile width toggle in preview overlay
+- Right: block inspector or template settings
 
-Top bar: template name, autosave indicator, Save button (creates revision), Preview, Export, back link.
+Top bar: template name, working-copy sync badge, Save (creates revision), Preview, History, Export, back link.
 
-Also design: structure tree panel for layout blocks (section/row/column), revision history drawer, merge tag picker.
+Block palette: Section, Row, Column, Heading, Text, Rich Text, Button, Image, Logo, Video, Divider, Spacer, Social, HTML, Table, Shape, Footer, QR.
 
-Content blocks reorder via drag-and-drop. Layout blocks managed in structure panel only.
+Canvas is preview-only (selection via Structure panel + inspector — ADR 0008). Content blocks reorder via DnD in Structure panel. Revision history drawer, merge tag warnings.
+
 Professional email-builder UX; reference Mailchimp builder density with Linear-style chrome.
 ```
 
