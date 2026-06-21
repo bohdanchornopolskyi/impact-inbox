@@ -7,6 +7,7 @@ import {
   sessions,
   users,
   templates,
+  templateRevisions,
   workspaceMembers,
   workspaces,
 } from "./schema";
@@ -37,6 +38,8 @@ type SessionsInsert = InferInsertModel<typeof sessions>;
 
 type TemplatesSelect = InferSelectModel<typeof templates>;
 type TemplatesInsert = InferInsertModel<typeof templates>;
+type TemplateRevisionsSelect = InferSelectModel<typeof templateRevisions>;
+type TemplateRevisionsInsert = InferInsertModel<typeof templateRevisions>;
 
 export {
   type UsersInsert,
@@ -57,4 +60,6 @@ export {
   type WorkspaceMembersSelect,
   type TemplatesInsert,
   type TemplatesSelect,
+  type TemplateRevisionsInsert,
+  type TemplateRevisionsSelect,
 };

@@ -4,7 +4,7 @@ import { accounts } from "./accounts";
 import { authTokens } from "./auth-tokens";
 import { organizations, organizationMembers } from "./organizations";
 import { workspaces, workspaceMembers } from "./workspaces";
-import { templates } from "./templates";
+import { templates, templateRevisions } from "./template";
 
 export {
   users,
@@ -16,5 +16,6 @@ export {
   workspaces,
   workspaceMembers,
   templates,
+  templateRevisions,
 };
 export { AUTH_TOKEN_TYPES, type AuthTokenType } from "./auth-tokens";

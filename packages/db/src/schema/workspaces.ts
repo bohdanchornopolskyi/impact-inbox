@@ -3,7 +3,7 @@ import { relations } from "drizzle-orm";
 import { type WorkspaceRole } from "@repo/shared";
 import { organizations } from "./organizations";
 import { users } from "./users";
-import { templates } from "./templates";
+import { templates } from "./template";
 import { timestamps } from "./_helpers";
 
 export const workspaces = pgTable("workspaces", {
