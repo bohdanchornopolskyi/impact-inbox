@@ -188,6 +188,7 @@ describe("TemplatesService", () => {
 
       const result = await service.updateTemplate("ws-1", "tpl-1", {
         archived: true,
+        expectedUpdatedAt: templateRow.updatedAt.toISOString(),
       });
 
       expect(result.archivedAt).toEqual(archivedRow.archivedAt);

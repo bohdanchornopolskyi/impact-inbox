@@ -9,7 +9,6 @@ import { and, desc, eq } from "drizzle-orm";
 import {
   type Database,
   type TemplateRevisionsSelect,
-  type TemplatesSelect,
   templateRevisions,
   templates,
 } from "@repo/db";
@@ -26,6 +25,7 @@ import {
   nextUpdatedAt,
   parseExpectedUpdatedAt,
 } from "src/templates/templates.service";
+import { toTemplateData } from "src/templates/template.mapper";
 
 @Injectable()
 export class TemplateRevisionsService {
@@ -161,7 +161,7 @@ export class TemplateRevisionsService {
       return updatedTemplate;
     });
 
-    return this.toTemplateData(restored);
+    return toTemplateData(restored);
   }
 
   private toRevisionData(row: TemplateRevisionsSelect): TemplateRevisionData {
@@ -170,18 +170,6 @@ export class TemplateRevisionsService {
       templateId: row.templateId,
       content: row.content as TemplateContentData,
       createdAt: row.createdAt,
-    };
-  }
-
-  private toTemplateData(template: TemplatesSelect): TemplateData {
-    return {
-      id: template.id,
-      workspaceId: template.workspaceId,
-      name: template.name,
-      content: template.content,
-      archivedAt: template.archivedAt,
-      createdAt: template.createdAt,
-      updatedAt: template.updatedAt,
     };
   }
 }

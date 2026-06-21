@@ -8,7 +8,7 @@ import {
 } from "@nestjs/common";
 import { and, eq, isNotNull, isNull } from "drizzle-orm";
 import { ZodError } from "zod";
-import { type TemplatesSelect, templates } from "@repo/db";
+import { templates } from "@repo/db";
 import { renderTemplate } from "@repo/email-renderer";
 import {
   createEmptyTemplateContent,
@@ -24,6 +24,7 @@ import {
 import { DATABASE_TOKEN } from "src/database/database.constants";
 import type { Database } from "@repo/db";
 import { PlanLimitsService } from "src/billing/plan-limits.service";
+import { toTemplateData } from "src/templates/template.mapper";
 
 /**
  * Message surfaced on a `409 Conflict` when an optimistic-concurrency check
@@ -102,7 +103,7 @@ export class TemplatesService {
       .from(templates)
       .where(and(...conditions));
 
-    return rows.map((row) => this.toTemplateData(row));
+    return rows.map((row) => toTemplateData(row));
   }
 
   async getTemplate(
@@ -110,7 +111,7 @@ export class TemplatesService {
     templateId: string,
   ): Promise<TemplateData> {
     const template = await this.findTemplate(workspaceId, templateId);
-    return this.toTemplateData(template);
+    return toTemplateData(template);
   }
 
   async createTemplate(
@@ -130,7 +131,7 @@ export class TemplatesService {
       throw new InternalServerErrorException("Template creation failed.");
     }
 
-    return this.toTemplateData(createdTemplate);
+    return toTemplateData(createdTemplate);
   }
 
   async updateTemplate(
@@ -140,10 +141,7 @@ export class TemplatesService {
   ): Promise<TemplateData> {
     await this.findTemplate(workspaceId, templateId);
 
-    const expectedUpdatedAt =
-      dto.expectedUpdatedAt !== undefined
-        ? parseExpectedUpdatedAt(dto.expectedUpdatedAt)
-        : undefined;
+    const expectedUpdatedAt = parseExpectedUpdatedAt(dto.expectedUpdatedAt);
 
     const updates: Partial<typeof templates.$inferInsert> = {
       updatedAt: nextUpdatedAt(expectedUpdatedAt),
@@ -166,11 +164,7 @@ export class TemplatesService {
       eq(templates.workspaceId, workspaceId),
     ];
 
-    // Optimistic-concurrency guard: when the client sends the token it loaded,
-    // only write if the row is still at that `updatedAt`.
-    if (expectedUpdatedAt !== undefined) {
-      conditions.push(eq(templates.updatedAt, expectedUpdatedAt));
-    }
+    conditions.push(eq(templates.updatedAt, expectedUpdatedAt));
 
     const [updatedTemplate] = await this.db
       .update(templates)
@@ -179,15 +173,10 @@ export class TemplatesService {
       .returning();
 
     if (!updatedTemplate) {
-      // Row still exists (findTemplate passed) but the guarded UPDATE matched
-      // zero rows → the `updatedAt` token was stale.
-      if (expectedUpdatedAt !== undefined) {
-        throw new ConflictException(TEMPLATE_CONFLICT_MESSAGE);
-      }
-      throw new InternalServerErrorException("Template update failed.");
+      throw new ConflictException(TEMPLATE_CONFLICT_MESSAGE);
     }
 
-    return this.toTemplateData(updatedTemplate);
+    return toTemplateData(updatedTemplate);
   }
 
   async previewTemplate(
@@ -249,7 +238,7 @@ export class TemplatesService {
   private async findTemplate(
     workspaceId: string,
     templateId: string,
-  ): Promise<TemplatesSelect> {
+  ) {
     const [template] = await this.db
       .select()
       .from(templates)
@@ -265,17 +254,5 @@ export class TemplatesService {
     }
 
     return template;
-  }
-
-  private toTemplateData(template: TemplatesSelect): TemplateData {
-    return {
-      id: template.id,
-      workspaceId: template.workspaceId,
-      name: template.name,
-      content: template.content,
-      archivedAt: template.archivedAt,
-      createdAt: template.createdAt,
-      updatedAt: template.updatedAt,
-    };
   }
 }
