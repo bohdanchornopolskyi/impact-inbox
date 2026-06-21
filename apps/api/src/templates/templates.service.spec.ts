@@ -1,7 +1,12 @@
-import { BadRequestException, NotFoundException } from "@nestjs/common";
+import {
+  BadRequestException,
+  ConflictException,
+  NotFoundException,
+} from "@nestjs/common";
 import { Test, TestingModule } from "@nestjs/testing";
 import { renderTemplate } from "@repo/email-renderer";
 import { DEFAULT_TEMPLATE_CONTENT } from "@repo/shared";
+import { PlanLimitsService } from "src/billing/plan-limits.service";
 import { DATABASE_TOKEN } from "src/database/database.constants";
 import { TemplatesService } from "./templates.service";
 
@@ -17,13 +22,15 @@ describe("TemplatesService", () => {
   const mockWhere = jest.fn();
   const mockInsert = jest.fn();
   const mockUpdate = jest.fn();
-  const mockDelete = jest.fn();
+
+  const mockPlanLimitsService = {
+    canExport: jest.fn(),
+  };
 
   const mockDb = {
     select: mockSelect,
     insert: mockInsert,
     update: mockUpdate,
-    delete: mockDelete,
   };
 
   const templateRow = {
@@ -52,14 +59,13 @@ describe("TemplatesService", () => {
         }),
       }),
     });
-    mockDelete.mockReturnValue({
-      where: jest.fn().mockResolvedValue(undefined),
-    });
+    mockPlanLimitsService.canExport.mockResolvedValue(undefined);
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         TemplatesService,
         { provide: DATABASE_TOKEN, useValue: mockDb },
+        { provide: PlanLimitsService, useValue: mockPlanLimitsService },
       ],
     }).compile();
 
@@ -127,6 +133,24 @@ describe("TemplatesService", () => {
     });
   });
 
+  describe("exportTemplate", () => {
+    it("checks plan limits and returns export bundle", async () => {
+      mockWhere.mockResolvedValueOnce([templateRow]);
+      const rendered = { html: "<html></html>", text: "Hello" };
+      (renderTemplate as jest.Mock).mockResolvedValue(rendered);
+
+      await expect(
+        service.exportTemplate("ws-1", "tpl-1", "org-1"),
+      ).resolves.toEqual({
+        html: rendered.html,
+        text: rendered.text,
+        fileName: "welcome.html",
+      });
+
+      expect(mockPlanLimitsService.canExport).toHaveBeenCalledWith("org-1");
+    });
+  });
+
   describe("createTemplate", () => {
     it("creates with default content", async () => {
       const result = await service.createTemplate("ws-1", { name: "Welcome" });
@@ -167,6 +191,45 @@ describe("TemplatesService", () => {
       });
 
       expect(result.archivedAt).toEqual(archivedRow.archivedAt);
+    });
+
+    it("guards the UPDATE on the updatedAt token when supplied", async () => {
+      mockWhere.mockResolvedValueOnce([templateRow]);
+      const set = jest.fn().mockReturnValue({
+        where: jest.fn().mockReturnValue({
+          returning: jest.fn().mockResolvedValue([templateRow]),
+        }),
+      });
+      mockUpdate.mockReturnValue({ set });
+
+      await service.updateTemplate("ws-1", "tpl-1", {
+        content: DEFAULT_TEMPLATE_CONTENT,
+        expectedUpdatedAt: templateRow.updatedAt.toISOString(),
+      });
+
+      // updatedAt is bumped explicitly on every write.
+      const setArg = set.mock.calls[0][0];
+      expect(setArg.updatedAt).toBeInstanceOf(Date);
+      expect(setArg.content).toEqual(DEFAULT_TEMPLATE_CONTENT);
+    });
+
+    it("throws 409 when the updatedAt token is stale", async () => {
+      mockWhere.mockResolvedValueOnce([templateRow]);
+      mockUpdate.mockReturnValue({
+        set: jest.fn().mockReturnValue({
+          where: jest.fn().mockReturnValue({
+            // Guarded UPDATE matched zero rows → conflict.
+            returning: jest.fn().mockResolvedValue([]),
+          }),
+        }),
+      });
+
+      await expect(
+        service.updateTemplate("ws-1", "tpl-1", {
+          content: DEFAULT_TEMPLATE_CONTENT,
+          expectedUpdatedAt: new Date("2020-01-01").toISOString(),
+        }),
+      ).rejects.toBeInstanceOf(ConflictException);
     });
   });
 });

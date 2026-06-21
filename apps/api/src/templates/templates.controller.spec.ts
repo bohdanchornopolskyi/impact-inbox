@@ -1,5 +1,6 @@
 import { Test, TestingModule } from "@nestjs/testing";
 import { WorkspaceGuard } from "src/workspaces/guards/workspace.guard";
+import { TemplateRevisionsService } from "./template-revisions.service";
 import { TemplatesController } from "./templates.controller";
 import { TemplatesService } from "./templates.service";
 
@@ -11,9 +12,27 @@ describe("TemplatesController", () => {
     createTemplate: jest.fn(),
     getTemplate: jest.fn(),
     updateTemplate: jest.fn(),
-    deleteTemplate: jest.fn(),
     previewTemplate: jest.fn(),
     previewContent: jest.fn(),
+    exportTemplate: jest.fn(),
+  };
+
+  const mockTemplateRevisionsService = {
+    saveRevision: jest.fn(),
+    listRevisions: jest.fn(),
+    restoreRevision: jest.fn(),
+  };
+
+  const workspaceContext = {
+    workspace: {
+      id: "ws-1",
+      organizationId: "org-1",
+      name: "Acme",
+      slug: "acme",
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    },
+    role: "owner" as const,
   };
 
   beforeEach(async () => {
@@ -21,6 +40,10 @@ describe("TemplatesController", () => {
       controllers: [TemplatesController],
       providers: [
         { provide: TemplatesService, useValue: mockTemplatesService },
+        {
+          provide: TemplateRevisionsService,
+          useValue: mockTemplateRevisionsService,
+        },
       ],
     })
       .overrideGuard(WorkspaceGuard)
@@ -54,41 +77,63 @@ describe("TemplatesController", () => {
     );
   });
 
-  it("gets a template by id", async () => {
-    const template = { id: "tpl-1", name: "Welcome" };
-    mockTemplatesService.getTemplate.mockResolvedValue(template);
+  it("exports a template", async () => {
+    const exported = {
+      html: "<html></html>",
+      text: "Hello",
+      fileName: "welcome.html",
+    };
+    mockTemplatesService.exportTemplate.mockResolvedValue(exported);
 
-    await expect(controller.getById("ws-1", "tpl-1")).resolves.toEqual(template);
-    expect(mockTemplatesService.getTemplate).toHaveBeenCalledWith(
+    await expect(
+      controller.exportTemplate("ws-1", "tpl-1", workspaceContext),
+    ).resolves.toEqual(exported);
+
+    expect(mockTemplatesService.exportTemplate).toHaveBeenCalledWith(
       "ws-1",
       "tpl-1",
+      "org-1",
     );
   });
 
-  it("updates a template", async () => {
-    const dto = { name: "Updated" };
-    const updated = { id: "tpl-1", ...dto };
-    mockTemplatesService.updateTemplate.mockResolvedValue(updated);
+  it("saves a revision with the working copy and lock token", async () => {
+    const revision = { id: "rev-1" };
+    mockTemplateRevisionsService.saveRevision.mockResolvedValue(revision);
 
-    await expect(controller.update("ws-1", "tpl-1", dto)).resolves.toEqual(
-      updated,
-    );
-    expect(mockTemplatesService.updateTemplate).toHaveBeenCalledWith(
+    const content = { version: 1 as const, settings: { width: 600 }, body: [] };
+    const dto = {
+      content,
+      expectedUpdatedAt: new Date("2024-01-01").toISOString(),
+    };
+
+    await expect(
+      controller.saveRevision("ws-1", "tpl-1", dto),
+    ).resolves.toEqual(revision);
+
+    expect(mockTemplateRevisionsService.saveRevision).toHaveBeenCalledWith(
       "ws-1",
       "tpl-1",
       dto,
     );
   });
 
-  it("deletes a template", async () => {
-    mockTemplatesService.deleteTemplate.mockResolvedValue(undefined);
+  it("restores a revision threading the lock token", async () => {
+    const restored = { id: "tpl-1" };
+    mockTemplateRevisionsService.restoreRevision.mockResolvedValue(restored);
 
-    await expect(controller.delete("ws-1", "tpl-1")).resolves.toEqual({
-      success: true,
-    });
-    expect(mockTemplatesService.deleteTemplate).toHaveBeenCalledWith(
+    const expectedUpdatedAt = new Date("2024-01-01").toISOString();
+
+    await expect(
+      controller.restoreRevision("ws-1", "tpl-1", "rev-1", {
+        expectedUpdatedAt,
+      }),
+    ).resolves.toEqual(restored);
+
+    expect(mockTemplateRevisionsService.restoreRevision).toHaveBeenCalledWith(
       "ws-1",
       "tpl-1",
+      "rev-1",
+      expectedUpdatedAt,
     );
   });
 
