@@ -118,6 +118,23 @@ describe("tree-ops", () => {
     }
   });
 
+  it("appends to an empty column when dropped on the column", () => {
+    let content = createEmptyTemplateContent();
+    content = addColumn(content, content.body[0]!.children[0]!.id, 1);
+
+    const sourceColumnId = content.body[0]!.children[0]!.children[0]!.id;
+    const emptyColumnId = content.body[0]!.children[0]!.children[1]!.id;
+
+    content = addContentBlock(content, sourceColumnId, "heading");
+    const blockId = content.body[0]!.children[0]!.children[0]!.children[0]!.id;
+
+    const moved = moveContentBlock(content, blockId, emptyColumnId, 0);
+    expect(moved.body[0]!.children[0]!.children[1]!.children).toHaveLength(1);
+    expect(moved.body[0]!.children[0]!.children[1]!.children[0]?.type).toBe(
+      "heading",
+    );
+  });
+
   it("removes blocks", () => {
     const base = createEmptyTemplateContent();
     const columnId = base.body[0]!.children[0]!.children[0]!.id;

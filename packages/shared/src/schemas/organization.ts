@@ -33,3 +33,38 @@ export type AuthenticatedOrganizationContext = {
   organization: OrganizationData;
   role: OrganizationRole;
 };
+
+export const organizationMemberSchema = z.object({
+  id: z.string().uuid(),
+  organizationId: z.string().uuid(),
+  userId: z.string().uuid(),
+  role: organizationRoleSchema,
+});
+
+export const organizationMemberWithUserSchema = organizationMemberSchema.extend({
+  name: z.string(),
+  email: z.string().email(),
+});
+
+export const inviteOrganizationMemberSchema = z.object({
+  email: z.string().email(),
+  role: organizationRoleSchema
+    .exclude(["owner"])
+    .optional()
+    .default("member"),
+});
+
+export const updateOrganizationMemberRoleSchema = z.object({
+  role: organizationRoleSchema.exclude(["owner"]),
+});
+
+export type OrganizationMemberData = z.infer<typeof organizationMemberSchema>;
+export type OrganizationMemberWithUserData = z.infer<
+  typeof organizationMemberWithUserSchema
+>;
+export type InviteOrganizationMemberInput = z.infer<
+  typeof inviteOrganizationMemberSchema
+>;
+export type UpdateOrganizationMemberRoleInput = z.infer<
+  typeof updateOrganizationMemberRoleSchema
+>;

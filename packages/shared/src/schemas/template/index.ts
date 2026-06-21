@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { queryBooleanSchema } from "../api-query";
 import { templateContentSchema } from "./content";
 
 export const createTemplateSchema = z.object({
@@ -8,13 +9,11 @@ export const createTemplateSchema = z.object({
 
 export const updateTemplateSchema = z
   .object({
-    name: z.string().min(1).max(255),
-    content: templateContentSchema,
-    archived: z.boolean(),
-    // Optimistic-concurrency token for autosave PATCH (ADR 0010).
+    name: z.string().min(1).max(255).optional(),
+    content: templateContentSchema.optional(),
+    archived: z.boolean().optional(),
     expectedUpdatedAt: z.string(),
   })
-  .partial()
   .refine(
     (value) =>
       value.name !== undefined ||
@@ -24,7 +23,7 @@ export const updateTemplateSchema = z
   );
 
 export const listTemplatesQuerySchema = z.object({
-  archived: z.coerce.boolean().optional(),
+  archived: queryBooleanSchema,
 });
 
 export const previewTemplateContentSchema = z.object({
