@@ -10,9 +10,9 @@ import { and, eq } from "drizzle-orm";
 import {
   type Database,
   type Transaction,
-  type WorkspaceMembersSelect,
   type WorkspacesSelect,
   workspaceMembers,
+  workspaceSlugRedirects,
   workspaces,
   users,
 } from "@repo/db";
@@ -157,7 +157,7 @@ export class WorkspacesService {
       context ??
       (await this.workspaceAccessService.resolve(workspaceId, userId));
 
-    if (dto.slug) {
+    if (dto.slug && dto.slug !== resolved.workspace.slug) {
       const [existing] = await this.db
         .select({ id: workspaces.id })
         .from(workspaces)
@@ -166,13 +166,47 @@ export class WorkspacesService {
       if (existing && existing.id !== workspaceId) {
         throw new ConflictException("Workspace slug already exists");
       }
+
+      const [redirectClaim] = await this.db
+        .select({ id: workspaceSlugRedirects.id })
+        .from(workspaceSlugRedirects)
+        .where(eq(workspaceSlugRedirects.slug, dto.slug));
+
+      if (redirectClaim) {
+        throw new ConflictException("Workspace slug already exists");
+      }
     }
 
-    const [updatedWorkspace] = await this.db
-      .update(workspaces)
-      .set(dto)
-      .where(eq(workspaces.id, workspaceId))
-      .returning();
+    const oldSlug =
+      dto.slug && dto.slug !== resolved.workspace.slug
+        ? resolved.workspace.slug
+        : undefined;
+
+    const [updatedWorkspace] = await this.db.transaction(async (tx) => {
+      if (oldSlug) {
+        await tx
+          .delete(workspaceSlugRedirects)
+          .where(
+            and(
+              eq(workspaceSlugRedirects.workspaceId, workspaceId),
+              eq(workspaceSlugRedirects.slug, dto.slug!),
+            ),
+          );
+
+        await tx.insert(workspaceSlugRedirects).values({
+          workspaceId,
+          slug: oldSlug,
+        });
+      }
+
+      const [row] = await tx
+        .update(workspaces)
+        .set(dto)
+        .where(eq(workspaces.id, workspaceId))
+        .returning();
+
+      return [row];
+    });
 
     if (!updatedWorkspace) {
       throw new InternalServerErrorException("Workspace update failed.");
@@ -192,7 +226,10 @@ export class WorkspacesService {
       throw new NotFoundException("User not found");
     }
 
-    const existingMembership = await this.getMembership(workspaceId, user.id);
+    const existingMembership = await this.workspaceAccessService.getMembership(
+      workspaceId,
+      user.id,
+    );
     if (existingMembership) {
       throw new ConflictException("User is already a member of this workspace");
     }
@@ -219,7 +256,10 @@ export class WorkspacesService {
   }
 
   async removeMember(workspaceId: string, targetUserId: string): Promise<void> {
-    const membership = await this.getMembership(workspaceId, targetUserId);
+    const membership = await this.workspaceAccessService.getMembership(
+      workspaceId,
+      targetUserId,
+    );
 
     if (!membership) {
       throw new NotFoundException("Member not found");
@@ -260,7 +300,10 @@ export class WorkspacesService {
     targetUserId: string,
     role: WorkspaceMemberData["role"],
   ): Promise<WorkspaceMemberData> {
-    const membership = await this.getMembership(workspaceId, targetUserId);
+    const membership = await this.workspaceAccessService.getMembership(
+      workspaceId,
+      targetUserId,
+    );
 
     if (!membership) {
       throw new NotFoundException("Member not found");
@@ -284,7 +327,10 @@ export class WorkspacesService {
   }
 
   async deleteWorkspace(workspaceId: string, userId: string): Promise<void> {
-    const membership = await this.getMembership(workspaceId, userId);
+    const membership = await this.workspaceAccessService.getMembership(
+      workspaceId,
+      userId,
+    );
 
     if (!membership || membership.role !== "owner") {
       throw new ForbiddenException("Only the workspace owner can delete it");
@@ -294,7 +340,10 @@ export class WorkspacesService {
   }
 
   async leaveWorkspace(workspaceId: string, userId: string): Promise<void> {
-    const membership = await this.getMembership(workspaceId, userId);
+    const membership = await this.workspaceAccessService.getMembership(
+      workspaceId,
+      userId,
+    );
 
     if (!membership) {
       throw new NotFoundException("You are not a member of this workspace");
@@ -324,26 +373,9 @@ export class WorkspacesService {
     return workspace;
   }
 
-  private async getMembership(
-    workspaceId: string,
-    userId: string,
-  ): Promise<WorkspaceMembersSelect | undefined> {
-    const [membership] = await this.db
-      .select()
-      .from(workspaceMembers)
-      .where(
-        and(
-          eq(workspaceMembers.workspaceId, workspaceId),
-          eq(workspaceMembers.userId, userId),
-        ),
-      );
-
-    return membership;
-  }
-
   private toWorkspaceDetail(
     workspace: WorkspacesSelect | AuthenticatedWorkspaceContext["workspace"],
-    role: WorkspaceMembersSelect["role"],
+    role: AuthenticatedWorkspaceContext["role"],
   ): WorkspaceDetailData {
     return {
       ...workspace,
