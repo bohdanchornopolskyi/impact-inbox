@@ -10,6 +10,7 @@ import {
   Button,
   Input,
   PasswordInput,
+  authInlineLinkClass,
   authShellLinkClass,
 } from "@repo/ui/client";
 import { ApiFormError } from "@/components/ui/api-form-error";
@@ -63,6 +64,11 @@ export function SignInForm() {
           autoComplete="current-password"
           placeholder="••••••••"
           error={errors.password?.message}
+          labelAction={
+            <Link href="/forgot-password" className={authInlineLinkClass()}>
+              Forgot?
+            </Link>
+          }
           {...register("password")}
         />
 

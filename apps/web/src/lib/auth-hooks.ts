@@ -2,11 +2,24 @@
 
 import { useMutation } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
-import type { SignInInput, SignUpInput } from "@repo/shared";
-import { signIn, signUp } from "@/lib/api/auth-api";
+import type {
+  ConfirmEmailInput,
+  ForgotPasswordInput,
+  ResetPasswordInput,
+  SignInInput,
+  SignUpInput,
+} from "@repo/shared";
+import {
+  confirmEmail,
+  forgotPassword,
+  resendVerification,
+  resetPassword,
+  signIn,
+  signUp,
+} from "@/lib/api/auth-api";
 import { resolveDefaultAppPath } from "@/lib/app-navigation";
 import { listWorkspaces } from "@/lib/api/workspaces-api";
-import { setAuthToken } from "@/lib/auth-token";
+import { getAuthToken, setAuthToken } from "@/lib/auth-token";
 
 async function resolvePostAuthPath(token: string): Promise<string> {
   const workspaces = await listWorkspaces(token);
@@ -32,11 +45,53 @@ export function useSignUp() {
 
   return useMutation({
     mutationFn: (input: SignUpInput) => signUp(input),
-    onSuccess: async ({ token }) => {
+    onSuccess: async ({ token }, variables) => {
       setAuthToken(token);
-      const destination = await resolvePostAuthPath(token);
-      router.push(destination);
+      router.push(
+        `/verify-email?email=${encodeURIComponent(variables.email)}`,
+      );
       router.refresh();
+    },
+  });
+}
+
+export function useForgotPassword() {
+  return useMutation({
+    mutationFn: (input: ForgotPasswordInput) => forgotPassword(input),
+  });
+}
+
+export function useResetPassword() {
+  const router = useRouter();
+
+  return useMutation({
+    mutationFn: (input: ResetPasswordInput) => resetPassword(input),
+    onSuccess: () => {
+      router.refresh();
+    },
+  });
+}
+
+export function useConfirmEmail() {
+  const router = useRouter();
+
+  return useMutation({
+    mutationFn: (input: ConfirmEmailInput) => confirmEmail(input),
+    onSuccess: () => {
+      router.refresh();
+    },
+  });
+}
+
+export function useResendVerification() {
+  return useMutation({
+    mutationFn: () => {
+      const token = getAuthToken();
+      if (!token) {
+        throw new Error("Sign in to resend verification email.");
+      }
+
+      return resendVerification(token);
     },
   });
 }
