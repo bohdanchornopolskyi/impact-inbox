@@ -5,7 +5,7 @@ import { Button } from "@repo/ui/client";
 import { OrgWorkspaceSwitcher } from "@/components/app/org-workspace-switcher";
 import { useSession } from "@/contexts/session-context";
 import { useOptionalWorkspace } from "@/contexts/workspace-context";
-import { resolveDefaultAppPath } from "@/lib/app-navigation";
+import { resolveAuthenticatedDestination } from "@/lib/auth-session";
 
 type AppHeaderProps = {
   title?: string;
@@ -15,10 +15,13 @@ type AppHeaderProps = {
 export function AppHeader({ title, subtitle }: AppHeaderProps) {
   const { user, signOut, workspaces } = useSession();
   const workspaceContext = useOptionalWorkspace();
+  const defaultDestination = resolveAuthenticatedDestination(workspaces);
   const homeHref =
     workspaceContext?.workspace.slug
       ? `/${workspaceContext.workspace.slug}`
-      : (resolveDefaultAppPath(workspaces) ?? "/");
+      : defaultDestination.kind === "workspace"
+        ? defaultDestination.path
+        : "/";
 
   return (
     <header className="border-b border-border-default bg-surface-card">

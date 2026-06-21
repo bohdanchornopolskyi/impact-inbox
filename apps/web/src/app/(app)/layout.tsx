@@ -1,21 +1,12 @@
 "use client";
 
-import { useEffect } from "react";
-import { useRouter } from "next/navigation";
 import { SessionProvider } from "@/contexts/session-context";
-import { useAuthToken } from "@/lib/use-auth-token";
+import { useAuthGate } from "@/lib/auth-session";
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
-  const router = useRouter();
-  const { token, isReady } = useAuthToken();
+  const { token, isReady, isAuthenticated } = useAuthGate();
 
-  useEffect(() => {
-    if (isReady && !token) {
-      router.replace("/sign-in");
-    }
-  }, [isReady, router, token]);
-
-  if (!isReady || !token) {
+  if (!isReady || !isAuthenticated || !token) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-surface-page">
         <p className="text-ui-sm text-text-secondary">Redirecting to sign in...</p>

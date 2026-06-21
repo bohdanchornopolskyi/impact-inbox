@@ -13,14 +13,16 @@ import {
   authShellLinkClass,
 } from "@repo/ui/client";
 import { ApiFormError } from "@/components/ui/api-form-error";
-import { resolveDefaultAppPath } from "@/lib/app-navigation";
 import {
   useConfirmEmail,
   useResendVerification,
 } from "@/lib/auth-hooks";
-import { listWorkspaces } from "@/lib/api/workspaces-api";
-import { getMe } from "@/lib/api/users-api";
-import { getAuthToken } from "@/lib/auth-token";
+import {
+  fetchSessionUserEmail,
+  getAuthToken,
+  navigateAfterAuth,
+  redirectToSignIn,
+} from "@/lib/auth-session";
 
 type VerifyEmailViewProps = {
   initialEmail?: string;
@@ -37,16 +39,20 @@ export function VerifyEmailView({ initialEmail }: VerifyEmailViewProps) {
   const [confirmAttempted, setConfirmAttempted] = useState(false);
 
   useEffect(() => {
-    if (!emailParam) {
-      const sessionToken = getAuthToken();
-      if (!sessionToken) {
-        return;
-      }
-
-      getMe(sessionToken)
-        .then((user) => setResolvedEmail(user.email))
-        .catch(() => undefined);
+    if (emailParam) {
+      return;
     }
+
+    const sessionToken = getAuthToken();
+    if (!sessionToken) {
+      return;
+    }
+
+    fetchSessionUserEmail(sessionToken).then((email) => {
+      if (email) {
+        setResolvedEmail(email);
+      }
+    });
   }, [emailParam]);
 
   useEffect(() => {
@@ -88,14 +94,11 @@ export function VerifyEmailView({ initialEmail }: VerifyEmailViewProps) {
           onClick={async () => {
             const sessionToken = getAuthToken();
             if (!sessionToken) {
-              router.push("/sign-in");
+              redirectToSignIn(router);
               return;
             }
 
-            const workspaces = await listWorkspaces(sessionToken);
-            const destination = resolveDefaultAppPath(workspaces) ?? "/sign-in";
-            router.push(destination);
-            router.refresh();
+            await navigateAfterAuth(router, sessionToken);
           }}
         >
           Continue

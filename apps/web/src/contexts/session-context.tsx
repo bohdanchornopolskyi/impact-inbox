@@ -19,7 +19,11 @@ import { isApiErrorCode } from "@/lib/api-error";
 import { listOrganizations } from "@/lib/api/organizations-api";
 import { getMe } from "@/lib/api/users-api";
 import { listWorkspaces } from "@/lib/api/workspaces-api";
-import { clearAuthToken } from "@/lib/auth-token";
+import {
+  sessionQueryKeys,
+  signOutSession,
+  useSessionSignOut,
+} from "@/lib/auth-session";
 
 type SessionContextValue = {
   token: string;
@@ -44,27 +48,29 @@ export function SessionProvider({
   const queryClient = useQueryClient();
   const [sessionToken, setSessionToken] = useState(token);
 
-  const handleUnauthorized = useCallback(() => {
-    clearAuthToken();
+  const clearSession = useCallback(() => {
     setSessionToken("");
-    queryClient.clear();
-    router.replace("/sign-in");
-  }, [queryClient, router]);
+  }, []);
+
+  const handleUnauthorized = useCallback(() => {
+    clearSession();
+    signOutSession(router, queryClient);
+  }, [clearSession, queryClient, router]);
 
   const meQuery = useQuery({
-    queryKey: ["session", "me", sessionToken],
+    queryKey: sessionQueryKeys.me(sessionToken),
     queryFn: () => getMe(sessionToken),
     enabled: Boolean(sessionToken),
   });
 
   const organizationsQuery = useQuery({
-    queryKey: ["session", "organizations", sessionToken],
+    queryKey: sessionQueryKeys.organizations(sessionToken),
     queryFn: () => listOrganizations(sessionToken),
     enabled: Boolean(sessionToken),
   });
 
   const workspacesQuery = useQuery({
-    queryKey: ["session", "workspaces", sessionToken],
+    queryKey: sessionQueryKeys.workspaces(sessionToken),
     queryFn: () => listWorkspaces(sessionToken),
     enabled: Boolean(sessionToken),
   });
@@ -89,19 +95,10 @@ export function SessionProvider({
     workspacesQuery.isLoading;
 
   const refreshSession = useCallback(async () => {
-    await Promise.all([
-      queryClient.invalidateQueries({ queryKey: ["session", "me"] }),
-      queryClient.invalidateQueries({ queryKey: ["session", "organizations"] }),
-      queryClient.invalidateQueries({ queryKey: ["session", "workspaces"] }),
-    ]);
+    await queryClient.invalidateQueries({ queryKey: sessionQueryKeys.all });
   }, [queryClient]);
 
-  const signOut = useCallback(() => {
-    clearAuthToken();
-    setSessionToken("");
-    queryClient.clear();
-    router.replace("/sign-in");
-  }, [queryClient, router]);
+  const signOut = useSessionSignOut(queryClient, clearSession);
 
   const value = useMemo((): SessionContextValue | null => {
     if (!meQuery.data) {

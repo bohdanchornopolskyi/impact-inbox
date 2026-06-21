@@ -17,14 +17,11 @@ import {
   signIn,
   signUp,
 } from "@/lib/api/auth-api";
-import { resolveDefaultAppPath } from "@/lib/app-navigation";
-import { listWorkspaces } from "@/lib/api/workspaces-api";
-import { getAuthToken, setAuthToken } from "@/lib/auth-token";
-
-async function resolvePostAuthPath(token: string): Promise<string> {
-  const workspaces = await listWorkspaces(token);
-  return resolveDefaultAppPath(workspaces) ?? "/";
-}
+import {
+  getAuthToken,
+  navigateAfterAuth,
+  setAuthToken,
+} from "@/lib/auth-session";
 
 export function useSignIn() {
   const router = useRouter();
@@ -33,9 +30,7 @@ export function useSignIn() {
     mutationFn: (input: SignInInput) => signIn(input),
     onSuccess: async ({ token }) => {
       setAuthToken(token);
-      const destination = await resolvePostAuthPath(token);
-      router.push(destination);
-      router.refresh();
+      await navigateAfterAuth(router, token);
     },
   });
 }

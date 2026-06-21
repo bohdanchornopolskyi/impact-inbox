@@ -3,16 +3,19 @@
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
-import { resolveDefaultAppPath } from "@/lib/app-navigation";
 import { listWorkspaces } from "@/lib/api/workspaces-api";
-import { useAuthToken } from "@/lib/use-auth-token";
+import {
+  resolveAuthenticatedDestination,
+  sessionQueryKeys,
+  useAuthTokenState,
+} from "@/lib/auth-session";
 
 export function HomeAuthRedirect() {
   const router = useRouter();
-  const { token, isReady } = useAuthToken();
+  const { token, isReady } = useAuthTokenState();
 
   const workspacesQuery = useQuery({
-    queryKey: ["home", "workspaces", token],
+    queryKey: sessionQueryKeys.workspaces(token ?? ""),
     queryFn: () => listWorkspaces(token!),
     enabled: isReady && Boolean(token),
   });
@@ -27,9 +30,9 @@ export function HomeAuthRedirect() {
       return;
     }
 
-    const destination = resolveDefaultAppPath(workspacesQuery.data);
-    if (destination) {
-      router.replace(destination);
+    const destination = resolveAuthenticatedDestination(workspacesQuery.data);
+    if (destination.kind === "workspace") {
+      router.replace(destination.path);
     }
   }, [
     isReady,
