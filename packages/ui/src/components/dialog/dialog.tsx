@@ -2,6 +2,7 @@
 
 import type { ReactNode } from "react";
 import { Dialog as BaseDialog } from "@base-ui/react/dialog";
+import { ClosePanelButton } from "../close-panel-button/close-panel-button";
 import { cn } from "../../lib/cn";
 
 export type ModalProps = {
@@ -34,20 +35,21 @@ export function Modal({
               className,
             )}
           >
-            <BaseDialog.Title className="text-ui-xl font-semibold text-text-primary">
-              {title}
-            </BaseDialog.Title>
-            {description ? (
-              <BaseDialog.Description className="mt-2 text-ui-sm text-text-secondary">
-                {description}
-              </BaseDialog.Description>
-            ) : null}
+            <div className="flex items-start justify-between gap-4">
+              <div className="min-w-0">
+                <BaseDialog.Title className="text-ui-xl font-semibold text-text-primary">
+                  {title}
+                </BaseDialog.Title>
+                {description ? (
+                  <BaseDialog.Description className="mt-2 text-ui-sm text-text-secondary">
+                    {description}
+                  </BaseDialog.Description>
+                ) : null}
+              </div>
+              <ClosePanelButton />
+            </div>
             <div className="mt-5">{children}</div>
             {footer ? <div className="mt-6 flex justify-end gap-2">{footer}</div> : null}
-            <BaseDialog.Close className="absolute top-4 right-4 inline-flex size-8 items-center justify-center rounded-md text-text-muted hover:bg-surface-muted hover:text-text-secondary">
-              <span className="sr-only">Close</span>
-              ×
-            </BaseDialog.Close>
           </BaseDialog.Popup>
         </BaseDialog.Viewport>
       </BaseDialog.Portal>

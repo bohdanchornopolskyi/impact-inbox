@@ -15,5 +15,18 @@ export { AuthBackLink, authBackLinkClass, type AuthBackLinkProps } from "./compo
 export { AuthNotice, AuthNoticeEmail, type AuthNoticeProps } from "./components/auth-notice/auth-notice";
 export { MailCheckIcon } from "./components/icons/mail-check-icon";
 export { Modal, Dialog, type ModalProps } from "./components/dialog/dialog";
+export { ClosePanelButton } from "./components/close-panel-button/close-panel-button";
 export { CollapsibleSection, Collapsible, type CollapsibleSectionProps } from "./components/collapsible/collapsible";
 export { Popover, BasePopover, type PopoverProps } from "./components/popover/popover";
+export {
+  SegmentedControl,
+  type SegmentedControlOption,
+  type SegmentedControlProps,
+} from "./components/segmented-control/segmented-control";
+export { Drawer, type DrawerProps } from "./components/drawer/drawer";
+export {
+  DropdownMenu,
+  type DropdownMenuItem,
+  type DropdownMenuProps,
+} from "./components/dropdown-menu/dropdown-menu";
+export { Tabs, type TabItem, type TabsProps } from "./components/tabs/tabs";
