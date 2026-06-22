@@ -4,6 +4,7 @@ import type {
   OrganizationListItemData,
   OrganizationMemberData,
   OrganizationMemberWithUserData,
+  UpdateOrganizationMemberRoleInput,
 } from "@repo/shared";
 import { apiRequest } from "@/lib/api-client";
 
@@ -42,4 +43,34 @@ export function inviteOrganizationMember(
     method: "POST",
     body: input,
   });
+}
+
+export function updateOrganizationMemberRole(
+  token: string,
+  orgId: string,
+  userId: string,
+  input: UpdateOrganizationMemberRoleInput,
+): Promise<OrganizationMemberData> {
+  return apiRequest<OrganizationMemberData>(
+    `/organizations/${orgId}/members/${userId}`,
+    {
+      token,
+      method: "PATCH",
+      body: input,
+    },
+  );
+}
+
+export function removeOrganizationMember(
+  token: string,
+  orgId: string,
+  userId: string,
+): Promise<{ success: true }> {
+  return apiRequest<{ success: true }>(
+    `/organizations/${orgId}/members/${userId}`,
+    {
+      token,
+      method: "DELETE",
+    },
+  );
 }
