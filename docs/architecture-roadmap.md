@@ -583,6 +583,8 @@ Contracts only — job names, payload Zod schemas, inferred types. No Redis/Bull
 
 ## 8. Phased roadmap
 
+**Open work (Phases 0–2):** [deferred-work.md](./deferred-work.md) — master checklist for everything **not done** or **partial**.
+
 ### Phase 0 — Foundation ✅ (mostly done)
 
 - [x] Monorepo + NestJS + Drizzle + Postgres + Redis (docker-compose)
@@ -594,7 +596,7 @@ Contracts only — job names, payload Zod schemas, inferred types. No Redis/Bull
 - [x] Transactional registration (user + account + workspace + session)
 - [x] CORS for `apps/web`
 - [x] `GET /api/health`
-- [ ] Drizzle migrations committed + CI migrate *(optional in local dev — required before production deploy)*
+- [ ] Drizzle migrations committed + CI migrate → [deferred-work.md §5](./deferred-work.md#5-drizzle-migrations--ci-migrate)
 - [x] Auth + workspace E2E tests
 
 ### Phase 1 — Web shell (2–3 weeks)
@@ -612,11 +614,12 @@ Goal: authenticate, org/workspace navigation, slug URLs.
 ### Phase 1b — Organizations (1–2 weeks)
 
 - [x] `organizations`, `organization_members` tables
-- [x] Registration creates org + default workspace; trial clock on first login post-verify
+- [x] Registration creates org + default workspace; trial clock *(placement fix still open — [deferred-work.md](./deferred-work.md) §2)*
 - [x] GitLab-style invites: workspace invite adds org membership; org member CRUD API
 - [x] Workspace slug change with redirects table
 - [x] Org roles: owner, org admin, member (API + guard)
-- [ ] Org member management UI, create-workspace UI, email invite tokens
+- [x] Org member management UI, create-workspace UI
+- [ ] Email invite tokens — [ADR 0011](./adr/0011-email-invite-tokens.md); interim: existing users only ([deferred-work.md](./deferred-work.md))
 
 ### Phase 2 — Templates & builder (3–4 weeks)
 

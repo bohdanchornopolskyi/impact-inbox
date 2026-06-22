@@ -22,6 +22,7 @@ Inline edits update **Working copy** through existing `UPDATE_BLOCK_PROPS`; no p
 | Inline text edit on canvas | heading, text, button label, etc. |
 | Canvas selection chrome | Highlight ring around selected block in preview |
 | Layout block selection on canvas | Section/row/column stay structure-panel only |
+| **Rename template from builder toolbar** | List view rename modal is sufficient for Phase 2; inline/modal rename in `builder-toolbar.tsx` ships with this canvas polish pass — reuse `RenameTemplateModal` / `expectedUpdatedAt` contract (ADR 0010) |
 
 ## Considered
 
