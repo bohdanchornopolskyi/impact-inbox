@@ -16,6 +16,7 @@ import {
   getAuthToken,
   setAuthToken,
 } from "@/lib/auth-token";
+import { isApiErrorCode } from "@/lib/api-error";
 
 export type { AuthenticatedDestination };
 export {
@@ -43,7 +44,12 @@ export function useAuthTokenState() {
     setIsReady(true);
   }, []);
 
-  return { token, isReady };
+  const clearToken = useCallback(() => {
+    clearAuthToken();
+    setToken(null);
+  }, []);
+
+  return { token, isReady, clearToken };
 }
 
 export function useAuthGate() {
@@ -85,7 +91,20 @@ export async function navigateAfterAuth(
   router: AppRouterInstance,
   token: string,
 ): Promise<void> {
-  const destination = await fetchAuthenticatedDestination(token);
+  let destination: AuthenticatedDestination;
+
+  try {
+    destination = await fetchAuthenticatedDestination(token);
+  } catch (error) {
+    if (isApiErrorCode(error, "UNAUTHORIZED")) {
+      clearAuthToken();
+      router.replace("/sign-in");
+      router.refresh();
+      return;
+    }
+
+    throw error;
+  }
 
   if (destination.kind === "workspace") {
     router.push(destination.path);
