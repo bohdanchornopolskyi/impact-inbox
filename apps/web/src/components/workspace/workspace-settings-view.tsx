@@ -4,6 +4,7 @@ import { hasWorkspaceRoleAtLeast } from "@repo/shared";
 import { useWorkspace } from "@/contexts/workspace-context";
 import { formatRoleLabel } from "@/lib/members/format-role-label";
 import { WorkspaceMembersSection } from "@/components/workspace/workspace-members-section";
+import { WorkspaceGeneralSection } from "@/components/workspace/workspace-general-section";
 
 export function WorkspaceSettingsView() {
   const { workspace } = useWorkspace();
@@ -41,6 +42,8 @@ export function WorkspaceSettingsView() {
           </div>
         </dl>
       </section>
+
+      <WorkspaceGeneralSection />
 
       <WorkspaceMembersSection
         workspaceId={workspace.id}

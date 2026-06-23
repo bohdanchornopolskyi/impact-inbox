@@ -2,6 +2,7 @@ import type {
   CreateWorkspaceInput,
   InviteMemberInput,
   UpdateMemberRoleInput,
+  UpdateWorkspaceInput,
   WorkspaceDetailData,
   WorkspaceListItemData,
   WorkspaceMemberData,
@@ -28,6 +29,18 @@ export function createWorkspace(
 ): Promise<WorkspaceDetailData> {
   return apiRequest<WorkspaceDetailData>("/workspaces", {
     method: "POST",
+    body: input,
+    token,
+  });
+}
+
+export function updateWorkspace(
+  token: string,
+  workspaceId: string,
+  input: UpdateWorkspaceInput,
+): Promise<WorkspaceDetailData> {
+  return apiRequest<WorkspaceDetailData>(`/workspaces/${workspaceId}`, {
+    method: "PATCH",
     body: input,
     token,
   });
