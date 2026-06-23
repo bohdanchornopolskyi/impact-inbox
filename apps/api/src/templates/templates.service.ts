@@ -124,6 +124,7 @@ export class TemplatesService {
         workspaceId,
         name: dto.name,
         content: dto.content ?? createEmptyTemplateContent(),
+        updatedAt: new Date(),
       })
       .returning();
 
