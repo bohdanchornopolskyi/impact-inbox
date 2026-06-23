@@ -638,12 +638,16 @@ Goal: M2 — build template, Save revision, preview, export. See [ADR 0007](./ad
 
 ### Phase 3 — Contacts & lists (2–3 weeks)
 
+Goal: M3 — import contacts, create list, double opt-in optional. See [ADR 0012](./adr/0012-phase-3-contacts-scope.md).
+
 | Task | Notes |
 |------|-------|
-| `contacts`, `contact_lists`, `list_members` | `subscribed` / `pending` / unsubscribed |
-| Import CSV | Sync under cap; async above; merge duplicates |
-| Unsubscribe model | List + global; preference page on web |
-| Double opt-in per list | Confirm via system email |
+| `contacts`, `contact_lists`, `list_members`, `list_confirm_tokens`, `contact_imports` | `subscribed` / `pending` / unsubscribed |
+| `workspaces.physical_address` | Workspace settings + PATCH API |
+| Import CSV | Preview → execute; sync ≤1k rows; async above; merge duplicates |
+| Unsubscribe model | List + global via admin; `/u/[token]` deferred to Phase 4 |
+| Double opt-in per list | Confirm via system email + `/confirm-subscription` |
+| Builder merge tags | Custom contact `attributes` join allowlist |
 
 ### Phase 4 — Campaigns & sends (4–5 weeks)
 

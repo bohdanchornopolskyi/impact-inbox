@@ -16,6 +16,10 @@ _Avoid_: Workspace on request as Drizzle row, guard-owned queries
 Human-readable identifier for a workspace in web URLs (e.g. `/acme-corp/templates`). Unique per platform; changeable by admin with automatic redirects from the previous slug. API routes continue to use workspace id.
 _Avoid_: UUID in primary web URLs, slug as display-only with id in the path
 
+**Workspace physical address**:
+CAN-SPAM postal address default for a workspace. Powers `{{physicalAddress}}` and the default unsubscribe footer when a campaign does not override. Editable in workspace settings by workspace admin/owner and org owner.
+_Avoid_: Campaign-only address with no workspace default, storing address only on templates
+
 **Workspace tenant**:
 An isolated operational tenant: contacts, lists, templates, campaigns, and send providers belong to one workspace. Users may belong to many workspaces across one or more organizations. Workspaces belong to one organization permanently in v1; cross-org transfer is deferred. Agencies typically use one workspace per client; campaign-level sender/address overrides cover edge cases within a workspace.
 _Avoid_: One workspace for all agency clients, assuming campaign overrides replace tenant isolation, moving workspaces between orgs in v1
