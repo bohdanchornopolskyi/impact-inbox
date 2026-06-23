@@ -1,0 +1,111 @@
+"use client";
+
+import Link from "next/link";
+import { useState } from "react";
+import { Button } from "@repo/ui/client";
+import { hasWorkspaceRoleAtLeast } from "@repo/shared";
+import { useWorkspace } from "@/contexts/workspace-context";
+import {
+  useContactList,
+  useListMembers,
+  useUpdateContactList,
+} from "@/lib/contacts/contact-hooks";
+import { ContactStatusBadge } from "@/components/contacts/contact-status-badge";
+import { ImportWizardModal } from "@/components/contacts/import/import-wizard-modal";
+
+type ContactListDetailViewProps = {
+  listId: string;
+};
+
+export function ContactListDetailView({ listId }: ContactListDetailViewProps) {
+  const { workspace } = useWorkspace();
+  const canEdit = hasWorkspaceRoleAtLeast(workspace.role, ["admin", "owner"]);
+  const listQuery = useContactList(listId);
+  const membersQuery = useListMembers(listId);
+  const updateList = useUpdateContactList(listId);
+  const [importOpen, setImportOpen] = useState(false);
+
+  if (listQuery.isPending || membersQuery.isPending) {
+    return <p className="p-8 text-ui-sm text-text-secondary">Loading…</p>;
+  }
+
+  if (!listQuery.data) {
+    throw new Error("List not found");
+  }
+
+  const list = listQuery.data;
+  const members = membersQuery.data ?? [];
+
+  return (
+    <div className="mx-auto w-full max-w-5xl px-4 py-8 sm:px-6">
+      <Link
+        href={`/${workspace.slug}/contacts/lists`}
+        className="text-ui-sm text-text-secondary hover:underline"
+      >
+        ← Lists
+      </Link>
+
+      <div className="mt-4 flex flex-wrap items-end justify-between gap-4">
+        <div>
+          <h1 className="text-ui-2xl font-semibold text-text-primary">{list.name}</h1>
+          <p className="mt-1 text-ui-sm text-text-secondary">
+            {list.memberCount} members
+          </p>
+        </div>
+        {canEdit ? (
+          <div className="flex gap-2">
+            <Button variant="secondary" onClick={() => setImportOpen(true)}>
+              Import CSV
+            </Button>
+            <Button
+              variant="secondary"
+              onClick={() =>
+                updateList.mutate({ doubleOptInEnabled: !list.doubleOptInEnabled })
+              }
+            >
+              {list.doubleOptInEnabled ? "Disable" : "Enable"} double opt-in
+            </Button>
+          </div>
+        ) : null}
+      </div>
+
+      <div className="mt-6 overflow-hidden rounded-2xl border border-border-default">
+        <table className="min-w-full divide-y divide-border-default text-ui-sm">
+          <thead className="bg-surface-inset">
+            <tr>
+              <th className="px-4 py-3 text-left font-medium text-text-secondary">Email</th>
+              <th className="px-4 py-3 text-left font-medium text-text-secondary">Status</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-border-default bg-surface-card">
+            {members.map((member) => (
+              <tr key={member.id}>
+                <td className="px-4 py-3">
+                  <Link
+                    href={`/${workspace.slug}/contacts/${member.contactId}`}
+                    className="font-medium text-text-primary hover:underline"
+                  >
+                    {member.email}
+                  </Link>
+                </td>
+                <td className="px-4 py-3">
+                  <ContactStatusBadge
+                    status={member.status}
+                    suppressed={Boolean(member.suppressedAt)}
+                    globallyUnsubscribed={Boolean(member.globalUnsubscribedAt)}
+                  />
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      <ImportWizardModal
+        listId={listId}
+        open={importOpen}
+        onOpenChange={setImportOpen}
+      />
+    </div>
+  );
+}
