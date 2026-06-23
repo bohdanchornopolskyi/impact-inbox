@@ -119,6 +119,7 @@ export class WorkspaceAccessService {
         organizationId: workspace.organizationId,
         name: workspace.name,
         slug: workspace.slug,
+        physicalAddress: workspace.physicalAddress,
         createdAt: workspace.createdAt,
         updatedAt: workspace.updatedAt,
       },

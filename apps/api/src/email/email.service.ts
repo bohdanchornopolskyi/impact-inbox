@@ -57,6 +57,29 @@ export class EmailService {
     });
   }
 
+  async sendDoubleOptInEmail(
+    email: string,
+    token: string,
+    listName: string,
+  ): Promise<void> {
+    const confirmUrl = `${getWebOrigin()}/confirm-subscription?token=${encodeURIComponent(token)}`;
+
+    if (!this.resend) {
+      this.logger.log(
+        `Double opt-in email for ${email} (${listName}): ${confirmUrl}`,
+      );
+      return;
+    }
+
+    await this.resend.emails.send({
+      from: this.from,
+      to: email,
+      subject: `Confirm your subscription to ${listName}`,
+      html: this.buildDoubleOptInHtml(confirmUrl, listName),
+      text: `Confirm your subscription to ${listName}: ${confirmUrl}`,
+    });
+  }
+
   private buildVerificationHtml(verifyUrl: string): string {
     return `
       <div style="font-family:Geist,-apple-system,BlinkMacSystemFont,sans-serif;color:#18181b;line-height:1.5;">
@@ -86,6 +109,23 @@ export class EmailService {
         </a>
         <p style="font-size:12px;color:#71717a;margin:20px 0 0;">
           If you did not request a reset, you can ignore this email.
+        </p>
+      </div>
+    `.trim();
+  }
+
+  private buildDoubleOptInHtml(confirmUrl: string, listName: string): string {
+    return `
+      <div style="font-family:Geist,-apple-system,BlinkMacSystemFont,sans-serif;color:#18181b;line-height:1.5;">
+        <h1 style="font-size:21px;font-weight:600;margin:0 0 12px;">Confirm your subscription</h1>
+        <p style="font-size:13px;color:#52525b;margin:0 0 20px;">
+          Please confirm that you want to receive emails from the list <strong>${listName}</strong>.
+        </p>
+        <a href="${confirmUrl}" style="display:inline-block;padding:10px 16px;background:#4f46e5;color:#ffffff;text-decoration:none;border-radius:8px;font-size:13px;font-weight:600;">
+          Confirm subscription
+        </a>
+        <p style="font-size:12px;color:#71717a;margin:20px 0 0;">
+          If you did not request this, you can ignore this email.
         </p>
       </div>
     `.trim();

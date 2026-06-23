@@ -20,4 +20,15 @@ export class PlanLimitsService {
   async canExport(_organizationId: string): Promise<void> {
     return;
   }
+
+  async assertCanCreateContact(_organizationId: string): Promise<void> {
+    return;
+  }
+
+  async assertCanImport(
+    _organizationId: string,
+    _rowCount: number,
+  ): Promise<void> {
+    return;
+  }
 }

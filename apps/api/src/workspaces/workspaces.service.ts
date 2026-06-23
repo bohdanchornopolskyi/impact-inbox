@@ -116,6 +116,7 @@ export class WorkspacesService {
         organizationId: workspaces.organizationId,
         name: workspaces.name,
         slug: workspaces.slug,
+        physicalAddress: workspaces.physicalAddress,
         createdAt: workspaces.createdAt,
         updatedAt: workspaces.updatedAt,
         role: workspaceMembers.role,
@@ -201,7 +202,13 @@ export class WorkspacesService {
 
       const [row] = await tx
         .update(workspaces)
-        .set(dto)
+        .set({
+          ...(dto.name !== undefined ? { name: dto.name } : {}),
+          ...(dto.slug !== undefined ? { slug: dto.slug } : {}),
+          ...(dto.physicalAddress !== undefined
+            ? { physicalAddress: dto.physicalAddress }
+            : {}),
+        })
         .where(eq(workspaces.id, workspaceId))
         .returning();
 

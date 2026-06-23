@@ -7,6 +7,7 @@ import { AccountsModule } from "./accounts/accounts.module";
 import { AuthModule } from "./auth/auth.module";
 import { WorkspacesModule } from "src/workspaces/workspaces.module";
 import { TemplatesModule } from "src/templates/templates.module";
+import { ContactsModule } from "src/contacts/contacts.module";
 import { DatabaseModule } from "src/database/database.module";
 
 @Module({
@@ -17,6 +18,7 @@ import { DatabaseModule } from "src/database/database.module";
     AccountsModule,
     WorkspacesModule,
     TemplatesModule,
+    ContactsModule,
     AuthModule,
   ],
   controllers: [AppController],

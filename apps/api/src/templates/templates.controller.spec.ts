@@ -29,6 +29,7 @@ describe("TemplatesController", () => {
       organizationId: "org-1",
       name: "Acme",
       slug: "acme",
+      physicalAddress: null,
       createdAt: new Date(),
       updatedAt: new Date(),
     },
