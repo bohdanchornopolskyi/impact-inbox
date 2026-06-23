@@ -10,6 +10,11 @@ import {
   templateRevisions,
   workspaceMembers,
   workspaces,
+  contacts,
+  contactLists,
+  listMembers,
+  listConfirmTokens,
+  contactImports,
 } from "./schema";
 import { db } from "./index";
 
@@ -41,6 +46,17 @@ type TemplatesInsert = InferInsertModel<typeof templates>;
 type TemplateRevisionsSelect = InferSelectModel<typeof templateRevisions>;
 type TemplateRevisionsInsert = InferInsertModel<typeof templateRevisions>;
 
+type ContactsSelect = InferSelectModel<typeof contacts>;
+type ContactsInsert = InferInsertModel<typeof contacts>;
+type ContactListsSelect = InferSelectModel<typeof contactLists>;
+type ContactListsInsert = InferInsertModel<typeof contactLists>;
+type ListMembersSelect = InferSelectModel<typeof listMembers>;
+type ListMembersInsert = InferInsertModel<typeof listMembers>;
+type ListConfirmTokensSelect = InferSelectModel<typeof listConfirmTokens>;
+type ListConfirmTokensInsert = InferInsertModel<typeof listConfirmTokens>;
+type ContactImportsSelect = InferSelectModel<typeof contactImports>;
+type ContactImportsInsert = InferInsertModel<typeof contactImports>;
+
 export {
   type UsersInsert,
   type UsersSelect,
@@ -62,4 +78,14 @@ export {
   type TemplatesSelect,
   type TemplateRevisionsInsert,
   type TemplateRevisionsSelect,
+  type ContactsInsert,
+  type ContactsSelect,
+  type ContactListsInsert,
+  type ContactListsSelect,
+  type ListMembersInsert,
+  type ListMembersSelect,
+  type ListConfirmTokensInsert,
+  type ListConfirmTokensSelect,
+  type ContactImportsInsert,
+  type ContactImportsSelect,
 };

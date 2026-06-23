@@ -6,6 +6,13 @@ import { organizations, organizationMembers } from "./organizations";
 import { workspaces, workspaceMembers } from "./workspaces";
 import { workspaceSlugRedirects } from "./workspace-slug-redirects";
 import { templates, templateRevisions } from "./template";
+import {
+  contacts,
+  contactLists,
+  listMembers,
+  listConfirmTokens,
+  contactImports,
+} from "./contacts";
 
 export {
   users,
@@ -19,5 +26,10 @@ export {
   workspaceSlugRedirects,
   templates,
   templateRevisions,
+  contacts,
+  contactLists,
+  listMembers,
+  listConfirmTokens,
+  contactImports,
 };
 export { AUTH_TOKEN_TYPES, type AuthTokenType } from "./auth-tokens";

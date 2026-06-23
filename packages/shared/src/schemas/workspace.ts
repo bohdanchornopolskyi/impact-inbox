@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { WORKSPACE_ROLES } from "../constants";
+import { physicalAddressSchema } from "./physical-address";
 
 export const workspaceRoleSchema = z.enum(WORKSPACE_ROLES);
 
@@ -19,11 +20,18 @@ export const updateWorkspaceSchema = z
   .object({
     name: z.string().min(1).max(255),
     slug: workspaceSlugSchema,
+    physicalAddress: physicalAddressSchema,
   })
   .partial()
-  .refine((value) => value.name !== undefined || value.slug !== undefined, {
-    message: "At least one field is required",
-  });
+  .refine(
+    (value) =>
+      value.name !== undefined ||
+      value.slug !== undefined ||
+      value.physicalAddress !== undefined,
+    {
+      message: "At least one field is required",
+    },
+  );
 
 export const inviteMemberSchema = z.object({
   email: z.string().email(),
@@ -44,6 +52,7 @@ export const workspaceSchema = z.object({
   organizationId: z.string().uuid(),
   name: z.string(),
   slug: z.string(),
+  physicalAddress: physicalAddressSchema,
   createdAt: z.coerce.date(),
   updatedAt: z.coerce.date(),
 });
