@@ -141,8 +141,8 @@ describe("content block registry", () => {
     expect(serialized).toContain("borderBottom");
   });
 
-  it("marks heading, text, and button as canvas-editable", () => {
-    for (const type of ["heading", "text", "button"] as const) {
+  it("marks heading and text as canvas-editable", () => {
+    for (const type of ["heading", "text"] as const) {
       const html = renderContentBlock(fixtures[type], context);
       const serialized = JSON.stringify(html);
 
@@ -151,12 +151,20 @@ describe("content block registry", () => {
     }
   });
 
-  it("marks heading block root as canvas-editable", () => {
+  it("does not mark button as canvas-editable", () => {
+    const html = renderContentBlock(fixtures.button, context);
+    const serialized = JSON.stringify(html);
+
+    expect(serialized).not.toContain("data-editable");
+  });
+
+  it("marks heading inner text as canvas-editable", () => {
     const html = renderContentBlock(fixtures.heading, context);
     const serialized = JSON.stringify(html);
 
     expect(serialized).toContain('"data-block-id":"heading-1"');
-    expect(serialized).toMatch(/data-block-id.*data-editable/);
+    expect(serialized).toContain("data-editable");
+    expect(serialized).toContain("data-editable-prop");
   });
 
   it("does not mark richtext or html as canvas-editable", () => {

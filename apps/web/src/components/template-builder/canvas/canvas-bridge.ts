@@ -74,7 +74,8 @@ export function isBlockEditCommitMessage(
 
 const CANVAS_BRIDGE_STYLES = (canEdit: boolean) => `<style id="canvas-bridge-styles">
 [data-block-id] { cursor: pointer; }
-${canEdit ? "[data-editable] { cursor: text; }\n" : ""}#canvas-bridge-layer {
+[data-block-id] a[data-canvas-link-disabled] { cursor: inherit; text-decoration: inherit; color: inherit; }
+${canEdit ? "[data-editable] { cursor: text; }\n[data-editable][contenteditable=\"true\"] { outline: none; box-shadow: none; }\n" : ""}#canvas-bridge-layer {
   position: absolute;
   top: 0;
   left: 0;
@@ -225,19 +226,24 @@ function buildBridgeScript(canEdit: boolean): string {
     return null;
   }
 
+  function isInlineEditableBlock(block) {
+    var label = block.getAttribute("data-block-label");
+    return label === "Heading" || label === "Text";
+  }
+
   function findEditableElement(block) {
+    if (!isInlineEditableBlock(block)) {
+      return null;
+    }
+
     var marked = block.querySelector("[data-editable]");
     if (marked) {
       return marked;
     }
 
-    var label = block.getAttribute("data-block-label");
-    if (label !== "Heading" && label !== "Text" && label !== "Button") {
-      return null;
-    }
-
     return (
-      block.querySelector("h1,h2,h3,h4,h5,h6,p,a") || block
+      block.querySelector("h1 span, h2 span, h3 span, h4 span, h5 span, h6 span, p span") ||
+      block.querySelector("h1,h2,h3,h4,h5,h6,p")
     );
   }
 
@@ -247,14 +253,18 @@ function buildBridgeScript(canEdit: boolean): string {
       return null;
     }
 
-    var editable = element.closest("[data-editable]");
-    if (editable) {
-      return editable;
+    var block = element.closest("[data-block-id]");
+    if (!block || !isInlineEditableBlock(block)) {
+      return null;
     }
 
-    var block = element.closest("[data-block-id]");
-    if (!block) {
-      return null;
+    var editable = element.closest("[data-editable]");
+    if (
+      editable &&
+      editable !== block &&
+      !editable.hasAttribute("data-block-id")
+    ) {
+      return editable;
     }
 
     return findEditableElement(block);
@@ -442,9 +452,35 @@ function buildBridgeScript(canEdit: boolean): string {
     true,
   );
 
+  function disableBlockLinks() {
+    var anchors = document.querySelectorAll("[data-block-id] a[href]");
+    for (var i = 0; i < anchors.length; i += 1) {
+      anchors[i].setAttribute("data-canvas-link-disabled", "");
+      anchors[i].removeAttribute("href");
+    }
+  }
+
+  function blockLinkFromTarget(target) {
+    var element = resolveElement(target);
+    if (!element) {
+      return null;
+    }
+    var link = element.closest("a");
+    if (!link || !link.closest("[data-block-id]")) {
+      return null;
+    }
+    return link;
+  }
+
+  disableBlockLinks();
+
   document.addEventListener(
     "click",
     function (event) {
+      if (blockLinkFromTarget(event.target)) {
+        event.preventDefault();
+      }
+
       if (editingElement) {
         return;
       }

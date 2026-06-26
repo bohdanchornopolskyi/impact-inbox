@@ -62,11 +62,6 @@ export function renderContentBlockHtml(
     {
       "data-block-id": block.id,
       "data-block-label": getBlockTypeLabel(block.type),
-      ...(block.type === "heading" ||
-      block.type === "text" ||
-      block.type === "button"
-        ? { "data-editable": "", "data-editable-prop": "text" }
-        : {}),
       key: block.id,
     },
     render(block, context),

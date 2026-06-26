@@ -47,7 +47,9 @@ describe("buildCanvasBridgeDocument", () => {
     expect(result).toContain("findEditableTarget");
     expect(result).toContain("findEditableElement");
     expect(result).toContain("dblclick");
-    expect(result).toContain("setTimeout(function ()");
+    expect(result).toContain("disableBlockLinks");
+    expect(result).toContain("data-canvas-link-disabled");
+    expect(result).toContain("isInlineEditableBlock");
   });
 
   it("appends injection when body tag is missing", () => {

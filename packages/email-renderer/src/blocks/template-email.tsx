@@ -162,7 +162,7 @@ function renderButtonBlock(block: ButtonBlock, context: RenderContext) {
           boxSizing: "border-box",
         }}
       >
-        {editableText(text)}
+        {text}
       </Button>
     </Section>
   );
