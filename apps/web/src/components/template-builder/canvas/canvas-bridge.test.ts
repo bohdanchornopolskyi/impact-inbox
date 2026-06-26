@@ -1,9 +1,12 @@
 import { describe, expect, it } from "vitest";
 import {
   buildCanvasBridgeDocument,
+  isBlockEditCancelMessage,
   isBlockEditCommitMessage,
   isBlockEditStartMessage,
+  isBlockEditSyncMessage,
   isBlockSelectMessage,
+  isRichtextFormatStateMessage,
 } from "./canvas-bridge";
 
 describe("buildCanvasBridgeDocument", () => {
@@ -42,6 +45,7 @@ describe("buildCanvasBridgeDocument", () => {
 
     expect(result).toContain("block-edit-start");
     expect(result).toContain("block-edit-commit");
+    expect(result).toContain("block-edit-cancel");
     expect(result).toContain("contentEditable");
     expect(result).toContain("resolveElement");
     expect(result).toContain("findEditableTarget");
@@ -49,7 +53,36 @@ describe("buildCanvasBridgeDocument", () => {
     expect(result).toContain("dblclick");
     expect(result).toContain("disableBlockLinks");
     expect(result).toContain("data-canvas-link-disabled");
-    expect(result).toContain("isInlineEditableBlock");
+    expect(result).toContain("isPlainTextEditableBlock");
+    expect(result).toContain("isRichtextEditableBlock");
+    expect(result).toContain("startRichtextEdit");
+    expect(result).toContain("resolveBlockLabel");
+    expect(result).toContain("editKind");
+  });
+
+  it("includes richtext in-iframe editing via execCommand", () => {
+    const result = buildCanvasBridgeDocument(sampleHtml, { canEdit: true });
+
+    expect(result).toContain("ensureRichtextEditing");
+    expect(result).toContain("focusRichtextForCommand");
+    expect(result).toContain("findRichtextBlockElement");
+    expect(result).toContain("applyRichtextCommand");
+    expect(result).toContain("applyRichtextHeading");
+    expect(result).toContain("resolveHeadingTag");
+    expect(result).toContain("reportRichtextFormatState");
+    expect(result).toContain("execCommand");
+    expect(result).toContain("richtext-format");
+    expect(result).toContain("richtext-format-state");
+    expect(result).toContain("richtext-set-heading");
+    expect(result).toContain("measureRichtextFormatState");
+    expect(result).toContain("reportRichtextFormatStateForBlock");
+    expect(result).toContain("editingSnapshotHtml");
+    expect(result).toContain("flushRichtextSync");
+    expect(result).toContain("onRichtextBlur");
+    expect(result).toContain("block-edit-sync");
+    expect(result).toContain("richtext-cancel");
+    expect(result).toContain("syncRichtextHtml");
+    expect(result).toContain("event.source !== window.parent");
   });
 
   it("appends injection when body tag is missing", () => {
@@ -94,6 +127,29 @@ describe("isBlockEditStartMessage", () => {
       isBlockEditStartMessage({ type: "block-edit-start", blockId: "text-1" }),
     ).toBe(true);
   });
+
+  it("accepts richtext edit-start messages", () => {
+    expect(
+      isBlockEditStartMessage({
+        type: "block-edit-start",
+        blockId: "richtext-1",
+        editKind: "richtext",
+      }),
+    ).toBe(true);
+  });
+});
+
+describe("isBlockEditSyncMessage", () => {
+  it("accepts valid block-edit-sync messages", () => {
+    expect(
+      isBlockEditSyncMessage({
+        type: "block-edit-sync",
+        blockId: "richtext-1",
+        prop: "html",
+        value: "<p>Hi</p>",
+      }),
+    ).toBe(true);
+  });
 });
 
 describe("isBlockEditCommitMessage", () => {
@@ -106,5 +162,42 @@ describe("isBlockEditCommitMessage", () => {
         value: "Updated",
       }),
     ).toBe(true);
+  });
+});
+
+describe("isBlockEditCancelMessage", () => {
+  it("accepts valid block-edit-cancel messages", () => {
+    expect(
+      isBlockEditCancelMessage({
+        type: "block-edit-cancel",
+        blockId: "richtext-1",
+      }),
+    ).toBe(true);
+  });
+
+  it("rejects messages without a block id", () => {
+    expect(isBlockEditCancelMessage({ type: "block-edit-cancel" })).toBe(false);
+  });
+});
+
+describe("isRichtextFormatStateMessage", () => {
+  it("accepts valid richtext-format-state messages", () => {
+    expect(
+      isRichtextFormatStateMessage({
+        type: "richtext-format-state",
+        blockId: "richtext-1",
+        state: { bold: true, italic: false, underline: false, heading: "h2" },
+      }),
+    ).toBe(true);
+  });
+
+  it("rejects messages with a malformed state", () => {
+    expect(
+      isRichtextFormatStateMessage({
+        type: "richtext-format-state",
+        blockId: "richtext-1",
+        state: { bold: "yes", italic: false, underline: false, heading: "p" },
+      }),
+    ).toBe(false);
   });
 });

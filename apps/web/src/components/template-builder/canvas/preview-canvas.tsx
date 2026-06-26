@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Monitor, Smartphone } from "lucide-react";
 import { SegmentedControl } from "@repo/ui/client";
-import { findBlock, getBlockLabel } from "@repo/shared";
+import { findBlock, getBlockLabel, sanitizeRichtextHtml } from "@repo/shared";
 import {
   previewWidth,
   useRenderedPreview,
@@ -11,10 +11,17 @@ import {
 import { useBuilder } from "../builder-provider";
 import {
   buildCanvasBridgeDocument,
+  isBlockEditCancelMessage,
   isBlockEditCommitMessage,
   isBlockEditStartMessage,
+  isBlockEditSyncMessage,
   isBlockSelectMessage,
+  isRichtextFormatStateMessage,
 } from "./canvas-bridge";
+import {
+  useRichtextCanvasEdit,
+  type RichtextCommand,
+} from "./richtext-canvas-edit-context";
 
 export function PreviewCanvas() {
   const content = useBuilder((s) => s.content);
@@ -24,11 +31,29 @@ export function PreviewCanvas() {
   const updateBlockProps = useBuilder((s) => s.updateBlockProps);
   const previewDevice = useBuilder((s) => s.previewDevice);
   const setPreviewDevice = useBuilder((s) => s.setPreviewDevice);
+  const {
+    session: richtextSession,
+    startEdit: startRichtextEdit,
+    endEdit: endRichtextEdit,
+    commitEdit: commitRichtextEdit,
+    setFormatState,
+    registerCommandSink,
+  } = useRichtextCanvasEdit();
+  const richtextSessionRef = useRef(richtextSession);
+  richtextSessionRef.current = richtextSession;
+  const selectedBlockIdRef = useRef(selectedBlockId);
+  selectedBlockIdRef.current = selectedBlockId;
+  const contentRef = useRef(content);
+  contentRef.current = content;
+  const richtextSnapshotRef = useRef<{ blockId: string; html: string } | null>(
+    null,
+  );
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const htmlRef = useRef("");
   const srcDocRef = useRef("");
   const pausedHtmlRef = useRef<string | null>(null);
-  const [previewPaused, setPreviewPaused] = useState(false);
+  const [plainTextEditPaused, setPlainTextEditPaused] = useState(false);
+  const previewPaused = plainTextEditPaused || richtextSession !== null;
   const { html } = useRenderedPreview(content, true, previewPaused);
 
   htmlRef.current = html;
@@ -48,6 +73,9 @@ export function PreviewCanvas() {
     const found = findBlock(content, selectedBlockId);
     return found ? getBlockLabel(found.block) : null;
   }, [content, selectedBlockId]);
+
+  const selectedLabelRef = useRef(selectedLabel);
+  selectedLabelRef.current = selectedLabel;
 
   const builtSrcDoc = useMemo(
     () =>
@@ -72,6 +100,13 @@ export function PreviewCanvas() {
   );
 
   useEffect(() => {
+    registerCommandSink((command: RichtextCommand) => {
+      iframeRef.current?.contentWindow?.postMessage(command, "*");
+    });
+    return () => registerCommandSink(null);
+  }, [registerCommandSink]);
+
+  useEffect(() => {
     function onMessage(event: MessageEvent) {
       if (event.source !== iframeRef.current?.contentWindow) {
         return;
@@ -84,23 +119,98 @@ export function PreviewCanvas() {
 
       if (isBlockEditStartMessage(event.data)) {
         pausedHtmlRef.current = htmlRef.current;
-        selectBlock(event.data.blockId);
-        queueMicrotask(() => setPreviewPaused(true));
+        if (event.data.editKind === "richtext") {
+          const found = findBlock(contentRef.current, event.data.blockId);
+          const html =
+            found?.block.type === "richtext"
+              ? String(
+                  (found.block.props as { html?: string }).html ?? "",
+                )
+              : "";
+          richtextSnapshotRef.current = {
+            blockId: event.data.blockId,
+            html,
+          };
+          startRichtextEdit({ blockId: event.data.blockId });
+        } else {
+          selectBlock(event.data.blockId);
+          queueMicrotask(() => setPlainTextEditPaused(true));
+        }
         return;
       }
 
       if (isBlockEditCommitMessage(event.data)) {
+        const value =
+          event.data.prop === "html"
+            ? sanitizeRichtextHtml(event.data.value)
+            : event.data.value;
         updateBlockProps(event.data.blockId, {
-          [event.data.prop]: event.data.value,
+          [event.data.prop]: value,
         });
+        richtextSnapshotRef.current = null;
         pausedHtmlRef.current = null;
-        setPreviewPaused(false);
+        setPlainTextEditPaused(false);
+        endRichtextEdit();
+        return;
+      }
+
+      if (isBlockEditSyncMessage(event.data)) {
+        const value =
+          event.data.prop === "html"
+            ? sanitizeRichtextHtml(event.data.value)
+            : event.data.value;
+        updateBlockProps(event.data.blockId, {
+          [event.data.prop]: value,
+        });
+        return;
+      }
+
+      if (isBlockEditCancelMessage(event.data)) {
+        const snapshot = richtextSnapshotRef.current;
+        if (snapshot && snapshot.blockId === event.data.blockId) {
+          updateBlockProps(snapshot.blockId, { html: snapshot.html });
+        }
+        richtextSnapshotRef.current = null;
+        pausedHtmlRef.current = null;
+        setPlainTextEditPaused(false);
+        endRichtextEdit();
+        postSelectBlock(selectedBlockIdRef.current, selectedLabelRef.current);
+        return;
+      }
+
+      if (isRichtextFormatStateMessage(event.data)) {
+        if (event.data.blockId !== selectedBlockIdRef.current) {
+          return;
+        }
+        setFormatState(event.data.state);
       }
     }
 
     window.addEventListener("message", onMessage);
     return () => window.removeEventListener("message", onMessage);
-  }, [selectBlock, updateBlockProps]);
+  }, [
+    endRichtextEdit,
+    selectBlock,
+    setFormatState,
+    startRichtextEdit,
+    updateBlockProps,
+  ]);
+
+  useEffect(() => {
+    if (!richtextSession) {
+      return;
+    }
+
+    if (selectedBlockId !== richtextSession.blockId) {
+      commitRichtextEdit();
+    }
+  }, [commitRichtextEdit, richtextSession, selectedBlockId]);
+
+  useEffect(() => {
+    if (!richtextSession) {
+      pausedHtmlRef.current = null;
+    }
+  }, [richtextSession]);
 
   useEffect(() => {
     postSelectBlock(selectedBlockId, selectedLabel);

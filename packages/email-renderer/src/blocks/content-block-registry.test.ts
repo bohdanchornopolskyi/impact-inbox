@@ -167,12 +167,20 @@ describe("content block registry", () => {
     expect(serialized).toContain("data-editable-prop");
   });
 
-  it("does not mark richtext or html as canvas-editable", () => {
-    for (const type of ["richtext", "html"] as const) {
-      const html = renderContentBlock(fixtures[type], context);
-      const serialized = JSON.stringify(html);
+  it("marks richtext as canvas-editable with richtext kind", () => {
+    const html = renderContentBlock(fixtures.richtext, context);
+    const serialized = JSON.stringify(html);
 
-      expect(serialized).not.toContain("data-editable");
-    }
+    expect(serialized).toContain("data-editable");
+    expect(serialized).toContain("data-editable-prop");
+    expect(serialized).toContain("data-editable-kind");
+    expect(serialized).toContain("richtext");
+  });
+
+  it("does not mark html as canvas-editable", () => {
+    const html = renderContentBlock(fixtures.html, context);
+    const serialized = JSON.stringify(html);
+
+    expect(serialized).not.toContain("data-editable");
   });
 });

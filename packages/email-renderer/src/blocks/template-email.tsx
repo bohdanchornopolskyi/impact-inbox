@@ -57,6 +57,18 @@ function editableText(text: string) {
   );
 }
 
+function editableRichtext(html: string) {
+  return (
+    <div
+      data-editable=""
+      data-editable-prop="html"
+      data-editable-kind="richtext"
+      style={{ fontWeight: 400, margin: 0 }}
+      dangerouslySetInnerHTML={{ __html: html }}
+    />
+  );
+}
+
 function renderHeadingBlock(block: HeadingBlock, context: RenderContext) {
   const { text, level, color, fontSize, fontWeight } = block.props;
   const headingAs = {
@@ -112,7 +124,7 @@ function renderRichtextBlock(block: RichtextBlock, context: RenderContext) {
   const { html, color, fontSize, lineHeight } = block.props;
 
   return (
-    <Text
+    <div
       key={block.id}
       style={{
         ...blockStylesToCss(block.styles),
@@ -120,10 +132,12 @@ function renderRichtextBlock(block: RichtextBlock, context: RenderContext) {
         fontSize: fontSize ?? context.settings.fontSize ?? 16,
         lineHeight: lineHeight ?? context.settings.lineHeight ?? 1.5,
         fontFamily: context.settings.fontFamily,
+        fontWeight: 400,
         margin: 0,
       }}
-      dangerouslySetInnerHTML={{ __html: html }}
-    />
+    >
+      {editableRichtext(html)}
+    </div>
   );
 }
 

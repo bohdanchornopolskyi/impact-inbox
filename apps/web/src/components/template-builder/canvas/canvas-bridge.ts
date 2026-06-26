@@ -10,6 +10,7 @@ export type BlockSelectMessage = {
 export type BlockEditStartMessage = {
   type: "block-edit-start";
   blockId: string;
+  editKind?: "plain" | "richtext";
 };
 
 export type BlockEditCommitMessage = {
@@ -17,6 +18,43 @@ export type BlockEditCommitMessage = {
   blockId: string;
   prop: string;
   value: string;
+};
+
+export type BlockEditSyncMessage = {
+  type: "block-edit-sync";
+  blockId: string;
+  prop: string;
+  value: string;
+};
+
+export type BlockEditCancelMessage = {
+  type: "block-edit-cancel";
+  blockId: string;
+};
+
+export const RICHTEXT_HEADING_TAGS = [
+  "p",
+  "h1",
+  "h2",
+  "h3",
+  "h4",
+  "h5",
+  "h6",
+] as const;
+
+export type RichtextHeadingTag = (typeof RICHTEXT_HEADING_TAGS)[number];
+
+export type RichtextFormatStateData = {
+  bold: boolean;
+  italic: boolean;
+  underline: boolean;
+  heading: RichtextHeadingTag;
+};
+
+export type RichtextFormatStateMessage = {
+  type: "richtext-format-state";
+  blockId: string;
+  state: RichtextFormatStateData;
 };
 
 export type SelectBlockMessage = {
@@ -28,7 +66,10 @@ export type SelectBlockMessage = {
 export type CanvasBridgeInboundMessage =
   | BlockSelectMessage
   | BlockEditStartMessage
-  | BlockEditCommitMessage;
+  | BlockEditCommitMessage
+  | BlockEditSyncMessage
+  | BlockEditCancelMessage
+  | RichtextFormatStateMessage;
 
 export function isBlockSelectMessage(
   data: unknown,
@@ -51,9 +92,17 @@ export function isBlockEditStartMessage(
   }
 
   const message = data as Record<string, unknown>;
-  return (
-    message.type === "block-edit-start" && typeof message.blockId === "string"
-  );
+  if (message.type !== "block-edit-start" || typeof message.blockId !== "string") {
+    return false;
+  }
+
+  if (message.editKind !== undefined) {
+    if (message.editKind !== "plain" && message.editKind !== "richtext") {
+      return false;
+    }
+  }
+
+  return true;
 }
 
 export function isBlockEditCommitMessage(
@@ -70,6 +119,71 @@ export function isBlockEditCommitMessage(
     typeof message.prop === "string" &&
     typeof message.value === "string"
   );
+}
+
+export function isBlockEditSyncMessage(
+  data: unknown,
+): data is BlockEditSyncMessage {
+  if (!data || typeof data !== "object") {
+    return false;
+  }
+
+  const message = data as Record<string, unknown>;
+  return (
+    message.type === "block-edit-sync" &&
+    typeof message.blockId === "string" &&
+    typeof message.prop === "string" &&
+    typeof message.value === "string"
+  );
+}
+
+export function isBlockEditCancelMessage(
+  data: unknown,
+): data is BlockEditCancelMessage {
+  if (!data || typeof data !== "object") {
+    return false;
+  }
+
+  const message = data as Record<string, unknown>;
+  return (
+    message.type === "block-edit-cancel" && typeof message.blockId === "string"
+  );
+}
+
+export function isRichtextFormatStateMessage(
+  data: unknown,
+): data is RichtextFormatStateMessage {
+  if (!data || typeof data !== "object") {
+    return false;
+  }
+
+  const message = data as Record<string, unknown>;
+  if (
+    message.type !== "richtext-format-state" ||
+    typeof message.blockId !== "string"
+  ) {
+    return false;
+  }
+
+  if (!message.state || typeof message.state !== "object") {
+    return false;
+  }
+
+  const state = message.state as Record<string, unknown>;
+  for (const key of ["bold", "italic", "underline"] as const) {
+    if (typeof state[key] !== "boolean") {
+      return false;
+    }
+  }
+
+  if (
+    typeof state.heading !== "string" ||
+    !RICHTEXT_HEADING_TAGS.includes(state.heading as RichtextHeadingTag)
+  ) {
+    return false;
+  }
+
+  return true;
 }
 
 const CANVAS_BRIDGE_STYLES = (canEdit: boolean) => `<style id="canvas-bridge-styles">
@@ -137,12 +251,341 @@ function buildBridgeScript(canEdit: boolean): string {
   var resizeObserver = null;
   var editingElement = null;
   var editingBlockId = null;
+  var editingKind = null;
+  var editingSnapshotHtml = null;
+  var savedRange = null;
+  var syncTimer = null;
+
+  function isRichtextEditing() {
+    return editingKind === "richtext";
+  }
+
+  function saveSelection() {
+    if (!editingElement) {
+      return;
+    }
+    var sel = window.getSelection();
+    if (!sel || sel.rangeCount === 0) {
+      return;
+    }
+    var range = sel.getRangeAt(0);
+    if (editingElement.contains(range.commonAncestorContainer)) {
+      savedRange = range.cloneRange();
+    }
+  }
+
+  function restoreSelection() {
+    if (!savedRange) {
+      return;
+    }
+    var sel = window.getSelection();
+    if (!sel) {
+      return;
+    }
+    sel.removeAllRanges();
+    sel.addRange(savedRange);
+  }
+
+  function resolveHeadingTag() {
+    var sel = window.getSelection();
+    if (!sel || sel.rangeCount === 0 || !editingElement) {
+      return "p";
+    }
+    var node = sel.anchorNode;
+    if (!node) {
+      return "p";
+    }
+    var el = node.nodeType === 3 ? node.parentElement : node;
+    while (el && el !== editingElement) {
+      var tag = el.tagName ? el.tagName.toLowerCase() : "";
+      if (
+        tag === "h1" ||
+        tag === "h2" ||
+        tag === "h3" ||
+        tag === "h4" ||
+        tag === "h5" ||
+        tag === "h6"
+      ) {
+        return tag;
+      }
+      if (tag === "p" || tag === "div") {
+        return "p";
+      }
+      el = el.parentElement;
+    }
+    return "p";
+  }
+
+  function postRichtextFormatState(blockId, state) {
+    window.parent.postMessage(
+      { type: "richtext-format-state", blockId: blockId, state: state },
+      "*",
+    );
+  }
+
+  function measureRichtextFormatState(richtextEl) {
+    var bold = false;
+    var italic = false;
+    var underline = false;
+    var heading = "p";
+    var walker = document.createTreeWalker(
+      richtextEl,
+      NodeFilter.SHOW_TEXT,
+      null,
+    );
+    var textNode = walker.nextNode();
+    if (textNode) {
+      var el = textNode.parentElement;
+      while (el && el !== richtextEl) {
+        var tag = el.tagName ? el.tagName.toUpperCase() : "";
+        if (tag === "STRONG" || tag === "B") {
+          bold = true;
+        }
+        if (tag === "EM" || tag === "I") {
+          italic = true;
+        }
+        if (tag === "U") {
+          underline = true;
+        }
+        el = el.parentElement;
+      }
+    }
+    var block = richtextEl.querySelector("h1,h2,h3,h4,h5,h6,p");
+    if (block) {
+      var blockTag = block.tagName.toLowerCase();
+      if (
+        blockTag === "h1" ||
+        blockTag === "h2" ||
+        blockTag === "h3" ||
+        blockTag === "h4" ||
+        blockTag === "h5" ||
+        blockTag === "h6"
+      ) {
+        heading = blockTag;
+      }
+    }
+    return { bold: bold, italic: italic, underline: underline, heading: heading };
+  }
+
+  function reportRichtextFormatStateForBlock(blockId) {
+    if (isRichtextEditing()) {
+      return;
+    }
+    var block = findBlockElement(blockId);
+    if (!block || !isRichtextEditableBlock(block)) {
+      return;
+    }
+    var richtext = block.querySelector("[data-editable-kind=richtext]");
+    if (!richtext) {
+      return;
+    }
+    postRichtextFormatState(blockId, measureRichtextFormatState(richtext));
+  }
+
+  function reportRichtextFormatState() {
+    if (!isRichtextEditing() || !editingBlockId) {
+      return;
+    }
+    postRichtextFormatState(editingBlockId, {
+      bold: document.queryCommandState("bold"),
+      italic: document.queryCommandState("italic"),
+      underline: document.queryCommandState("underline"),
+      heading: resolveHeadingTag(),
+    });
+  }
+
+  function onSelectionChange() {
+    if (!isRichtextEditing()) {
+      return;
+    }
+    saveSelection();
+    reportRichtextFormatState();
+  }
+
+  function ensureRichtextEditing(blockId) {
+    if (isRichtextEditing()) {
+      if (editingBlockId === blockId) {
+        return true;
+      }
+      commitEdit();
+    }
+    var block = findBlockElement(blockId);
+    if (!block) {
+      return false;
+    }
+    startRichtextEdit(block);
+    return !!editingElement;
+  }
+
+  function focusRichtextForCommand() {
+    if (!editingElement) {
+      return;
+    }
+    editingElement.focus();
+    if (!savedRange) {
+      var range = document.createRange();
+      range.selectNodeContents(editingElement);
+      var selection = window.getSelection();
+      if (selection) {
+        selection.removeAllRanges();
+        selection.addRange(range);
+      }
+      saveSelection();
+      return;
+    }
+    restoreSelection();
+  }
+
+  function findRichtextBlockElement(node) {
+    if (!node || !editingElement) {
+      return null;
+    }
+    var el = node.nodeType === 3 ? node.parentElement : node;
+    var blockTags = ["p", "h1", "h2", "h3", "h4", "h5", "h6", "div"];
+    while (el && el !== editingElement) {
+      var tag = el.tagName ? el.tagName.toLowerCase() : "";
+      if (blockTags.indexOf(tag) >= 0) {
+        return el;
+      }
+      el = el.parentElement;
+    }
+    return null;
+  }
+
+  function applyRichtextCommand(command, value, blockId) {
+    if (!ensureRichtextEditing(blockId)) {
+      return;
+    }
+    focusRichtextForCommand();
+    try {
+      document.execCommand("styleWithCSS", false, "false");
+    } catch (e) {}
+    document.execCommand(command, false, value);
+    saveSelection();
+    reportRichtextFormatState();
+    syncRichtextHtml();
+  }
+
+  function applyRichtextHeading(tag, blockId) {
+    if (!ensureRichtextEditing(blockId)) {
+      return;
+    }
+    focusRichtextForCommand();
+
+    var sel = window.getSelection();
+    if (!sel || sel.rangeCount === 0) {
+      return;
+    }
+
+    var block = findRichtextBlockElement(sel.anchorNode);
+    if (block && block.parentElement) {
+      var currentTag = block.tagName.toLowerCase();
+      var normalizedCurrent = currentTag === "div" ? "p" : currentTag;
+      if (normalizedCurrent !== tag) {
+        var replacement = document.createElement(tag);
+        replacement.innerHTML = block.innerHTML;
+        if (tag !== "p") {
+          replacement.style.margin = "0";
+        }
+        block.parentElement.replaceChild(replacement, block);
+        var range = document.createRange();
+        range.selectNodeContents(replacement);
+        range.collapse(false);
+        sel.removeAllRanges();
+        sel.addRange(range);
+        saveSelection();
+        reportRichtextFormatState();
+        syncRichtextHtml();
+        return;
+      }
+      reportRichtextFormatState();
+      return;
+    }
+
+    document.execCommand("formatBlock", false, tag === "p" ? "<p>" : "<" + tag + ">");
+    saveSelection();
+    reportRichtextFormatState();
+    syncRichtextHtml();
+  }
+
+  function flushRichtextSync() {
+    if (!isRichtextEditing() || !editingElement || !editingBlockId) {
+      return;
+    }
+    var prop = editingElement.getAttribute("data-editable-prop");
+    if (!prop) {
+      return;
+    }
+    window.parent.postMessage(
+      {
+        type: "block-edit-sync",
+        blockId: editingBlockId,
+        prop: prop,
+        value: editingElement.innerHTML,
+      },
+      "*",
+    );
+  }
+
+  function syncRichtextHtml() {
+    if (syncTimer) {
+      clearTimeout(syncTimer);
+    }
+    syncTimer = setTimeout(function () {
+      syncTimer = null;
+      flushRichtextSync();
+    }, 200);
+  }
+
+  function onRichtextInput() {
+    syncRichtextHtml();
+  }
+
+  function onRichtextBlur(event) {
+    if (editingKind !== "richtext" || !editingElement) {
+      return;
+    }
+    var related = event.relatedTarget;
+    if (related && editingElement.contains(related)) {
+      return;
+    }
+    commitEdit();
+  }
 
   function onEditKeydown(event) {
+    if (event.key === "Escape") {
+      event.preventDefault();
+      cancelEditing();
+      return;
+    }
+    if (editingKind === "richtext") {
+      return;
+    }
     if (event.key === "Enter" && !event.shiftKey) {
       event.preventDefault();
       editingElement.blur();
     }
+  }
+
+  function teardownEditing() {
+    if (!editingElement) {
+      return;
+    }
+    editingElement.contentEditable = "false";
+    editingElement.removeEventListener("keydown", onEditKeydown);
+    editingElement.removeEventListener("blur", onEditBlur);
+    editingElement.removeEventListener("blur", onRichtextBlur);
+    editingElement.removeEventListener("input", onRichtextInput);
+    document.removeEventListener("selectionchange", onSelectionChange);
+    if (syncTimer) {
+      clearTimeout(syncTimer);
+      syncTimer = null;
+    }
+    editingElement = null;
+    editingBlockId = null;
+    editingKind = null;
+    editingSnapshotHtml = null;
+    savedRange = null;
   }
 
   function commitEdit() {
@@ -150,23 +593,39 @@ function buildBridgeScript(canEdit: boolean): string {
       return;
     }
 
-    var prop = editingElement.getAttribute("data-editable-prop");
-    if (!prop) {
-      editingElement.contentEditable = "false";
-      editingElement.removeEventListener("keydown", onEditKeydown);
-      editingElement = null;
-      editingBlockId = null;
-      return;
+    if (syncTimer) {
+      clearTimeout(syncTimer);
+      syncTimer = null;
+      flushRichtextSync();
     }
 
-    var value = editingElement.textContent || "";
+    var prop = editingElement.getAttribute("data-editable-prop");
+    var value =
+      editingKind === "richtext"
+        ? editingElement.innerHTML
+        : editingElement.textContent || "";
     var blockId = editingBlockId;
-    editingElement.contentEditable = "false";
-    editingElement.removeEventListener("keydown", onEditKeydown);
-    editingElement = null;
-    editingBlockId = null;
+    teardownEditing();
+
+    if (prop) {
+      window.parent.postMessage(
+        { type: "block-edit-commit", blockId: blockId, prop: prop, value: value },
+        "*",
+      );
+    }
+  }
+
+  function cancelEditing() {
+    if (!editingElement || !editingBlockId) {
+      return;
+    }
+    if (editingKind === "richtext" && editingSnapshotHtml !== null) {
+      editingElement.innerHTML = editingSnapshotHtml;
+    }
+    var blockId = editingBlockId;
+    teardownEditing();
     window.parent.postMessage(
-      { type: "block-edit-commit", blockId: blockId, prop: prop, value: value },
+      { type: "block-edit-cancel", blockId: blockId },
       "*",
     );
   }
@@ -196,9 +655,10 @@ function buildBridgeScript(canEdit: boolean): string {
 
     editingElement = element;
     editingBlockId = blockId;
+    editingKind = "plain";
     applySelection(blockId, null);
     element.contentEditable = "true";
-    element.addEventListener("blur", onEditBlur, { once: true });
+    element.addEventListener("blur", onEditBlur);
     element.addEventListener("keydown", onEditKeydown);
     element.focus();
 
@@ -210,7 +670,49 @@ function buildBridgeScript(canEdit: boolean): string {
       selection.addRange(range);
     }
 
-    window.parent.postMessage({ type: "block-edit-start", blockId: blockId }, "*");
+    window.parent.postMessage(
+      { type: "block-edit-start", blockId: blockId, editKind: "plain" },
+      "*",
+    );
+  }
+
+  function startRichtextEdit(block) {
+    if (!canEdit || editingElement) {
+      return;
+    }
+
+    var blockId = block.getAttribute("data-block-id");
+    if (!blockId) {
+      return;
+    }
+
+    var element = resolveChromeElement(block);
+    if (!element) {
+      return;
+    }
+
+    if (!element.getAttribute("data-editable-prop")) {
+      element.setAttribute("data-editable-prop", "html");
+    }
+
+    editingElement = element;
+    editingBlockId = blockId;
+    editingKind = "richtext";
+    editingSnapshotHtml = element.innerHTML;
+    applySelection(blockId, block.getAttribute("data-block-label"));
+    element.contentEditable = "true";
+    element.addEventListener("keydown", onEditKeydown);
+    element.addEventListener("blur", onRichtextBlur);
+    element.addEventListener("input", onRichtextInput);
+    document.addEventListener("selectionchange", onSelectionChange);
+    element.focus();
+    saveSelection();
+    reportRichtextFormatState();
+
+    window.parent.postMessage(
+      { type: "block-edit-start", blockId: blockId, editKind: "richtext" },
+      "*",
+    );
   }
 
   function resolveElement(target) {
@@ -226,13 +728,36 @@ function buildBridgeScript(canEdit: boolean): string {
     return null;
   }
 
-  function isInlineEditableBlock(block) {
+  function isPlainTextEditableBlock(block) {
     var label = block.getAttribute("data-block-label");
     return label === "Heading" || label === "Text";
   }
 
+  function isRichtextEditableBlock(block) {
+    return block.getAttribute("data-block-label") === "Rich Text";
+  }
+
+  function isCanvasEditableBlock(block) {
+    return isPlainTextEditableBlock(block) || isRichtextEditableBlock(block);
+  }
+
+  function resolveChromeElement(block) {
+    if (!block) {
+      return block;
+    }
+
+    if (isRichtextEditableBlock(block)) {
+      var richtext = block.querySelector("[data-editable-kind=richtext]");
+      if (richtext) {
+        return richtext;
+      }
+    }
+
+    return block;
+  }
+
   function findEditableElement(block) {
-    if (!isInlineEditableBlock(block)) {
+    if (!isCanvasEditableBlock(block)) {
       return null;
     }
 
@@ -241,10 +766,28 @@ function buildBridgeScript(canEdit: boolean): string {
       return marked;
     }
 
-    return (
-      block.querySelector("h1 span, h2 span, h3 span, h4 span, h5 span, h6 span, p span") ||
-      block.querySelector("h1,h2,h3,h4,h5,h6,p")
-    );
+    if (isPlainTextEditableBlock(block)) {
+      return (
+        block.querySelector("h1 span, h2 span, h3 span, h4 span, h5 span, h6 span, p span") ||
+        block.querySelector("h1,h2,h3,h4,h5,h6,p")
+      );
+    }
+
+    return null;
+  }
+
+  function findEditableBlock(target) {
+    var element = resolveElement(target);
+    if (!element) {
+      return null;
+    }
+
+    var block = element.closest("[data-block-id]");
+    if (!block || !isCanvasEditableBlock(block)) {
+      return null;
+    }
+
+    return block;
   }
 
   function findEditableTarget(target) {
@@ -254,7 +797,7 @@ function buildBridgeScript(canEdit: boolean): string {
     }
 
     var block = element.closest("[data-block-id]");
-    if (!block || !isInlineEditableBlock(block)) {
+    if (!block || !isCanvasEditableBlock(block)) {
       return null;
     }
 
@@ -311,11 +854,16 @@ function buildBridgeScript(canEdit: boolean): string {
     frame.style.height = rect.height + "px";
   }
 
+  function resolveBlockLabel(element) {
+    var block = element.closest("[data-block-id]");
+    return block ? (block.getAttribute("data-block-label") || "") : "";
+  }
+
   function resolveLabel(element, label) {
     if (label) {
       return label;
     }
-    return element.getAttribute("data-block-label") || "";
+    return element.getAttribute("data-block-label") || resolveBlockLabel(element);
   }
 
   function positionToolbar(element, label) {
@@ -343,7 +891,7 @@ function buildBridgeScript(canEdit: boolean): string {
 
   function updatePositions() {
     if (hoveredBlock && hoveredBlock.getAttribute("data-block-id") !== selectedBlockId) {
-      positionFrame(hoverFrame, hoveredBlock);
+      positionFrame(hoverFrame, resolveChromeElement(hoveredBlock));
     } else {
       hideFrame(hoverFrame);
     }
@@ -361,8 +909,8 @@ function buildBridgeScript(canEdit: boolean): string {
       return;
     }
 
-    positionFrame(selectionFrame, selected);
-    positionToolbar(selected, toolbarLabel.textContent || null);
+    positionFrame(selectionFrame, resolveChromeElement(selected));
+    positionToolbar(resolveChromeElement(selected), toolbarLabel.textContent || null);
   }
 
   function observeSelectedBlock(element) {
@@ -395,7 +943,7 @@ function buildBridgeScript(canEdit: boolean): string {
     }
     hoveredBlock = element;
     ensureLayer();
-    positionFrame(hoverFrame, element);
+    positionFrame(hoverFrame, resolveChromeElement(element));
   }
 
   function applySelection(blockId, label) {
@@ -421,17 +969,19 @@ function buildBridgeScript(canEdit: boolean): string {
       return;
     }
 
+    if (hoveredBlock && hoveredBlock.getAttribute("data-block-id") === blockId) {
+      clearHover();
+    }
+
     if (label) {
       toolbarLabel.textContent = label;
     }
 
-    positionFrame(selectionFrame, target);
-    positionToolbar(target, label || null);
-    observeSelectedBlock(target);
-
-    if (hoveredBlock && hoveredBlock.getAttribute("data-block-id") === blockId) {
-      clearHover();
-    }
+    var chrome = resolveChromeElement(target);
+    positionFrame(selectionFrame, chrome);
+    positionToolbar(chrome, label || null);
+    observeSelectedBlock(chrome);
+    reportRichtextFormatStateForBlock(blockId);
   }
 
   document.addEventListener(
@@ -481,15 +1031,19 @@ function buildBridgeScript(canEdit: boolean): string {
         event.preventDefault();
       }
 
+      var clickedElement = resolveElement(event.target);
+
       if (editingElement) {
-        return;
+        if (clickedElement && editingElement.contains(clickedElement)) {
+          return;
+        }
+        commitEdit();
       }
 
-      var element = resolveElement(event.target);
-      if (!element) {
+      if (!clickedElement) {
         return;
       }
-      var block = element.closest("[data-block-id]");
+      var block = clickedElement.closest("[data-block-id]");
       if (!block) {
         return;
       }
@@ -500,13 +1054,16 @@ function buildBridgeScript(canEdit: boolean): string {
 
       var editable = canEdit ? findEditableTarget(event.target) : null;
       if (editable) {
-        event.preventDefault();
-        event.stopPropagation();
-        var target = editable;
-        setTimeout(function () {
-          startEdit(target);
-        }, 0);
-        return;
+        var editableBlock = findEditableBlock(event.target);
+        if (!editableBlock || !isRichtextEditableBlock(editableBlock)) {
+          event.preventDefault();
+          event.stopPropagation();
+          var target = editable;
+          setTimeout(function () {
+            startEdit(target);
+          }, 0);
+          return;
+        }
       }
 
       event.preventDefault();
@@ -529,6 +1086,11 @@ function buildBridgeScript(canEdit: boolean): string {
       }
       event.preventDefault();
       event.stopPropagation();
+      var editableBlock = findEditableBlock(event.target);
+      if (editableBlock && isRichtextEditableBlock(editableBlock)) {
+        startRichtextEdit(editableBlock);
+        return;
+      }
       var target = editable;
       setTimeout(function () {
         startEdit(target);
@@ -538,11 +1100,33 @@ function buildBridgeScript(canEdit: boolean): string {
   );
 
   window.addEventListener("message", function (event) {
-    var data = event.data;
-    if (!data || data.type !== "select-block") {
+    if (event.source !== window.parent) {
       return;
     }
-    applySelection(data.blockId, data.label || null);
+    var data = event.data;
+    if (!data) {
+      return;
+    }
+    if (data.type === "select-block") {
+      applySelection(data.blockId, data.label || null);
+      return;
+    }
+    if (data.type === "richtext-format") {
+      applyRichtextCommand(data.command, data.value, data.blockId);
+      return;
+    }
+    if (data.type === "richtext-set-heading") {
+      applyRichtextHeading(data.tag, data.blockId);
+      return;
+    }
+    if (data.type === "richtext-commit") {
+      commitEdit();
+      return;
+    }
+    if (data.type === "richtext-cancel") {
+      cancelEditing();
+      return;
+    }
   });
 
   window.addEventListener("scroll", updatePositions, true);

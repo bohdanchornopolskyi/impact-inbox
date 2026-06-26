@@ -5,6 +5,7 @@ import { useWorkspace } from "@/contexts/workspace-context";
 import { useTemplate } from "@/lib/templates/template-hooks";
 import { BuilderInspectorPanel } from "./builder-inspector-panel";
 import { BuilderProvider } from "./builder-provider";
+import { RichtextCanvasEditProvider } from "./canvas/richtext-canvas-edit-context";
 import { BuilderToolbar } from "./builder-toolbar";
 import { PreviewCanvas } from "./canvas/preview-canvas";
 import { RevisionHistoryDrawer } from "./drawers/revision-history-drawer";
@@ -36,18 +37,20 @@ export function TemplateBuilderView({ templateId }: TemplateBuilderViewProps) {
 
   return (
     <BuilderProvider template={templateQuery.data} canEdit={canEdit}>
-      <div className="flex h-[calc(100vh-99px)] flex-col">
-        <BuilderToolbar />
-        <MergeTagWarnings />
-        <div className="grid min-h-0 flex-1 grid-cols-[266px_minmax(0,1fr)_302px]">
-          <LeftSidebar />
-          <PreviewCanvas />
-          <BuilderInspectorPanel />
+      <RichtextCanvasEditProvider>
+        <div className="flex h-[calc(100vh-99px)] flex-col">
+          <BuilderToolbar />
+          <MergeTagWarnings />
+          <div className="grid min-h-0 flex-1 grid-cols-[266px_minmax(0,1fr)_302px]">
+            <LeftSidebar />
+            <PreviewCanvas />
+            <BuilderInspectorPanel />
+          </div>
         </div>
-      </div>
-      <PreviewOverlay />
-      <RevisionHistoryDrawer />
-      <ExportTemplateModal />
+        <PreviewOverlay />
+        <RevisionHistoryDrawer />
+        <ExportTemplateModal />
+      </RichtextCanvasEditProvider>
     </BuilderProvider>
   );
 }

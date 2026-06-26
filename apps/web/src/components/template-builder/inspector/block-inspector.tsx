@@ -17,6 +17,7 @@ import {
   resolveImageUrl,
 } from "./fields";
 import { SocialLinksEditor, TableEditor } from "./custom-editors";
+import { RichtextFormatFields } from "./richtext-inspector-toolbar";
 
 type UpdateProps = (props: Record<string, unknown>) => void;
 
@@ -131,16 +132,25 @@ function BlockFields({
   const props = block.props as Record<string, unknown>;
 
   return (
-    <>
-      {definition.fields.map((field) => (
-        <BlockField
-          key={field.prop}
-          field={field}
-          value={props[field.prop]}
-          updateProps={updateProps}
-        />
-      ))}
-    </>
+    <div className="space-y-4">
+      {block.type === "richtext" ? (
+        <RichtextFormatFields blockId={block.id} canEdit={canEdit} />
+      ) : null}
+      {definition.fields.map((field) => {
+        if (block.type === "richtext" && field.prop === "html") {
+          return null;
+        }
+
+        return (
+          <BlockField
+            key={field.prop}
+            field={field}
+            value={props[field.prop]}
+            updateProps={updateProps}
+          />
+        );
+      })}
+    </div>
   );
 }
 
@@ -230,8 +240,6 @@ function asString(value: unknown): string {
   return "";
 }
 
-// `level` is stored as a number; other selects keep string values. Coerce based
-// on whether every option value is numeric.
 function coerceSelectValue(
   field: BlockFieldDescriptor,
   next: string,

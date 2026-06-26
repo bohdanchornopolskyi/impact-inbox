@@ -6,3 +6,4 @@ export {
   isValidContactAttributeKey,
   buildKnownMergeTagNames,
 } from "./contact/attribute-keys";
+export { sanitizeRichtextHtml } from "./html/sanitize-richtext-html";

@@ -125,18 +125,21 @@ export function SelectField({
   value,
   onChange,
   options,
+  disabled = false,
 }: {
   label: string;
   value: string | number;
   onChange: (value: string) => void;
   options: { value: string; label: string }[];
+  disabled?: boolean;
 }) {
   return (
     <FieldRow label={label}>
       <select
         value={String(value)}
+        disabled={disabled}
         onChange={(event) => onChange(event.target.value)}
-        className="w-full rounded-md border border-border-strong bg-surface-card px-3 py-2 text-ui-sm text-text-primary outline-none"
+        className="w-full rounded-md border border-border-strong bg-surface-card px-3 py-2 text-ui-sm text-text-primary outline-none disabled:cursor-not-allowed disabled:opacity-50"
       >
         {options.map((option) => (
           <option key={option.value} value={option.value}>
