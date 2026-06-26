@@ -97,6 +97,8 @@ describe("renderTemplate", () => {
     expect(result.html).toContain("background-image");
     expect(result.html).toContain("letter-spacing:1px");
     expect(result.html).toContain("data:image/png;base64");
+    expect(result.html).toContain('data-editable=""');
+    expect(result.html).toContain('data-block-id="heading-1"');
     expect(result.text).toContain("Hello World");
     expect(result.text).toContain("Watch Video: https://example.com/video");
     expect(result.text).toContain("https://example.com/qr");

@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Monitor, Smartphone } from "lucide-react";
 import { SegmentedControl } from "@repo/ui/client";
 import { findBlock, getBlockLabel } from "@repo/shared";
@@ -11,6 +11,8 @@ import {
 import { useBuilder } from "../builder-provider";
 import {
   buildCanvasBridgeDocument,
+  isBlockEditCommitMessage,
+  isBlockEditStartMessage,
   isBlockSelectMessage,
 } from "./canvas-bridge";
 
@@ -19,10 +21,22 @@ export function PreviewCanvas() {
   const canEdit = useBuilder((s) => s.canEdit);
   const selectedBlockId = useBuilder((s) => s.selectedBlockId);
   const selectBlock = useBuilder((s) => s.selectBlock);
+  const updateBlockProps = useBuilder((s) => s.updateBlockProps);
   const previewDevice = useBuilder((s) => s.previewDevice);
   const setPreviewDevice = useBuilder((s) => s.setPreviewDevice);
   const iframeRef = useRef<HTMLIFrameElement>(null);
-  const { html } = useRenderedPreview(content);
+  const htmlRef = useRef("");
+  const srcDocRef = useRef("");
+  const pausedHtmlRef = useRef<string | null>(null);
+  const [previewPaused, setPreviewPaused] = useState(false);
+  const { html } = useRenderedPreview(content, true, previewPaused);
+
+  htmlRef.current = html;
+
+  const effectiveHtml =
+    previewPaused && pausedHtmlRef.current !== null
+      ? pausedHtmlRef.current
+      : html;
 
   const canvasWidth = previewWidth(previewDevice, content.settings);
 
@@ -35,10 +49,17 @@ export function PreviewCanvas() {
     return found ? getBlockLabel(found.block) : null;
   }, [content, selectedBlockId]);
 
-  const srcDoc = useMemo(
-    () => (html ? buildCanvasBridgeDocument(html, { canEdit }) : ""),
-    [html, canEdit],
+  const builtSrcDoc = useMemo(
+    () =>
+      effectiveHtml ? buildCanvasBridgeDocument(effectiveHtml, { canEdit }) : "",
+    [effectiveHtml, canEdit],
   );
+
+  if (!previewPaused) {
+    srcDocRef.current = builtSrcDoc;
+  }
+
+  const srcDoc = previewPaused ? srcDocRef.current : builtSrcDoc;
 
   const postSelectBlock = useCallback(
     (blockId: string | null, label: string | null) => {
@@ -56,16 +77,30 @@ export function PreviewCanvas() {
         return;
       }
 
-      if (!isBlockSelectMessage(event.data)) {
+      if (isBlockSelectMessage(event.data)) {
+        selectBlock(event.data.blockId);
         return;
       }
 
-      selectBlock(event.data.blockId);
+      if (isBlockEditStartMessage(event.data)) {
+        pausedHtmlRef.current = htmlRef.current;
+        selectBlock(event.data.blockId);
+        queueMicrotask(() => setPreviewPaused(true));
+        return;
+      }
+
+      if (isBlockEditCommitMessage(event.data)) {
+        updateBlockProps(event.data.blockId, {
+          [event.data.prop]: event.data.value,
+        });
+        pausedHtmlRef.current = null;
+        setPreviewPaused(false);
+      }
     }
 
     window.addEventListener("message", onMessage);
     return () => window.removeEventListener("message", onMessage);
-  }, [selectBlock]);
+  }, [selectBlock, updateBlockProps]);
 
   useEffect(() => {
     postSelectBlock(selectedBlockId, selectedLabel);

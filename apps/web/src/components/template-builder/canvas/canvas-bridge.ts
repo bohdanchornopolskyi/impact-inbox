@@ -7,13 +7,28 @@ export type BlockSelectMessage = {
   blockId: string;
 };
 
+export type BlockEditStartMessage = {
+  type: "block-edit-start";
+  blockId: string;
+};
+
+export type BlockEditCommitMessage = {
+  type: "block-edit-commit";
+  blockId: string;
+  prop: string;
+  value: string;
+};
+
 export type SelectBlockMessage = {
   type: "select-block";
   blockId: string | null;
   label?: string | null;
 };
 
-export type CanvasBridgeInboundMessage = BlockSelectMessage;
+export type CanvasBridgeInboundMessage =
+  | BlockSelectMessage
+  | BlockEditStartMessage
+  | BlockEditCommitMessage;
 
 export function isBlockSelectMessage(
   data: unknown,
@@ -28,9 +43,38 @@ export function isBlockSelectMessage(
   );
 }
 
-const CANVAS_BRIDGE_STYLES = `<style id="canvas-bridge-styles">
+export function isBlockEditStartMessage(
+  data: unknown,
+): data is BlockEditStartMessage {
+  if (!data || typeof data !== "object") {
+    return false;
+  }
+
+  const message = data as Record<string, unknown>;
+  return (
+    message.type === "block-edit-start" && typeof message.blockId === "string"
+  );
+}
+
+export function isBlockEditCommitMessage(
+  data: unknown,
+): data is BlockEditCommitMessage {
+  if (!data || typeof data !== "object") {
+    return false;
+  }
+
+  const message = data as Record<string, unknown>;
+  return (
+    message.type === "block-edit-commit" &&
+    typeof message.blockId === "string" &&
+    typeof message.prop === "string" &&
+    typeof message.value === "string"
+  );
+}
+
+const CANVAS_BRIDGE_STYLES = (canEdit: boolean) => `<style id="canvas-bridge-styles">
 [data-block-id] { cursor: pointer; }
-#canvas-bridge-layer {
+${canEdit ? "[data-editable] { cursor: text; }\n" : ""}#canvas-bridge-layer {
   position: absolute;
   top: 0;
   left: 0;
@@ -81,8 +125,6 @@ const CANVAS_BRIDGE_STYLES = `<style id="canvas-bridge-styles">
 function buildBridgeScript(canEdit: boolean): string {
   return `(function () {
   var canEdit = ${JSON.stringify(canEdit)};
-  void canEdit;
-
   var layer = null;
   var hoverFrame = null;
   var selectionFrame = null;
@@ -92,6 +134,131 @@ function buildBridgeScript(canEdit: boolean): string {
   var selectedBlockId = null;
   var hoveredBlock = null;
   var resizeObserver = null;
+  var editingElement = null;
+  var editingBlockId = null;
+
+  function onEditKeydown(event) {
+    if (event.key === "Enter" && !event.shiftKey) {
+      event.preventDefault();
+      editingElement.blur();
+    }
+  }
+
+  function commitEdit() {
+    if (!editingElement || !editingBlockId) {
+      return;
+    }
+
+    var prop = editingElement.getAttribute("data-editable-prop");
+    if (!prop) {
+      editingElement.contentEditable = "false";
+      editingElement.removeEventListener("keydown", onEditKeydown);
+      editingElement = null;
+      editingBlockId = null;
+      return;
+    }
+
+    var value = editingElement.textContent || "";
+    var blockId = editingBlockId;
+    editingElement.contentEditable = "false";
+    editingElement.removeEventListener("keydown", onEditKeydown);
+    editingElement = null;
+    editingBlockId = null;
+    window.parent.postMessage(
+      { type: "block-edit-commit", blockId: blockId, prop: prop, value: value },
+      "*",
+    );
+  }
+
+  function onEditBlur() {
+    commitEdit();
+  }
+
+  function startEdit(element) {
+    if (!canEdit || editingElement) {
+      return;
+    }
+
+    var block = element.closest("[data-block-id]");
+    if (!block) {
+      return;
+    }
+
+    var blockId = block.getAttribute("data-block-id");
+    if (!blockId) {
+      return;
+    }
+
+    if (!element.getAttribute("data-editable-prop")) {
+      element.setAttribute("data-editable-prop", "text");
+    }
+
+    editingElement = element;
+    editingBlockId = blockId;
+    applySelection(blockId, null);
+    element.contentEditable = "true";
+    element.addEventListener("blur", onEditBlur, { once: true });
+    element.addEventListener("keydown", onEditKeydown);
+    element.focus();
+
+    var range = document.createRange();
+    range.selectNodeContents(element);
+    var selection = window.getSelection();
+    if (selection) {
+      selection.removeAllRanges();
+      selection.addRange(range);
+    }
+
+    window.parent.postMessage({ type: "block-edit-start", blockId: blockId }, "*");
+  }
+
+  function resolveElement(target) {
+    if (!target) {
+      return null;
+    }
+    if (target.nodeType === 3) {
+      return target.parentElement;
+    }
+    if (target.nodeType === 1) {
+      return target;
+    }
+    return null;
+  }
+
+  function findEditableElement(block) {
+    var marked = block.querySelector("[data-editable]");
+    if (marked) {
+      return marked;
+    }
+
+    var label = block.getAttribute("data-block-label");
+    if (label !== "Heading" && label !== "Text" && label !== "Button") {
+      return null;
+    }
+
+    return (
+      block.querySelector("h1,h2,h3,h4,h5,h6,p,a") || block
+    );
+  }
+
+  function findEditableTarget(target) {
+    var element = resolveElement(target);
+    if (!element) {
+      return null;
+    }
+
+    var editable = element.closest("[data-editable]");
+    if (editable) {
+      return editable;
+    }
+
+    var block = element.closest("[data-block-id]");
+    if (!block) {
+      return null;
+    }
+
+    return findEditableElement(block);
+  }
 
   function ensureLayer() {
     if (layer) {
@@ -260,12 +427,12 @@ function buildBridgeScript(canEdit: boolean): string {
   document.addEventListener(
     "mouseover",
     function (event) {
-      var target = event.target;
-      if (!target || !target.closest) {
+      var element = resolveElement(event.target);
+      if (!element) {
         clearHover();
         return;
       }
-      var block = target.closest("[data-block-id]");
+      var block = element.closest("[data-block-id]");
       if (!block) {
         clearHover();
         return;
@@ -278,21 +445,58 @@ function buildBridgeScript(canEdit: boolean): string {
   document.addEventListener(
     "click",
     function (event) {
-      var target = event.target;
-      if (!target || !target.closest) {
+      if (editingElement) {
         return;
       }
-      var block = target.closest("[data-block-id]");
+
+      var element = resolveElement(event.target);
+      if (!element) {
+        return;
+      }
+      var block = element.closest("[data-block-id]");
       if (!block) {
         return;
       }
-      event.preventDefault();
-      event.stopPropagation();
       var blockId = block.getAttribute("data-block-id");
       if (!blockId) {
         return;
       }
+
+      var editable = canEdit ? findEditableTarget(event.target) : null;
+      if (editable) {
+        event.preventDefault();
+        event.stopPropagation();
+        var target = editable;
+        setTimeout(function () {
+          startEdit(target);
+        }, 0);
+        return;
+      }
+
+      event.preventDefault();
+      event.stopPropagation();
       window.parent.postMessage({ type: "block-select", blockId: blockId }, "*");
+    },
+    true,
+  );
+
+  document.addEventListener(
+    "dblclick",
+    function (event) {
+      if (!canEdit || editingElement) {
+        return;
+      }
+
+      var editable = findEditableTarget(event.target);
+      if (!editable) {
+        return;
+      }
+      event.preventDefault();
+      event.stopPropagation();
+      var target = editable;
+      setTimeout(function () {
+        startEdit(target);
+      }, 0);
     },
     true,
   );
@@ -324,7 +528,7 @@ export function buildCanvasBridgeDocument(
   html: string,
   options: CanvasBridgeOptions,
 ): string {
-  const injection = `${CANVAS_BRIDGE_STYLES}<script id="canvas-bridge-script">${buildBridgeScript(options.canEdit)}</script>`;
+  const injection = `${CANVAS_BRIDGE_STYLES(options.canEdit)}<script id="canvas-bridge-script">${buildBridgeScript(options.canEdit)}</script>`;
 
   if (html.includes("</body>")) {
     return html.replace("</body>", `${injection}</body>`);

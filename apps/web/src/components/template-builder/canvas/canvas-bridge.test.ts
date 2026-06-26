@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
   buildCanvasBridgeDocument,
+  isBlockEditCommitMessage,
+  isBlockEditStartMessage,
   isBlockSelectMessage,
 } from "./canvas-bridge";
 
@@ -31,6 +33,21 @@ describe("buildCanvasBridgeDocument", () => {
 
     expect(editable).toContain("var canEdit = true");
     expect(readOnly).toContain("var canEdit = false");
+    expect(editable).toContain("[data-editable] { cursor: text; }");
+    expect(readOnly).not.toContain("[data-editable] { cursor: text; }");
+  });
+
+  it("includes inline edit handlers when editable", () => {
+    const result = buildCanvasBridgeDocument(sampleHtml, { canEdit: true });
+
+    expect(result).toContain("block-edit-start");
+    expect(result).toContain("block-edit-commit");
+    expect(result).toContain("contentEditable");
+    expect(result).toContain("resolveElement");
+    expect(result).toContain("findEditableTarget");
+    expect(result).toContain("findEditableElement");
+    expect(result).toContain("dblclick");
+    expect(result).toContain("setTimeout(function ()");
   });
 
   it("appends injection when body tag is missing", () => {
@@ -39,6 +56,15 @@ describe("buildCanvasBridgeDocument", () => {
 
     expect(result.startsWith(fragment)).toBe(true);
     expect(result).toContain("canvas-bridge-script");
+  });
+
+  it("produces valid bridge script syntax", () => {
+    const result = buildCanvasBridgeDocument(sampleHtml, { canEdit: true });
+    const match = result.match(
+      /<script id="canvas-bridge-script">([\s\S]*?)<\/script>/,
+    );
+    expect(match?.[1]).toBeDefined();
+    expect(() => new Function(match![1]!)).not.toThrow();
   });
 });
 
@@ -57,5 +83,26 @@ describe("isBlockSelectMessage", () => {
     expect(isBlockSelectMessage({ type: "block-select", blockId: 1 })).toBe(
       false,
     );
+  });
+});
+
+describe("isBlockEditStartMessage", () => {
+  it("accepts valid block-edit-start messages", () => {
+    expect(
+      isBlockEditStartMessage({ type: "block-edit-start", blockId: "text-1" }),
+    ).toBe(true);
+  });
+});
+
+describe("isBlockEditCommitMessage", () => {
+  it("accepts valid block-edit-commit messages", () => {
+    expect(
+      isBlockEditCommitMessage({
+        type: "block-edit-commit",
+        blockId: "text-1",
+        prop: "text",
+        value: "Updated",
+      }),
+    ).toBe(true);
   });
 });

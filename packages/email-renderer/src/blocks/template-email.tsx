@@ -49,6 +49,14 @@ import {
 } from "./content-block-registry";
 import { renderContentBlockText } from "./plain-text";
 
+function editableText(text: string) {
+  return (
+    <span data-editable="" data-editable-prop="text">
+      {text}
+    </span>
+  );
+}
+
 function renderHeadingBlock(block: HeadingBlock, context: RenderContext) {
   const { text, level, color, fontSize, fontWeight } = block.props;
   const headingAs = {
@@ -74,7 +82,7 @@ function renderHeadingBlock(block: HeadingBlock, context: RenderContext) {
         margin: 0,
       }}
     >
-      {text}
+      {editableText(text)}
     </Heading>
   );
 }
@@ -95,7 +103,7 @@ function renderTextBlock(block: TextBlock, context: RenderContext) {
         margin: 0,
       }}
     >
-      {text}
+      {editableText(text)}
     </Text>
   );
 }
@@ -154,7 +162,7 @@ function renderButtonBlock(block: ButtonBlock, context: RenderContext) {
           boxSizing: "border-box",
         }}
       >
-        {text}
+        {editableText(text)}
       </Button>
     </Section>
   );

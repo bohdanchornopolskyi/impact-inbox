@@ -36,6 +36,7 @@ export function previewWidth(
 export function useRenderedPreview(
   content: TemplateContentData,
   enabled = true,
+  paused = false,
 ) {
   const { token } = useSession();
   const { workspace } = useWorkspace();
@@ -44,12 +45,16 @@ export function useRenderedPreview(
   const [debouncedHash, setDebouncedHash] = useState(contentHash);
 
   useEffect(() => {
+    if (paused) {
+      return;
+    }
+
     const timer = window.setTimeout(() => {
       setDebouncedHash(contentHash);
     }, PREVIEW_DEBOUNCE_MS);
 
     return () => window.clearTimeout(timer);
-  }, [contentHash]);
+  }, [contentHash, paused]);
 
   const query = useQuery({
     queryKey: ["rendered-preview", workspace.id, debouncedHash, token],
@@ -57,7 +62,7 @@ export function useRenderedPreview(
       previewTemplateContent(token, workspace.id, {
         content: JSON.parse(debouncedHash) as TemplateContentData,
       }),
-    enabled: Boolean(token) && enabled,
+    enabled: Boolean(token) && enabled && !paused,
   });
 
   return { html: query.data?.html ?? "", isFetching: query.isFetching };
