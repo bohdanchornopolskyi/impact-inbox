@@ -1,8 +1,8 @@
 "use client";
 
 import {
-  TEMPLATE_BLOCK_DEFINITIONS,
   findBlock,
+  getBlockTypeLabel,
   isContentBlock,
   resolveRowId,
   resolveSectionId,
@@ -40,20 +40,20 @@ type TreeNode = {
 function buildTree(content: TemplateContentData): TreeNode[] {
   return content.body.map((section) => ({
     id: section.id,
-    label: TEMPLATE_BLOCK_DEFINITIONS.section.label,
+    label: getBlockTypeLabel("section"),
     type: section.type,
     children: section.children.map((row) => ({
       id: row.id,
-      label: TEMPLATE_BLOCK_DEFINITIONS.row.label,
+      label: getBlockTypeLabel("row"),
       type: row.type,
       children: row.children.map((column) => ({
         id: column.id,
-        label: TEMPLATE_BLOCK_DEFINITIONS.column.label,
+        label: getBlockTypeLabel("column"),
         type: column.type,
         columnId: column.id,
         children: column.children.map((child) => ({
           id: child.id,
-          label: TEMPLATE_BLOCK_DEFINITIONS[child.type].label,
+          label: getBlockTypeLabel(child.type),
           type: child.type,
           columnId: column.id,
         })),

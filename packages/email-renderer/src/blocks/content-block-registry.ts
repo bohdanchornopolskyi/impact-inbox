@@ -1,4 +1,9 @@
-import type { ContentBlock, ContentBlockType, TemplateSettings } from "@repo/shared";
+import {
+  getBlockTypeLabel,
+  type ContentBlock,
+  type ContentBlockType,
+  type TemplateSettings,
+} from "@repo/shared";
 import { createElement, type ReactNode } from "react";
 
 export type RenderContext = {
@@ -54,7 +59,11 @@ export function renderContentBlockHtml(
 
   return createElement(
     "div",
-    { "data-block-id": block.id, key: block.id },
+    {
+      "data-block-id": block.id,
+      "data-block-label": getBlockTypeLabel(block.type),
+      key: block.id,
+    },
     render(block, context),
   );
 }

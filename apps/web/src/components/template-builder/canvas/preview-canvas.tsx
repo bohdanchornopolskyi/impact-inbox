@@ -1,19 +1,24 @@
 "use client";
 
-import { useMemo, useRef } from "react";
+import { useCallback, useEffect, useMemo, useRef } from "react";
 import { Monitor, Smartphone } from "lucide-react";
 import { SegmentedControl } from "@repo/ui/client";
-import { findBlock } from "@repo/shared";
+import { findBlock, getBlockLabel } from "@repo/shared";
 import {
   previewWidth,
   useRenderedPreview,
 } from "@/lib/templates/use-rendered-preview";
 import { useBuilder } from "../builder-provider";
+import {
+  buildCanvasBridgeDocument,
+  isBlockSelectMessage,
+} from "./canvas-bridge";
 
 export function PreviewCanvas() {
   const content = useBuilder((s) => s.content);
   const canEdit = useBuilder((s) => s.canEdit);
   const selectedBlockId = useBuilder((s) => s.selectedBlockId);
+  const selectBlock = useBuilder((s) => s.selectBlock);
   const previewDevice = useBuilder((s) => s.previewDevice);
   const setPreviewDevice = useBuilder((s) => s.setPreviewDevice);
   const iframeRef = useRef<HTMLIFrameElement>(null);
@@ -27,8 +32,44 @@ export function PreviewCanvas() {
     }
 
     const found = findBlock(content, selectedBlockId);
-    return found?.block.type ?? null;
+    return found ? getBlockLabel(found.block) : null;
   }, [content, selectedBlockId]);
+
+  const srcDoc = useMemo(
+    () => (html ? buildCanvasBridgeDocument(html, { canEdit }) : ""),
+    [html, canEdit],
+  );
+
+  const postSelectBlock = useCallback(
+    (blockId: string | null, label: string | null) => {
+      iframeRef.current?.contentWindow?.postMessage(
+        { type: "select-block", blockId, label },
+        "*",
+      );
+    },
+    [],
+  );
+
+  useEffect(() => {
+    function onMessage(event: MessageEvent) {
+      if (event.source !== iframeRef.current?.contentWindow) {
+        return;
+      }
+
+      if (!isBlockSelectMessage(event.data)) {
+        return;
+      }
+
+      selectBlock(event.data.blockId);
+    }
+
+    window.addEventListener("message", onMessage);
+    return () => window.removeEventListener("message", onMessage);
+  }, [selectBlock]);
+
+  useEffect(() => {
+    postSelectBlock(selectedBlockId, selectedLabel);
+  }, [selectedBlockId, selectedLabel, srcDoc, postSelectBlock]);
 
   return (
     <div className="flex h-full flex-col bg-surface-sunken">
@@ -58,17 +99,13 @@ export function PreviewCanvas() {
           className="relative bg-white shadow-card"
           style={{ width: canvasWidth }}
         >
-          {selectedLabel && selectedBlockId ? (
-            <div className="pointer-events-none absolute -top-7 left-0 rounded bg-accent px-2 py-0.5 text-ui-xs font-medium text-text-on-accent">
-              {selectedLabel}
-            </div>
-          ) : null}
           <iframe
             ref={iframeRef}
             title="Template preview"
             className="block w-full border-0"
             style={{ minHeight: 640 }}
-            srcDoc={html}
+            srcDoc={srcDoc}
+            onLoad={() => postSelectBlock(selectedBlockId, selectedLabel)}
           />
         </div>
       </div>
