@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import type { TemplateData } from "@repo/shared";
 import { Button, Input, Modal } from "@repo/ui/client";
 import { useUpdateTemplate } from "@/lib/templates/template-hooks";
 import { useToastMutation } from "@/lib/use-toast-mutation";
@@ -11,6 +12,7 @@ type RenameTemplateModalProps = {
   templateId: string;
   currentName: string;
   expectedUpdatedAt: string;
+  onRenamed?: (template: TemplateData) => void;
 };
 
 export function RenameTemplateModal({
@@ -19,6 +21,7 @@ export function RenameTemplateModal({
   templateId,
   currentName,
   expectedUpdatedAt,
+  onRenamed,
 }: RenameTemplateModalProps) {
   const updateTemplate = useUpdateTemplate(templateId);
   const rename = useToastMutation({
@@ -29,7 +32,10 @@ export function RenameTemplateModal({
       }),
     successMessage: "Template renamed",
     errorMessage: "Could not rename template",
-    onSuccess: () => onOpenChange(false),
+    onSuccess: (template) => {
+      onRenamed?.(template);
+      onOpenChange(false);
+    },
   });
   const [name, setName] = useState(currentName);
 

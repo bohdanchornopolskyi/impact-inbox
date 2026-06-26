@@ -78,6 +78,8 @@ type BuilderState = {
   setConflictOpen: (open: boolean) => void;
   /** Advance the concurrency token after a successful write without touching the working copy. */
   markSaved: (updatedAt: string) => void;
+  /** Adopt a rename from metadata-only PATCH without touching content or saveState. */
+  applyRename: (template: Pick<TemplateData, "name" | "updatedAt">) => void;
 };
 
 export type BuilderStore = StoreApi<BuilderState>;
@@ -197,6 +199,11 @@ function createBuilderStore(canEdit: boolean): BuilderStore {
           // a mid-flight edit will have flipped saveState back to "unsaved".
           saveState: state.saveState === "saving" ? "synced" : state.saveState,
         })),
+      applyRename: (template) =>
+        set({
+          name: template.name,
+          updatedAt: toToken(template.updatedAt),
+        }),
     };
   });
 }
@@ -389,6 +396,15 @@ export function useSelectedBlock(): ReturnType<typeof findBlock> | undefined {
 /** Explicit-Save flush of the working copy. Returns false on failure (incl. 409). */
 export function useBuilderFlush(): () => Promise<boolean> {
   return useBuilderContext().flush;
+}
+
+export function useApplyTemplateRename(): (
+  template: Pick<TemplateData, "name" | "updatedAt">,
+) => void {
+  const { store } = useBuilderContext();
+  return (template) => {
+    store.getState().applyRename(template);
+  };
 }
 
 /**

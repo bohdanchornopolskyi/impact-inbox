@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import {
   AlertCircle,
@@ -9,11 +10,17 @@ import {
   Eye,
   History,
   Loader2,
+  Pencil,
   Upload,
 } from "lucide-react";
 import { Badge, Button } from "@repo/ui/client";
 import { useWorkspace } from "@/contexts/workspace-context";
-import { useBuilder, useSaveRevision } from "./builder-provider";
+import {
+  useApplyTemplateRename,
+  useBuilder,
+  useSaveRevision,
+} from "./builder-provider";
+import { RenameTemplateModal } from "./modals/rename-template-modal";
 
 const WORKING_COPY_SYNC_HELP =
   "Your working copy autosaves. Save creates a revision snapshot for history and campaigns.";
@@ -58,13 +65,17 @@ function WorkingCopySyncBadge() {
 
 export function BuilderToolbar() {
   const { workspace } = useWorkspace();
+  const templateId = useBuilder((s) => s.templateId);
   const name = useBuilder((s) => s.name);
+  const updatedAt = useBuilder((s) => s.updatedAt);
   const canEdit = useBuilder((s) => s.canEdit);
   const saveState = useBuilder((s) => s.saveState);
   const setPreviewOpen = useBuilder((s) => s.setPreviewOpen);
   const setRevisionsOpen = useBuilder((s) => s.setRevisionsOpen);
   const setExportOpen = useBuilder((s) => s.setExportOpen);
+  const applyRename = useApplyTemplateRename();
   const { saveRevision, isPending: isSaving } = useSaveRevision();
+  const [renameOpen, setRenameOpen] = useState(false);
 
   async function handleSaveRevision() {
     await saveRevision();
@@ -85,9 +96,25 @@ export function BuilderToolbar() {
       </Link>
       <div className="h-5 w-px bg-border-default" />
       <div className="min-w-0 flex-1">
-        <p className="truncate text-ui-md font-semibold text-text-primary">
-          {name}
-        </p>
+        {canEdit ? (
+          <button
+            type="button"
+            className="group inline-flex max-w-full min-w-0 items-center gap-1.5 rounded-md px-1 -mx-1 text-left hover:bg-surface-muted"
+            title="Rename template"
+            onClick={() => setRenameOpen(true)}>
+            <span className="truncate text-ui-md font-semibold text-text-primary">
+              {name}
+            </span>
+            <Pencil
+              className="size-3.5 shrink-0 text-text-tertiary opacity-0 transition-opacity group-hover:opacity-100"
+              strokeWidth={1.5}
+            />
+          </button>
+        ) : (
+          <p className="truncate text-ui-md font-semibold text-text-primary">
+            {name}
+          </p>
+        )}
       </div>
       <WorkingCopySyncBadge />
       <Button
@@ -122,6 +149,16 @@ export function BuilderToolbar() {
             Save
           </Button>
         </>
+      ) : null}
+      {canEdit ? (
+        <RenameTemplateModal
+          open={renameOpen}
+          onOpenChange={setRenameOpen}
+          templateId={templateId}
+          currentName={name}
+          expectedUpdatedAt={updatedAt}
+          onRenamed={applyRename}
+        />
       ) : null}
     </div>
   );
