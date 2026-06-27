@@ -53,8 +53,10 @@ describe("buildCanvasBridgeDocument", () => {
     expect(result).toContain("dblclick");
     expect(result).toContain("disableBlockLinks");
     expect(result).toContain("data-canvas-link-disabled");
-    expect(result).toContain("isPlainTextEditableBlock");
-    expect(result).toContain("isRichtextEditableBlock");
+    expect(result).toContain("data-block-type");
+    expect(result).toContain("plainTextEditableTypes");
+    expect(result).toContain("richtextEditableTypes");
+    expect(result).not.toContain('label === "Heading"');
     expect(result).toContain("startRichtextEdit");
     expect(result).toContain("resolveBlockLabel");
     expect(result).toContain("editKind");
@@ -76,6 +78,7 @@ describe("buildCanvasBridgeDocument", () => {
     expect(result).toContain("richtext-set-heading");
     expect(result).toContain("measureRichtextFormatState");
     expect(result).toContain("reportRichtextFormatStateForBlock");
+    expect(result).toContain("richtextHeadingStyles");
     expect(result).toContain("editingSnapshotHtml");
     expect(result).toContain("flushRichtextSync");
     expect(result).toContain("onRichtextBlur");

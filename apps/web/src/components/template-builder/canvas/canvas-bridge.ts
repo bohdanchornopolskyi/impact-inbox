@@ -1,3 +1,9 @@
+import {
+  CANVAS_PLAIN_TEXT_EDITABLE_TYPES,
+  CANVAS_RICHTEXT_EDITABLE_TYPES,
+  RICHTEXT_HEADING_INLINE_STYLES,
+} from "@repo/shared";
+
 export type CanvasBridgeOptions = {
   canEdit: boolean;
 };
@@ -257,8 +263,19 @@ ${canEdit ? "[data-editable] { cursor: text; }\n[data-editable][contenteditable=
 </style>`;
 
 function buildBridgeScript(canEdit: boolean): string {
+  const plainTextEditableTypes = JSON.stringify([
+    ...CANVAS_PLAIN_TEXT_EDITABLE_TYPES,
+  ]);
+  const richtextEditableTypes = JSON.stringify([
+    ...CANVAS_RICHTEXT_EDITABLE_TYPES,
+  ]);
+  const richtextHeadingStyles = JSON.stringify(RICHTEXT_HEADING_INLINE_STYLES);
+
   return `(function () {
   var canEdit = ${JSON.stringify(canEdit)};
+  var plainTextEditableTypes = ${plainTextEditableTypes};
+  var richtextEditableTypes = ${richtextEditableTypes};
+  var richtextHeadingStyles = ${richtextHeadingStyles};
   var layer = null;
   var hoverFrame = null;
   var selectionFrame = null;
@@ -369,19 +386,9 @@ function buildBridgeScript(canEdit: boolean): string {
         el = el.parentElement;
       }
     }
-    var block = richtextEl.querySelector("h1,h2,h3,h4,h5,h6,p");
+    var block = richtextEl.querySelector("h1,h2,h3,h4,h5,h6");
     if (block) {
-      var blockTag = block.tagName.toLowerCase();
-      if (
-        blockTag === "h1" ||
-        blockTag === "h2" ||
-        blockTag === "h3" ||
-        blockTag === "h4" ||
-        blockTag === "h5" ||
-        blockTag === "h6"
-      ) {
-        heading = blockTag;
-      }
+      heading = block.tagName.toLowerCase();
     }
     return { bold: bold, italic: italic, underline: underline, heading: heading };
   }
@@ -461,6 +468,20 @@ function buildBridgeScript(canEdit: boolean): string {
     }
     var el = node.nodeType === 3 ? node.parentElement : node;
     var blockTags = ["p", "h1", "h2", "h3", "h4", "h5", "h6", "div"];
+    if (el === editingElement) {
+      var sel = window.getSelection();
+      var child = null;
+      if (sel && sel.rangeCount > 0) {
+        var offset = sel.getRangeAt(0).startOffset;
+        child =
+          editingElement.childNodes[offset] ||
+          editingElement.childNodes[offset - 1] ||
+          editingElement.firstChild;
+      } else {
+        child = editingElement.firstChild;
+      }
+      el = child && child.nodeType === 3 ? child.parentElement : child;
+    }
     while (el && el !== editingElement) {
       var tag = el.tagName ? el.tagName.toLowerCase() : "";
       if (blockTags.indexOf(tag) >= 0) {
@@ -503,7 +524,9 @@ function buildBridgeScript(canEdit: boolean): string {
       if (normalizedCurrent !== tag) {
         var replacement = document.createElement(tag);
         replacement.innerHTML = block.innerHTML;
-        if (tag !== "p") {
+        if (tag !== "p" && richtextHeadingStyles[tag]) {
+          replacement.setAttribute("style", richtextHeadingStyles[tag]);
+        } else {
           replacement.style.margin = "0";
         }
         block.parentElement.replaceChild(replacement, block);
@@ -624,6 +647,7 @@ function buildBridgeScript(canEdit: boolean): string {
         ? editingElement.innerHTML
         : editingElement.textContent || "";
     var blockId = editingBlockId;
+    var wasRichtext = editingKind === "richtext";
     teardownEditing();
 
     if (prop) {
@@ -631,6 +655,10 @@ function buildBridgeScript(canEdit: boolean): string {
         { type: "block-edit-commit", blockId: blockId, prop: prop, value: value },
         "*",
       );
+    }
+
+    if (wasRichtext && blockId === selectedBlockId) {
+      reportRichtextFormatStateForBlock(blockId);
     }
   }
 
@@ -748,12 +776,13 @@ function buildBridgeScript(canEdit: boolean): string {
   }
 
   function isPlainTextEditableBlock(block) {
-    var label = block.getAttribute("data-block-label");
-    return label === "Heading" || label === "Text";
+    var type = block.getAttribute("data-block-type");
+    return plainTextEditableTypes.indexOf(type) !== -1;
   }
 
   function isRichtextEditableBlock(block) {
-    return block.getAttribute("data-block-label") === "Rich Text";
+    var type = block.getAttribute("data-block-type");
+    return richtextEditableTypes.indexOf(type) !== -1;
   }
 
   function isCanvasEditableBlock(block) {
