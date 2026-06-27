@@ -2,7 +2,7 @@
 
 import { createContext, useContext, useEffect, useRef, useState } from "react";
 import { createStore, useStore, type StoreApi } from "zustand";
-import type { ContentBlockType, TemplateContentData, TemplateData } from "@repo/shared";
+import type { ContentBlockType, TemplateContentData, TemplateData, BlockStyles } from "@repo/shared";
 import {
   addColumn,
   addContentBlock,
@@ -13,6 +13,7 @@ import {
   moveContentBlock,
   removeBlock,
   updateBlockProps,
+  updateBlockStyles,
   updateSettings,
 } from "@repo/shared";
 import { useToast } from "@/components/ui/toast";
@@ -62,6 +63,7 @@ type BuilderState = {
   applyServerTemplate: (template: TemplateData) => void;
   updateSettings: (settings: Partial<TemplateContentData["settings"]>) => void;
   updateBlockProps: (blockId: string, props: Record<string, unknown>) => void;
+  updateBlockStyles: (blockId: string, styles: Partial<BlockStyles>) => void;
   addBlock: (columnId: string, blockType: ContentBlockType, index?: number) => void;
   removeBlock: (blockId: string) => void;
   moveBlock: (blockId: string, targetColumnId: string, targetIndex: number) => void;
@@ -150,6 +152,11 @@ function createBuilderStore(canEdit: boolean): BuilderStore {
       updateBlockProps: (blockId, props) =>
         set((state) => ({
           content: updateBlockProps(state.content, blockId, props),
+          saveState: "unsaved",
+        })),
+      updateBlockStyles: (blockId, styles) =>
+        set((state) => ({
+          content: updateBlockStyles(state.content, blockId, styles),
           saveState: "unsaved",
         })),
       addBlock: (columnId, blockType, index) =>

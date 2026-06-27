@@ -18,6 +18,7 @@ import {
 } from "./fields";
 import { SocialLinksEditor, TableEditor } from "./custom-editors";
 import { RichtextFormatFields } from "./richtext-inspector-toolbar";
+import { BlockAppearanceInspector } from "./block-appearance-inspector";
 
 type UpdateProps = (props: Record<string, unknown>) => void;
 
@@ -25,6 +26,7 @@ export function BlockInspector() {
   const selectedBlock = useSelectedBlock();
   const canEdit = useBuilder((s) => s.canEdit);
   const updateBlockProps = useBuilder((s) => s.updateBlockProps);
+  const updateBlockStyles = useBuilder((s) => s.updateBlockStyles);
   const removeBlockAction = useBuilder((s) => s.removeBlock);
 
   if (!selectedBlock) {
@@ -40,15 +42,32 @@ export function BlockInspector() {
     selectedBlock.block.type === "row" ||
     selectedBlock.block.type === "column"
   ) {
+    const layoutBlock = selectedBlock.block;
+
+    function updateStyles(styles: Parameters<typeof updateBlockStyles>[1]) {
+      if (!canEdit) {
+        return;
+      }
+
+      updateBlockStyles(layoutBlock.id, styles);
+    }
+
     return (
-      <div className="space-y-2">
-        <h2 className="text-ui-sm font-semibold capitalize text-text-primary">
-          {selectedBlock.block.type}
-        </h2>
-        <p className="text-ui-sm text-text-secondary">
-          Layout blocks are managed from the Structure tab. Select a content
-          block to edit its properties.
-        </p>
+      <div className="space-y-4">
+        <div>
+          <h2 className="text-ui-sm font-semibold capitalize text-text-primary">
+            {layoutBlock.type}
+          </h2>
+          <p className="mt-0.5 text-ui-xs text-text-tertiary">
+            Layout spacing and background for this {layoutBlock.type}.
+          </p>
+        </div>
+        <BlockAppearanceInspector
+          block={layoutBlock}
+          canEdit={canEdit}
+          updateStyles={updateStyles}
+          updateProps={() => {}}
+        />
       </div>
     );
   }
@@ -61,6 +80,14 @@ export function BlockInspector() {
     }
 
     updateBlockProps(block.id, props);
+  }
+
+  function updateStyles(styles: Parameters<typeof updateBlockStyles>[1]) {
+    if (!canEdit) {
+      return;
+    }
+
+    updateBlockStyles(block.id, styles);
   }
 
   function removeBlock() {
@@ -95,6 +122,12 @@ export function BlockInspector() {
         definition={definition}
         updateProps={updateProps}
         canEdit={canEdit}
+      />
+      <BlockAppearanceInspector
+        block={block}
+        canEdit={canEdit}
+        updateStyles={updateStyles}
+        updateProps={updateProps}
       />
     </div>
   );
