@@ -7,3 +7,7 @@ export {
   buildKnownMergeTagNames,
 } from "./contact/attribute-keys";
 export { sanitizeRichtextHtml } from "./html/sanitize-richtext-html";
+export {
+  mergeRichtextHeadingStyle,
+  RICHTEXT_HEADING_INLINE_STYLES,
+} from "./html/richtext-heading-styles";
