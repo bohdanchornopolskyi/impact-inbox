@@ -5,7 +5,8 @@ import { cn } from "../../lib/cn";
 
 export type SegmentedControlOption = {
   value: string;
-  label: string;
+  label?: string;
+  ariaLabel?: string;
   icon?: ReactNode;
 };
 
@@ -14,6 +15,7 @@ export type SegmentedControlProps = {
   value: string;
   onChange: (value: string) => void;
   className?: string;
+  iconOnly?: boolean;
 };
 
 export function SegmentedControl({
@@ -21,6 +23,7 @@ export function SegmentedControl({
   value,
   onChange,
   className,
+  iconOnly = false,
 }: SegmentedControlProps) {
   return (
     <div
@@ -32,6 +35,9 @@ export function SegmentedControl({
     >
       {options.map((option) => {
         const active = option.value === value;
+        const showIconOnly = iconOnly || Boolean(option.icon && !option.label);
+        const accessibleName =
+          option.ariaLabel ?? option.label ?? option.value;
 
         return (
           <button
@@ -39,17 +45,19 @@ export function SegmentedControl({
             type="button"
             role="tab"
             aria-selected={active}
+            aria-label={accessibleName}
+            title={accessibleName}
             onClick={() => onChange(option.value)}
             className={cn(
-              "inline-flex items-center justify-center gap-1.5 rounded-sm px-3 py-1.5 text-ui-sm font-medium transition-colors duration-180",
-              option.icon && !option.label ? "px-2 py-1.5" : "",
+              "inline-flex items-center justify-center rounded-sm text-ui-sm font-medium transition-colors duration-180",
+              showIconOnly ? "size-8" : "gap-1.5 px-3 py-1.5",
               active
                 ? "bg-surface-card text-text-primary shadow-xs"
                 : "bg-transparent text-text-tertiary hover:text-text-secondary",
             )}
           >
             {option.icon}
-            {option.label}
+            {!showIconOnly && option.label ? option.label : null}
           </button>
         );
       })}
