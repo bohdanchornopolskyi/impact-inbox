@@ -37,6 +37,16 @@ type TreeNode = {
   columnId?: string;
 };
 
+function collectContentBlockIds(nodes: TreeNode[]): string[] {
+  return nodes.flatMap((node) => {
+    if (!isLayoutBlockType(node.type)) {
+      return [node.id];
+    }
+
+    return node.children ? collectContentBlockIds(node.children) : [];
+  });
+}
+
 function buildTree(content: TemplateContentData): TreeNode[] {
   return content.body.map((section) => ({
     id: section.id,
@@ -156,18 +166,11 @@ function TreeNodeView({ node, depth }: { node: TreeNode; depth: number }) {
       {isEmptyColumn ? (
         <EmptyColumnDropZone columnId={node.id} depth={depth + 1} />
       ) : null}
-      {node.children && node.children.length > 0 ? (
-        <SortableContext
-          items={node.children
-            .filter((child) => !isLayoutBlockType(child.type))
-            .map((child) => child.id)}
-          strategy={verticalListSortingStrategy}
-        >
-          {node.children.map((child) => (
+      {node.children && node.children.length > 0
+        ? node.children.map((child) => (
             <TreeNodeView key={child.id} node={child} depth={depth + 1} />
-          ))}
-        </SortableContext>
-      ) : null}
+          ))
+        : null}
     </div>
   );
 }
@@ -179,6 +182,7 @@ export function StructurePanel() {
   const { handleAddSection, handleAddRow, handleAddColumn } =
     useLayoutAddTargets();
   const tree = buildTree(content);
+  const contentBlockIds = collectContentBlockIds(tree);
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: { distance: 8 },
@@ -220,8 +224,8 @@ export function StructurePanel() {
   }
 
   return (
-    <div className="flex h-full flex-col">
-      <div className="border-b border-border-subtle px-4 py-3">
+    <div className="flex h-full min-h-0 flex-col overflow-hidden">
+      <div className="shrink-0 border-b border-border-subtle px-4 py-3">
         <h2 className="text-ui-sm font-semibold text-text-primary">Structure</h2>
         <p className="mt-0.5 text-ui-xs text-text-tertiary">
           Manage layout and reorder content blocks.
@@ -232,26 +236,33 @@ export function StructurePanel() {
         collisionDetection={closestCenter}
         onDragEnd={handleDragEnd}
       >
-        <div className="min-h-0 flex-1 overflow-y-auto p-2">
-          {tree.map((section) => (
-            <div key={section.id} className="mb-2">
-              <TreeNodeView node={section} depth={0} />
-            </div>
-          ))}
-          {canEdit ? (
-            <button
-              type="button"
-              onClick={handleAddSection}
-              className="mt-2 flex w-full items-center justify-center gap-1.5 rounded-lg border border-dashed border-border-strong bg-surface-muted px-3 py-2 text-ui-sm font-medium text-text-secondary transition-colors hover:border-accent-border hover:bg-accent-soft hover:text-accent-text"
-            >
-              <Plus className="size-4" strokeWidth={1.5} />
-              Add section
-            </button>
-          ) : null}
+        <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+          <SortableContext
+            items={contentBlockIds}
+            strategy={verticalListSortingStrategy}
+          >
+            <div className="min-h-0 flex-1 overflow-y-auto p-2">
+            {tree.map((section) => (
+              <div key={section.id} className="mb-2">
+                <TreeNodeView node={section} depth={0} />
+              </div>
+            ))}
+            {canEdit ? (
+              <button
+                type="button"
+                onClick={handleAddSection}
+                className="mt-2 flex w-full items-center justify-center gap-1.5 rounded-lg border border-dashed border-border-strong bg-surface-muted px-3 py-2 text-ui-sm font-medium text-text-secondary transition-colors hover:border-accent-border hover:bg-accent-soft hover:text-accent-text"
+              >
+                <Plus className="size-4" strokeWidth={1.5} />
+                Add section
+              </button>
+            ) : null}
+          </div>
+        </SortableContext>
         </div>
       </DndContext>
       {canEdit ? (
-        <div className="flex flex-wrap gap-2 border-t border-border-subtle p-3">
+        <div className="flex shrink-0 flex-wrap gap-2 border-t border-border-subtle p-3">
           <Button
             size="sm"
             variant="secondary"
