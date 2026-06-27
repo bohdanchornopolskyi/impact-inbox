@@ -4,23 +4,20 @@ import {
   CONTENT_BLOCK_TYPES,
   LAYOUT_BLOCK_TYPES,
   TEMPLATE_BLOCK_DEFINITIONS,
-  resolveRowId,
-  resolveSectionId,
   resolveTargetColumnId,
   type ContentBlockType,
 } from "@repo/shared";
 import { useBuilder } from "./builder-provider";
 import { TemplateBlockIcon } from "./block-icons";
 import { PaletteTile } from "./palette-tile";
+import { useLayoutAddTargets } from "./use-layout-add-targets";
 
 export function BlockPalette() {
   const canEdit = useBuilder((s) => s.canEdit);
   const content = useBuilder((s) => s.content);
   const selectedBlockId = useBuilder((s) => s.selectedBlockId);
   const addBlock = useBuilder((s) => s.addBlock);
-  const addSection = useBuilder((s) => s.addSection);
-  const addRow = useBuilder((s) => s.addRow);
-  const addColumn = useBuilder((s) => s.addColumn);
+  const { handleAddLayoutBlock } = useLayoutAddTargets();
 
   function handleAddContentBlock(blockType: ContentBlockType) {
     if (!canEdit) {
@@ -33,36 +30,6 @@ export function BlockPalette() {
     }
 
     addBlock(columnId, blockType);
-  }
-
-  function handleAddLayoutBlock(
-    blockType: (typeof LAYOUT_BLOCK_TYPES)[number],
-  ) {
-    if (!canEdit) {
-      return;
-    }
-
-    if (blockType === "section") {
-      addSection();
-      return;
-    }
-
-    if (blockType === "row") {
-      const sectionId = resolveSectionId(content, selectedBlockId);
-      if (!sectionId) {
-        return;
-      }
-
-      addRow(sectionId);
-      return;
-    }
-
-    const rowId = resolveRowId(content, selectedBlockId);
-    if (!rowId) {
-      return;
-    }
-
-    addColumn(rowId);
   }
 
   return (

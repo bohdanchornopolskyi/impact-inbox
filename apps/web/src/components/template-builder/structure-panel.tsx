@@ -4,8 +4,6 @@ import {
   findBlock,
   getBlockTypeLabel,
   isContentBlock,
-  resolveRowId,
-  resolveSectionId,
   type TemplateBlockType,
   type TemplateContentData,
 } from "@repo/shared";
@@ -28,6 +26,8 @@ import { GripVertical, Plus } from "lucide-react";
 import { Button } from "@repo/ui/client";
 import { useBuilder } from "./builder-provider";
 import { TemplateBlockIcon } from "./block-icons";
+import { isLayoutBlockType } from "./layout-add-targets";
+import { useLayoutAddTargets } from "./use-layout-add-targets";
 
 type TreeNode = {
   id: string;
@@ -129,7 +129,7 @@ function EmptyColumnDropZone({ columnId, depth }: { columnId: string; depth: num
 function TreeNodeView({ node, depth }: { node: TreeNode; depth: number }) {
   const selectBlock = useBuilder((s) => s.selectBlock);
   const selected = useBuilder((s) => s.selectedBlockId === node.id);
-  const isContent = !isLayoutType(node.type);
+  const isContent = !isLayoutBlockType(node.type);
 
   if (isContent) {
     return <SortableContentNode node={node} depth={depth} />;
@@ -159,7 +159,7 @@ function TreeNodeView({ node, depth }: { node: TreeNode; depth: number }) {
       {node.children && node.children.length > 0 ? (
         <SortableContext
           items={node.children
-            .filter((child) => !isLayoutType(child.type))
+            .filter((child) => !isLayoutBlockType(child.type))
             .map((child) => child.id)}
           strategy={verticalListSortingStrategy}
         >
@@ -172,18 +172,12 @@ function TreeNodeView({ node, depth }: { node: TreeNode; depth: number }) {
   );
 }
 
-function isLayoutType(type: TemplateBlockType): boolean {
-  return type === "section" || type === "row" || type === "column";
-}
-
 export function StructurePanel() {
   const content = useBuilder((s) => s.content);
   const canEdit = useBuilder((s) => s.canEdit);
-  const selectedBlockId = useBuilder((s) => s.selectedBlockId);
   const moveBlock = useBuilder((s) => s.moveBlock);
-  const addSectionAction = useBuilder((s) => s.addSection);
-  const addRowAction = useBuilder((s) => s.addRow);
-  const addColumnAction = useBuilder((s) => s.addColumn);
+  const { handleAddSection, handleAddRow, handleAddColumn } =
+    useLayoutAddTargets();
   const tree = buildTree(content);
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -223,28 +217,6 @@ export function StructurePanel() {
     const targetIndex = overFound.path.contentIndex;
 
     moveBlock(String(active.id), targetColumnId, targetIndex);
-  }
-
-  function handleAddSection() {
-    addSectionAction();
-  }
-
-  function handleAddRow() {
-    const sectionId = resolveSectionId(content, selectedBlockId);
-    if (!sectionId) {
-      return;
-    }
-
-    addRowAction(sectionId);
-  }
-
-  function handleAddColumn() {
-    const rowId = resolveRowId(content, selectedBlockId);
-    if (!rowId) {
-      return;
-    }
-
-    addColumnAction(rowId);
   }
 
   return (
