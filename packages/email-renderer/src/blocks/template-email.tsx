@@ -1,7 +1,5 @@
 import {
-  Button,
   Column,
-  Heading,
   Hr,
   Img,
   Link,
@@ -11,23 +9,19 @@ import {
 } from "@react-email/components";
 import type { CSSProperties } from "react";
 import type {
-  ButtonBlock,
   ContentBlock,
   DividerBlock,
   FooterBlock,
-  HeadingBlock,
   HtmlBlock,
   ImageBlock,
   LogoBlock,
   QrBlock,
-  RichtextBlock,
   ShapeBlock,
   SocialBlock,
   SocialLink,
   SpacerBlock,
   TableBlock,
   TableColumn,
-  TextBlock,
   VideoBlock,
 } from "@repo/shared";
 import { alignedBlockStyle, alignedImageStyle } from "../align";
@@ -35,127 +29,12 @@ import { getSocialIconSrc } from "../social-icons";
 import { blockStylesToCss } from "../styles";
 import {
   buildAlignedImage,
-  editableRichtext,
-  editableText,
   renderLinkedImageSection,
 } from "./block-utils";
 import {
   renderContentBlockHtml,
   type RenderContext,
 } from "./content-block-registry";
-
-export function renderHeadingBlock(block: HeadingBlock, context: RenderContext) {
-  const { text, level, color, fontSize, fontWeight } = block.props;
-  const headingAs = {
-    1: "h1",
-    2: "h2",
-    3: "h3",
-    4: "h4",
-    5: "h5",
-    6: "h6",
-  } as const;
-
-  return (
-    <Heading
-      key={block.id}
-      as={headingAs[level]}
-      style={{
-        ...blockStylesToCss(block.styles),
-        color: color ?? context.settings.textColor ?? "#111111",
-        fontSize: fontSize ?? undefined,
-        fontWeight: fontWeight ?? undefined,
-        fontFamily: context.settings.fontFamily,
-        lineHeight: context.settings.lineHeight,
-        margin: 0,
-      }}
-    >
-      {editableText(text)}
-    </Heading>
-  );
-}
-
-export function renderTextBlock(block: TextBlock, context: RenderContext) {
-  const { text, color, fontSize, fontWeight, lineHeight } = block.props;
-
-  return (
-    <Text
-      key={block.id}
-      style={{
-        ...blockStylesToCss(block.styles),
-        color: color ?? context.settings.textColor ?? "#333333",
-        fontSize: fontSize ?? context.settings.fontSize ?? 16,
-        fontWeight: fontWeight ?? undefined,
-        lineHeight: lineHeight ?? context.settings.lineHeight ?? 1.5,
-        fontFamily: context.settings.fontFamily,
-        margin: 0,
-      }}
-    >
-      {editableText(text)}
-    </Text>
-  );
-}
-
-export function renderRichtextBlock(block: RichtextBlock, context: RenderContext) {
-  const { html, color, fontSize, lineHeight } = block.props;
-
-  return (
-    <div
-      key={block.id}
-      style={{
-        ...blockStylesToCss(block.styles),
-        color: color ?? context.settings.textColor ?? "#333333",
-        fontSize: fontSize ?? context.settings.fontSize ?? 16,
-        lineHeight: lineHeight ?? context.settings.lineHeight ?? 1.5,
-        fontFamily: context.settings.fontFamily,
-        fontWeight: 400,
-        margin: 0,
-      }}
-    >
-      {editableRichtext(html)}
-    </div>
-  );
-}
-
-export function renderButtonBlock(block: ButtonBlock, context: RenderContext) {
-  const {
-    text,
-    href,
-    backgroundColor,
-    textColor,
-    borderRadius,
-    borderWidth,
-    borderColor,
-    fontSize,
-    fullWidth,
-    paddingX,
-    paddingY,
-  } = block.props;
-
-  return (
-    <Section key={block.id} style={blockStylesToCss(block.styles)}>
-      <Button
-        href={href}
-        style={{
-          backgroundColor: backgroundColor ?? context.settings.linkColor ?? "#2563eb",
-          color: textColor ?? "#ffffff",
-          borderRadius: `${borderRadius ?? 6}px`,
-          borderWidth: borderWidth ?? 0,
-          borderColor: borderColor ?? "transparent",
-          borderStyle: "solid",
-          fontSize: fontSize ?? 16,
-          fontFamily: context.settings.fontFamily,
-          padding: `${paddingY ?? 12}px ${paddingX ?? 24}px`,
-          display: fullWidth ? "block" : "inline-block",
-          width: fullWidth ? "100%" : undefined,
-          textAlign: "center",
-          boxSizing: "border-box",
-        }}
-      >
-        {text}
-      </Button>
-    </Section>
-  );
-}
 
 export function renderImageBlock(block: ImageBlock, context: RenderContext) {
   const { src, alt, href, width, height, borderRadius, align } = block.props;

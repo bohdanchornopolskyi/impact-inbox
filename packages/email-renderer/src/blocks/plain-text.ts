@@ -1,19 +1,15 @@
 import type {
-  ButtonBlock,
   ContentBlock,
   DividerBlock,
   FooterBlock,
-  HeadingBlock,
   HtmlBlock,
   ImageBlock,
   LogoBlock,
   QrBlock,
-  RichtextBlock,
   ShapeBlock,
   SocialBlock,
   SpacerBlock,
   TableBlock,
-  TextBlock,
   VideoBlock,
 } from "@repo/shared";
 import {
@@ -22,22 +18,6 @@ import {
 
 function stripHtml(html: string): string {
   return html.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
-}
-
-export function renderHeadingBlockText(block: HeadingBlock): string {
-  return block.props.text;
-}
-
-export function renderTextBlockText(block: TextBlock): string {
-  return block.props.text;
-}
-
-export function renderRichtextBlockText(block: RichtextBlock): string {
-  return stripHtml(block.props.html);
-}
-
-export function renderButtonBlockText(block: ButtonBlock): string {
-  return `${block.props.text}: ${block.props.href}`;
 }
 
 export function renderImageBlockText(block: ImageBlock): string {

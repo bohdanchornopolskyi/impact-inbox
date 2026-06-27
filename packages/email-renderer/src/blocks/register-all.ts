@@ -1,43 +1,34 @@
 import { registerBlock } from "./content-block-registry";
+import "./button";
+import "./heading";
+import "./richtext";
+import "./text";
 import {
-  renderButtonBlock,
   renderDividerBlock,
   renderFooterBlock,
-  renderHeadingBlock,
   renderHtmlBlock,
   renderImageBlock,
   renderLogoBlock,
   renderQrBlock,
-  renderRichtextBlock,
   renderShapeBlock,
   renderSocialBlock,
   renderSpacerBlock,
   renderTableBlock,
-  renderTextBlock,
   renderVideoBlock,
 } from "./template-email";
 import {
-  renderButtonBlockText,
   renderDividerBlockText,
   renderFooterBlockText,
-  renderHeadingBlockText,
   renderHtmlBlockText,
   renderImageBlockText,
   renderLogoBlockText,
   renderQrBlockText,
-  renderRichtextBlockText,
   renderShapeBlockText,
   renderSocialBlockText,
   renderSpacerBlockText,
   renderTableBlockText,
-  renderTextBlockText,
   renderVideoBlockText,
 } from "./plain-text";
-
-registerBlock("heading", { html: renderHeadingBlock, text: renderHeadingBlockText });
-registerBlock("text", { html: renderTextBlock, text: renderTextBlockText });
-registerBlock("richtext", { html: renderRichtextBlock, text: renderRichtextBlockText });
-registerBlock("button", { html: renderButtonBlock, text: renderButtonBlockText });
 registerBlock("image", { html: renderImageBlock, text: renderImageBlockText });
 registerBlock("logo", { html: renderLogoBlock, text: renderLogoBlockText });
 registerBlock("video", { html: renderVideoBlock, text: renderVideoBlockText });
