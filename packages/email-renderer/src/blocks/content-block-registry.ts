@@ -25,7 +25,7 @@ type RendererEntry = {
 
 const registry = new Map<ContentBlockType, RendererEntry>();
 
-export function registerContentBlockRenderer<T extends ContentBlockType>(
+export function registerBlock<T extends ContentBlockType>(
   type: T,
   renderers: {
     html?: HtmlRenderer<Extract<ContentBlock, { type: T }>>;
@@ -35,6 +35,8 @@ export function registerContentBlockRenderer<T extends ContentBlockType>(
   const existing = registry.get(type) ?? {};
   registry.set(type, { ...existing, ...renderers } as RendererEntry);
 }
+
+export const registerContentBlockRenderer = registerBlock;
 
 export function getContentBlockHtmlRenderer(
   type: ContentBlockType,
@@ -61,6 +63,7 @@ export function renderContentBlockHtml(
     "div",
     {
       "data-block-id": block.id,
+      "data-block-type": block.type,
       "data-block-label": getBlockTypeLabel(block.type),
       key: block.id,
     },

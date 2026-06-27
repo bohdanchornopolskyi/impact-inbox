@@ -1,11 +1,5 @@
-import type { RowBlock, SectionBlock, TemplateContentData } from "@repo/shared";
-
-function rowReverseOnMobile(
-  row: RowBlock,
-  sectionProps: SectionBlock["props"],
-): boolean {
-  return row.props.reverseOnMobile ?? sectionProps.reverseColumnsOnMobile ?? false;
-}
+import { walkRows, type TemplateContentData } from "@repo/shared";
+import { rowReverseOnMobile } from "./blocks/layout";
 
 export function buildLayoutMobileStyles(content: TemplateContentData): string {
   const rules: string[] = [
@@ -18,13 +12,10 @@ export function buildLayoutMobileStyles(content: TemplateContentData): string {
     }`,
   ];
 
-  for (const section of content.body) {
-    for (const row of section.children) {
-      const reverse = rowReverseOnMobile(row, section.props);
-
-      if (reverse) {
-        rules.push(
-          `@media only screen and (max-width: 480px) {
+  walkRows(content, ({ row, section }) => {
+    if (rowReverseOnMobile(row, section.props)) {
+      rules.push(
+        `@media only screen and (max-width: 480px) {
             .row-${row.id} tbody {
               display: flex !important;
               flex-direction: column-reverse !important;
@@ -34,10 +25,9 @@ export function buildLayoutMobileStyles(content: TemplateContentData): string {
               width: 100% !important;
             }
           }`,
-        );
-      }
+      );
     }
-  }
+  });
 
   return rules.join("\n");
 }

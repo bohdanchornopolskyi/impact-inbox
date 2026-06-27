@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { ContentBlock, ContentBlockType, TemplateSettings } from "@repo/shared";
+import "./register-all";
 import { renderContentBlock } from "./template-email";
 import { renderContentBlockText } from "./plain-text";
 
@@ -148,6 +149,7 @@ describe("content block registry", () => {
 
       expect(serialized).toContain("data-editable");
       expect(serialized).toContain("data-editable-prop");
+      expect(serialized).toContain(`"data-block-type":"${type}"`);
     }
   });
 
@@ -175,6 +177,15 @@ describe("content block registry", () => {
     expect(serialized).toContain("data-editable-prop");
     expect(serialized).toContain("data-editable-kind");
     expect(serialized).toContain("richtext");
+    expect(serialized).toContain('"data-block-type":"richtext"');
+  });
+
+  it("does not tie editability to display labels", () => {
+    const html = renderContentBlock(fixtures.heading, context);
+    const serialized = JSON.stringify(html);
+
+    expect(serialized).toContain('"data-block-type":"heading"');
+    expect(serialized).toContain('"data-block-label":"Heading"');
   });
 
   it("does not mark html as canvas-editable", () => {

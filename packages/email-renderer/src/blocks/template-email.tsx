@@ -1,14 +1,10 @@
 import {
   Button,
   Column,
-  Container,
-  Head,
   Heading,
   Hr,
-  Html,
   Img,
   Link,
-  Preview,
   Row,
   Section,
   Text,
@@ -16,7 +12,6 @@ import {
 import type { CSSProperties } from "react";
 import type {
   ButtonBlock,
-  ColumnBlock,
   ContentBlock,
   DividerBlock,
   FooterBlock,
@@ -26,50 +21,30 @@ import type {
   LogoBlock,
   QrBlock,
   RichtextBlock,
-  RowBlock,
-  SectionBlock,
   ShapeBlock,
   SocialBlock,
   SocialLink,
   SpacerBlock,
   TableBlock,
   TableColumn,
-  TemplateContentData,
   TextBlock,
   VideoBlock,
 } from "@repo/shared";
 import { alignedBlockStyle, alignedImageStyle } from "../align";
-import { buildLayoutMobileStyles } from "../layout-styles";
 import { getSocialIconSrc } from "../social-icons";
 import { blockStylesToCss } from "../styles";
 import {
-  registerContentBlockRenderer,
+  buildAlignedImage,
+  editableRichtext,
+  editableText,
+  renderLinkedImageSection,
+} from "./block-utils";
+import {
   renderContentBlockHtml,
   type RenderContext,
 } from "./content-block-registry";
-import { renderContentBlockText } from "./plain-text";
 
-function editableText(text: string) {
-  return (
-    <span data-editable="" data-editable-prop="text">
-      {text}
-    </span>
-  );
-}
-
-function editableRichtext(html: string) {
-  return (
-    <div
-      data-editable=""
-      data-editable-prop="html"
-      data-editable-kind="richtext"
-      style={{ fontWeight: 400, margin: 0 }}
-      dangerouslySetInnerHTML={{ __html: html }}
-    />
-  );
-}
-
-function renderHeadingBlock(block: HeadingBlock, context: RenderContext) {
+export function renderHeadingBlock(block: HeadingBlock, context: RenderContext) {
   const { text, level, color, fontSize, fontWeight } = block.props;
   const headingAs = {
     1: "h1",
@@ -99,7 +74,7 @@ function renderHeadingBlock(block: HeadingBlock, context: RenderContext) {
   );
 }
 
-function renderTextBlock(block: TextBlock, context: RenderContext) {
+export function renderTextBlock(block: TextBlock, context: RenderContext) {
   const { text, color, fontSize, fontWeight, lineHeight } = block.props;
 
   return (
@@ -120,7 +95,7 @@ function renderTextBlock(block: TextBlock, context: RenderContext) {
   );
 }
 
-function renderRichtextBlock(block: RichtextBlock, context: RenderContext) {
+export function renderRichtextBlock(block: RichtextBlock, context: RenderContext) {
   const { html, color, fontSize, lineHeight } = block.props;
 
   return (
@@ -141,7 +116,7 @@ function renderRichtextBlock(block: RichtextBlock, context: RenderContext) {
   );
 }
 
-function renderButtonBlock(block: ButtonBlock, context: RenderContext) {
+export function renderButtonBlock(block: ButtonBlock, context: RenderContext) {
   const {
     text,
     href,
@@ -182,82 +157,45 @@ function renderButtonBlock(block: ButtonBlock, context: RenderContext) {
   );
 }
 
-function renderImageBlock(block: ImageBlock, context: RenderContext) {
+export function renderImageBlock(block: ImageBlock, context: RenderContext) {
   const { src, alt, href, width, height, borderRadius, align } = block.props;
-  const image = (
-    <Img
-      src={src}
-      alt={alt ?? ""}
-      width={width === "100%" ? undefined : width}
-      height={height}
-      style={{
-        ...alignedImageStyle(align),
-        width: width === "100%" ? "100%" : width ? `${width}px` : "100%",
-        borderRadius: borderRadius ? `${borderRadius}px` : undefined,
-      }}
-    />
-  );
 
-  const content = href ? (
-    <Link href={href} style={{ color: context.settings.linkColor }}>
-      {image}
-    </Link>
-  ) : (
-    image
-  );
-
-  return (
-    <Section
-      key={block.id}
-      style={{
-        ...blockStylesToCss(block.styles),
-        ...alignedBlockStyle(align),
-      }}
-    >
-      {content}
-    </Section>
-  );
+  return renderLinkedImageSection({
+    block,
+    align,
+    context,
+    href,
+    image: buildAlignedImage({
+      src,
+      alt: alt ?? "",
+      align,
+      width,
+      height,
+      borderRadius,
+    }),
+  });
 }
 
-function renderLogoBlock(block: LogoBlock, context: RenderContext) {
+export function renderLogoBlock(block: LogoBlock, context: RenderContext) {
   const { src, alt, href, width, maxHeight, borderRadius, align } = block.props;
-  const logo = (
-    <Img
-      src={src}
-      alt={alt ?? "Logo"}
-      width={width}
-      style={{
-        ...alignedImageStyle(align),
-        width: width ? `${width}px` : undefined,
-        maxHeight: maxHeight ? `${maxHeight}px` : undefined,
-        height: "auto",
-        borderRadius: borderRadius ? `${borderRadius}px` : undefined,
-      }}
-    />
-  );
 
-  const content = href ? (
-    <Link href={href} style={{ color: context.settings.linkColor }}>
-      {logo}
-    </Link>
-  ) : (
-    logo
-  );
-
-  return (
-    <Section
-      key={block.id}
-      style={{
-        ...blockStylesToCss(block.styles),
-        ...alignedBlockStyle(align),
-      }}
-    >
-      {content}
-    </Section>
-  );
+  return renderLinkedImageSection({
+    block,
+    align,
+    context,
+    href,
+    image: buildAlignedImage({
+      src,
+      alt: alt ?? "Logo",
+      align,
+      width,
+      maxHeight,
+      borderRadius,
+    }),
+  });
 }
 
-function renderVideoBlock(block: VideoBlock, context: RenderContext) {
+export function renderVideoBlock(block: VideoBlock, context: RenderContext) {
   const {
     thumbnailSrc,
     videoUrl,
@@ -334,7 +272,7 @@ function renderVideoBlock(block: VideoBlock, context: RenderContext) {
   );
 }
 
-function renderFooterBlock(block: FooterBlock, context: RenderContext) {
+export function renderFooterBlock(block: FooterBlock, context: RenderContext) {
   const {
     companyName,
     address,
@@ -393,7 +331,7 @@ function renderFooterBlock(block: FooterBlock, context: RenderContext) {
   );
 }
 
-function renderQrBlock(block: QrBlock, context: RenderContext) {
+export function renderQrBlock(block: QrBlock, context: RenderContext) {
   const { align, size } = block.props;
   const src = context.qrImages.get(block.id);
 
@@ -425,7 +363,7 @@ function renderQrBlock(block: QrBlock, context: RenderContext) {
   );
 }
 
-function renderDividerBlock(block: DividerBlock) {
+export function renderDividerBlock(block: DividerBlock) {
   const { color, thickness, style, width } = block.props;
 
   return (
@@ -443,7 +381,7 @@ function renderDividerBlock(block: DividerBlock) {
   );
 }
 
-function renderSpacerBlock(block: SpacerBlock) {
+export function renderSpacerBlock(block: SpacerBlock) {
   return (
     <Section
       key={block.id}
@@ -459,7 +397,7 @@ function renderSpacerBlock(block: SpacerBlock) {
   );
 }
 
-function renderSocialBlock(block: SocialBlock, context: RenderContext) {
+export function renderSocialBlock(block: SocialBlock, context: RenderContext) {
   const { links, iconSize, gap, backgroundColor } = block.props;
   const size = iconSize ?? 24;
 
@@ -494,7 +432,7 @@ function renderSocialBlock(block: SocialBlock, context: RenderContext) {
   );
 }
 
-function renderHtmlBlock(block: HtmlBlock) {
+export function renderHtmlBlock(block: HtmlBlock) {
   return (
     <Section
       key={block.id}
@@ -504,7 +442,7 @@ function renderHtmlBlock(block: HtmlBlock) {
   );
 }
 
-function renderTableBlock(block: TableBlock, context: RenderContext) {
+export function renderTableBlock(block: TableBlock, context: RenderContext) {
   const {
     columns,
     rows,
@@ -584,7 +522,7 @@ function renderTableBlock(block: TableBlock, context: RenderContext) {
   );
 }
 
-function renderShapeBlock(block: ShapeBlock) {
+export function renderShapeBlock(block: ShapeBlock) {
   const { shape, color, width, height, borderRadius } = block.props;
   const fill = color ?? "#2563eb";
 
@@ -634,189 +572,6 @@ function renderShapeBlock(block: ShapeBlock) {
   );
 }
 
-registerContentBlockRenderer("heading", { html: renderHeadingBlock });
-registerContentBlockRenderer("text", { html: renderTextBlock });
-registerContentBlockRenderer("richtext", { html: renderRichtextBlock });
-registerContentBlockRenderer("button", { html: renderButtonBlock });
-registerContentBlockRenderer("image", { html: renderImageBlock });
-registerContentBlockRenderer("logo", { html: renderLogoBlock });
-registerContentBlockRenderer("video", { html: renderVideoBlock });
-registerContentBlockRenderer("divider", { html: renderDividerBlock });
-registerContentBlockRenderer("spacer", { html: renderSpacerBlock });
-registerContentBlockRenderer("social", { html: renderSocialBlock });
-registerContentBlockRenderer("html", { html: renderHtmlBlock });
-registerContentBlockRenderer("table", { html: renderTableBlock });
-registerContentBlockRenderer("shape", { html: renderShapeBlock });
-registerContentBlockRenderer("footer", { html: renderFooterBlock });
-registerContentBlockRenderer("qr", { html: renderQrBlock });
-
 export function renderContentBlock(block: ContentBlock, context: RenderContext) {
   return renderContentBlockHtml(block, context);
-}
-
-function renderColumnBlock(
-  column: ColumnBlock,
-  context: RenderContext,
-  gapPadding: number,
-) {
-  const width = column.props.width ? `${column.props.width}%` : undefined;
-
-  return (
-    <Column
-      key={column.id}
-      className="stack-column"
-      style={{
-        ...blockStylesToCss(column.styles),
-        width,
-        verticalAlign: column.styles?.verticalAlign ?? "top",
-        paddingRight: gapPadding > 0 ? gapPadding : undefined,
-      }}
-    >
-      {column.children.map((child) => renderContentBlock(child, context))}
-    </Column>
-  );
-}
-
-function renderRowBlock(
-  row: RowBlock,
-  context: RenderContext,
-  sectionProps: SectionBlock["props"],
-) {
-  const reverseOnMobile =
-    row.props.reverseOnMobile ?? sectionProps.reverseColumnsOnMobile ?? false;
-  const gap = row.props.gap ?? 0;
-
-  return (
-    <Row
-      key={row.id}
-      className={reverseOnMobile ? `row-${row.id}` : undefined}
-      style={blockStylesToCss(row.styles)}
-    >
-      {row.children.map((column, index) => {
-        const explicitWidth = row.props.columnWidths?.[index];
-        const columnWithWidth =
-          explicitWidth !== undefined
-            ? {
-                ...column,
-                props: { ...column.props, width: explicitWidth },
-              }
-            : column;
-        const isLast = index === row.children.length - 1;
-
-        return renderColumnBlock(
-          columnWithWidth,
-          context,
-          isLast ? 0 : gap,
-        );
-      })}
-    </Row>
-  );
-}
-
-function renderSectionBlock(
-  section: SectionBlock,
-  context: RenderContext,
-) {
-  const {
-    fullWidth,
-    backgroundImage,
-    backgroundSize,
-    backgroundPosition,
-    backgroundRepeat,
-  } = section.props;
-
-  return (
-    <Section
-      key={section.id}
-      style={{
-        ...blockStylesToCss(section.styles),
-        width: fullWidth ? "100%" : undefined,
-        backgroundImage: backgroundImage ? `url(${backgroundImage})` : undefined,
-        backgroundSize: backgroundImage ? (backgroundSize ?? "cover") : undefined,
-        backgroundPosition: backgroundImage
-          ? (backgroundPosition ?? "center center")
-          : undefined,
-        backgroundRepeat: backgroundImage
-          ? (backgroundRepeat ?? "no-repeat")
-          : undefined,
-      }}
-    >
-      {section.children.map((row) =>
-        renderRowBlock(row, context, section.props),
-      )}
-    </Section>
-  );
-}
-
-type TemplateEmailProps = {
-  content: TemplateContentData;
-  qrImages: Map<string, string>;
-};
-
-function buildGlobalStyles(content: TemplateContentData): string {
-  const { settings } = content;
-  const linkColor = settings.linkColor ?? "#2563eb";
-  const mobileStyles = buildLayoutMobileStyles(content);
-
-  return `
-    a { color: ${linkColor}; }
-    ${mobileStyles}
-  `;
-}
-
-export function TemplateEmail({ content, qrImages }: TemplateEmailProps) {
-  const settings = content.settings;
-  const context: RenderContext = { settings, qrImages };
-
-  return (
-    <Html>
-      <Head>
-        <style>{buildGlobalStyles(content)}</style>
-      </Head>
-      {settings.preheader ? <Preview>{settings.preheader}</Preview> : null}
-      <body
-        style={{
-          margin: 0,
-          padding: 0,
-          backgroundColor: settings.backgroundColor ?? "#f3f4f6",
-          fontFamily: settings.fontFamily ?? "Arial, sans-serif",
-        }}
-      >
-        <Container
-          style={{
-            width: `${settings.width}px`,
-            maxWidth: "100%",
-            margin: "0 auto",
-            backgroundColor: settings.contentBackgroundColor ?? "#ffffff",
-          }}
-        >
-          {content.body.map((section) => renderSectionBlock(section, context))}
-        </Container>
-      </body>
-    </Html>
-  );
-}
-
-export function renderTemplatePlainText(content: TemplateContentData): string {
-  const lines: string[] = [];
-
-  if (content.settings.preheader) {
-    lines.push(content.settings.preheader);
-    lines.push("");
-  }
-
-  for (const section of content.body) {
-    for (const row of section.children) {
-      for (const column of row.children) {
-        for (const block of column.children) {
-          const line = renderContentBlockText(block);
-          if (line) {
-            lines.push(line);
-          }
-        }
-      }
-    }
-  }
-
-  return lines.join("\n").trim();
 }

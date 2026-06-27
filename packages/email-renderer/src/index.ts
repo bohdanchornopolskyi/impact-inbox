@@ -20,4 +20,4 @@ export async function renderTemplate(
   return { html, text };
 }
 
-export { TemplateEmail, renderTemplatePlainText } from "./blocks/template-email";
+export { TemplateEmail, renderTemplatePlainText } from "./blocks/template-shell";

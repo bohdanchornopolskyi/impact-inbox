@@ -1,10 +1,11 @@
 import { render } from "@react-email/render";
 import { type TemplateContentData } from "@repo/shared";
 import { buildQrImageMap } from "./qr-code";
+import "./blocks/register-all";
 import {
   TemplateEmail,
   renderTemplatePlainText,
-} from "./blocks/template-email";
+} from "./blocks/template-shell";
 
 export async function renderTemplateToHtml(
   content: TemplateContentData,

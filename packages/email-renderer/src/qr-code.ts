@@ -1,4 +1,4 @@
-import type { QrBlock, TemplateContentData } from "@repo/shared";
+import { walkContentBlocks, type QrBlock, type TemplateContentData } from "@repo/shared";
 import QRCode from "qrcode";
 
 export async function generateQrDataUri(block: QrBlock): Promise<string> {
@@ -19,16 +19,15 @@ export async function buildQrImageMap(
 ): Promise<Map<string, string>> {
   const qrImages = new Map<string, string>();
 
-  for (const section of content.body) {
-    for (const row of section.children) {
-      for (const column of row.children) {
-        for (const block of column.children) {
-          if (block.type === "qr") {
-            qrImages.set(block.id, await generateQrDataUri(block));
-          }
-        }
-      }
+  const qrBlocks: QrBlock[] = [];
+  walkContentBlocks(content, ({ block }) => {
+    if (block.type === "qr") {
+      qrBlocks.push(block);
     }
+  });
+
+  for (const block of qrBlocks) {
+    qrImages.set(block.id, await generateQrDataUri(block));
   }
 
   return qrImages;
