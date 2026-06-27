@@ -6,6 +6,7 @@ import type {
 } from "../schemas/template/blocks/layout";
 import type { TemplateContentData } from "../schemas/template/content";
 import type { TemplateSettings } from "../schemas/template/settings";
+import type { BlockStyles } from "../schemas/template/styles";
 import { templateSettingsSchema } from "../schemas/template/settings";
 import { createContentBlock, createColumnBlock, createRowBlock, createSectionBlock } from "./create-block";
 
@@ -219,6 +220,62 @@ export function updateBlockProps(
               children: column.children.map((child) =>
                 child.id === blockId
                   ? ({ ...child, props: { ...child.props, ...props } } as ContentBlock)
+                  : child,
+              ),
+            };
+          }),
+        };
+      }),
+    };
+  });
+}
+
+function mergeBlockStyles(
+  block: { styles?: BlockStyles },
+  styles: Partial<BlockStyles>,
+): BlockStyles | undefined {
+  const merged: Record<string, unknown> = { ...(block.styles ?? {}) };
+
+  for (const [key, value] of Object.entries(styles)) {
+    if (value === undefined) {
+      delete merged[key];
+    } else {
+      merged[key] = value;
+    }
+  }
+
+  return Object.keys(merged).length > 0 ? (merged as BlockStyles) : undefined;
+}
+
+export function updateBlockStyles(
+  content: TemplateContentData,
+  blockId: string,
+  styles: Partial<BlockStyles>,
+): TemplateContentData {
+  return mapSections(content, (section) => {
+    if (section.id === blockId) {
+      return { ...section, styles: mergeBlockStyles(section, styles) };
+    }
+
+    return {
+      ...section,
+      children: section.children.map((row) => {
+        if (row.id === blockId) {
+          return { ...row, styles: mergeBlockStyles(row, styles) };
+        }
+
+        return {
+          ...row,
+          children: row.children.map((column) => {
+            if (column.id === blockId) {
+              return { ...column, styles: mergeBlockStyles(column, styles) };
+            }
+
+            return {
+              ...column,
+              children: column.children.map((child) =>
+                child.id === blockId
+                  ? ({ ...child, styles: mergeBlockStyles(child, styles) } as ContentBlock)
                   : child,
               ),
             };

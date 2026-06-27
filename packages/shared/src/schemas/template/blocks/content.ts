@@ -1,5 +1,9 @@
 import { z } from "zod";
-import { blockAlignSchema, blockStylesSchema } from "../styles";
+import {
+  blockAlignSchema,
+  blockStylesSchema,
+  textTransformSchema,
+} from "../styles";
 
 const blockBaseSchema = z.object({
   id: z.string().min(1),
@@ -31,6 +35,8 @@ export const headingBlockSchema = blockBaseSchema.extend({
           z.literal(700),
         ])
         .optional(),
+      lineHeight: z.number().min(1).max(3).optional(),
+      textTransform: textTransformSchema.optional(),
     })
     .strict(),
 });
@@ -53,6 +59,7 @@ export const textBlockSchema = blockBaseSchema.extend({
         ])
         .optional(),
       lineHeight: z.number().min(1).max(3).optional(),
+      textTransform: textTransformSchema.optional(),
     })
     .strict(),
 });
@@ -65,6 +72,7 @@ export const richtextBlockSchema = blockBaseSchema.extend({
       color: z.string().optional(),
       fontSize: z.number().min(8).max(72).optional(),
       lineHeight: z.number().min(1).max(3).optional(),
+      textTransform: textTransformSchema.optional(),
     })
     .strict(),
 });
