@@ -15,29 +15,30 @@ import {
   updateBlockProps,
   updateSettings,
 } from "@repo/shared";
-import { ApiClientError } from "@/lib/api-client";
 import { useToast } from "@/components/ui/toast";
 import {
   useRestoreTemplateRevision,
   useSaveTemplateRevision,
   useUpdateTemplate,
 } from "@/lib/templates/template-hooks";
+import {
+  executeWorkingCopyWrite,
+  handleWriteConflict,
+  subscribeAutosave,
+  toUpdatedAtToken,
+  type SaveState,
+} from "@/lib/templates/working-copy-persistence";
 import type { PreviewDevice } from "@/lib/templates/preview-device";
 import { TemplateConflictModal } from "./modals/template-conflict-modal";
 import { useSession } from "@/contexts/session-context";
 import { useWorkspace } from "@/contexts/workspace-context";
 import { getTemplate } from "@/lib/api/templates-api";
 
-export type SaveState = "synced" | "unsaved" | "saving" | "error";
+export type { SaveState } from "@/lib/templates/working-copy-persistence";
 export type InspectorMode = "block" | "templateSettings";
 export type { PreviewDevice } from "@/lib/templates/preview-device";
 
-function isConflict(error: unknown): boolean {
-  return error instanceof ApiClientError && error.code === "CONFLICT";
-}
-
 type BuilderState = {
-  // Working-copy data
   templateId: string;
   name: string;
   content: TemplateContentData;
@@ -85,7 +86,17 @@ type BuilderState = {
 export type BuilderStore = StoreApi<BuilderState>;
 
 function toToken(updatedAt: TemplateData["updatedAt"]): string {
-  return updatedAt instanceof Date ? updatedAt.toISOString() : String(updatedAt);
+  return toUpdatedAtToken(updatedAt);
+}
+
+function createWriteErrorHandlers(
+  store: BuilderStore,
+  showError: (message: string) => void,
+) {
+  return {
+    onConflict: () => handleWriteConflict(store),
+    onError: (message: string) => showError(message),
+  };
 }
 
 function createBuilderStore(canEdit: boolean): BuilderStore {
@@ -222,11 +233,6 @@ type BuilderProviderProps = {
   children: React.ReactNode;
 };
 
-function handleWriteConflict(store: BuilderStore): void {
-  store.getState().setSaveState("error");
-  store.getState().setConflictOpen(true);
-}
-
 export function BuilderProvider({
   template,
   canEdit,
@@ -240,80 +246,34 @@ export function BuilderProvider({
 
   const { mutateAsync: updateTemplateAsync } = useUpdateTemplate(template.id);
   const { showError } = useToast();
-  const autosaveTimer = useRef<number | null>(null);
-  const initializedRef = useRef(false);
+  const autosaveRef = useRef<ReturnType<typeof subscribeAutosave> | null>(null);
 
-  // Initialize / re-initialize when a different template loads. Keyed on
-  // `template.id` only: re-running on every `template` identity would clobber
-  // the working copy with a refetched server snapshot.
   useEffect(() => {
     store.getState().init(template);
-    initializedRef.current = true;
+    autosaveRef.current?.markInitialized();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [store, template.id]);
 
   const flush = useRef<() => Promise<boolean>>(() => Promise.resolve(true));
-  flush.current = async (): Promise<boolean> => {
-    const state = store.getState();
-    if (!state.canEdit || state.saveState !== "unsaved") {
-      return true;
-    }
 
-    if (autosaveTimer.current) {
-      window.clearTimeout(autosaveTimer.current);
-      autosaveTimer.current = null;
-    }
-
-    store.getState().setSaveState("saving");
-
-    try {
-      const result = await updateTemplateAsync({
-        content: state.content,
-        expectedUpdatedAt: state.updatedAt,
-      });
-      // Advance the token; do not overwrite content (an edit may have landed
-      // while the PATCH was in flight — markSaved leaves it dirty).
-      store.getState().markSaved(toToken(result.updatedAt));
-      return true;
-    } catch (error) {
-      if (isConflict(error)) {
-        handleWriteConflict(store);
-      } else {
-        store.getState().setSaveState("error");
-        showError(asMessage(error, "Autosave failed"));
-      }
-      return false;
-    }
-  };
-
-  // Debounced autosave: subscribe to working-copy changes and flush after 500ms.
   useEffect(() => {
-    const unsubscribe = store.subscribe((state, prev) => {
-      if (state.saveState !== "unsaved" || state.content === prev.content) {
-        return;
-      }
-      if (!state.canEdit || !initializedRef.current) {
-        return;
-      }
-
-      if (autosaveTimer.current) {
-        window.clearTimeout(autosaveTimer.current);
-      }
-      autosaveTimer.current = window.setTimeout(() => {
-        void flush.current?.();
-      }, 500);
-    });
+    const autosave = subscribeAutosave(
+      store,
+      async (input) => {
+        const result = await updateTemplateAsync(input);
+        return { updatedAt: toToken(result.updatedAt) };
+      },
+      createWriteErrorHandlers(store, (message) => showError(message)),
+    );
+    autosaveRef.current = autosave;
+    autosave.markInitialized();
+    flush.current = autosave.flush;
 
     return () => {
-      unsubscribe();
-      if (autosaveTimer.current) {
-        window.clearTimeout(autosaveTimer.current);
-        autosaveTimer.current = null;
-      }
-      // Flush an edit made just before navigation/unmount (ADR 0009).
-      void flush.current?.();
+      autosave.dispose();
+      autosaveRef.current = null;
     };
-  }, [store]);
+  }, [store, updateTemplateAsync, showError]);
 
   const valueRef = useRef<BuilderContextValue | null>(null);
   if (!valueRef.current) {
@@ -363,10 +323,6 @@ function TemplateConflictHandler({ store }: { store: BuilderStore }) {
       isReloading={isReloading}
     />
   );
-}
-
-function asMessage(error: unknown, fallback: string): string {
-  return error instanceof Error ? error.message : fallback;
 }
 
 function useBuilderContext(): BuilderContextValue {
@@ -426,26 +382,20 @@ export function useSaveRevision(): {
       return true;
     }
 
-    state.setSaveState("saving");
-    try {
-      const template = await save.mutateAsync({
-        content: state.content,
-        expectedUpdatedAt: state.updatedAt,
-      });
-      // Save bumps updatedAt server-side; adopt the fresh token so the next
-      // autosave PATCH does not 409 against our now-stale value.
-      store.getState().markSaved(toToken(template.updatedAt));
-      showToast("Revision saved");
-      return true;
-    } catch (error) {
-      if (isConflict(error)) {
-        handleWriteConflict(store);
-      } else {
-        store.getState().setSaveState("error");
-        showError(asMessage(error, "Could not save revision"));
-      }
-      return false;
-    }
+    return executeWorkingCopyWrite({
+      store,
+      write: () =>
+        save.mutateAsync({
+          content: state.content,
+          expectedUpdatedAt: state.updatedAt,
+        }),
+      onSuccess: (template) => {
+        store.getState().markSaved(toToken(template.updatedAt));
+        showToast("Revision saved");
+      },
+      handlers: createWriteErrorHandlers(store, (message) => showError(message)),
+      fallbackMessage: "Could not save revision",
+    });
   }
 
   return { saveRevision, isPending: save.isPending };
@@ -463,24 +413,24 @@ export function useRestoreRevision(): {
 
   async function restore(revisionId: string): Promise<boolean> {
     const state = store.getState();
-    try {
-      const template = await restoreMutation.mutateAsync({
-        revisionId,
-        expectedUpdatedAt: state.updatedAt,
-      });
-      store.getState().applyServerTemplate(template);
-      store.getState().selectBlock(null);
-      store.getState().setInspectorMode("templateSettings");
-      showToast("Revision restored");
-      return true;
-    } catch (error) {
-      if (isConflict(error)) {
-        handleWriteConflict(store);
-      } else {
-        showError(asMessage(error, "Could not restore revision"));
-      }
-      return false;
-    }
+
+    return executeWorkingCopyWrite({
+      store,
+      markSaving: false,
+      write: () =>
+        restoreMutation.mutateAsync({
+          revisionId,
+          expectedUpdatedAt: state.updatedAt,
+        }),
+      onSuccess: (template) => {
+        store.getState().applyServerTemplate(template);
+        store.getState().selectBlock(null);
+        store.getState().setInspectorMode("templateSettings");
+        showToast("Revision restored");
+      },
+      handlers: createWriteErrorHandlers(store, (message) => showError(message)),
+      fallbackMessage: "Could not restore revision",
+    });
   }
 
   return { restore, isPending: restoreMutation.isPending };
