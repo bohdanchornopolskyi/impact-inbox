@@ -80,3 +80,6 @@ export function renderContentBlockTextDispatch(
   }
   return render(block);
 }
+
+export const renderContentBlock = renderContentBlockHtml;
+export const renderContentBlockText = renderContentBlockTextDispatch;

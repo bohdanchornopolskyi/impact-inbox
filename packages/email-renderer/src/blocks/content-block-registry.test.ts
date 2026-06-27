@@ -1,8 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { ContentBlock, ContentBlockType, TemplateSettings } from "@repo/shared";
 import "./register-all";
-import { renderContentBlock } from "./template-email";
-import { renderContentBlockText } from "./plain-text";
+import { renderContentBlock, renderContentBlockText } from "./content-block-registry";
 
 const settings: TemplateSettings = { width: 600 };
 const context = { settings, qrImages: new Map<string, string>() };

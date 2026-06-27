@@ -7,7 +7,7 @@ import {
 import { walkContentBlocks, type TemplateContentData } from "@repo/shared";
 import { buildLayoutMobileStyles } from "../layout-styles";
 import { renderSectionBlock } from "./layout";
-import { renderContentBlockText } from "./plain-text";
+import { renderContentBlockText } from "./content-block-registry";
 import type { RenderContext } from "./content-block-registry";
 
 export type TemplateEmailProps = {
