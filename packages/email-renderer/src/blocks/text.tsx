@@ -5,7 +5,7 @@ import { editableText } from "./block-utils";
 import { registerBlock, type RenderContext } from "./content-block-registry";
 
 export function renderTextBlock(block: TextBlock, context: RenderContext) {
-  const { text, color, fontSize, fontWeight, lineHeight } = block.props;
+  const { text, color, fontSize, fontWeight, lineHeight, textTransform } = block.props;
 
   return (
     <Text
@@ -16,6 +16,7 @@ export function renderTextBlock(block: TextBlock, context: RenderContext) {
         fontSize: fontSize ?? context.settings.fontSize ?? 16,
         fontWeight: fontWeight ?? undefined,
         lineHeight: lineHeight ?? context.settings.lineHeight ?? 1.5,
+        textTransform: textTransform ?? undefined,
         fontFamily: context.settings.fontFamily,
         margin: 0,
       }}

@@ -5,7 +5,8 @@ import { editableText } from "./block-utils";
 import { registerBlock, type RenderContext } from "./content-block-registry";
 
 export function renderHeadingBlock(block: HeadingBlock, context: RenderContext) {
-  const { text, level, color, fontSize, fontWeight } = block.props;
+  const { text, level, color, fontSize, fontWeight, lineHeight, textTransform } =
+    block.props;
   const headingAs = {
     1: "h1",
     2: "h2",
@@ -24,8 +25,9 @@ export function renderHeadingBlock(block: HeadingBlock, context: RenderContext) 
         color: color ?? context.settings.textColor ?? "#111111",
         fontSize: fontSize ?? undefined,
         fontWeight: fontWeight ?? undefined,
+        lineHeight: lineHeight ?? context.settings.lineHeight,
+        textTransform: textTransform ?? undefined,
         fontFamily: context.settings.fontFamily,
-        lineHeight: context.settings.lineHeight,
         margin: 0,
       }}
     >
