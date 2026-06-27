@@ -5,6 +5,7 @@ import {
   findUnknownMergeTags,
   PHASE2_KNOWN_MERGE_TAG_NAMES,
 } from "./merge-tags";
+import { walkContentBlocks } from "./walk-content-blocks";
 
 // Recursively collects every string leaf found under a prop value. This lets
 // the registry-driven scanner reach text nested inside footer `links` (the
@@ -47,15 +48,9 @@ export function collectMergeTagSourceTexts(
     texts.push(settings.preheader);
   }
 
-  for (const section of content.body) {
-    for (const row of section.children) {
-      for (const column of row.children) {
-        for (const block of column.children) {
-          texts.push(...collectBlockTexts(block));
-        }
-      }
-    }
-  }
+  walkContentBlocks(content, ({ block }) => {
+    texts.push(...collectBlockTexts(block));
+  });
 
   return texts;
 }
