@@ -65,5 +65,10 @@ export function useRenderedPreview(
     enabled: Boolean(token) && enabled && !paused,
   });
 
-  return { html: query.data?.html ?? "", isFetching: query.isFetching };
+  return {
+    html: query.data?.html ?? "",
+    isFetching: query.isFetching,
+    debouncedHash,
+    previewMatchesContent: contentHash === debouncedHash,
+  };
 }

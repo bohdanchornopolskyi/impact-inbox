@@ -16,8 +16,13 @@ import {
   isBlockEditStartMessage,
   isBlockEditSyncMessage,
   isBlockSelectMessage,
+  isPreviewNeedsReloadMessage,
   isRichtextFormatStateMessage,
 } from "./canvas-bridge";
+import {
+  getPreviewLayoutKey,
+  needsPreviewFullReload,
+} from "./canvas-preview-layout";
 import {
   useRichtextCanvasEdit,
   type RichtextCommand,
@@ -52,9 +57,19 @@ export function PreviewCanvas() {
   const htmlRef = useRef("");
   const srcDocRef = useRef("");
   const pausedHtmlRef = useRef<string | null>(null);
+  const iframeReadyRef = useRef(false);
+  const layoutKeyRef = useRef("");
+  const appliedHtmlHashRef = useRef("");
+  const canEditRef = useRef(canEdit);
+  canEditRef.current = canEdit;
+  const [iframeSrcDoc, setIframeSrcDoc] = useState("");
   const [plainTextEditPaused, setPlainTextEditPaused] = useState(false);
   const previewPaused = plainTextEditPaused || richtextSession !== null;
-  const { html } = useRenderedPreview(content, true, previewPaused);
+  const { html, debouncedHash, previewMatchesContent } = useRenderedPreview(
+    content,
+    true,
+    previewPaused,
+  );
 
   htmlRef.current = html;
 
@@ -79,15 +94,83 @@ export function PreviewCanvas() {
 
   const builtSrcDoc = useMemo(
     () =>
-      effectiveHtml ? buildCanvasBridgeDocument(effectiveHtml, { canEdit }) : "",
+      effectiveHtml
+        ? buildCanvasBridgeDocument(effectiveHtml, { canEdit })
+        : "",
     [effectiveHtml, canEdit],
   );
+
+  const layoutKey = useMemo(() => getPreviewLayoutKey(content), [content]);
 
   if (!previewPaused) {
     srcDocRef.current = builtSrcDoc;
   }
 
-  const srcDoc = previewPaused ? srcDocRef.current : builtSrcDoc;
+  const reloadIframeSrcDoc = useCallback(
+    (htmlToRender: string, nextLayoutKey: string) => {
+      const built = buildCanvasBridgeDocument(htmlToRender, { canEdit });
+      layoutKeyRef.current = nextLayoutKey;
+      canEditRef.current = canEdit;
+      appliedHtmlHashRef.current = debouncedHash;
+      iframeReadyRef.current = false;
+      srcDocRef.current = built;
+      setIframeSrcDoc(built);
+    },
+    [canEdit, debouncedHash],
+  );
+
+  const patchPreviewHtml = useCallback(
+    (htmlToRender: string) => {
+      iframeRef.current?.contentWindow?.postMessage(
+        { type: "update-preview", html: htmlToRender },
+        "*",
+      );
+      appliedHtmlHashRef.current = debouncedHash;
+    },
+    [debouncedHash],
+  );
+
+  useEffect(() => {
+    if (!effectiveHtml || previewPaused) {
+      return;
+    }
+
+    if (!previewMatchesContent) {
+      return;
+    }
+
+    const needsFullReload = needsPreviewFullReload({
+      hasSrcDoc: Boolean(srcDocRef.current),
+      layoutKey,
+      appliedLayoutKey: layoutKeyRef.current,
+      canEdit,
+      appliedCanEdit: canEditRef.current,
+    });
+
+    if (needsFullReload) {
+      reloadIframeSrcDoc(effectiveHtml, layoutKey);
+      return;
+    }
+
+    if (appliedHtmlHashRef.current === debouncedHash) {
+      return;
+    }
+
+    if (!iframeReadyRef.current) {
+      return;
+    }
+
+    patchPreviewHtml(effectiveHtml);
+  }, [
+    effectiveHtml,
+    layoutKey,
+    canEdit,
+    previewPaused,
+    previewMatchesContent,
+    debouncedHash,
+    reloadIframeSrcDoc,
+    patchPreviewHtml,
+  ]);
 
   const postSelectBlock = useCallback(
     (blockId: string | null, label: string | null) => {
@@ -123,9 +206,7 @@ export function PreviewCanvas() {
           const found = findBlock(contentRef.current, event.data.blockId);
           const html =
             found?.block.type === "richtext"
-              ? String(
-                  (found.block.props as { html?: string }).html ?? "",
-                )
+              ? String((found.block.props as { html?: string }).html ?? "")
               : "";
           richtextSnapshotRef.current = {
             blockId: event.data.blockId,
@@ -183,6 +264,14 @@ export function PreviewCanvas() {
           return;
         }
         setFormatState(event.data.state);
+        return;
+      }
+
+      if (isPreviewNeedsReloadMessage(event.data)) {
+        reloadIframeSrcDoc(
+          htmlRef.current,
+          getPreviewLayoutKey(contentRef.current),
+        );
       }
     }
 
@@ -194,6 +283,7 @@ export function PreviewCanvas() {
     setFormatState,
     startRichtextEdit,
     updateBlockProps,
+    reloadIframeSrcDoc,
   ]);
 
   useEffect(() => {
@@ -214,7 +304,32 @@ export function PreviewCanvas() {
 
   useEffect(() => {
     postSelectBlock(selectedBlockId, selectedLabel);
-  }, [selectedBlockId, selectedLabel, srcDoc, postSelectBlock]);
+  }, [selectedBlockId, selectedLabel, postSelectBlock]);
+
+  const handleIframeLoad = useCallback(() => {
+    iframeReadyRef.current = true;
+    postSelectBlock(selectedBlockId, selectedLabel);
+
+    if (
+      previewPaused ||
+      !previewMatchesContent ||
+      appliedHtmlHashRef.current === debouncedHash
+    ) {
+      return;
+    }
+
+    patchPreviewHtml(htmlRef.current);
+  }, [
+    debouncedHash,
+    patchPreviewHtml,
+    postSelectBlock,
+    previewMatchesContent,
+    previewPaused,
+    selectedBlockId,
+    selectedLabel,
+  ]);
+
+  const srcDoc = previewPaused ? srcDocRef.current : iframeSrcDoc;
 
   return (
     <div className="flex h-full flex-col bg-surface-sunken">
@@ -222,7 +337,7 @@ export function PreviewCanvas() {
         <p className="text-ui-sm text-text-secondary">Canvas preview</p>
         <SegmentedControl
           value={previewDevice}
-          onChange={(value) =>
+          onChange={(value: "desktop" | "mobile") =>
             setPreviewDevice(value as "desktop" | "mobile")
           }
           options={[
@@ -242,15 +357,14 @@ export function PreviewCanvas() {
       <div className="flex flex-1 items-start justify-center overflow-auto p-8">
         <div
           className="relative bg-white shadow-card"
-          style={{ width: canvasWidth }}
-        >
+          style={{ width: canvasWidth }}>
           <iframe
             ref={iframeRef}
             title="Template preview"
             className="block w-full border-0"
             style={{ minHeight: 640 }}
             srcDoc={srcDoc}
-            onLoad={() => postSelectBlock(selectedBlockId, selectedLabel)}
+            onLoad={handleIframeLoad}
           />
         </div>
       </div>

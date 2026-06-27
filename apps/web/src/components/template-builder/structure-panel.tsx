@@ -220,15 +220,7 @@ export function StructurePanel() {
     }
 
     const targetColumnId = overFound.parentColumnId;
-    let targetIndex = overFound.path.contentIndex;
-
-    if (
-      activeFound.parentColumnId === targetColumnId &&
-      activeFound.path.contentIndex !== undefined &&
-      activeFound.path.contentIndex < targetIndex
-    ) {
-      targetIndex -= 1;
-    }
+    const targetIndex = overFound.path.contentIndex;
 
     moveBlock(String(active.id), targetColumnId, targetIndex);
   }

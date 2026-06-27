@@ -82,6 +82,8 @@ describe("buildCanvasBridgeDocument", () => {
     expect(result).toContain("block-edit-sync");
     expect(result).toContain("richtext-cancel");
     expect(result).toContain("syncRichtextHtml");
+    expect(result).toContain("update-preview");
+    expect(result).toContain("preview-needs-reload");
     expect(result).toContain("event.source !== window.parent");
   });
 
