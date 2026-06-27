@@ -9,7 +9,7 @@ import {
   ListOrdered,
   Underline,
 } from "lucide-react";
-import type { ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { useBuilder } from "../builder-provider";
 import { useRichtextCanvasEdit } from "../canvas/richtext-canvas-edit-context";
 import { FieldRow, SelectField } from "./fields";
@@ -74,6 +74,23 @@ export function RichtextFormatFields({
   const isSelected = selectedBlockId === blockId;
   const showFormatState = isSelected;
 
+  const [pendingHeading, setPendingHeading] =
+    useState<RichtextHeadingTag | null>(null);
+
+  useEffect(() => {
+    setPendingHeading(null);
+  }, [blockId]);
+
+  useEffect(() => {
+    if (pendingHeading && formatState.heading === pendingHeading) {
+      setPendingHeading(null);
+    }
+  }, [formatState.heading, pendingHeading]);
+
+  const headingValue = showFormatState
+    ? (pendingHeading ?? formatState.heading)
+    : "p";
+
   return (
     <>
       <FieldRow label="Format">
@@ -127,9 +144,13 @@ export function RichtextFormatFields({
       </FieldRow>
       <SelectField
         label="Text style"
-        value={showFormatState ? formatState.heading : "p"}
+        value={headingValue}
         disabled={!canEdit}
-        onChange={(value) => setHeading(blockId, value as RichtextHeadingTag)}
+        onChange={(value) => {
+          const tag = value as RichtextHeadingTag;
+          setPendingHeading(tag);
+          setHeading(blockId, tag);
+        }}
         options={HEADING_OPTIONS}
       />
     </>
