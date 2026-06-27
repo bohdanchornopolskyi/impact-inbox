@@ -2,6 +2,7 @@
 
 import type { ReactNode } from "react";
 import { Input } from "@repo/ui/client";
+import { ColorPickerField } from "./color-picker-field";
 
 export function FieldRow({
   label,
@@ -87,16 +88,7 @@ export function ColorField({
   value: string | undefined;
   onChange: (value: string) => void;
 }) {
-  return (
-    <FieldRow label={label}>
-      <Input
-        value={value ?? ""}
-        placeholder="#000000"
-        mono
-        onChange={(event) => onChange(event.target.value)}
-      />
-    </FieldRow>
-  );
+  return <ColorPickerField label={label} value={value} onChange={onChange} />;
 }
 
 export function UrlField({
