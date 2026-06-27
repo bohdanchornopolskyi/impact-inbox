@@ -33,14 +33,14 @@ export function BlockPalette() {
   }
 
   return (
-    <div className="flex h-full flex-col">
-      <div className="border-b border-border-subtle px-4 py-3">
+    <div className="flex h-full min-h-0 flex-col overflow-hidden">
+      <div className="shrink-0 border-b border-border-subtle px-4 py-3">
         <h2 className="text-ui-sm font-semibold text-text-primary">Blocks</h2>
         <p className="mt-0.5 text-ui-xs text-text-tertiary">
           Add layout and content blocks to your template.
         </p>
       </div>
-      <div className="flex-1 overflow-y-auto p-3">
+      <div className="min-h-0 flex-1 overflow-y-auto p-3">
         <p className="mb-2 px-0.5 text-ui-xs font-semibold uppercase tracking-wide text-text-tertiary">
           Layout
         </p>

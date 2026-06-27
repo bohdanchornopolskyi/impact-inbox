@@ -38,10 +38,12 @@ export function TemplateBuilderView({ templateId }: TemplateBuilderViewProps) {
   return (
     <BuilderProvider template={templateQuery.data} canEdit={canEdit}>
       <RichtextCanvasEditProvider>
-        <div className="flex h-[calc(100vh-99px)] flex-col">
-          <BuilderToolbar />
-          <MergeTagWarnings />
-          <div className="grid min-h-0 flex-1 grid-cols-[266px_minmax(0,1fr)_302px]">
+        <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+          <div className="shrink-0">
+            <BuilderToolbar />
+            <MergeTagWarnings />
+          </div>
+        <div className="grid min-h-0 flex-1 grid-cols-[266px_minmax(0,1fr)_302px] overflow-hidden [&>*]:min-h-0">
             <LeftSidebar />
             <PreviewCanvas />
             <BuilderInspectorPanel />

@@ -12,8 +12,8 @@ export function LeftSidebar() {
   const [tab, setTab] = useState<SidebarTab>("blocks");
 
   return (
-    <div className="flex min-h-0 flex-col border-r border-border-default bg-surface-card">
-      <div className="border-b border-border-subtle px-4 py-3">
+    <div className="flex h-full min-h-0 flex-col overflow-hidden border-r border-border-default bg-surface-card">
+      <div className="shrink-0 border-b border-border-subtle px-4 py-3">
         <SegmentedControl
           value={tab}
           onChange={(value) => setTab(value as SidebarTab)}

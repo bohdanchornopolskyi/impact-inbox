@@ -12,8 +12,8 @@ export function BuilderInspectorPanel() {
   const selectBlock = useBuilder((s) => s.selectBlock);
 
   return (
-    <div className="flex h-full flex-col border-l border-border-default bg-surface-card">
-      <div className="flex items-center gap-2 border-b border-border-subtle px-4 py-3">
+    <div className="flex h-full min-h-0 flex-col overflow-hidden border-l border-border-default bg-surface-card">
+      <div className="shrink-0 flex items-center gap-2 border-b border-border-subtle px-4 py-3">
         <Button
           size="sm"
           variant={inspectorMode === "templateSettings" ? "soft" : "ghost"}
@@ -34,7 +34,7 @@ export function BuilderInspectorPanel() {
           Block
         </Button>
       </div>
-      <div className="flex-1 overflow-y-auto p-4">
+      <div className="min-h-0 flex-1 overflow-y-auto p-4">
         {inspectorMode === "templateSettings" ? (
           <TemplateSettingsInspector />
         ) : (

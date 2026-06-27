@@ -272,8 +272,8 @@ export function PreviewCanvas() {
   const srcDoc = iframeSrcDoc;
 
   return (
-    <div className="flex h-full flex-col bg-surface-sunken">
-      <div className="flex items-center justify-between border-b border-border-default bg-surface-card px-4 py-2">
+    <div className="flex h-full min-h-0 flex-col overflow-hidden bg-surface-sunken">
+      <div className="flex shrink-0 items-center justify-between border-b border-border-default bg-surface-card px-4 py-2">
         <p className="text-ui-sm text-text-secondary">Canvas preview</p>
         <SegmentedControl
           value={previewDevice}
@@ -294,7 +294,7 @@ export function PreviewCanvas() {
           ]}
         />
       </div>
-      <div className="flex flex-1 items-start justify-center overflow-auto p-8">
+      <div className="flex min-h-0 flex-1 items-start justify-center overflow-y-auto p-8">
         <div
           className="relative bg-white shadow-card"
           style={{ width: canvasWidth }}>
@@ -309,7 +309,7 @@ export function PreviewCanvas() {
         </div>
       </div>
       {!canEdit ? (
-        <p className="border-t border-border-subtle px-4 py-2 text-ui-xs text-text-tertiary">
+        <p className="shrink-0 border-t border-border-subtle px-4 py-2 text-ui-xs text-text-tertiary">
           View-only access
         </p>
       ) : null}

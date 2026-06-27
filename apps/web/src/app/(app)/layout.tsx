@@ -16,7 +16,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
   return (
     <SessionProvider token={token}>
-      <div className="flex min-h-screen flex-1 flex-col bg-surface-page">
+      <div className="flex h-screen flex-col overflow-hidden bg-surface-page">
         {children}
       </div>
     </SessionProvider>
