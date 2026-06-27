@@ -7,6 +7,7 @@ import type { PreviewDevice } from "@/lib/templates/preview-device";
 import { useSession } from "@/contexts/session-context";
 import { useWorkspace } from "@/contexts/workspace-context";
 import { previewTemplateContent } from "@/lib/api/templates-api";
+import { isPreviewHtmlReady } from "@/lib/templates/preview-sync";
 
 const PREVIEW_DEBOUNCE_MS = 300;
 const MOBILE_PREVIEW_WIDTH = 375;
@@ -65,10 +66,17 @@ export function useRenderedPreview(
     enabled: Boolean(token) && enabled && !paused,
   });
 
+  const html = query.data?.html ?? "";
+
   return {
-    html: query.data?.html ?? "",
+    html,
     isFetching: query.isFetching,
     debouncedHash,
-    previewMatchesContent: contentHash === debouncedHash,
+    previewMatchesContent: isPreviewHtmlReady({
+      contentHash,
+      debouncedHash,
+      isFetching: query.isFetching,
+      html,
+    }),
   };
 }

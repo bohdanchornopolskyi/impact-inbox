@@ -3,7 +3,7 @@ import type { TemplateContentData } from "@repo/shared";
 import {
   getPreviewLayoutKey,
   needsPreviewFullReload,
-} from "./canvas-preview-layout";
+} from "@repo/shared";
 
 const baseContent: TemplateContentData = {
   version: 1,
