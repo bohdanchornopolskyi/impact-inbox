@@ -16,6 +16,7 @@ export type SegmentedControlProps = {
   onChange: (value: string) => void;
   className?: string;
   iconOnly?: boolean;
+  disabled?: boolean;
 };
 
 export function SegmentedControl({
@@ -24,11 +25,13 @@ export function SegmentedControl({
   onChange,
   className,
   iconOnly = false,
+  disabled = false,
 }: SegmentedControlProps) {
   return (
     <div
       className={cn(
         "inline-flex gap-0.5 rounded-lg bg-surface-inset p-[3px]",
+        disabled && "cursor-not-allowed opacity-50",
         className,
       )}
       role="tablist"
@@ -47,7 +50,12 @@ export function SegmentedControl({
             aria-selected={active}
             aria-label={accessibleName}
             title={accessibleName}
-            onClick={() => onChange(option.value)}
+            disabled={disabled}
+            onClick={() => {
+              if (!disabled) {
+                onChange(option.value);
+              }
+            }}
             className={cn(
               "inline-flex items-center justify-center rounded-sm text-ui-sm font-medium transition-colors duration-180",
               showIconOnly ? "size-8" : "gap-1.5 px-3 py-1.5",

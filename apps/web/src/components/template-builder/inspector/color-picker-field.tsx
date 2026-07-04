@@ -41,10 +41,12 @@ export function ColorPickerField({
   label,
   value,
   onChange,
+  disabled = false,
 }: {
   label: string;
   value: string | undefined;
   onChange: (value: string) => void;
+  disabled?: boolean;
 }) {
   const [draft, setDraft] = useState(normalizeHex(value ?? "#000000"));
 
@@ -53,6 +55,10 @@ export function ColorPickerField({
   }, [value]);
 
   function commit(next: string) {
+    if (disabled) {
+      return;
+    }
+
     const normalized = normalizeHex(next);
     setDraft(normalized);
     onChange(normalized);
@@ -64,9 +70,11 @@ export function ColorPickerField({
         <BasePopover.Root>
           <BasePopover.Trigger
             aria-label={`Pick ${label.toLowerCase()}`}
+            disabled={disabled}
             className={cn(
               "size-9 shrink-0 rounded-md border border-border-strong shadow-xs",
               "transition-shadow hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-border",
+              disabled && "cursor-not-allowed opacity-50",
             )}
             style={{ backgroundColor: draft }}
           />
@@ -96,6 +104,7 @@ export function ColorPickerField({
                     value={draft}
                     placeholder="#000000"
                     mono
+                    disabled={disabled}
                     onChange={(event) => {
                       const next = event.target.value;
                       setDraft(next.startsWith("#") ? next : `#${next}`);
@@ -114,6 +123,7 @@ export function ColorPickerField({
           value={draft}
           placeholder="#000000"
           mono
+          disabled={disabled}
           onChange={(event) => {
             const next = event.target.value;
             setDraft(next);

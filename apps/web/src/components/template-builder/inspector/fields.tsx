@@ -27,12 +27,14 @@ export function TextField({
   onChange,
   placeholder,
   multiline = false,
+  disabled = false,
 }: {
   label: string;
   value: string;
   onChange: (value: string) => void;
   placeholder?: string;
   multiline?: boolean;
+  disabled?: boolean;
 }) {
   return (
     <FieldRow label={label}>
@@ -40,11 +42,17 @@ export function TextField({
         <textarea
           value={value}
           placeholder={placeholder}
+          disabled={disabled}
           onChange={(event) => onChange(event.target.value)}
-          className="min-h-24 w-full rounded-md border border-border-strong bg-surface-card px-3 py-2 text-ui-sm text-text-primary outline-none"
+          className="min-h-24 w-full rounded-md border border-border-strong bg-surface-card px-3 py-2 text-ui-sm text-text-primary outline-none disabled:cursor-not-allowed disabled:opacity-50"
         />
       ) : (
-        <Input value={value} placeholder={placeholder} onChange={(event) => onChange(event.target.value)} />
+        <Input
+          value={value}
+          placeholder={placeholder}
+          disabled={disabled}
+          onChange={(event) => onChange(event.target.value)}
+        />
       )}
     </FieldRow>
   );
@@ -56,12 +64,14 @@ export function NumberField({
   onChange,
   min,
   max,
+  disabled = false,
 }: {
   label: string;
   value: number | undefined;
   onChange: (value: number | undefined) => void;
   min?: number;
   max?: number;
+  disabled?: boolean;
 }) {
   return (
     <FieldRow label={label}>
@@ -70,6 +80,7 @@ export function NumberField({
         value={value ?? ""}
         min={min}
         max={max}
+        disabled={disabled}
         onChange={(event) => {
           const next = event.target.value;
           onChange(next === "" ? undefined : Number(next));
@@ -83,22 +94,33 @@ export function ColorField({
   label,
   value,
   onChange,
+  disabled = false,
 }: {
   label: string;
   value: string | undefined;
   onChange: (value: string) => void;
+  disabled?: boolean;
 }) {
-  return <ColorPickerField label={label} value={value} onChange={onChange} />;
+  return (
+    <ColorPickerField
+      label={label}
+      value={value}
+      disabled={disabled}
+      onChange={onChange}
+    />
+  );
 }
 
 export function UrlField({
   label,
   value,
   onChange,
+  disabled = false,
 }: {
   label: string;
   value: string;
   onChange: (value: string) => void;
+  disabled?: boolean;
 }) {
   return (
     <FieldRow label={label}>
@@ -106,6 +128,7 @@ export function UrlField({
         value={value}
         placeholder="https://"
         mono
+        disabled={disabled}
         onChange={(event) => onChange(event.target.value)}
       />
     </FieldRow>
@@ -145,4 +168,16 @@ export function SelectField({
 
 export function resolveImageUrl(url: string): string {
   return url.trim();
+}
+
+export function asString(value: unknown): string {
+  if (typeof value === "string") {
+    return value;
+  }
+
+  if (typeof value === "number") {
+    return String(value);
+  }
+
+  return "";
 }

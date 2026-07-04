@@ -104,14 +104,15 @@ export function BlockAppearanceInspector({
   updateProps: UpdateProps;
   canEdit: boolean;
 }) {
-  if (!canEdit) {
-    return null;
-  }
-
+  const disabled = !canEdit;
   const styles = block.styles ?? {};
   const props = ("props" in block ? block.props : {}) as Record<string, unknown>;
 
   function patchStyles(partial: Partial<BlockStyles>) {
+    if (disabled) {
+      return;
+    }
+
     updateStyles(partial);
   }
 
@@ -125,6 +126,7 @@ export function BlockAppearanceInspector({
                 label="Font weight"
                 value={String(props.fontWeight ?? "normal")}
                 options={FONT_WEIGHT_OPTIONS}
+                disabled={disabled}
                 onChange={(next) =>
                   updateProps({
                     fontWeight:
@@ -143,6 +145,7 @@ export function BlockAppearanceInspector({
                 value={typeof props.lineHeight === "number" ? props.lineHeight : undefined}
                 min={1}
                 max={3}
+                disabled={disabled}
                 onChange={(next) => updateProps({ lineHeight: next })}
               />
             )}
@@ -153,6 +156,7 @@ export function BlockAppearanceInspector({
                 </span>
                 <SegmentedControl
                   iconOnly
+                  disabled={disabled}
                   value={(props.textTransform as TextTransform | undefined) ?? "none"}
                   options={TEXT_TRANSFORM_OPTIONS}
                   onChange={(next) =>
@@ -169,6 +173,7 @@ export function BlockAppearanceInspector({
               </span>
               <SegmentedControl
                 iconOnly
+                disabled={disabled}
                 value={styles.textAlign ?? "left"}
                 options={TEXT_ALIGN_OPTIONS}
                 onChange={(next) =>
@@ -185,6 +190,7 @@ export function BlockAppearanceInspector({
                   value={typeof props.fontSize === "number" ? props.fontSize : undefined}
                   min={8}
                   max={32}
+                  disabled={disabled}
                   onChange={(next) => updateProps({ fontSize: next })}
                 />
                 <NumberField
@@ -192,6 +198,7 @@ export function BlockAppearanceInspector({
                   value={typeof props.paddingX === "number" ? props.paddingX : undefined}
                   min={0}
                   max={80}
+                  disabled={disabled}
                   onChange={(next) => updateProps({ paddingX: next })}
                 />
                 <NumberField
@@ -199,6 +206,7 @@ export function BlockAppearanceInspector({
                   value={typeof props.paddingY === "number" ? props.paddingY : undefined}
                   min={0}
                   max={80}
+                  disabled={disabled}
                   onChange={(next) => updateProps({ paddingY: next })}
                 />
               </>
@@ -214,6 +222,7 @@ export function BlockAppearanceInspector({
             value={spacingValue(styles.padding)}
             min={0}
             max={120}
+            disabled={disabled}
             onChange={(next) => patchStyles({ padding: next })}
           />
           <NumberField
@@ -221,6 +230,7 @@ export function BlockAppearanceInspector({
             value={spacingValue(styles.margin)}
             min={0}
             max={120}
+            disabled={disabled}
             onChange={(next) => patchStyles({ margin: next })}
           />
           {hasBlockAlign(block) && (
@@ -230,6 +240,7 @@ export function BlockAppearanceInspector({
               </span>
               <SegmentedControl
                 iconOnly
+                disabled={disabled}
                 value={(props.align as BlockAlign | undefined) ?? "left"}
                 options={BLOCK_ALIGN_OPTIONS}
                 onChange={(next) =>
@@ -255,6 +266,7 @@ export function BlockAppearanceInspector({
                   value={typeof props.width === "number" ? props.width : undefined}
                   min={1}
                   max={700}
+                  disabled={disabled}
                   onChange={(next) => updateProps({ width: next })}
                 />
                 {block.type === "image" && (
@@ -263,6 +275,7 @@ export function BlockAppearanceInspector({
                     value={typeof props.height === "number" ? props.height : undefined}
                     min={1}
                     max={700}
+                    disabled={disabled}
                     onChange={(next) => updateProps({ height: next })}
                   />
                 )}
@@ -272,6 +285,7 @@ export function BlockAppearanceInspector({
                     value={typeof props.maxHeight === "number" ? props.maxHeight : undefined}
                     min={1}
                     max={300}
+                    disabled={disabled}
                     onChange={(next) => updateProps({ maxHeight: next })}
                   />
                 )}
@@ -284,6 +298,7 @@ export function BlockAppearanceInspector({
                   value={typeof props.width === "number" ? props.width : undefined}
                   min={1}
                   max={700}
+                  disabled={disabled}
                   onChange={(next) => updateProps({ width: next })}
                 />
                 <NumberField
@@ -291,6 +306,7 @@ export function BlockAppearanceInspector({
                   value={typeof props.height === "number" ? props.height : undefined}
                   min={1}
                   max={500}
+                  disabled={disabled}
                   onChange={(next) => updateProps({ height: next })}
                 />
               </>
@@ -301,6 +317,7 @@ export function BlockAppearanceInspector({
                 value={typeof props.size === "number" ? props.size : undefined}
                 min={64}
                 max={512}
+                disabled={disabled}
                 onChange={(next) => updateProps({ size: next })}
               />
             )}
@@ -309,6 +326,7 @@ export function BlockAppearanceInspector({
               value={typeof styles.width === "number" ? styles.width : undefined}
               min={1}
               max={700}
+              disabled={disabled}
               onChange={(next) => patchStyles({ width: next })}
             />
           </div>
@@ -320,6 +338,7 @@ export function BlockAppearanceInspector({
           <ColorPickerField
             label="Background"
             value={styles.backgroundColor}
+            disabled={disabled}
             onChange={(next) => patchStyles({ backgroundColor: next })}
           />
           <NumberField
@@ -327,6 +346,7 @@ export function BlockAppearanceInspector({
             value={styles.borderRadius}
             min={0}
             max={100}
+            disabled={disabled}
             onChange={(next) => patchStyles({ borderRadius: next })}
           />
           <NumberField
@@ -334,12 +354,14 @@ export function BlockAppearanceInspector({
             value={styles.borderWidth}
             min={0}
             max={20}
+            disabled={disabled}
             onChange={(next) => patchStyles({ borderWidth: next })}
           />
           <SelectField
             label="Border style"
             value={styles.borderStyle ?? "none"}
             options={BORDER_STYLE_OPTIONS}
+            disabled={disabled}
             onChange={(next) =>
               patchStyles({
                 borderStyle: next === "none" ? undefined : (next as BlockStyles["borderStyle"]),
@@ -349,6 +371,7 @@ export function BlockAppearanceInspector({
           <ColorPickerField
             label="Border color"
             value={styles.borderColor}
+            disabled={disabled}
             onChange={(next) => patchStyles({ borderColor: next })}
           />
           {(block.type === "image" ||
@@ -365,6 +388,7 @@ export function BlockAppearanceInspector({
               }
               min={0}
               max={100}
+              disabled={disabled}
               onChange={(next) => updateProps({ borderRadius: next })}
             />
           )}
