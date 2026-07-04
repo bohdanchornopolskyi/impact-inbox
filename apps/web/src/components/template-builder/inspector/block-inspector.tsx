@@ -9,6 +9,7 @@ import { TEMPLATE_BLOCK_DEFINITIONS } from "@repo/shared";
 import { Button } from "@repo/ui/client";
 import { useBuilder, useSelectedBlock } from "../builder-provider";
 import {
+  asString,
   ColorField,
   NumberField,
   SelectField,
@@ -19,6 +20,7 @@ import {
 import { SocialLinksEditor, TableEditor } from "./custom-editors";
 import { RichtextFormatFields } from "./richtext-inspector-toolbar";
 import { BlockAppearanceInspector } from "./block-appearance-inspector";
+import { LayoutBlockPropsInspector } from "./layout-block-inspector";
 
 type UpdateProps = (props: Record<string, unknown>) => void;
 
@@ -52,6 +54,14 @@ export function BlockInspector() {
       updateBlockStyles(layoutBlock.id, styles);
     }
 
+    function updateProps(props: Record<string, unknown>) {
+      if (!canEdit) {
+        return;
+      }
+
+      updateBlockProps(layoutBlock.id, props);
+    }
+
     return (
       <div className="space-y-4">
         <div>
@@ -62,11 +72,16 @@ export function BlockInspector() {
             Layout spacing and background for this {layoutBlock.type}.
           </p>
         </div>
+        <LayoutBlockPropsInspector
+          block={layoutBlock}
+          updateProps={updateProps}
+          disabled={!canEdit}
+        />
         <BlockAppearanceInspector
           block={layoutBlock}
           canEdit={canEdit}
           updateStyles={updateStyles}
-          updateProps={() => {}}
+          updateProps={updateProps}
         />
       </div>
     );
@@ -180,6 +195,7 @@ function BlockFields({
             field={field}
             value={props[field.prop]}
             updateProps={updateProps}
+            disabled={!canEdit}
           />
         );
       })}
@@ -191,10 +207,12 @@ function BlockField({
   field,
   value,
   updateProps,
+  disabled = false,
 }: {
   field: BlockFieldDescriptor;
   value: unknown;
   updateProps: UpdateProps;
+  disabled?: boolean;
 }) {
   switch (field.kind) {
     case "text":
@@ -202,6 +220,7 @@ function BlockField({
         <TextField
           label={field.label}
           value={asString(value)}
+          disabled={disabled}
           onChange={(next) => updateProps({ [field.prop]: next })}
         />
       );
@@ -211,6 +230,7 @@ function BlockField({
           label={field.label}
           value={asString(value)}
           multiline
+          disabled={disabled}
           onChange={(next) => updateProps({ [field.prop]: next })}
         />
       );
@@ -219,6 +239,7 @@ function BlockField({
         <UrlField
           label={field.label}
           value={asString(value)}
+          disabled={disabled}
           onChange={(next) =>
             updateProps({
               [field.prop]:
@@ -234,6 +255,7 @@ function BlockField({
         <ColorField
           label={field.label}
           value={typeof value === "string" ? value : undefined}
+          disabled={disabled}
           onChange={(next) => updateProps({ [field.prop]: next })}
         />
       );
@@ -244,6 +266,7 @@ function BlockField({
           value={typeof value === "number" ? value : undefined}
           min={field.min}
           max={field.max}
+          disabled={disabled}
           onChange={(next) => updateProps({ [field.prop]: next })}
         />
       );
@@ -252,6 +275,7 @@ function BlockField({
         <SelectField
           label={field.label}
           value={asString(value)}
+          disabled={disabled}
           onChange={(next) =>
             updateProps({ [field.prop]: coerceSelectValue(field, next) })
           }
@@ -259,18 +283,6 @@ function BlockField({
         />
       );
   }
-}
-
-function asString(value: unknown): string {
-  if (typeof value === "string") {
-    return value;
-  }
-
-  if (typeof value === "number") {
-    return String(value);
-  }
-
-  return "";
 }
 
 function coerceSelectValue(
