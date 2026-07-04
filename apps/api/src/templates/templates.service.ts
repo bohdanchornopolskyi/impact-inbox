@@ -194,6 +194,11 @@ export class TemplatesService {
     return this.renderValidatedContent(content);
   }
 
+  async renderListPreviewHtml(content: TemplateContentData): Promise<string> {
+    const rendered = await this.renderValidatedContent(content);
+    return rendered.html;
+  }
+
   async exportTemplate(
     workspaceId: string,
     templateId: string,

@@ -19,6 +19,7 @@ describe("TemplateRevisionsService", () => {
   const mockTemplatesService = {
     getTemplate: jest.fn(),
     updateTemplate: jest.fn(),
+    renderListPreviewHtml: jest.fn(),
   };
 
   const mockDb = {
@@ -81,6 +82,9 @@ describe("TemplateRevisionsService", () => {
     });
     setupTransaction();
     mockTemplatesService.getTemplate.mockResolvedValue(templateData);
+    mockTemplatesService.renderListPreviewHtml.mockResolvedValue(
+      "<html><body>Preview</body></html>",
+    );
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -108,6 +112,9 @@ describe("TemplateRevisionsService", () => {
     const revision = await service.saveRevision("ws-1", "tpl-1", input);
 
     expect(revision.id).toBe("rev-1");
+    expect(mockTemplatesService.renderListPreviewHtml).toHaveBeenCalledWith(
+      DEFAULT_TEMPLATE_CONTENT,
+    );
     // Single transaction: template UPDATE then revision INSERT.
     expect(mockTransaction).toHaveBeenCalledTimes(1);
     expect(tx.update).toHaveBeenCalled();
@@ -116,6 +123,9 @@ describe("TemplateRevisionsService", () => {
     // Working copy from the client is written and bumps updatedAt.
     const setArg = txSet.mock.calls[0][0];
     expect(setArg.content).toEqual(DEFAULT_TEMPLATE_CONTENT);
+    expect(setArg.listPreviewHtml).toBe(
+      "<html><body>Preview</body></html>",
+    );
     expect(setArg.updatedAt).toBeInstanceOf(Date);
 
     // The same content is snapshotted into the revision.

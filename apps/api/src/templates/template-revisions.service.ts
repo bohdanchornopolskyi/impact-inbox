@@ -51,12 +51,15 @@ export class TemplateRevisionsService {
 
     const { content } = input;
     const expectedUpdatedAt = parseExpectedUpdatedAt(input.expectedUpdatedAt);
+    const listPreviewHtml =
+      await this.templatesService.renderListPreviewHtml(content);
 
     const revision = await this.db.transaction(async (tx) => {
       const [updatedTemplate] = await tx
         .update(templates)
         .set({
           content,
+          listPreviewHtml,
           updatedAt: nextUpdatedAt(expectedUpdatedAt),
         })
         .where(

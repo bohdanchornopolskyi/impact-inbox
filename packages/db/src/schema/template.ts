@@ -20,6 +20,7 @@ export const templates = pgTable(
       .references(() => workspaces.id, { onDelete: "cascade" }),
     name: text("name").notNull(),
     content: jsonb("content").$type<TemplateContentData>().notNull(),
+    listPreviewHtml: text("list_preview_html"),
     archivedAt: timestamp("archived_at"),
     ...timestamps,
   },

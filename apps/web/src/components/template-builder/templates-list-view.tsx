@@ -18,27 +18,10 @@ import { ArchiveTemplateModal } from "@/components/template-builder/modals/archi
 import { CreateTemplateModal } from "@/components/template-builder/modals/create-template-modal";
 import { RenameTemplateModal } from "@/components/template-builder/modals/rename-template-modal";
 import { RestoreTemplateModal } from "@/components/template-builder/modals/restore-template-modal";
+import { TemplateThumbnail } from "@/components/template-builder/template-thumbnail";
 
 function toUpdatedAtToken(updatedAt: Date | string): string {
   return updatedAt instanceof Date ? updatedAt.toISOString() : String(updatedAt);
-}
-
-function TemplateThumbnail() {
-  return (
-    <div
-      className="relative h-36 overflow-hidden rounded-lg border border-border-default bg-surface-sunken"
-      style={{
-        backgroundImage:
-          "repeating-linear-gradient(135deg, #ececee 0, #ececee 1px, transparent 1px, transparent 10px)",
-      }}
-    >
-      <div className="absolute inset-x-0 bottom-3 flex justify-center">
-        <span className="rounded-full bg-white/90 px-2 py-0.5 font-mono text-2xs text-text-muted">
-          PREVIEW · 600×240
-        </span>
-      </div>
-    </div>
-  );
 }
 
 type ActionTarget = {
@@ -139,7 +122,7 @@ export function TemplatesListView() {
                 href={`/${workspace.slug}/templates/${template.id}`}
                 className="block p-4 pb-3"
               >
-                <TemplateThumbnail />
+                <TemplateThumbnail listPreviewHtml={template.listPreviewHtml} />
                 <div className="mt-3 flex items-start justify-between gap-2">
                   <div>
                     <h3 className="text-ui-md font-semibold text-text-primary">

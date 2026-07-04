@@ -7,6 +7,7 @@ export function toTemplateData(template: TemplatesSelect): TemplateData {
     workspaceId: template.workspaceId,
     name: template.name,
     content: template.content,
+    listPreviewHtml: template.listPreviewHtml,
     archivedAt: template.archivedAt,
     createdAt: template.createdAt,
     updatedAt: template.updatedAt,

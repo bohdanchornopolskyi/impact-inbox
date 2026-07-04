@@ -17,10 +17,7 @@ Work in this order unless you have a reason to skip.
 | 1 | Email invite tokens | `not done` | [ADR 0011](./adr/0011-email-invite-tokens.md) | Phase 1b complete; inviting non-users |
 | 2 | Trial clock placement | `partial` | [deferred-work §2](#2-trial-clock-placement) · CONTEXT **Trial** | Spec accuracy; remove AuthGuard side-effect |
 | 3 | Workspace name/slug edit UI | `not done` | API: `PATCH /workspaces/:id` exists | Workspace settings completeness |
-| 4 | Template list previews | `not done` | CONTEXT **Template list preview** | Phase 2 polish |
 | 5 | Drizzle migrations + CI migrate | `not done` | Roadmap Phase 0 | Production deploy |
-| 6 | Builder toolbar rename | `not done` | [ADR 0008](./adr/0008-canvas-interaction-deferred.md) | — (polish) |
-| 7 | Canvas click-to-select + inline edit | `not done` | [ADR 0008](./adr/0008-canvas-interaction-deferred.md) | Post–Phase 2 builder UX |
 | 8 | Workspace overview stat placeholders | `not done` | design-brief §4 | — (polish) |
 | 9 | Org settings: billing + usage meters | `not done` | design-brief · ADR 0006 | Phase 6 billing |
 | 10 | E2E: org members, invites, templates | `not done` | — | Confidence before Phase 3+ |
@@ -44,8 +41,22 @@ Do not re-implement unless fixing bugs.
 | Trial banner on workspace home | `done` |
 | Workspace home copy (no Phase 2 stub text) | `done` |
 | Interim invite-by-email for **existing users only** | `done` (replace when #1 ships) |
+| Canvas polish — toolbar rename, click-to-select, inline edit, preview sync | `done` — [ADR 0008](./adr/0008-canvas-interaction-deferred.md) |
+| Template list previews — cached HTML on Save, list thumbnails | `done` — CONTEXT **Template list preview** |
 
-Phase 2 M2 (templates, builder, revisions, export) is **done** per [ADR 0007](./adr/0007-phase-2-templates-scope.md). Intentionally out of scope there stays out of this backlog (image upload, canvas bridge, export cap enforcement, etc.).
+Phase 2 M2 (templates, builder, revisions, export) is **done** per [ADR 0007](./adr/0007-phase-2-templates-scope.md). Intentionally out of scope there stays out of this backlog (image upload, export cap enforcement, etc.). Canvas interaction shipped post–M2 per ADR 0008.
+
+---
+
+## Done — canvas polish (ADR 0008)
+
+**Status:** `done` (2026-06)
+
+**Shipped:** Builder toolbar rename (`RenameTemplateModal` + `expectedUpdatedAt`). Iframe bridge (`canvas-bridge.ts`) on builder canvas only — click-to-select, selection chrome, structure ↔ canvas sync. Plain-text inline edit for `heading` / `text` (double-click, commit on blur). `richtext` in-iframe `contenteditable` with sidebar formatting toolbar via `execCommand`; HTML sanitized on commit. Preview refetch pauses during inline edit; incremental DOM patch on prop-only updates to reduce iframe flicker. `button` canvas-selectable, inspector-only for props. View-only members: selection without edit. Full-screen Preview overlay stays read-only.
+
+**Out of scope (unchanged):** Layout block selection on canvas; `html` block editing in inspector only.
+
+**Code:** `apps/web/src/components/template-builder/canvas/`, `builder-toolbar.tsx`, `@repo/email-renderer` `data-editable` markers.
 
 ---
 
@@ -112,17 +123,15 @@ Phase 2 M2 (templates, builder, revisions, export) is **done** per [ADR 0007](./
 
 ## 4. Template list previews
 
-**Status:** `not done`
+**Status:** `done` (2026-07)
 
-**Current behavior:** Placeholder gradient in `templates-list-view.tsx` (`TemplateThumbnail`).
-
-**Target (CONTEXT.md):** Cached snapshot on explicit Save — not autosave. Placeholder until first Save.
+**Shipped:** `list_preview_html` on `templates`, rendered on explicit Save via `@repo/email-renderer`, exposed as `listPreviewHtml` on `TemplateData`. List UI shows scaled iframe thumbnail; placeholder until first Save.
 
 **Checklist:**
 
-- [ ] `preview_url` or equivalent on `templates` table
-- [ ] Generate snapshot in `saveTemplateRevision` via `@repo/email-renderer`
-- [ ] List UI reads snapshot; fallback to placeholder
+- [x] `list_preview_html` on `templates` table
+- [x] Generate snapshot in `saveTemplateRevision` via renderer
+- [x] List UI reads snapshot; fallback to placeholder
 
 ---
 
@@ -141,39 +150,6 @@ Phase 2 M2 (templates, builder, revisions, export) is **done** per [ADR 0007](./
 - [ ] CI job runs `db:migrate` before/with deploy
 
 **Note:** First migration batch should include `invites` when ADR 0011 ships.
-
----
-
-## 6. Builder toolbar rename
-
-**Status:** `not done`
-
-**Current behavior:** Rename only from templates list (`RenameTemplateModal`).
-
-**Spec:** [ADR 0008](./adr/0008-canvas-interaction-deferred.md) — ship with canvas polish.
-
-**Checklist:**
-
-- [ ] Rename entry in `builder-toolbar.tsx`
-- [ ] Reuse `RenameTemplateModal` + `expectedUpdatedAt` (ADR 0010)
-
----
-
-## 7. Canvas interaction (post–Phase 2)
-
-**Status:** `not done`
-
-**Spec:** [ADR 0008](./adr/0008-canvas-interaction-deferred.md)
-
-| Capability | Status |
-| --- | --- |
-| Canvas click-to-select | `not done` |
-| Inline text edit on canvas | `not done` |
-| Canvas selection chrome | `not done` |
-| Layout block selection on canvas | `not done` |
-| iframe `postMessage` bridge | `not done` |
-
-Phase 2 uses structure panel + inspector for selection. Preview HTML already has `data-block-id`.
 
 ---
 
@@ -230,4 +206,4 @@ Phase 2 uses structure panel + inspector for selection. Preview HTML already has
 | [ADR 0011](./adr/0011-email-invite-tokens.md) | Invite tokens — full design |
 | [ADR 0006](./adr/0006-organization-billing-model.md) | Trial, billing (trial wording may lag CONTEXT — CONTEXT wins) |
 | [ADR 0007](./adr/0007-phase-2-templates-scope.md) | Phase 2 intentional deferrals |
-| [ADR 0008](./adr/0008-canvas-interaction-deferred.md) | Canvas + toolbar rename |
+| [ADR 0008](./adr/0008-canvas-interaction-deferred.md) | Canvas interaction — **implemented** |

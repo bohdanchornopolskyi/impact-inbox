@@ -36,6 +36,7 @@ export const templateSchema = z.object({
   name: z.string(),
   content: templateContentSchema,
   archivedAt: z.coerce.date().nullable(),
+  listPreviewHtml: z.string().nullable(),
   createdAt: z.coerce.date(),
   updatedAt: z.coerce.date(),
 });
