@@ -253,7 +253,7 @@ Top bar: template name, working-copy sync badge, Save (creates revision), Previe
 
 Block palette: Section, Row, Column, Heading, Text, Rich Text, Button, Image, Logo, Video, Divider, Spacer, Social, HTML, Table, Shape, Footer, QR.
 
-Canvas is preview-only (selection via Structure panel + inspector — ADR 0008). Content blocks reorder via DnD in Structure panel. Revision history drawer, merge tag warnings.
+Canvas supports click-to-select and inline edit for heading/text/richtext (ADR 0008); button is inspector-only. Content blocks reorder via DnD in Structure panel. Revision history drawer, merge tag warnings.
 
 Professional email-builder UX; reference Mailchimp builder density with Linear-style chrome.
 ```

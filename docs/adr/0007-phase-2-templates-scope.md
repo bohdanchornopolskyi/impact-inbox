@@ -23,7 +23,7 @@ Phase 2 delivers milestone M2: build a template, Save a revision, preview, and e
 | Export cap enforcement | 6 | Billing + template access mode meters ship at public launch |
 | Hard delete templates | 4 | Requires campaign → revision reference check |
 | Platform image upload UI | TBD | Same content model; swap URL resolver in builder |
-| Canvas click-to-select + inline edit | Post–2 | Preview-only in Phase 2; iframe `postMessage` bridge — ADR 0008 |
+| Canvas click-to-select + inline edit | Post–2 → **shipped** (2026-06) | ADR 0008 implemented; was preview-only in Phase 2 |
 | Merge tag attribute allowlist | 3 | Phase 2 warns on core + reserved only; workspace contact attributes extend scanner |
 
 ## Considered
