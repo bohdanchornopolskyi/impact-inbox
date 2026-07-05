@@ -11,6 +11,9 @@ import {
   ensureDefaultStructure,
   findBlock,
   moveContentBlock,
+  moveColumn,
+  moveRow,
+  moveSection,
   removeBlock,
   updateBlockProps,
   updateBlockStyles,
@@ -67,9 +70,12 @@ type BuilderState = {
   addBlock: (columnId: string, blockType: ContentBlockType, index?: number) => void;
   removeBlock: (blockId: string) => void;
   moveBlock: (blockId: string, targetColumnId: string, targetIndex: number) => void;
-  addSection: () => void;
-  addRow: (sectionId: string) => void;
-  addColumn: (rowId: string) => void;
+  moveSection: (sectionId: string, targetIndex: number) => void;
+  moveRow: (rowId: string, targetSectionId: string, targetIndex: number) => void;
+  moveColumn: (columnId: string, targetRowId: string, targetIndex: number) => void;
+  addSection: (index?: number) => void;
+  addRow: (sectionId: string, index?: number) => void;
+  addColumn: (rowId: string, index?: number) => void;
   selectBlock: (blockId: string | null) => void;
   setInspectorMode: (mode: InspectorMode) => void;
   setPreviewOpen: (open: boolean) => void;
@@ -160,10 +166,15 @@ function createBuilderStore(canEdit: boolean): BuilderStore {
           saveState: "unsaved",
         })),
       addBlock: (columnId, blockType, index) =>
-        set((state) => ({
-          content: addContentBlock(state.content, columnId, blockType, index),
-          saveState: "unsaved",
-        })),
+        set((state) => {
+          const result = addContentBlock(state.content, columnId, blockType, index);
+          return {
+            content: result.content,
+            selectedBlockId: result.blockId,
+            inspectorMode: "block",
+            saveState: "unsaved",
+          };
+        }),
       removeBlock: (blockId) =>
         set((state) => ({
           content: removeBlock(state.content, blockId),
@@ -181,21 +192,51 @@ function createBuilderStore(canEdit: boolean): BuilderStore {
           ),
           saveState: "unsaved",
         })),
-      addSection: () =>
+      moveSection: (sectionId, targetIndex) =>
         set((state) => ({
-          content: addSection(state.content),
+          content: moveSection(state.content, sectionId, targetIndex),
           saveState: "unsaved",
         })),
-      addRow: (sectionId) =>
+      moveRow: (rowId, targetSectionId, targetIndex) =>
         set((state) => ({
-          content: addRow(state.content, sectionId),
+          content: moveRow(state.content, rowId, targetSectionId, targetIndex),
           saveState: "unsaved",
         })),
-      addColumn: (rowId) =>
+      moveColumn: (columnId, targetRowId, targetIndex) =>
         set((state) => ({
-          content: addColumn(state.content, rowId),
+          content: moveColumn(state.content, columnId, targetRowId, targetIndex),
           saveState: "unsaved",
         })),
+      addSection: (index) =>
+        set((state) => {
+          const result = addSection(state.content, index);
+          return {
+            content: result.content,
+            selectedBlockId: result.blockId,
+            inspectorMode: "block",
+            saveState: "unsaved",
+          };
+        }),
+      addRow: (sectionId, index) =>
+        set((state) => {
+          const result = addRow(state.content, sectionId, index);
+          return {
+            content: result.content,
+            selectedBlockId: result.blockId,
+            inspectorMode: "block",
+            saveState: "unsaved",
+          };
+        }),
+      addColumn: (rowId, index) =>
+        set((state) => {
+          const result = addColumn(state.content, rowId, index);
+          return {
+            content: result.content,
+            selectedBlockId: result.blockId,
+            inspectorMode: "block",
+            saveState: "unsaved",
+          };
+        }),
       selectBlock: (blockId) =>
         set((state) => ({
           selectedBlockId: blockId,

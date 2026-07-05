@@ -19,11 +19,11 @@ describe("layout-add-targets", () => {
       settings: { width: 600 },
       body: [],
     });
-    content = addSection(content);
-    content = addRow(content, content.body[0]!.id);
-    content = addColumn(content, content.body[0]!.children[0]!.id);
+    content = addSection(content).content;
+    content = addRow(content, content.body[0]!.id).content;
+    content = addColumn(content, content.body[0]!.children[0]!.id).content;
     const columnId = content.body[0]!.children[0]!.children[0]!.id;
-    content = addContentBlock(content, columnId, "text");
+    content = addContentBlock(content, columnId, "text").content;
 
     const textBlockId = content.body[0]!.children[0]!.children[0]!.children[0]!.id;
     const targets = resolveLayoutAddTargets(content, textBlockId);
@@ -38,8 +38,8 @@ describe("layout-add-targets", () => {
       settings: { width: 600 },
       body: [],
     });
-    content = addSection(content);
-    content = addSection(content);
+    content = addSection(content).content;
+    content = addSection(content).content;
     const sectionId = content.body[1]!.id;
 
     const targets = resolveLayoutAddTargets(content, sectionId);
@@ -53,8 +53,8 @@ describe("layout-add-targets", () => {
       settings: { width: 600 },
       body: [],
     });
-    content = addSection(content);
-    content = addRow(content, content.body[0]!.id);
+    content = addSection(content).content;
+    content = addRow(content, content.body[0]!.id).content;
 
     const targets = resolveLayoutAddTargets(content, null);
     const lastSection = content.body.at(-1)!;
@@ -75,13 +75,13 @@ describe("layout-add-targets", () => {
 
     const actions = {
       addSection: () => {
-        content = addSection(content);
+        content = addSection(content).content;
       },
       addRow: (targetSectionId: string) => {
-        content = addRow(content, targetSectionId);
+        content = addRow(content, targetSectionId).content;
       },
       addColumn: (rowId: string) => {
-        content = addColumn(content, rowId);
+        content = addColumn(content, rowId).content;
       },
     };
 
