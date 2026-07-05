@@ -310,7 +310,24 @@ export function PaletteCanvasDndProvider({ children }: { children: ReactNode }) 
             return;
           }
 
-          commitPaletteDrop();
+          detachDocPointerListeners();
+          postPaletteDragPointer(finishEvent.clientX, finishEvent.clientY);
+          const coords = toIframePointerCoords(
+            canvasIframeRef.current,
+            finishEvent.clientX,
+            finishEvent.clientY,
+          );
+          postToIframeRef.current({
+            type: "canvas-palette-drag-finish",
+            clientX: coords.clientX,
+            clientY: coords.clientY,
+          });
+
+          window.setTimeout(() => {
+            if (!finishHandledRef.current) {
+              commitPaletteDrop(dropTargetRef.current);
+            }
+          }, 50);
         }
 
         docListenersRef.current = {

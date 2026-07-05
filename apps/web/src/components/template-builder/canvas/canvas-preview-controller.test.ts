@@ -138,7 +138,7 @@ function createController(
 }
 
 describe("createCanvasPreviewController", () => {
-  it("forwards canvas drop-target messages", () => {
+  it("forwards idle canvas drop-target messages", () => {
     const onDropTargetChange = vi.fn();
     const controller = createController({ onDropTargetChange });
 
@@ -151,6 +151,44 @@ describe("createCanvasPreviewController", () => {
     );
 
     expect(onDropTargetChange).toHaveBeenCalledWith({ kind: "body", index: 1 });
+  });
+
+  it("validates drag drop targets before notifying parent", () => {
+    const onDropTargetChange = vi.fn();
+    const controller = createController({ onDropTargetChange });
+
+    controller.handleMessage(
+      {
+        type: "canvas-drop-target",
+        target: { kind: "column", columnId: "col-1", index: 0 },
+        dragKind: "section",
+        dragBlockId: "section-1",
+      },
+      null,
+    );
+
+    expect(onDropTargetChange).toHaveBeenCalledWith(null);
+  });
+
+  it("forwards validated drag drop targets to parent", () => {
+    const onDropTargetChange = vi.fn();
+    const controller = createController({ onDropTargetChange });
+
+    controller.handleMessage(
+      {
+        type: "canvas-drop-target",
+        target: { kind: "column", columnId: "col-2", index: 0 },
+        dragKind: "content",
+        dragBlockId: "richtext-1",
+      },
+      null,
+    );
+
+    expect(onDropTargetChange).toHaveBeenCalledWith({
+      kind: "column",
+      columnId: "col-2",
+      index: 0,
+    });
   });
 
   it("updates richtext snapshot on sync", () => {

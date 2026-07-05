@@ -14,6 +14,7 @@ import type {
   RichtextFormatStateData,
   RichtextFormatStateMessage,
 } from "./canvas-bridge";
+import { canShowDropIndicator } from "./canvas-dnd";
 import {
   isBlockEditCancelMessage,
   isBlockEditCommitMessage,
@@ -287,6 +288,22 @@ export function createCanvasPreviewController(
       }
 
       if (isCanvasDropTargetMessage(data)) {
+        const dragKind = data.dragKind ?? null;
+        const dragBlockId = data.dragBlockId ?? null;
+
+        if (dragKind) {
+          const validated = canShowDropIndicator(
+            dragKind,
+            data.target,
+            deps.getContent(),
+            dragBlockId,
+          )
+            ? data.target
+            : null;
+          deps.onDropTargetChange?.(validated);
+          return;
+        }
+
         deps.onDropTargetChange?.(data.target);
         return;
       }

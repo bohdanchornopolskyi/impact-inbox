@@ -10,6 +10,7 @@ import {
   canDropSectionAtTarget,
   canInsertAtTarget,
   canInsertBlockTypeAtTarget,
+  canShowDropIndicator,
   inferCanvasDragKind,
   isCanvasDragActiveMessage,
   isCanvasDragCommitMessage,
@@ -335,6 +336,36 @@ describe("canInsertAtTarget", () => {
     ).toBe(false);
     expect(
       canInsertBlockTypeAtTarget("heading", { kind: "body", index: 0 }),
+    ).toBe(false);
+  });
+});
+
+describe("canShowDropIndicator", () => {
+  it("accepts valid palette insert targets without a dragged block id", () => {
+    expect(
+      canShowDropIndicator("content", { kind: "column", columnId: "col-2", index: 0 }, content, null),
+    ).toBe(true);
+    expect(
+      canShowDropIndicator("section", { kind: "column", columnId: "col-1", index: 0 }, content, null),
+    ).toBe(false);
+  });
+
+  it("accepts valid canvas move targets for an existing block", () => {
+    expect(
+      canShowDropIndicator(
+        "content",
+        { kind: "column", columnId: "col-2", index: 0 },
+        content,
+        "heading-1",
+      ),
+    ).toBe(true);
+    expect(
+      canShowDropIndicator(
+        "section",
+        { kind: "column", columnId: "col-1", index: 0 },
+        content,
+        "section-1",
+      ),
     ).toBe(false);
   });
 });

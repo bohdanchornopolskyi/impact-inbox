@@ -255,6 +255,23 @@ export function canInsertBlockTypeAtTarget(
   return canInsertAtTarget(blockTypeToDragKind(blockType), target);
 }
 
+export function canShowDropIndicator(
+  dragKind: CanvasDragKind,
+  target: CanvasDropTarget | null,
+  content: TemplateContentData,
+  draggedBlockId: string | null,
+): boolean {
+  if (!target) {
+    return false;
+  }
+
+  if (!draggedBlockId) {
+    return canInsertAtTarget(dragKind, target);
+  }
+
+  return canDropAtTarget(content, draggedBlockId, dragKind, target);
+}
+
 type PaletteInsertActions = {
   addSection: (index?: number) => void;
   addRow: (sectionId: string, index?: number) => void;
