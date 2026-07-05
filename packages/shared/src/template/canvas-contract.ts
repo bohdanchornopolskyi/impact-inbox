@@ -1,11 +1,24 @@
 import type { ContentBlockType } from "../schemas/template/blocks/content";
+import { LAYOUT_BLOCK_TYPES } from "../constants";
 
 export const CANVAS_BLOCK_ID_ATTR = "data-block-id";
 export const CANVAS_BLOCK_TYPE_ATTR = "data-block-type";
 export const CANVAS_BLOCK_LABEL_ATTR = "data-block-label";
+export const CANVAS_LAYOUT_ROLE_ATTR = "data-layout-role";
+export const CANVAS_BODY_ATTR = "data-canvas-body";
+export const CANVAS_EMPTY_COLUMN_ATTR = "data-empty-column";
+export const CANVAS_EMPTY_PLACEHOLDER_ATTR = "data-canvas-empty-placeholder";
 export const CANVAS_EDITABLE_ATTR = "data-editable";
 export const CANVAS_EDITABLE_PROP_ATTR = "data-editable-prop";
 export const CANVAS_EDITABLE_KIND_ATTR = "data-editable-kind";
+
+export type CanvasLayoutRole = (typeof LAYOUT_BLOCK_TYPES)[number];
+
+export type CanvasDropTarget =
+  | { kind: "body"; index: number }
+  | { kind: "section"; sectionId: string; index: number }
+  | { kind: "row"; rowId: string; index: number }
+  | { kind: "column"; columnId: string; index: number };
 
 export type CanvasEditableKind = "plain" | "richtext";
 
@@ -30,4 +43,51 @@ export function getCanvasEditableKind(
 
 export function isCanvasEditableBlockType(type: ContentBlockType): boolean {
   return getCanvasEditableKind(type) !== null;
+}
+
+export function resolveInsertionIndex(
+  pointerCoord: number,
+  siblingBounds: ReadonlyArray<{ start: number; end: number }>,
+): number {
+  for (let index = 0; index < siblingBounds.length; index += 1) {
+    const bounds = siblingBounds[index]!;
+    const midpoint = (bounds.start + bounds.end) / 2;
+    if (pointerCoord < midpoint) {
+      return index;
+    }
+  }
+
+  return siblingBounds.length;
+}
+
+export function canvasDropTargetsEqual(
+  left: CanvasDropTarget | null,
+  right: CanvasDropTarget | null,
+): boolean {
+  if (left === right) {
+    return true;
+  }
+
+  if (!left || !right) {
+    return false;
+  }
+
+  if (left.kind !== right.kind || left.index !== right.index) {
+    return false;
+  }
+
+  switch (left.kind) {
+    case "body":
+      return right.kind === "body";
+    case "section":
+      return right.kind === "section" && right.sectionId === left.sectionId;
+    case "row":
+      return right.kind === "row" && right.rowId === left.rowId;
+    case "column":
+      return right.kind === "column" && right.columnId === left.columnId;
+    default: {
+      const unreachable: never = left;
+      return unreachable;
+    }
+  }
 }

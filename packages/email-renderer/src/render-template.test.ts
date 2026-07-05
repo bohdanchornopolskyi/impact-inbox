@@ -99,6 +99,11 @@ describe("renderTemplate", () => {
     expect(result.html).toContain("data:image/png;base64");
     expect(result.html).toContain('data-editable=""');
     expect(result.html).toContain('data-block-id="heading-1"');
+    expect(result.html).toContain('data-block-id="section-1"');
+    expect(result.html).toContain('data-layout-role="section"');
+    expect(result.html).toContain('data-layout-role="row"');
+    expect(result.html).toContain('data-layout-role="column"');
+    expect(result.html).toContain('data-block-label="Section"');
     expect(result.text).toContain("Hello World");
     expect(result.text).toContain("Watch Video: https://example.com/video");
     expect(result.text).toContain("https://example.com/qr");

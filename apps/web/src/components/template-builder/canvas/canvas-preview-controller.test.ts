@@ -112,28 +112,53 @@ describe("sanitizeEditValue", () => {
   });
 });
 
+function createController(
+  overrides: Partial<Parameters<typeof createCanvasPreviewController>[0]> = {},
+) {
+  return createCanvasPreviewController({
+    getContent: () => baseContent,
+    getHtml: () => "<html></html>",
+    getDebouncedHash: () => "hash",
+    getPreviewMatchesContent: () => true,
+    getSelectedBlockId: () => "richtext-1",
+    getSelectedLabel: () => "Rich Text",
+    getCanEdit: () => true,
+    selectBlock: vi.fn(),
+    updateBlockProps: vi.fn(),
+    onPlainTextEditPausedChange: vi.fn(),
+    startRichtextEdit: vi.fn(),
+    endRichtextEdit: vi.fn(),
+    setFormatState: vi.fn(),
+    onReload: vi.fn(),
+    onPatch: vi.fn(),
+    onSelectBlockPosted: vi.fn(),
+    onDropTargetChange: vi.fn(),
+    ...overrides,
+  });
+}
+
 describe("createCanvasPreviewController", () => {
+  it("forwards canvas drop-target messages", () => {
+    const onDropTargetChange = vi.fn();
+    const controller = createController({ onDropTargetChange });
+
+    controller.handleMessage(
+      {
+        type: "canvas-drop-target",
+        target: { kind: "body", index: 1 },
+      },
+      null,
+    );
+
+    expect(onDropTargetChange).toHaveBeenCalledWith({ kind: "body", index: 1 });
+  });
+
   it("updates richtext snapshot on sync", () => {
     const updates: Array<Record<string, unknown>> = [];
-    const controller = createCanvasPreviewController({
-      getContent: () => baseContent,
-      getHtml: () => "<html></html>",
-      getDebouncedHash: () => "hash",
-      getPreviewMatchesContent: () => true,
-      getSelectedBlockId: () => "richtext-1",
-      getSelectedLabel: () => "Rich Text",
-      getCanEdit: () => true,
-      selectBlock: vi.fn(),
+    const controller = createController({
       updateBlockProps: (_blockId, props) => {
         updates.push(props);
       },
-      onPlainTextEditPausedChange: vi.fn(),
-      startRichtextEdit: vi.fn(),
-      endRichtextEdit: vi.fn(),
-      setFormatState: vi.fn(),
-      onReload: vi.fn(),
-      onPatch: vi.fn(),
-      onSelectBlockPosted: vi.fn(),
     });
 
     controller.handleMessage(
@@ -165,29 +190,16 @@ describe("createCanvasPreviewController", () => {
     let paused = false;
     let ended = false;
 
-    const controller = createCanvasPreviewController({
-      getContent: () => baseContent,
-      getHtml: () => "<html></html>",
-      getDebouncedHash: () => "hash",
-      getPreviewMatchesContent: () => true,
-      getSelectedBlockId: () => "richtext-1",
-      getSelectedLabel: () => "Rich Text",
-      getCanEdit: () => true,
-      selectBlock: vi.fn(),
+    const controller = createController({
       updateBlockProps: (_blockId, props) => {
         updates.push(props);
       },
       onPlainTextEditPausedChange: (value) => {
         paused = value;
       },
-      startRichtextEdit: vi.fn(),
       endRichtextEdit: () => {
         ended = true;
       },
-      setFormatState: vi.fn(),
-      onReload: vi.fn(),
-      onPatch: vi.fn(),
-      onSelectBlockPosted: vi.fn(),
     });
 
     controller.handleMessage(

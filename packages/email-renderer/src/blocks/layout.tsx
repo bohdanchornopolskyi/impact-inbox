@@ -1,7 +1,29 @@
 import { Column, Row, Section } from "@react-email/components";
-import type { ColumnBlock, RowBlock, SectionBlock } from "@repo/shared";
+import {
+  CANVAS_BLOCK_ID_ATTR,
+  CANVAS_BLOCK_LABEL_ATTR,
+  CANVAS_BLOCK_TYPE_ATTR,
+  CANVAS_EMPTY_COLUMN_ATTR,
+  CANVAS_EMPTY_PLACEHOLDER_ATTR,
+  CANVAS_LAYOUT_ROLE_ATTR,
+  getBlockTypeLabel,
+  type ColumnBlock,
+  type RowBlock,
+  type SectionBlock,
+} from "@repo/shared";
 import { blockStylesToCss } from "../styles";
 import { renderContentBlockHtml, type RenderContext } from "./content-block-registry";
+
+function layoutBlockMarkers(
+  block: SectionBlock | RowBlock | ColumnBlock,
+): Record<string, string> {
+  return {
+    [CANVAS_BLOCK_ID_ATTR]: block.id,
+    [CANVAS_BLOCK_TYPE_ATTR]: block.type,
+    [CANVAS_BLOCK_LABEL_ATTR]: getBlockTypeLabel(block.type),
+    [CANVAS_LAYOUT_ROLE_ATTR]: block.type,
+  };
+}
 
 export function rowReverseOnMobile(
   row: RowBlock,
@@ -21,6 +43,10 @@ function renderColumnBlock(
     <Column
       key={column.id}
       className="stack-column"
+      {...layoutBlockMarkers(column)}
+      {...(column.children.length === 0
+        ? { [CANVAS_EMPTY_COLUMN_ATTR]: "" }
+        : {})}
       style={{
         ...blockStylesToCss(column.styles),
         width,
@@ -28,6 +54,9 @@ function renderColumnBlock(
         paddingRight: gapPadding > 0 ? gapPadding : undefined,
       }}
     >
+      {column.children.length === 0 ? (
+        <div key={`${column.id}-empty`} {...{ [CANVAS_EMPTY_PLACEHOLDER_ATTR]: "" }} />
+      ) : null}
       {column.children.map((child) => renderContentBlockHtml(child, context))}
     </Column>
   );
@@ -45,6 +74,7 @@ function renderRowBlock(
     <Row
       key={row.id}
       className={reverseOnMobile ? `row-${row.id}` : undefined}
+      {...layoutBlockMarkers(row)}
       style={blockStylesToCss(row.styles)}
     >
       {row.children.map((column, index) => {
@@ -79,6 +109,7 @@ export function renderSectionBlock(
   return (
     <Section
       key={section.id}
+      {...layoutBlockMarkers(section)}
       style={{
         ...blockStylesToCss(section.styles),
         width: fullWidth ? "100%" : undefined,

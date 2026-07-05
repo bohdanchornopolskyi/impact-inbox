@@ -6,6 +6,7 @@ import {
   isBlockEditStartMessage,
   isBlockEditSyncMessage,
   isBlockSelectMessage,
+  isCanvasDropTargetMessage,
   isRichtextFormatStateMessage,
 } from "./canvas-bridge";
 
@@ -88,6 +89,10 @@ describe("buildCanvasBridgeDocument", () => {
     expect(result).toContain("update-preview");
     expect(result).toContain("preview-needs-reload");
     expect(result).toContain("event.source !== window.parent");
+    expect(result).toContain("data-layout-role");
+    expect(result).toContain("resolveDropTarget");
+    expect(result).toContain("canvas-drop-target");
+    expect(result).toContain("data-canvas-empty-placeholder");
   });
 
   it("appends injection when body tag is missing", () => {
@@ -182,6 +187,32 @@ describe("isBlockEditCancelMessage", () => {
 
   it("rejects messages without a block id", () => {
     expect(isBlockEditCancelMessage({ type: "block-edit-cancel" })).toBe(false);
+  });
+});
+
+describe("isCanvasDropTargetMessage", () => {
+  it("accepts valid drop-target messages", () => {
+    expect(
+      isCanvasDropTargetMessage({
+        type: "canvas-drop-target",
+        target: { kind: "body", index: 0 },
+      }),
+    ).toBe(true);
+    expect(
+      isCanvasDropTargetMessage({
+        type: "canvas-drop-target",
+        target: null,
+      }),
+    ).toBe(true);
+  });
+
+  it("rejects malformed drop-target messages", () => {
+    expect(
+      isCanvasDropTargetMessage({
+        type: "canvas-drop-target",
+        target: { kind: "column", index: 0 },
+      }),
+    ).toBe(false);
   });
 });
 

@@ -2,6 +2,7 @@ import {
   CANVAS_PLAIN_TEXT_EDITABLE_TYPES,
   CANVAS_RICHTEXT_EDITABLE_TYPES,
   RICHTEXT_HEADING_INLINE_STYLES,
+  type CanvasDropTarget,
 } from "@repo/shared";
 
 export type CanvasBridgeOptions = {
@@ -78,13 +79,19 @@ export type PreviewNeedsReloadMessage = {
   type: "preview-needs-reload";
 };
 
+export type CanvasDropTargetMessage = {
+  type: "canvas-drop-target";
+  target: CanvasDropTarget | null;
+};
+
 export type CanvasBridgeInboundMessage =
   | BlockSelectMessage
   | BlockEditStartMessage
   | BlockEditCommitMessage
   | BlockEditSyncMessage
   | BlockEditCancelMessage
-  | RichtextFormatStateMessage;
+  | RichtextFormatStateMessage
+  | CanvasDropTargetMessage;
 
 export function isBlockSelectMessage(
   data: unknown,
@@ -211,6 +218,43 @@ export function isPreviewNeedsReloadMessage(
   return (data as Record<string, unknown>).type === "preview-needs-reload";
 }
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return Boolean(value) && typeof value === "object";
+}
+
+function isCanvasDropTargetValue(value: unknown): value is CanvasDropTarget {
+  if (!isRecord(value) || typeof value.index !== "number") {
+    return false;
+  }
+
+  switch (value.kind) {
+    case "body":
+      return true;
+    case "section":
+      return typeof value.sectionId === "string";
+    case "row":
+      return typeof value.rowId === "string";
+    case "column":
+      return typeof value.columnId === "string";
+    default:
+      return false;
+  }
+}
+
+export function isCanvasDropTargetMessage(
+  data: unknown,
+): data is CanvasDropTargetMessage {
+  if (!isRecord(data) || data.type !== "canvas-drop-target") {
+    return false;
+  }
+
+  if (data.target === null) {
+    return true;
+  }
+
+  return isCanvasDropTargetValue(data.target);
+}
+
 const CANVAS_BRIDGE_STYLES = (canEdit: boolean) => `<style id="canvas-bridge-styles">
 [data-block-id] { cursor: pointer; }
 [data-block-id] a[data-canvas-link-disabled] { cursor: inherit; text-decoration: inherit; color: inherit; }
@@ -260,6 +304,14 @@ ${canEdit ? "[data-editable] { cursor: text; }\n[data-editable][contenteditable=
   align-items: center;
   gap: 4px;
 }
+[data-empty-column] [data-canvas-empty-placeholder] {
+  display: block;
+  min-height: 48px;
+  box-sizing: border-box;
+  border: 1px dashed rgba(79, 70, 229, 0.35);
+  border-radius: 4px;
+  background: rgba(79, 70, 229, 0.04);
+}
 </style>`;
 
 function buildBridgeScript(canEdit: boolean): string {
@@ -291,6 +343,7 @@ function buildBridgeScript(canEdit: boolean): string {
   var editingSnapshotHtml = null;
   var savedRange = null;
   var syncTimer = null;
+  var activeDropTarget = null;
 
   function isRichtextEditing() {
     return editingKind === "richtext";
@@ -794,6 +847,10 @@ function buildBridgeScript(canEdit: boolean): string {
       return block;
     }
 
+    if (block.hasAttribute("data-layout-role")) {
+      return block;
+    }
+
     if (isRichtextEditableBlock(block)) {
       var richtext = block.querySelector("[data-editable-kind=richtext]");
       if (richtext) {
@@ -859,6 +916,180 @@ function buildBridgeScript(canEdit: boolean): string {
     }
 
     return findEditableElement(block);
+  }
+
+  function resolveInsertionIndex(pointerCoord, siblingBounds) {
+    for (var i = 0; i < siblingBounds.length; i += 1) {
+      var bounds = siblingBounds[i];
+      var midpoint = (bounds.start + bounds.end) / 2;
+      if (pointerCoord < midpoint) {
+        return i;
+      }
+    }
+    return siblingBounds.length;
+  }
+
+  function getVerticalBounds(elements) {
+    var bounds = [];
+    for (var i = 0; i < elements.length; i += 1) {
+      var rect = elements[i].getBoundingClientRect();
+      bounds.push({ start: rect.top, end: rect.bottom });
+    }
+    return bounds;
+  }
+
+  function getHorizontalBounds(elements) {
+    var bounds = [];
+    for (var i = 0; i < elements.length; i += 1) {
+      var rect = elements[i].getBoundingClientRect();
+      bounds.push({ start: rect.left, end: rect.right });
+    }
+    return bounds;
+  }
+
+  function getContentBlocksInColumn(columnEl) {
+    var blocks = [];
+    var children = columnEl.children;
+    for (var i = 0; i < children.length; i += 1) {
+      var child = children[i];
+      if (
+        child.hasAttribute("data-block-id") &&
+        !child.hasAttribute("data-layout-role")
+      ) {
+        blocks.push(child);
+      }
+    }
+    return blocks;
+  }
+
+  function getSectionsInBody() {
+    var body = document.querySelector("[data-canvas-body]");
+    if (!body) {
+      return [];
+    }
+    return Array.prototype.slice.call(
+      body.querySelectorAll('[data-layout-role="section"]'),
+    );
+  }
+
+  function getRowsInSection(sectionEl) {
+    return Array.prototype.slice.call(
+      sectionEl.querySelectorAll('[data-layout-role="row"]'),
+    );
+  }
+
+  function getColumnsInRow(rowEl) {
+    return Array.prototype.slice.call(
+      rowEl.querySelectorAll('[data-layout-role="column"]'),
+    );
+  }
+
+  function dropTargetsEqual(left, right) {
+    if (left === right) {
+      return true;
+    }
+    if (!left || !right) {
+      return false;
+    }
+    if (left.kind !== right.kind || left.index !== right.index) {
+      return false;
+    }
+    if (left.kind === "body") {
+      return right.kind === "body";
+    }
+    if (left.kind === "section") {
+      return right.kind === "section" && right.sectionId === left.sectionId;
+    }
+    if (left.kind === "row") {
+      return right.kind === "row" && right.rowId === left.rowId;
+    }
+    if (left.kind === "column") {
+      return right.kind === "column" && right.columnId === left.columnId;
+    }
+    return false;
+  }
+
+  function resolveColumnContentTarget(columnEl, clientY) {
+    var columnId = columnEl.getAttribute("data-block-id");
+    if (!columnId) {
+      return null;
+    }
+    var contentBlocks = getContentBlocksInColumn(columnEl);
+    if (contentBlocks.length === 0) {
+      return { kind: "column", columnId: columnId, index: 0 };
+    }
+    var index = resolveInsertionIndex(clientY, getVerticalBounds(contentBlocks));
+    return { kind: "column", columnId: columnId, index: index };
+  }
+
+  function resolveDropTarget(clientX, clientY) {
+    var body = document.querySelector("[data-canvas-body]");
+    if (!body) {
+      return null;
+    }
+
+    var hit = document.elementFromPoint(clientX, clientY);
+    if (!hit || !body.contains(hit)) {
+      return null;
+    }
+
+    var contentBlock = hit.closest("[data-block-id]:not([data-layout-role])");
+    if (contentBlock && body.contains(contentBlock)) {
+      var contentColumn = contentBlock.closest('[data-layout-role="column"]');
+      if (!contentColumn) {
+        return null;
+      }
+      return resolveColumnContentTarget(contentColumn, clientY);
+    }
+
+    var column = hit.closest('[data-layout-role="column"]');
+    if (column && body.contains(column)) {
+      return resolveColumnContentTarget(column, clientY);
+    }
+
+    var row = hit.closest('[data-layout-role="row"]');
+    if (row && body.contains(row)) {
+      var rowId = row.getAttribute("data-block-id");
+      if (!rowId) {
+        return null;
+      }
+      var columns = getColumnsInRow(row);
+      var columnIndex = resolveInsertionIndex(clientX, getHorizontalBounds(columns));
+      return { kind: "row", rowId: rowId, index: columnIndex };
+    }
+
+    var section = hit.closest('[data-layout-role="section"]');
+    if (section && body.contains(section)) {
+      var sectionId = section.getAttribute("data-block-id");
+      if (!sectionId) {
+        return null;
+      }
+      var rows = getRowsInSection(section);
+      var rowIndex = resolveInsertionIndex(clientY, getVerticalBounds(rows));
+      return { kind: "section", sectionId: sectionId, index: rowIndex };
+    }
+
+    var sections = getSectionsInBody();
+    if (sections.length === 0) {
+      return { kind: "body", index: 0 };
+    }
+    var sectionIndex = resolveInsertionIndex(clientY, getVerticalBounds(sections));
+    return { kind: "body", index: sectionIndex };
+  }
+
+  function postDropTarget(target) {
+    if (dropTargetsEqual(activeDropTarget, target)) {
+      return;
+    }
+    activeDropTarget = target;
+    window.parent.postMessage(
+      { type: "canvas-drop-target", target: target },
+      "*",
+    );
+  }
+
+  function clearDropTarget() {
+    postDropTarget(null);
   }
 
   function ensureLayer() {
@@ -1049,6 +1280,22 @@ function buildBridgeScript(canEdit: boolean): string {
     },
     true,
   );
+
+  document.addEventListener(
+    "mousemove",
+    function (event) {
+      if (editingElement) {
+        clearDropTarget();
+        return;
+      }
+      postDropTarget(resolveDropTarget(event.clientX, event.clientY));
+    },
+    true,
+  );
+
+  document.body.addEventListener("mouseleave", function () {
+    clearDropTarget();
+  });
 
   function disableBlockLinks(root) {
     var scope = root || document;

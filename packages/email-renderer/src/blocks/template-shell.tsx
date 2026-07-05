@@ -4,7 +4,7 @@ import {
   Html,
   Preview,
 } from "@react-email/components";
-import { walkContentBlocks, type TemplateContentData } from "@repo/shared";
+import { walkContentBlocks, CANVAS_BODY_ATTR, type TemplateContentData } from "@repo/shared";
 import { buildLayoutMobileStyles } from "../layout-styles";
 import { renderSectionBlock } from "./layout";
 import { renderContentBlockText } from "./content-block-registry";
@@ -45,6 +45,7 @@ export function TemplateEmail({ content, qrImages }: TemplateEmailProps) {
         }}
       >
         <Container
+          {...{ [CANVAS_BODY_ATTR]: "" }}
           style={{
             width: `${settings.width}px`,
             maxWidth: "100%",

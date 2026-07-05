@@ -7,6 +7,7 @@ import {
   findBlock,
   getBlockLabel,
   getPreviewLayoutKey,
+  type CanvasDropTarget,
 } from "@repo/shared";
 import {
   previewWidth,
@@ -50,6 +51,7 @@ export function PreviewCanvas() {
   const srcDocRef = useRef("");
   const [iframeSrcDoc, setIframeSrcDoc] = useState("");
   const [plainTextEditPaused, setPlainTextEditPaused] = useState(false);
+  const canvasDropTargetRef = useRef<CanvasDropTarget | null>(null);
   const previewPaused = plainTextEditPaused || richtextSession !== null;
   const { html, debouncedHash, previewMatchesContent } = useRenderedPreview(
     content,
@@ -142,6 +144,9 @@ export function PreviewCanvas() {
         patchPreviewHtmlRef.current(htmlToRender, nextHash);
       },
       onSelectBlockPosted: postSelectBlock,
+      onDropTargetChange: (target) => {
+        canvasDropTargetRef.current = target;
+      },
     });
   }
 
