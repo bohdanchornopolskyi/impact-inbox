@@ -21,7 +21,7 @@ describe("merge-tag-scan", () => {
     if (!columnId) {
       throw new Error("missing column");
     }
-    content = addContentBlock(content, columnId, "heading");
+    content = addContentBlock(content, columnId, "heading").content;
 
     const texts = collectMergeTagSourceTexts(content);
     expect(texts).toContain("Hi {{firstName}}");
