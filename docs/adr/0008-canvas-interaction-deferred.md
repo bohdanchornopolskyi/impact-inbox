@@ -1,6 +1,6 @@
 # Canvas click-to-select and inline edit
 
-**Status:** Implemented (2026-06). Originally deferred post–Phase 2; shipped as the canvas polish pass. See [deferred-work.md](../deferred-work.md#done--canvas-polish-adr-0008).
+**Status:** Implemented (2026-06). Originally deferred post–Phase 2; shipped as the canvas polish pass. See [deferred-work.md](../deferred-work.md#done--canvas-polish-adr-0008). ADR 0013 supersedes the "layout blocks stay structure-panel only" scope for the next builder-quality pass.
 
 Phase 2 initially shipped canvas **preview** only. Block selection and property editing used the **Structure** panel and right **inspector**. Canvas click-to-select and inline editing are now live in the builder canvas.
 
@@ -25,7 +25,7 @@ Inline edits update **Working copy** through existing `updateBlockProps`; no par
 | **Rich text on canvas** | In-place `contenteditable` inside the iframe (revised — see "Revision 2026-06-26"); toolbar + settings in the sidebar drive the selection via `document.execCommand`; bold, italic, underline, links, lists, paragraph/heading h1–h6; HTML sanitized on commit |
 | **Preview refresh during edit** | Pause debounced preview refetch while a block is in canvas edit mode; commit on blur → one refetch |
 | **Full-screen Preview overlay** | Read-only — no bridge; editing surface is the builder canvas only |
-| **Layout blocks on canvas** | Not selectable — section/row/column stay structure-panel only |
+| **Layout blocks on canvas** | ADR 0008 did not select/edit them; ADR 0013 makes layout DnD a proposed next pass |
 | **Enter inline edit** | Single click selects; **double-click** on `data-editable` enters edit mode |
 | **Selection sync** | Bidirectional — structure panel selection posts `select-block` to iframe; canvas clicks update store |
 | **View-only members** | Bridge active for selection only — structure + canvas highlight; no inline edit (`canEdit: false` disables double-click edit and `contenteditable`) |
@@ -60,12 +60,12 @@ Iframe → parent:
 | Canvas selection chrome | Shipped — highlight + label toolbar in iframe |
 | Rich text in-canvas editor | Shipped — in-iframe `contenteditable` + sidebar `execCommand` toolbar |
 | Rename template from builder toolbar | Shipped — `RenameTemplateModal` + `expectedUpdatedAt` |
-| Layout block selection on canvas | Still out of scope — structure panel only |
+| Layout block selection on canvas | Out of ADR 0008 scope; proposed for canvas DnD in ADR 0013 |
 
 ## Considered
 
 - **Remove iframe; render blocks as React in builder** — rejected; duplicates renderer, preview/send drift risk.
-- **Transparent overlay from block bounds API** — rejected for v1; needs layout measurement pipeline; postMessage + `data-block-id` is simpler and matches rendered output.
+- **Transparent overlay from block bounds API** — rejected for ADR 0008 v1 selection/editing; ADR 0013 reopens layout geometry for DnD target reporting without replacing the iframe renderer.
 - **Parent-level click on iframe wrapper** — does not work (clicks stay inside iframe); removed from Phase 2 UI.
 
 ## Consequences

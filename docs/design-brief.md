@@ -89,8 +89,8 @@ Org-scoped (org id in URL — not nested under workspace)
 | Screen | Key elements |
 |--------|----------------|
 | Template list | Grid/list, search, create, archive filter, empty state |
-| Template builder | **Left sidebar** (Blocks / Structure tabs) · **center** canvas preview · **right** inspector. Top bar: name, working-copy sync badge, Save (revision), Preview, History, Export |
-| Structure panel | Tree: section → row → column → blocks. Add/remove layout nodes here (not drag on canvas) |
+| Template builder | **Left sidebar** (Blocks / secondary Structure) · **center** canvas editor/preview · **right** inspector. Top bar: name, working-copy sync badge, Save (revision), Preview, History, Export |
+| Structure panel | Secondary tree: section → row → column → blocks. Useful for advanced navigation/recovery, not required for normal placement |
 | Revision history | Sidebar or modal: timestamped saves, restore (with confirm) |
 | Preview modes | Desktop ~600px width canvas; mobile ~375px toggle — same HTML |
 
@@ -100,8 +100,9 @@ Layout: Section, Row, Column
 Content: Heading, Text, Rich Text, Button, Image, Logo, Video, Divider, Spacer, Social Links, HTML, Table, Shape, Footer, QR Code
 
 **Builder rules:**
-- Content blocks: drag-and-drop reorder within/between columns
-- Layout blocks: structure panel only (no free-form section drag in v1)
+- Canvas is the primary manipulation surface: sections, rows, columns, and content blocks drag-and-drop within valid parents
+- Palette tiles support drag-to-canvas insertion and click-to-add fallback
+- Layout chrome is minimal: hover/selection outlines, empty-container hints, and drop indicators while dragging
 - Working copy autosaves (badge: Synced / Unsaved changes / Syncing…)
 - Explicit Save = new revision in history
 - Merge tag picker: contact fields + reserved tags (`unsubscribeUrl`, `physicalAddress`, `listName`, `workspaceName`, `currentYear`)

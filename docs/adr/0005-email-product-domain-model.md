@@ -20,7 +20,7 @@ No `draft`/`published` template status — remove `TEMPLATE_STATUSES` draft/publ
 
 **Block image source:** external URL only in Phase 2; blocks store one resolved URL so platform upload can plug in without changing the content model (see ADR 0007).
 
-Builder is block-native with an HTML block escape hatch (ADR 0004). All registered block types appear in the builder palette at launch; v1 property editors may be minimal or schema-driven. Content blocks reorder via drag-and-drop; layout blocks (section, row, column) via structure panel. Preview: desktop at template width (default 600px, configurable 480–700px) and mobile viewport toggle. Working copy autosaves; explicit Save creates a template revision. **Template export** = HTML + plain text bundle; export authorization goes through **Plan limits** (stub until billing at launch).
+Builder is block-native with an HTML block escape hatch (ADR 0004). All registered block types appear in the builder palette at launch; v1 property editors may be minimal or schema-driven. Canvas-first layout/content drag-and-drop is proposed in ADR 0013: sections, rows, columns, and content blocks move within valid parents, and palette blocks can be dragged to specific canvas targets. Preview: desktop at template width (default 600px, configurable 480–700px) and mobile viewport toggle. Working copy autosaves; explicit Save creates a template revision. **Template export** = HTML + plain text bundle; export authorization goes through **Plan limits** (stub until billing at launch).
 
 ## Campaigns, newsletters, audience
 

@@ -14,6 +14,8 @@ Phase 2 delivers milestone M2: build a template, Save a revision, preview, and e
 - Archive-only lifecycle — remove or disable hard delete until Phase 4 campaign reference guard exists; unarchive via `archived: false` on archived tab
 - **Block image source** — external URL only; single `src` on blocks so platform upload plugs in later without schema change
 
+Post-M2 builder UX quality continues in [ADR 0013](./0013-template-builder-canvas-dnd.md): canvas-first drag-and-drop for layout/content blocks and drag-from-palette insertion.
+
 ## Deferred
 
 | Item | Phase | Reason |
