@@ -109,6 +109,17 @@ describe("buildCanvasBridgeDocument", () => {
     expect(result).toContain("resolveSectionRowTarget");
     expect(result).toContain("resolveRowColumnTarget");
     expect(result).toContain("showRowColumnDropIndicator");
+    expect(result).toContain("canvas-cancel-drag");
+    expect(result).toContain("canvas-drag-pointer");
+    expect(result).toContain("data-empty-section");
+    expect(result).toContain("data-empty-row");
+    expect(result).toContain("palette-drag-active");
+    expect(result).toContain("canvas-palette-drag-start");
+    expect(result).toContain("canvas-palette-drag-move");
+    expect(result).toContain("canvas-palette-drag-end");
+    expect(result).toContain("canvas-palette-drag-commit");
+    expect(result).toContain("startPaletteDragPointerSession");
+    expect(result).toContain("setPaletteDragSessionActive");
   });
 
   it("appends injection when body tag is missing", () => {

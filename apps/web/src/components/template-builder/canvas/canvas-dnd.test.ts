@@ -1,11 +1,15 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import type { TemplateContentData } from "@repo/shared";
 import {
+  applyPaletteInsert,
+  blockTypeToDragKind,
   canDropAtTarget,
   canDropColumnAtTarget,
   canDropContentBlockAtTarget,
   canDropRowAtTarget,
   canDropSectionAtTarget,
+  canInsertAtTarget,
+  canInsertBlockTypeAtTarget,
   inferCanvasDragKind,
   isCanvasDragActiveMessage,
   isCanvasDragCommitMessage,
@@ -287,5 +291,87 @@ describe("canDropAtTarget", () => {
         index: 0,
       }),
     ).toBe(false);
+  });
+});
+
+describe("blockTypeToDragKind", () => {
+  it("maps layout and content block types", () => {
+    expect(blockTypeToDragKind("section")).toBe("section");
+    expect(blockTypeToDragKind("row")).toBe("row");
+    expect(blockTypeToDragKind("column")).toBe("column");
+    expect(blockTypeToDragKind("heading")).toBe("content");
+  });
+});
+
+describe("canInsertAtTarget", () => {
+  it("accepts valid palette insert targets", () => {
+    expect(canInsertAtTarget("section", { kind: "body", index: 0 })).toBe(true);
+    expect(
+      canInsertAtTarget("row", {
+        kind: "section",
+        sectionId: "section-1",
+        index: 0,
+      }),
+    ).toBe(true);
+    expect(
+      canInsertAtTarget("column", { kind: "row", rowId: "row-1", index: 0 }),
+    ).toBe(true);
+    expect(
+      canInsertAtTarget("content", {
+        kind: "column",
+        columnId: "col-1",
+        index: 0,
+      }),
+    ).toBe(true);
+  });
+
+  it("rejects mismatched insert targets", () => {
+    expect(
+      canInsertAtTarget("section", {
+        kind: "column",
+        columnId: "col-1",
+        index: 0,
+      }),
+    ).toBe(false);
+    expect(
+      canInsertBlockTypeAtTarget("heading", { kind: "body", index: 0 }),
+    ).toBe(false);
+  });
+});
+
+describe("applyPaletteInsert", () => {
+  it("calls the matching insert action for valid targets", () => {
+    const addSection = vi.fn();
+    const addRow = vi.fn();
+    const addColumn = vi.fn();
+    const addBlock = vi.fn();
+
+    applyPaletteInsert(
+      "section",
+      { kind: "body", index: 1 },
+      { addSection, addRow, addColumn, addBlock },
+    );
+    expect(addSection).toHaveBeenCalledWith(1);
+
+    applyPaletteInsert(
+      "row",
+      { kind: "section", sectionId: "section-1", index: 0 },
+      { addSection, addRow, addColumn, addBlock },
+    );
+    expect(addRow).toHaveBeenCalledWith("section-1", 0);
+
+    applyPaletteInsert(
+      "column",
+      { kind: "row", rowId: "row-1", index: 2 },
+      { addSection, addRow, addColumn, addBlock },
+    );
+    expect(addColumn).toHaveBeenCalledWith("row-1", 2);
+
+    applyPaletteInsert(
+      "heading",
+      { kind: "column", columnId: "col-1", index: 0 },
+      { addSection, addRow, addColumn, addBlock },
+    );
+    expect(addBlock).toHaveBeenCalledWith("col-1", "heading", 0);
   });
 });

@@ -5,8 +5,11 @@ import {
   CANVAS_BLOCK_TYPE_ATTR,
   CANVAS_EMPTY_COLUMN_ATTR,
   CANVAS_EMPTY_PLACEHOLDER_ATTR,
+  CANVAS_EMPTY_ROW_ATTR,
+  CANVAS_EMPTY_SECTION_ATTR,
   CANVAS_LAYOUT_ROLE_ATTR,
   getBlockTypeLabel,
+  resolveRowColumnWidths,
   type ColumnBlock,
   type RowBlock,
   type SectionBlock,
@@ -69,21 +72,26 @@ function renderRowBlock(
 ) {
   const reverseOnMobile = rowReverseOnMobile(row, sectionProps);
   const gap = row.props.gap ?? 0;
+  const columnWidths = resolveRowColumnWidths(row);
 
   return (
     <Row
       key={row.id}
       className={reverseOnMobile ? `row-${row.id}` : undefined}
       {...layoutBlockMarkers(row)}
+      {...(row.children.length === 0 ? { [CANVAS_EMPTY_ROW_ATTR]: "" } : {})}
       style={blockStylesToCss(row.styles)}
     >
+      {row.children.length === 0 ? (
+        <div key={`${row.id}-empty`} {...{ [CANVAS_EMPTY_PLACEHOLDER_ATTR]: "" }} />
+      ) : null}
       {row.children.map((column, index) => {
-        const explicitWidth = row.props.columnWidths?.[index];
+        const widthPercent = columnWidths[index];
         const columnWithWidth =
-          explicitWidth !== undefined
+          widthPercent !== undefined
             ? {
                 ...column,
-                props: { ...column.props, width: explicitWidth },
+                props: { ...column.props, width: widthPercent },
               }
             : column;
         const isLast = index === row.children.length - 1;
@@ -110,6 +118,7 @@ export function renderSectionBlock(
     <Section
       key={section.id}
       {...layoutBlockMarkers(section)}
+      {...(section.children.length === 0 ? { [CANVAS_EMPTY_SECTION_ATTR]: "" } : {})}
       style={{
         ...blockStylesToCss(section.styles),
         width: fullWidth ? "100%" : undefined,
@@ -123,6 +132,9 @@ export function renderSectionBlock(
           : undefined,
       }}
     >
+      {section.children.length === 0 ? (
+        <div key={`${section.id}-empty`} {...{ [CANVAS_EMPTY_PLACEHOLDER_ATTR]: "" }} />
+      ) : null}
       {section.children.map((row) =>
         renderRowBlock(row, context, section.props),
       )}

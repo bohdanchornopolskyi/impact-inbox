@@ -85,6 +85,11 @@ export type CanvasDropTargetMessage = {
   target: CanvasDropTarget | null;
 };
 
+export type CanvasPaletteDragCommitMessage = {
+  type: "canvas-palette-drag-commit";
+  target: CanvasDropTarget | null;
+};
+
 export type CanvasBridgeInboundMessage =
   | BlockSelectMessage
   | BlockEditStartMessage
@@ -92,7 +97,8 @@ export type CanvasBridgeInboundMessage =
   | BlockEditSyncMessage
   | BlockEditCancelMessage
   | RichtextFormatStateMessage
-  | CanvasDropTargetMessage;
+  | CanvasDropTargetMessage
+  | CanvasPaletteDragCommitMessage;
 
 export function isBlockSelectMessage(
   data: unknown,
@@ -256,13 +262,29 @@ export function isCanvasDropTargetMessage(
   return isCanvasDropTargetValue(data.target);
 }
 
+export function isCanvasPaletteDragCommitMessage(
+  data: unknown,
+): data is CanvasPaletteDragCommitMessage {
+  if (!isRecord(data) || data.type !== "canvas-palette-drag-commit") {
+    return false;
+  }
+
+  if (data.target === null) {
+    return true;
+  }
+
+  return isCanvasDropTargetValue(data.target);
+}
+
 const CANVAS_BRIDGE_STYLES = (canEdit: boolean) => `<style id="canvas-bridge-styles">
 [data-block-id] { cursor: pointer; }
 [data-block-id][data-layout-role] { cursor: grab; }
 [data-block-id].canvas-bridge-dragging { cursor: grabbing; }
 [data-block-id] a[data-canvas-link-disabled] { cursor: inherit; text-decoration: inherit; color: inherit; }
 ${canEdit ? "[data-editable] { cursor: text; }\n[data-editable][contenteditable=\"true\"] { outline: none; box-shadow: none; }\n" : ""}html, body {
-  overflow: visible !important;
+  overflow-x: hidden !important;
+  overflow-y: visible !important;
+  max-width: 100%;
 }
 #canvas-bridge-layer {
   position: absolute;
@@ -351,9 +373,22 @@ ${canEdit ? "[data-editable] { cursor: text; }\n[data-editable][contenteditable=
   pointer-events: none;
   z-index: 2147483647;
 }
+html.palette-drag-active,
+html.palette-drag-active body {
+  cursor: grabbing !important;
+}
 [data-empty-column] [data-canvas-empty-placeholder] {
   display: block;
   min-height: 48px;
+  box-sizing: border-box;
+  border: 1px dashed rgba(79, 70, 229, 0.35);
+  border-radius: 4px;
+  background: rgba(79, 70, 229, 0.04);
+}
+[data-empty-section] [data-canvas-empty-placeholder],
+[data-empty-row] [data-canvas-empty-placeholder] {
+  display: block;
+  min-height: 40px;
   box-sizing: border-box;
   border: 1px dashed rgba(79, 70, 229, 0.35);
   border-radius: 4px;
@@ -398,6 +433,7 @@ function buildBridgeScript(canEdit: boolean): string {
   var dragBlockId = null;
   var dragKind = null;
   var dragPointer = null;
+  var paletteDragPointer = null;
   var suppressBlockClick = false;
   var dragHandleSvg =
     '<svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true" focusable="false"><circle cx="4" cy="3" r="1.2" fill="currentColor"/><circle cx="10" cy="3" r="1.2" fill="currentColor"/><circle cx="4" cy="7" r="1.2" fill="currentColor"/><circle cx="10" cy="7" r="1.2" fill="currentColor"/><circle cx="4" cy="11" r="1.2" fill="currentColor"/><circle cx="10" cy="11" r="1.2" fill="currentColor"/></svg>';
@@ -1262,15 +1298,14 @@ function buildBridgeScript(canEdit: boolean): string {
         return;
       }
 
-      if (dragPointer.active) {
-        suppressBlockClick = true;
-      }
-
       detachDragPointerListeners(dragPointer);
 
-      postDragCommit(dragPointer.blockId, activeDropTarget);
+      if (dragPointer.active) {
+        suppressBlockClick = true;
+        postDragCommit(dragPointer.blockId, activeDropTarget);
+        clearDragSession();
+      }
 
-      clearDragSession();
       dragPointer = null;
       updatePositions();
     }
@@ -1565,7 +1600,9 @@ function buildBridgeScript(canEdit: boolean): string {
 
     var rows = filterDraggedSibling(getRowsInSection(section), excludeBlockId);
     if (rows.length === 0) {
-      var sectionRect = section.getBoundingClientRect();
+      var placeholder = section.querySelector("[data-canvas-empty-placeholder]");
+      var anchor = placeholder || section;
+      var sectionRect = anchor.getBoundingClientRect();
       positionDropIndicator(
         sectionRect.left + window.scrollX,
         sectionRect.top + window.scrollY + Math.max(0, sectionRect.height / 2 - 1),
@@ -1603,7 +1640,9 @@ function buildBridgeScript(canEdit: boolean): string {
 
     var columns = filterDraggedSibling(getColumnsInRow(row), excludeBlockId);
     if (columns.length === 0) {
-      var rowRect = row.getBoundingClientRect();
+      var placeholder = row.querySelector("[data-canvas-empty-placeholder]");
+      var anchor = placeholder || row;
+      var rowRect = anchor.getBoundingClientRect();
       positionDropIndicatorVerticalBar(
         rowRect.left + window.scrollX + Math.max(0, rowRect.width / 2 - 1),
         rowRect.top + window.scrollY,
@@ -1698,6 +1737,64 @@ function buildBridgeScript(canEdit: boolean): string {
     );
   }
 
+  function setPaletteDragSessionActive(kind) {
+    isDragSession = true;
+    dragBlockId = null;
+    dragKind = kind;
+    clearHover();
+    hideToolbar();
+    ensureLayer();
+    document.documentElement.classList.add("palette-drag-active");
+  }
+
+  function detachPaletteDragPointerListeners() {
+    if (!paletteDragPointer) {
+      return;
+    }
+
+    window.removeEventListener("pointermove", paletteDragPointer.onPointerMove);
+    window.removeEventListener("pointerup", paletteDragPointer.onPointerFinish);
+    window.removeEventListener(
+      "pointercancel",
+      paletteDragPointer.onPointerFinish,
+    );
+    paletteDragPointer = null;
+  }
+
+  function finishPaletteDragFromIframe() {
+    var target = activeDropTarget;
+    detachPaletteDragPointerListeners();
+    clearDragSession();
+    window.parent.postMessage(
+      {
+        type: "canvas-palette-drag-commit",
+        target: target,
+      },
+      "*",
+    );
+  }
+
+  function startPaletteDragPointerSession() {
+    detachPaletteDragPointerListeners();
+
+    function onPointerMove(moveEvent) {
+      handlePointerAtDuringDrag(moveEvent.clientX, moveEvent.clientY);
+    }
+
+    function onPointerFinish() {
+      finishPaletteDragFromIframe();
+    }
+
+    paletteDragPointer = {
+      onPointerMove: onPointerMove,
+      onPointerFinish: onPointerFinish,
+    };
+
+    window.addEventListener("pointermove", onPointerMove);
+    window.addEventListener("pointerup", onPointerFinish);
+    window.addEventListener("pointercancel", onPointerFinish);
+  }
+
   function setDragSessionActive(blockId) {
     isDragSession = true;
     dragBlockId = blockId;
@@ -1709,6 +1806,8 @@ function buildBridgeScript(canEdit: boolean): string {
   }
 
   function clearDragSession() {
+    detachPaletteDragPointerListeners();
+    document.documentElement.classList.remove("palette-drag-active");
     if (dragBlockId) {
       var block = findBlockElement(dragBlockId);
       if (block) {
@@ -1724,30 +1823,37 @@ function buildBridgeScript(canEdit: boolean): string {
   }
 
   function resolveDropTargetForDrag(clientX, clientY) {
-    if (!dragKind || !dragBlockId) {
+    if (!dragKind) {
       return null;
     }
+
+    var excludeBlockId = dragBlockId || null;
 
     if (dragKind === "content") {
       return resolveColumnContentTargetForDrag(clientX, clientY);
     }
 
     if (dragKind === "section") {
-      return resolveBodySectionTarget(clientY, dragBlockId);
+      return resolveBodySectionTarget(clientY, excludeBlockId);
     }
 
     if (dragKind === "row") {
-      return resolveSectionRowTarget(clientX, clientY, dragBlockId);
+      return resolveSectionRowTarget(clientX, clientY, excludeBlockId);
     }
 
     if (dragKind === "column") {
-      return resolveRowColumnTarget(clientX, clientY, dragBlockId);
+      return resolveRowColumnTarget(clientX, clientY, excludeBlockId);
     }
 
     return null;
   }
 
   function handlePointerAtDuringDrag(x, y) {
+    ensureLayer();
+    window.parent.postMessage(
+      { type: "canvas-drag-pointer", clientY: y },
+      "*",
+    );
     var target = resolveDropTargetForDrag(x, y);
     if (target) {
       showDropIndicator(target);
@@ -1827,6 +1933,14 @@ function buildBridgeScript(canEdit: boolean): string {
     }
 
     left = Math.max(rect.left + window.scrollX, left);
+
+    var body = document.querySelector("[data-canvas-body]");
+    if (body) {
+      var bodyRect = body.getBoundingClientRect();
+      var minLeft = bodyRect.left + window.scrollX;
+      var maxLeft = bodyRect.right + window.scrollX - toolbarWidth;
+      left = Math.max(minLeft, Math.min(left, maxLeft));
+    }
 
     toolbar.style.top = top + "px";
     toolbar.style.left = left + "px";
@@ -2157,6 +2271,45 @@ function buildBridgeScript(canEdit: boolean): string {
     }
     if (data.type === "canvas-prepare-drag") {
       commitEdit();
+      return;
+    }
+    if (data.type === "canvas-cancel-drag") {
+      abortDragPointerSession();
+      detachPaletteDragPointerListeners();
+      clearDragSession();
+      return;
+    }
+    if (data.type === "canvas-palette-drag-start") {
+      if (!canEdit || !data.dragKind) {
+        return;
+      }
+      abortDragPointerSession();
+      commitEdit();
+      setPaletteDragSessionActive(data.dragKind);
+      if (
+        typeof data.clientX === "number" &&
+        typeof data.clientY === "number"
+      ) {
+        handlePointerAtDuringDrag(data.clientX, data.clientY);
+      }
+      return;
+    }
+    if (data.type === "canvas-palette-drag-move") {
+      if (!isDragSession || dragPointer) {
+        return;
+      }
+      if (
+        typeof data.clientX !== "number" ||
+        typeof data.clientY !== "number"
+      ) {
+        return;
+      }
+      handlePointerAtDuringDrag(data.clientX, data.clientY);
+      return;
+    }
+    if (data.type === "canvas-palette-drag-end") {
+      detachPaletteDragPointerListeners();
+      clearDragSession();
       return;
     }
     if (data.type === "richtext-format") {

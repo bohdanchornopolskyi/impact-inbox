@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { Monitor, Smartphone } from "lucide-react";
 import { SegmentedControl } from "@repo/ui/client";
 import {
@@ -13,12 +13,18 @@ import {
   useRenderedPreview,
 } from "@/lib/templates/use-rendered-preview";
 import { useBuilder } from "../builder-provider";
-import { buildCanvasBridgeDocument } from "./canvas-bridge";
+import {
+  buildCanvasBridgeDocument,
+  isCanvasPaletteDragCommitMessage,
+} from "./canvas-bridge";
 import {
   createCanvasPreviewController,
   resolveEffectiveHtml,
 } from "./canvas-preview-controller";
+import { usePaletteCanvasDnd } from "./palette-canvas-dnd-context";
+import { isCanvasDragActiveMessage, isCanvasDragCommitMessage } from "./canvas-dnd";
 import { useCanvasDnd } from "./use-canvas-dnd";
+import { useCanvasViewportAutoScroll } from "./use-canvas-viewport-auto-scroll";
 import {
   useRichtextCanvasEdit,
   type RichtextCommand,
@@ -44,6 +50,20 @@ export function PreviewCanvas() {
     setFormatState,
     registerCommandSink,
   } = useRichtextCanvasEdit();
+  const {
+    registerIframeBridge,
+    registerCanvasIframe,
+    registerPrepareDrag,
+    registerDropCommitted,
+    handleDropTargetChange,
+    handlePaletteDragCommit,
+    cancelPaletteDrag,
+    isPaletteDragging,
+  } = usePaletteCanvasDnd();
+  const handleDropTargetChangeRef = useRef(handleDropTargetChange);
+  handleDropTargetChangeRef.current = handleDropTargetChange;
+  const handlePaletteDragCommitRef = useRef(handlePaletteDragCommit);
+  handlePaletteDragCommitRef.current = handlePaletteDragCommit;
   const richtextSessionRef = useRef(richtextSession);
   richtextSessionRef.current = richtextSession;
   const selectedBlockIdRef = useRef(selectedBlockId);
@@ -51,9 +71,11 @@ export function PreviewCanvas() {
   const contentRef = useRef(content);
   contentRef.current = content;
   const iframeRef = useRef<HTMLIFrameElement>(null);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
   const htmlRef = useRef("");
   const srcDocRef = useRef("");
   const [iframeSrcDoc, setIframeSrcDoc] = useState("");
+  const [isCanvasDragging, setIsCanvasDragging] = useState(false);
   const [plainTextEditPaused, setPlainTextEditPaused] = useState(false);
   const previewPaused = plainTextEditPaused || richtextSession !== null;
   const { html, debouncedHash, previewMatchesContent, syncDebouncedHash } =
@@ -89,6 +111,18 @@ export function PreviewCanvas() {
     iframeRef.current?.contentWindow?.postMessage(message, "*");
   }, []);
 
+  useCanvasViewportAutoScroll({
+    scrollContainerRef,
+    iframeRef,
+    isActive: isPaletteDragging || isCanvasDragging,
+  });
+
+  useEffect(() => {
+    cancelPaletteDrag();
+    setIsCanvasDragging(false);
+    postToIframe({ type: "canvas-cancel-drag" });
+  }, [cancelPaletteDrag, postToIframe, previewDevice]);
+
   const prepareCanvasDrag = useCallback(() => {
     postToIframe({ type: "canvas-prepare-drag" });
     commitRichtextEdit();
@@ -100,6 +134,20 @@ export function PreviewCanvas() {
     syncDebouncedHash();
     controllerRef.current?.requestStructuralSync();
   };
+
+  useLayoutEffect(() => {
+    registerIframeBridge(postToIframe);
+    registerCanvasIframe(iframeRef.current);
+    registerPrepareDrag(prepareCanvasDrag);
+    registerDropCommitted(() => syncPreviewAfterDropRef.current());
+  }, [
+    postToIframe,
+    prepareCanvasDrag,
+    registerCanvasIframe,
+    registerDropCommitted,
+    registerIframeBridge,
+    registerPrepareDrag,
+  ]);
 
   const { handleDragMessage } = useCanvasDnd({
     canEdit,
@@ -170,6 +218,8 @@ export function PreviewCanvas() {
         patchPreviewHtmlRef.current(htmlToRender, nextHash);
       },
       onSelectBlockPosted: postSelectBlock,
+      onDropTargetChange: (target) =>
+        handleDropTargetChangeRef.current(target),
     });
   }
 
@@ -239,6 +289,19 @@ export function PreviewCanvas() {
         return;
       }
 
+      if (isCanvasPaletteDragCommitMessage(event.data)) {
+        handlePaletteDragCommitRef.current(event.data.target);
+        return;
+      }
+
+      if (isCanvasDragActiveMessage(event.data)) {
+        setIsCanvasDragging(true);
+      }
+
+      if (isCanvasDragCommitMessage(event.data)) {
+        setIsCanvasDragging(false);
+      }
+
       if (handleDragMessageRef.current(event.data)) {
         return;
       }
@@ -271,6 +334,7 @@ export function PreviewCanvas() {
   }, [selectedBlockId, selectedLabel, postSelectBlock]);
 
   const handleIframeLoad = useCallback(() => {
+    registerCanvasIframe(iframeRef.current);
     controller.markIframeReady();
     postSelectBlock(selectedBlockId, selectedLabel);
 
@@ -297,6 +361,7 @@ export function PreviewCanvas() {
     postSelectBlock,
     previewMatchesContent,
     previewPaused,
+    registerCanvasIframe,
     selectedBlockId,
     selectedLabel,
   ]);
@@ -326,7 +391,9 @@ export function PreviewCanvas() {
           ]}
         />
       </div>
-      <div className="flex min-h-0 flex-1 items-start justify-center overflow-y-auto p-8">
+      <div
+        ref={scrollContainerRef}
+        className="flex min-h-0 flex-1 items-start justify-center overflow-x-hidden overflow-y-auto p-8">
         <div
           className="relative bg-white shadow-card"
           style={{ width: canvasWidth }}>

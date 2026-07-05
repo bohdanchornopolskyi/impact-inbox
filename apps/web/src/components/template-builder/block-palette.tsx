@@ -9,6 +9,7 @@ import {
 } from "@repo/shared";
 import { useBuilder } from "./builder-provider";
 import { TemplateBlockIcon } from "./block-icons";
+import { usePaletteCanvasDnd } from "./canvas/palette-canvas-dnd-context";
 import { PaletteTile } from "./palette-tile";
 import { useLayoutAddTargets } from "./use-layout-add-targets";
 
@@ -18,6 +19,7 @@ export function BlockPalette() {
   const selectedBlockId = useBuilder((s) => s.selectedBlockId);
   const addBlock = useBuilder((s) => s.addBlock);
   const { handleAddLayoutBlock } = useLayoutAddTargets();
+  const { bindPaletteTile } = usePaletteCanvasDnd();
 
   function handleAddContentBlock(blockType: ContentBlockType) {
     if (!canEdit) {
@@ -47,6 +49,9 @@ export function BlockPalette() {
         <div className="grid grid-cols-3 gap-2">
           {LAYOUT_BLOCK_TYPES.map((type) => {
             const definition = TEMPLATE_BLOCK_DEFINITIONS[type];
+            const tileHandlers = bindPaletteTile(type, () =>
+              handleAddLayoutBlock(type),
+            );
 
             return (
               <PaletteTile
@@ -54,7 +59,8 @@ export function BlockPalette() {
                 label={definition.label}
                 disabled={!canEdit}
                 icon={<TemplateBlockIcon type={type} />}
-                onClick={() => handleAddLayoutBlock(type)}
+                onClick={tileHandlers.onClick}
+                onPointerDown={canEdit ? tileHandlers.onPointerDown : undefined}
               />
             );
           })}
@@ -66,6 +72,9 @@ export function BlockPalette() {
         <div className="grid grid-cols-2 gap-2">
           {CONTENT_BLOCK_TYPES.map((type) => {
             const definition = TEMPLATE_BLOCK_DEFINITIONS[type];
+            const tileHandlers = bindPaletteTile(type, () =>
+              handleAddContentBlock(type),
+            );
 
             return (
               <PaletteTile
@@ -73,7 +82,8 @@ export function BlockPalette() {
                 label={definition.label}
                 disabled={!canEdit}
                 icon={<TemplateBlockIcon type={type} />}
-                onClick={() => handleAddContentBlock(type)}
+                onClick={tileHandlers.onClick}
+                onPointerDown={canEdit ? tileHandlers.onPointerDown : undefined}
               />
             );
           })}

@@ -5,6 +5,7 @@ import { useWorkspace } from "@/contexts/workspace-context";
 import { useTemplate } from "@/lib/templates/template-hooks";
 import { BuilderInspectorPanel } from "./builder-inspector-panel";
 import { BuilderProvider } from "./builder-provider";
+import { PaletteCanvasDndProvider } from "./canvas/palette-canvas-dnd-context";
 import { RichtextCanvasEditProvider } from "./canvas/richtext-canvas-edit-context";
 import { BuilderToolbar } from "./builder-toolbar";
 import { PreviewCanvas } from "./canvas/preview-canvas";
@@ -38,20 +39,22 @@ export function TemplateBuilderView({ templateId }: TemplateBuilderViewProps) {
   return (
     <BuilderProvider template={templateQuery.data} canEdit={canEdit}>
       <RichtextCanvasEditProvider>
-        <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
-          <div className="shrink-0">
-            <BuilderToolbar />
-            <MergeTagWarnings />
+        <PaletteCanvasDndProvider>
+          <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+            <div className="shrink-0">
+              <BuilderToolbar />
+              <MergeTagWarnings />
+            </div>
+            <div className="grid min-h-0 flex-1 grid-cols-[266px_minmax(0,1fr)_302px] overflow-hidden [&>*]:min-h-0">
+              <LeftSidebar />
+              <PreviewCanvas />
+              <BuilderInspectorPanel />
+            </div>
           </div>
-        <div className="grid min-h-0 flex-1 grid-cols-[266px_minmax(0,1fr)_302px] overflow-hidden [&>*]:min-h-0">
-            <LeftSidebar />
-            <PreviewCanvas />
-            <BuilderInspectorPanel />
-          </div>
-        </div>
-        <PreviewOverlay />
-        <RevisionHistoryDrawer />
-        <ExportTemplateModal />
+          <PreviewOverlay />
+          <RevisionHistoryDrawer />
+          <ExportTemplateModal />
+        </PaletteCanvasDndProvider>
       </RichtextCanvasEditProvider>
     </BuilderProvider>
   );

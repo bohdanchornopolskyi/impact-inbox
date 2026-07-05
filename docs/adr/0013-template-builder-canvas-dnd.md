@@ -1,6 +1,6 @@
 # Template builder canvas DnD
 
-**Status:** Proposed (2026-07-04)
+**Status:** Accepted (2026-07-05)
 
 The template builder is the highest-leverage surface in the product. ADR 0008 made the canvas interactive for selection and inline text editing, but structural edits still depend on the Blocks and Structure sidebars. That creates poor spatial feedback: users can add Section, Row, and Column blocks without seeing clearly where they landed, and placing a content block into a specific column requires knowing to select that column in the Structure panel first.
 

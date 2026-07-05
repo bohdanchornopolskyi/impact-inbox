@@ -9,6 +9,7 @@ import type { TemplateSettings } from "../schemas/template/settings";
 import type { BlockStyles } from "../schemas/template/styles";
 import { templateSettingsSchema } from "../schemas/template/settings";
 import { createContentBlock, createColumnBlock, createRowBlock, createSectionBlock } from "./create-block";
+import { rowWithRedistributedColumnWidths } from "./column-widths";
 
 export type TemplateBlock =
   | SectionBlock
@@ -391,7 +392,7 @@ export function addColumn(
           index === undefined ? children.length : clampIndex(index, children.length);
         children.splice(targetIndex, 0, column);
 
-        return { ...row, children };
+        return rowWithRedistributedColumnWidths({ ...row, children });
       }),
     })),
   };
@@ -457,7 +458,7 @@ export function removeBlock(
             return row;
           }
 
-          return { ...row, children: columns };
+          return rowWithRedistributedColumnWidths({ ...row, children: columns });
         }),
       };
     });
@@ -599,12 +600,12 @@ function extractColumn(
             return row;
           }
 
-          return {
+          return rowWithRedistributedColumnWidths({
             ...row,
             children: row.children.filter(
               (_, childIndex) => childIndex !== columnIndex,
             ),
-          };
+          });
         }),
       };
     }),
@@ -653,7 +654,7 @@ function insertColumnAt(
 
       const children = [...row.children];
       children.splice(clampIndex(index, children.length), 0, column);
-      return { ...row, children };
+      return rowWithRedistributedColumnWidths({ ...row, children });
     }),
   }));
 }

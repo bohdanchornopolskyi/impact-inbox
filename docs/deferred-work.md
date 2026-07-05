@@ -25,7 +25,7 @@ Work in this order unless you have a reason to skip.
 | 12 | `OrganizationAccessService` consolidation | `not done` | ADR 0002 pattern | — (tech debt) |
 | 13 | `@repo/shared` package layout split | `not done` | Roadmap §7 | — (tech debt) |
 | 14 | `EmailService` vendor abstraction | `not done` | ADR 0005 | Multi-provider need |
-| 15 | Template builder canvas DnD | `not done` | [ADR 0013](./adr/0013-template-builder-canvas-dnd.md) | Builder UX quality |
+| 15 | Template builder canvas DnD | `done` | [ADR 0013](./adr/0013-template-builder-canvas-dnd.md) | — |
 
 ---
 
@@ -43,6 +43,7 @@ Do not re-implement unless fixing bugs.
 | Workspace home copy (no Phase 2 stub text) | `done` |
 | Interim invite-by-email for **existing users only** | `done` (replace when #1 ships) |
 | Canvas polish — toolbar rename, click-to-select, inline edit, preview sync | `done` — [ADR 0008](./adr/0008-canvas-interaction-deferred.md) |
+| Template builder canvas DnD — layout/content reorder, palette drag-to-canvas | `done` — [ADR 0013](./adr/0013-template-builder-canvas-dnd.md) |
 | Template list previews — cached HTML on Save, list thumbnails | `done` — CONTEXT **Template list preview** |
 
 Phase 2 M2 (templates, builder, revisions, export) is **done** per [ADR 0007](./adr/0007-phase-2-templates-scope.md). Intentionally out of scope there stays out of this backlog (image upload, export cap enforcement, etc.). Canvas interaction shipped post–M2 per ADR 0008.
@@ -55,9 +56,19 @@ Phase 2 M2 (templates, builder, revisions, export) is **done** per [ADR 0007](./
 
 **Shipped:** Builder toolbar rename (`RenameTemplateModal` + `expectedUpdatedAt`). Iframe bridge (`canvas-bridge.ts`) on builder canvas only — click-to-select, selection chrome, structure ↔ canvas sync. Plain-text inline edit for `heading` / `text` (double-click, commit on blur). `richtext` in-iframe `contenteditable` with sidebar formatting toolbar via `execCommand`; HTML sanitized on commit. Preview refetch pauses during inline edit; incremental DOM patch on prop-only updates to reduce iframe flicker. `button` canvas-selectable, inspector-only for props. View-only members: selection without edit. Full-screen Preview overlay stays read-only.
 
-**Out of scope for ADR 0008:** Layout block DnD moved to proposed [ADR 0013](./adr/0013-template-builder-canvas-dnd.md); `html` block editing remains inspector only.
+**Out of scope for ADR 0008:** Layout block DnD shipped in [ADR 0013](./adr/0013-template-builder-canvas-dnd.md); `html` block editing remains inspector only.
 
 **Code:** `apps/web/src/components/template-builder/canvas/`, `builder-toolbar.tsx`, `@repo/email-renderer` `data-editable` markers.
+
+---
+
+## Done — canvas DnD (ADR 0013)
+
+**Status:** `done` (2026-07)
+
+**Shipped:** Canvas is the primary manipulation surface for sections, rows, columns, and content blocks. Existing blocks reorder via iframe bridge DnD; palette tiles drag-to-canvas with click-to-add fallback. Minimal builder chrome (hover/selection outlines, empty-container hints, drop indicators). Structure panel stays secondary (Blocks tab default). Full-screen Preview overlay remains read-only with no DnD bridge.
+
+**Code:** `apps/web/src/components/template-builder/canvas/`, `block-palette.tsx`, `palette-canvas-dnd-context.tsx`, `@repo/shared` tree-ops + `canvas-contract.ts`, `@repo/email-renderer` layout markers.
 
 ---
 
@@ -208,4 +219,4 @@ Phase 2 M2 (templates, builder, revisions, export) is **done** per [ADR 0007](./
 | [ADR 0006](./adr/0006-organization-billing-model.md) | Trial, billing (trial wording may lag CONTEXT — CONTEXT wins) |
 | [ADR 0007](./adr/0007-phase-2-templates-scope.md) | Phase 2 intentional deferrals |
 | [ADR 0008](./adr/0008-canvas-interaction-deferred.md) | Canvas interaction — **implemented** |
-| [ADR 0013](./adr/0013-template-builder-canvas-dnd.md) | Template builder canvas DnD — proposed |
+| [ADR 0013](./adr/0013-template-builder-canvas-dnd.md) | Template builder canvas DnD — **implemented** |

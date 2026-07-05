@@ -1,4 +1,5 @@
 import {
+  CONTENT_BLOCK_TYPES,
   findBlock,
   isBodyDropTarget,
   isCanvasDropTarget,
@@ -8,6 +9,8 @@ import {
   isRowDropTarget,
   isSectionDropTarget,
   type CanvasDropTarget,
+  type ContentBlockType,
+  type TemplateBlockType,
   type TemplateContentData,
 } from "@repo/shared";
 
@@ -195,6 +198,98 @@ export function canDropAtTarget(
       return canDropRowAtTarget(content, blockId, target);
     case "column":
       return canDropColumnAtTarget(content, blockId, target);
+    default: {
+      const unreachable: never = dragKind;
+      return unreachable;
+    }
+  }
+}
+
+const contentBlockTypeSet = new Set<string>(CONTENT_BLOCK_TYPES);
+
+function isContentBlockType(type: TemplateBlockType): type is ContentBlockType {
+  return contentBlockTypeSet.has(type);
+}
+
+export function blockTypeToDragKind(blockType: TemplateBlockType): CanvasDragKind {
+  if (blockType === "section") {
+    return "section";
+  }
+  if (blockType === "row") {
+    return "row";
+  }
+  if (blockType === "column") {
+    return "column";
+  }
+  return "content";
+}
+
+export function canInsertAtTarget(
+  dragKind: CanvasDragKind,
+  target: CanvasDropTarget | null,
+): boolean {
+  if (!target) {
+    return false;
+  }
+
+  switch (dragKind) {
+    case "content":
+      return isColumnDropTarget(target);
+    case "section":
+      return isBodyDropTarget(target);
+    case "row":
+      return isSectionDropTarget(target);
+    case "column":
+      return isRowDropTarget(target);
+    default: {
+      const unreachable: never = dragKind;
+      return unreachable;
+    }
+  }
+}
+
+export function canInsertBlockTypeAtTarget(
+  blockType: TemplateBlockType,
+  target: CanvasDropTarget | null,
+): boolean {
+  return canInsertAtTarget(blockTypeToDragKind(blockType), target);
+}
+
+type PaletteInsertActions = {
+  addSection: (index?: number) => void;
+  addRow: (sectionId: string, index?: number) => void;
+  addColumn: (rowId: string, index?: number) => void;
+  addBlock: (columnId: string, blockType: ContentBlockType, index?: number) => void;
+};
+
+export function applyPaletteInsert(
+  blockType: TemplateBlockType,
+  target: CanvasDropTarget,
+  actions: PaletteInsertActions,
+): void {
+  const dragKind = blockTypeToDragKind(blockType);
+
+  switch (dragKind) {
+    case "section":
+      if (target.kind === "body") {
+        actions.addSection(target.index);
+      }
+      break;
+    case "row":
+      if (target.kind === "section") {
+        actions.addRow(target.sectionId, target.index);
+      }
+      break;
+    case "column":
+      if (target.kind === "row") {
+        actions.addColumn(target.rowId, target.index);
+      }
+      break;
+    case "content":
+      if (target.kind === "column" && isContentBlockType(blockType)) {
+        actions.addBlock(target.columnId, blockType, target.index);
+      }
+      break;
     default: {
       const unreachable: never = dragKind;
       return unreachable;
