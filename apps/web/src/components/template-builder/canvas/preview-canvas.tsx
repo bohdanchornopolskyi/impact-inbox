@@ -7,7 +7,6 @@ import {
   findBlock,
   getBlockLabel,
   getPreviewLayoutKey,
-  type CanvasDropTarget,
 } from "@repo/shared";
 import {
   previewWidth,
@@ -19,6 +18,7 @@ import {
   createCanvasPreviewController,
   resolveEffectiveHtml,
 } from "./canvas-preview-controller";
+import { useCanvasContentDnd } from "./use-canvas-content-dnd";
 import {
   useRichtextCanvasEdit,
   type RichtextCommand,
@@ -29,6 +29,7 @@ export function PreviewCanvas() {
   const canEdit = useBuilder((s) => s.canEdit);
   const selectedBlockId = useBuilder((s) => s.selectedBlockId);
   const selectBlock = useBuilder((s) => s.selectBlock);
+  const moveBlock = useBuilder((s) => s.moveBlock);
   const updateBlockProps = useBuilder((s) => s.updateBlockProps);
   const previewDevice = useBuilder((s) => s.previewDevice);
   const setPreviewDevice = useBuilder((s) => s.setPreviewDevice);
@@ -51,7 +52,6 @@ export function PreviewCanvas() {
   const srcDocRef = useRef("");
   const [iframeSrcDoc, setIframeSrcDoc] = useState("");
   const [plainTextEditPaused, setPlainTextEditPaused] = useState(false);
-  const canvasDropTargetRef = useRef<CanvasDropTarget | null>(null);
   const previewPaused = plainTextEditPaused || richtextSession !== null;
   const { html, debouncedHash, previewMatchesContent } = useRenderedPreview(
     content,
@@ -80,6 +80,21 @@ export function PreviewCanvas() {
   previewMatchesContentRef.current = previewMatchesContent;
   const canEditRef = useRef(canEdit);
   canEditRef.current = canEdit;
+
+  const prepareCanvasDrag = useCallback(() => {
+    commitRichtextEdit();
+  }, [commitRichtextEdit]);
+
+  const { handleDragMessage } = useCanvasContentDnd({
+    canEdit,
+    getContent: () => contentRef.current,
+    moveBlock,
+    selectBlock,
+    onPrepareDrag: prepareCanvasDrag,
+  });
+
+  const handleDragMessageRef = useRef(handleDragMessage);
+  handleDragMessageRef.current = handleDragMessage;
 
   const postSelectBlock = useCallback(
     (blockId: string | null, label: string | null) => {
@@ -144,9 +159,6 @@ export function PreviewCanvas() {
         patchPreviewHtmlRef.current(htmlToRender, nextHash);
       },
       onSelectBlockPosted: postSelectBlock,
-      onDropTargetChange: (target) => {
-        canvasDropTargetRef.current = target;
-      },
     });
   }
 
@@ -213,6 +225,10 @@ export function PreviewCanvas() {
   useEffect(() => {
     function onMessage(event: MessageEvent) {
       if (event.source !== iframeRef.current?.contentWindow) {
+        return;
+      }
+
+      if (handleDragMessageRef.current(event.data)) {
         return;
       }
 

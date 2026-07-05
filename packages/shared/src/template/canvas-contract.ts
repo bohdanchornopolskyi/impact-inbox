@@ -20,6 +20,8 @@ export type CanvasDropTarget =
   | { kind: "row"; rowId: string; index: number }
   | { kind: "column"; columnId: string; index: number };
 
+export const CANVAS_DRAG_ACTIVATION_PX = 5;
+
 export type CanvasEditableKind = "plain" | "richtext";
 
 export const CANVAS_PLAIN_TEXT_EDITABLE_TYPES = ["heading", "text"] as const satisfies readonly ContentBlockType[];
@@ -58,6 +60,12 @@ export function resolveInsertionIndex(
   }
 
   return siblingBounds.length;
+}
+
+export function isColumnDropTarget(
+  target: CanvasDropTarget | null,
+): target is Extract<CanvasDropTarget, { kind: "column" }> {
+  return target?.kind === "column";
 }
 
 export function canvasDropTargetsEqual(

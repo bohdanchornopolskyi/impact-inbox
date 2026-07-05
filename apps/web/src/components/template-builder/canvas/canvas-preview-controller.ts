@@ -105,7 +105,7 @@ export type CanvasPreviewControllerDeps = {
   onReload: (html: string, layoutKey: string) => void;
   onPatch: (html: string, debouncedHash: string) => void;
   onSelectBlockPosted: (blockId: string | null, label: string | null) => void;
-  onDropTargetChange: (target: CanvasDropTarget | null) => void;
+  onDropTargetChange?: (target: CanvasDropTarget | null) => void;
 };
 
 export type CanvasPreviewController = {
@@ -283,7 +283,7 @@ export function createCanvasPreviewController(
       }
 
       if (isCanvasDropTargetMessage(data)) {
-        deps.onDropTargetChange(data.target);
+        deps.onDropTargetChange?.(data.target);
         return;
       }
 

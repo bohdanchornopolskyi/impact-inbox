@@ -22,6 +22,13 @@ describe("buildCanvasBridgeDocument", () => {
     expect(result).toContain("#canvas-bridge-layer");
     expect(result).toContain("canvas-bridge-hover");
     expect(result).toContain("canvas-bridge-toolbar");
+    expect(result).toContain("canvas-bridge-drag-handle");
+    expect(result).toContain("canvas-bridge-drop-indicator");
+    expect(result).toContain("canvas-drag-handle-down");
+    expect(result).toContain("canvas-drag-active");
+    expect(result).toContain("canvas-drag-commit");
+    expect(result).toContain("dragActivationPx");
+    expect(result).toContain("setPointerCapture");
     expect(result).toContain('<script id="canvas-bridge-script">');
     expect(result.indexOf("<style id=\"canvas-bridge-styles\">")).toBeLessThan(
       result.indexOf("</body>"),
@@ -58,8 +65,9 @@ describe("buildCanvasBridgeDocument", () => {
     expect(result).toContain("plainTextEditableTypes");
     expect(result).toContain("richtextEditableTypes");
     expect(result).not.toContain('label === "Heading"');
+    expect(result).not.toContain("canvas-bridge-toolbar-below");
+    expect(result).not.toContain("toolbarLabel");
     expect(result).toContain("startRichtextEdit");
-    expect(result).toContain("resolveBlockLabel");
     expect(result).toContain("editKind");
   });
 

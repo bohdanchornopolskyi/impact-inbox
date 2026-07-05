@@ -1,12 +1,14 @@
 import { describe, expect, it } from "vitest";
 import {
   CANVAS_BLOCK_TYPE_ATTR,
+  CANVAS_DRAG_ACTIVATION_PX,
   CANVAS_LAYOUT_ROLE_ATTR,
   CANVAS_PLAIN_TEXT_EDITABLE_TYPES,
   CANVAS_RICHTEXT_EDITABLE_TYPES,
   canvasDropTargetsEqual,
   getCanvasEditableKind,
   isCanvasEditableBlockType,
+  isColumnDropTarget,
   resolveInsertionIndex,
 } from "./canvas-contract";
 
@@ -52,5 +54,17 @@ describe("canvas-contract", () => {
       ),
     ).toBe(false);
     expect(canvasDropTargetsEqual(null, null)).toBe(true);
+  });
+
+  it("exports drag activation threshold", () => {
+    expect(CANVAS_DRAG_ACTIVATION_PX).toBe(5);
+  });
+
+  it("detects column drop targets", () => {
+    expect(
+      isColumnDropTarget({ kind: "column", columnId: "col-1", index: 0 }),
+    ).toBe(true);
+    expect(isColumnDropTarget({ kind: "body", index: 0 })).toBe(false);
+    expect(isColumnDropTarget(null)).toBe(false);
   });
 });
