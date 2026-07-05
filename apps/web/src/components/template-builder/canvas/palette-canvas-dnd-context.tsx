@@ -16,25 +16,23 @@ import {
   type CanvasDropTarget,
   type ContentBlockType,
   type TemplateBlockType,
+  type TemplateContentData,
 } from "@repo/shared";
 import { TemplateBlockIcon } from "../block-icons";
 import { useBuilder } from "../builder-provider";
+import { isCanvasPaletteDragCommitMessage } from "./canvas-bridge";
 import {
-  applyPaletteInsert,
   blockTypeToDragKind,
-  canInsertBlockTypeAtTarget,
-  type CanvasDragKind,
+  isCanvasDragActiveMessage,
 } from "./canvas-dnd";
+import {
+  createCanvasDragSessionState,
+  handleCanvasDragMessage,
+  resetDragSession,
+  setDropTarget,
+  type PaletteDragSession,
+} from "./canvas-drag-session";
 import { toIframePointerCoords } from "./palette-drag-coords";
-
-type PaletteDragSession = {
-  blockType: TemplateBlockType;
-  dragKind: CanvasDragKind;
-  pointerId: number;
-  startX: number;
-  startY: number;
-  active: boolean;
-};
 
 type DocPointerListeners = {
   onPointerMove: (event: globalThis.PointerEvent) => void;
@@ -47,6 +45,14 @@ type PaletteDragGhostState = {
   y: number;
 };
 
+type DragBridge = {
+  postToIframe: (message: object) => void;
+  getCanvasIframe: () => HTMLIFrameElement | null;
+  getContent: () => TemplateContentData;
+  prepareDrag: () => void;
+  onDropCommitted: () => void;
+};
+
 type PaletteCanvasDndContextValue = {
   bindPaletteTile: (
     blockType: TemplateBlockType,
@@ -55,14 +61,12 @@ type PaletteCanvasDndContextValue = {
     onPointerDown: (event: ReactPointerEvent<HTMLButtonElement>) => void;
     onClick: (event: MouseEvent<HTMLButtonElement>) => void;
   };
-  registerIframeBridge: (post: (message: object) => void) => void;
-  registerCanvasIframe: (iframe: HTMLIFrameElement | null) => void;
-  registerPrepareDrag: (prepare: () => void) => void;
-  registerDropCommitted: (commit: () => void) => void;
+  registerDragBridge: (bridge: DragBridge | null) => void;
+  handleIframeMessage: (data: unknown) => boolean;
   handleDropTargetChange: (target: CanvasDropTarget | null) => void;
-  handlePaletteDragCommit: (target: CanvasDropTarget | null) => void;
-  cancelPaletteDrag: () => void;
+  cancelAllDrags: () => void;
   isPaletteDragging: boolean;
+  isCanvasDragging: boolean;
 };
 
 function PaletteDragGhost({ ghost }: { ghost: PaletteDragGhostState }) {
@@ -96,33 +100,22 @@ export function PaletteCanvasDndProvider({ children }: { children: ReactNode }) 
   const addSection = useBuilder((s) => s.addSection);
   const addRow = useBuilder((s) => s.addRow);
   const addColumn = useBuilder((s) => s.addColumn);
+  const moveBlock = useBuilder((s) => s.moveBlock);
+  const moveSection = useBuilder((s) => s.moveSection);
+  const moveRow = useBuilder((s) => s.moveRow);
+  const moveColumn = useBuilder((s) => s.moveColumn);
+  const selectBlock = useBuilder((s) => s.selectBlock);
 
   const [isPaletteDragging, setIsPaletteDragging] = useState(false);
+  const [isCanvasDragging, setIsCanvasDragging] = useState(false);
   const [dragGhost, setDragGhost] = useState<PaletteDragGhostState | null>(null);
-  const sessionRef = useRef<PaletteDragSession | null>(null);
-  const dropTargetRef = useRef<CanvasDropTarget | null>(null);
+  const sessionRef = useRef(createCanvasDragSessionState());
   const suppressClickRef = useRef(false);
-  const finishHandledRef = useRef(false);
   const docListenersRef = useRef<DocPointerListeners | null>(null);
-  const postToIframeRef = useRef<(message: object) => void>(() => {});
-  const canvasIframeRef = useRef<HTMLIFrameElement | null>(null);
-  const prepareDragRef = useRef<() => void>(() => {});
-  const dropCommittedRef = useRef<() => void>(() => {});
+  const bridgeRef = useRef<DragBridge | null>(null);
 
-  const registerIframeBridge = useCallback((post: (message: object) => void) => {
-    postToIframeRef.current = post;
-  }, []);
-
-  const registerCanvasIframe = useCallback((iframe: HTMLIFrameElement | null) => {
-    canvasIframeRef.current = iframe;
-  }, []);
-
-  const registerPrepareDrag = useCallback((prepare: () => void) => {
-    prepareDragRef.current = prepare;
-  }, []);
-
-  const registerDropCommitted = useCallback((commit: () => void) => {
-    dropCommittedRef.current = commit;
+  const registerDragBridge = useCallback((bridge: DragBridge | null) => {
+    bridgeRef.current = bridge;
   }, []);
 
   const detachDocPointerListeners = useCallback(() => {
@@ -137,21 +130,31 @@ export function PaletteCanvasDndProvider({ children }: { children: ReactNode }) 
     docListenersRef.current = null;
   }, []);
 
-  const endPaletteDrag = useCallback(() => {
+  const finishPaletteDragUi = useCallback(() => {
     detachDocPointerListeners();
 
-    const session = sessionRef.current;
+    const session = sessionRef.current.paletteSession;
     if (session && document.body.hasPointerCapture(session.pointerId)) {
       document.body.releasePointerCapture(session.pointerId);
     }
 
-    sessionRef.current = null;
-    dropTargetRef.current = null;
-    finishHandledRef.current = false;
     setDragGhost(null);
     setIsPaletteDragging(false);
-    postToIframeRef.current({ type: "canvas-palette-drag-end" });
   }, [detachDocPointerListeners]);
+
+  const endPaletteDrag = useCallback(() => {
+    finishPaletteDragUi();
+    resetDragSession(sessionRef.current);
+    bridgeRef.current?.postToIframe({ type: "canvas-palette-drag-end" });
+  }, [finishPaletteDragUi]);
+
+  const abortPaletteDragAwaitingCommit = useCallback(() => {
+    sessionRef.current.paletteFinishHandled = true;
+    finishPaletteDragUi();
+    sessionRef.current.paletteSession = null;
+    sessionRef.current.dropTarget = null;
+    bridgeRef.current?.postToIframe({ type: "canvas-palette-drag-end" });
+  }, [finishPaletteDragUi]);
 
   const updateDragGhost = useCallback(
     (blockType: TemplateBlockType, clientX: number, clientY: number) => {
@@ -161,8 +164,13 @@ export function PaletteCanvasDndProvider({ children }: { children: ReactNode }) 
   );
 
   const postPaletteDragPointer = useCallback((clientX: number, clientY: number) => {
-    const coords = toIframePointerCoords(canvasIframeRef.current, clientX, clientY);
-    postToIframeRef.current({
+    const bridge = bridgeRef.current;
+    if (!bridge) {
+      return;
+    }
+
+    const coords = toIframePointerCoords(bridge.getCanvasIframe(), clientX, clientY);
+    bridge.postToIframe({
       type: "canvas-palette-drag-move",
       clientX: coords.clientX,
       clientY: coords.clientY,
@@ -171,11 +179,16 @@ export function PaletteCanvasDndProvider({ children }: { children: ReactNode }) 
 
   const activatePaletteDrag = useCallback(
     (session: PaletteDragSession, clientX: number, clientY: number) => {
-      prepareDragRef.current();
+      const bridge = bridgeRef.current;
+      if (!bridge) {
+        return;
+      }
+
+      bridge.prepareDrag();
       document.body.setPointerCapture(session.pointerId);
 
-      const coords = toIframePointerCoords(canvasIframeRef.current, clientX, clientY);
-      postToIframeRef.current({
+      const coords = toIframePointerCoords(bridge.getCanvasIframe(), clientX, clientY);
+      bridge.postToIframe({
         type: "canvas-palette-drag-start",
         dragKind: session.dragKind,
         clientX: coords.clientX,
@@ -189,57 +202,82 @@ export function PaletteCanvasDndProvider({ children }: { children: ReactNode }) 
     [postPaletteDragPointer, updateDragGhost],
   );
 
-  const commitPaletteDrop = useCallback(
-    (targetOverride?: CanvasDropTarget | null) => {
-      if (finishHandledRef.current) {
-        return;
+  const cancelAllDrags = useCallback(() => {
+    if (sessionRef.current.paletteSession?.active) {
+      sessionRef.current.paletteFinishHandled = true;
+    }
+    endPaletteDrag();
+    setIsCanvasDragging(false);
+    resetDragSession(sessionRef.current);
+    bridgeRef.current?.postToIframe({ type: "canvas-cancel-drag" });
+  }, [endPaletteDrag]);
+
+  const handleDropTargetChange = useCallback((target: CanvasDropTarget | null) => {
+    setDropTarget(sessionRef.current, target);
+  }, []);
+
+  const handleIframeMessage = useCallback(
+    (data: unknown): boolean => {
+      const bridge = bridgeRef.current;
+      if (!bridge) {
+        return false;
       }
-      finishHandledRef.current = true;
 
-      const session = sessionRef.current;
-      const target =
-        targetOverride !== undefined ? targetOverride : dropTargetRef.current;
+      if (isCanvasDragActiveMessage(data) && canEdit) {
+        bridge.prepareDrag();
+      }
 
-      if (
-        session?.active &&
-        target &&
-        canInsertBlockTypeAtTarget(session.blockType, target)
-      ) {
-        applyPaletteInsert(session.blockType, target, {
+      if (isCanvasPaletteDragCommitMessage(data)) {
+        finishPaletteDragUi();
+      }
+
+      const result = handleCanvasDragMessage({
+        state: sessionRef.current,
+        data,
+        canEdit,
+        content: bridge.getContent(),
+        moveActions: {
+          moveBlock,
+          moveSection,
+          moveRow,
+          moveColumn,
+          selectBlock,
+        },
+        paletteActions: {
           addSection,
           addRow,
           addColumn,
           addBlock: (columnId, blockType, index) =>
             addBlock(columnId, blockType as ContentBlockType, index),
-        });
-        dropCommittedRef.current();
+        },
+      });
+
+      if (result.canvasDragStarted) {
+        setIsCanvasDragging(true);
+      }
+      if (result.canvasDragEnded) {
+        setIsCanvasDragging(false);
+      }
+      if (result.dropCommitted) {
+        bridge.onDropCommitted();
       }
 
-      endPaletteDrag();
+      return result.handled;
     },
-    [addBlock, addColumn, addRow, addSection, endPaletteDrag],
+    [
+      addBlock,
+      addColumn,
+      addRow,
+      addSection,
+      canEdit,
+      finishPaletteDragUi,
+      moveBlock,
+      moveColumn,
+      moveRow,
+      moveSection,
+      selectBlock,
+    ],
   );
-
-  const handleDropTargetChange = useCallback((target: CanvasDropTarget | null) => {
-    if (!sessionRef.current?.active) {
-      return;
-    }
-    dropTargetRef.current = target;
-  }, []);
-
-  const handlePaletteDragCommit = useCallback(
-    (target: CanvasDropTarget | null) => {
-      commitPaletteDrop(target);
-    },
-    [commitPaletteDrop],
-  );
-
-  const cancelPaletteDrag = useCallback(() => {
-    if (sessionRef.current?.active) {
-      finishHandledRef.current = true;
-    }
-    endPaletteDrag();
-  }, [endPaletteDrag]);
 
   const bindPaletteTile = useCallback(
     (blockType: TemplateBlockType, onClick: () => void) => {
@@ -251,8 +289,8 @@ export function PaletteCanvasDndProvider({ children }: { children: ReactNode }) 
         event.preventDefault();
 
         detachDocPointerListeners();
-        finishHandledRef.current = false;
-        dropTargetRef.current = null;
+        sessionRef.current.paletteFinishHandled = false;
+        sessionRef.current.dropTarget = null;
 
         const session: PaletteDragSession = {
           blockType,
@@ -262,10 +300,10 @@ export function PaletteCanvasDndProvider({ children }: { children: ReactNode }) 
           startY: event.clientY,
           active: false,
         };
-        sessionRef.current = session;
+        sessionRef.current.paletteSession = session;
 
         function onPointerMove(moveEvent: globalThis.PointerEvent) {
-          const current = sessionRef.current;
+          const current = sessionRef.current.paletteSession;
           if (!current || moveEvent.pointerId !== current.pointerId) {
             return;
           }
@@ -278,29 +316,21 @@ export function PaletteCanvasDndProvider({ children }: { children: ReactNode }) 
             }
 
             current.active = true;
-            activatePaletteDrag(
-              current,
-              moveEvent.clientX,
-              moveEvent.clientY,
-            );
+            activatePaletteDrag(current, moveEvent.clientX, moveEvent.clientY);
             return;
           }
 
-          updateDragGhost(
-            current.blockType,
-            moveEvent.clientX,
-            moveEvent.clientY,
-          );
+          updateDragGhost(current.blockType, moveEvent.clientX, moveEvent.clientY);
           postPaletteDragPointer(moveEvent.clientX, moveEvent.clientY);
         }
 
         function onPointerFinish(finishEvent: globalThis.PointerEvent) {
-          const current = sessionRef.current;
+          const current = sessionRef.current.paletteSession;
           if (!current || finishEvent.pointerId !== current.pointerId) {
             return;
           }
 
-          if (finishHandledRef.current) {
+          if (sessionRef.current.paletteFinishHandled) {
             detachDocPointerListeners();
             return;
           }
@@ -312,22 +342,33 @@ export function PaletteCanvasDndProvider({ children }: { children: ReactNode }) 
 
           detachDocPointerListeners();
           postPaletteDragPointer(finishEvent.clientX, finishEvent.clientY);
+          const bridge = bridgeRef.current;
+          if (!bridge) {
+            endPaletteDrag();
+            return;
+          }
+
           const coords = toIframePointerCoords(
-            canvasIframeRef.current,
+            bridge.getCanvasIframe(),
             finishEvent.clientX,
             finishEvent.clientY,
           );
-          postToIframeRef.current({
+          bridge.postToIframe({
             type: "canvas-palette-drag-finish",
             clientX: coords.clientX,
             clientY: coords.clientY,
           });
 
           window.setTimeout(() => {
-            if (!finishHandledRef.current) {
-              commitPaletteDrop(dropTargetRef.current);
+            if (
+              sessionRef.current.paletteFinishHandled ||
+              !sessionRef.current.paletteSession?.active
+            ) {
+              return;
             }
-          }, 50);
+
+            abortPaletteDragAwaitingCommit();
+          }, 200);
         }
 
         docListenersRef.current = {
@@ -355,24 +396,22 @@ export function PaletteCanvasDndProvider({ children }: { children: ReactNode }) 
     [
       activatePaletteDrag,
       canEdit,
-      commitPaletteDrop,
       detachDocPointerListeners,
       endPaletteDrag,
       postPaletteDragPointer,
+      abortPaletteDragAwaitingCommit,
       updateDragGhost,
     ],
   );
 
   const value: PaletteCanvasDndContextValue = {
     bindPaletteTile,
-    registerIframeBridge,
-    registerCanvasIframe,
-    registerPrepareDrag,
-    registerDropCommitted,
+    registerDragBridge,
+    handleIframeMessage,
     handleDropTargetChange,
-    handlePaletteDragCommit,
-    cancelPaletteDrag,
+    cancelAllDrags,
     isPaletteDragging,
+    isCanvasDragging,
   };
 
   return (

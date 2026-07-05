@@ -13,17 +13,12 @@ import {
   useRenderedPreview,
 } from "@/lib/templates/use-rendered-preview";
 import { useBuilder } from "../builder-provider";
-import {
-  buildCanvasBridgeDocument,
-  isCanvasPaletteDragCommitMessage,
-} from "./canvas-bridge";
+import { buildCanvasBridgeDocument } from "./canvas-bridge";
 import {
   createCanvasPreviewController,
   resolveEffectiveHtml,
 } from "./canvas-preview-controller";
 import { usePaletteCanvasDnd } from "./palette-canvas-dnd-context";
-import { isCanvasDragActiveMessage, isCanvasDragCommitMessage } from "./canvas-dnd";
-import { useCanvasDnd } from "./use-canvas-dnd";
 import { useCanvasViewportAutoScroll } from "./use-canvas-viewport-auto-scroll";
 import {
   useRichtextCanvasEdit,
@@ -35,10 +30,6 @@ export function PreviewCanvas() {
   const canEdit = useBuilder((s) => s.canEdit);
   const selectedBlockId = useBuilder((s) => s.selectedBlockId);
   const selectBlock = useBuilder((s) => s.selectBlock);
-  const moveBlock = useBuilder((s) => s.moveBlock);
-  const moveSection = useBuilder((s) => s.moveSection);
-  const moveRow = useBuilder((s) => s.moveRow);
-  const moveColumn = useBuilder((s) => s.moveColumn);
   const updateBlockProps = useBuilder((s) => s.updateBlockProps);
   const previewDevice = useBuilder((s) => s.previewDevice);
   const setPreviewDevice = useBuilder((s) => s.setPreviewDevice);
@@ -51,19 +42,13 @@ export function PreviewCanvas() {
     registerCommandSink,
   } = useRichtextCanvasEdit();
   const {
-    registerIframeBridge,
-    registerCanvasIframe,
-    registerPrepareDrag,
-    registerDropCommitted,
+    registerDragBridge,
+    handleIframeMessage,
     handleDropTargetChange,
-    handlePaletteDragCommit,
-    cancelPaletteDrag,
+    cancelAllDrags,
     isPaletteDragging,
+    isCanvasDragging,
   } = usePaletteCanvasDnd();
-  const handleDropTargetChangeRef = useRef(handleDropTargetChange);
-  handleDropTargetChangeRef.current = handleDropTargetChange;
-  const handlePaletteDragCommitRef = useRef(handlePaletteDragCommit);
-  handlePaletteDragCommitRef.current = handlePaletteDragCommit;
   const richtextSessionRef = useRef(richtextSession);
   richtextSessionRef.current = richtextSession;
   const selectedBlockIdRef = useRef(selectedBlockId);
@@ -75,7 +60,6 @@ export function PreviewCanvas() {
   const htmlRef = useRef("");
   const srcDocRef = useRef("");
   const [iframeSrcDoc, setIframeSrcDoc] = useState("");
-  const [isCanvasDragging, setIsCanvasDragging] = useState(false);
   const [plainTextEditPaused, setPlainTextEditPaused] = useState(false);
   const previewPaused = plainTextEditPaused || richtextSession !== null;
   const { html, debouncedHash, previewMatchesContent, syncDebouncedHash } =
@@ -118,10 +102,8 @@ export function PreviewCanvas() {
   });
 
   useEffect(() => {
-    cancelPaletteDrag();
-    setIsCanvasDragging(false);
-    postToIframe({ type: "canvas-cancel-drag" });
-  }, [cancelPaletteDrag, postToIframe, previewDevice]);
+    cancelAllDrags();
+  }, [cancelAllDrags, previewDevice]);
 
   const prepareCanvasDrag = useCallback(() => {
     postToIframe({ type: "canvas-prepare-drag" });
@@ -129,40 +111,22 @@ export function PreviewCanvas() {
     setPlainTextEditPaused(false);
   }, [commitRichtextEdit, postToIframe]);
 
-  const syncPreviewAfterDropRef = useRef<() => void>(() => {});
-  syncPreviewAfterDropRef.current = () => {
+  const syncPreviewAfterDrop = useCallback(() => {
     syncDebouncedHash();
     controllerRef.current?.requestStructuralSync();
-  };
+  }, [syncDebouncedHash]);
 
   useLayoutEffect(() => {
-    registerIframeBridge(postToIframe);
-    registerCanvasIframe(iframeRef.current);
-    registerPrepareDrag(prepareCanvasDrag);
-    registerDropCommitted(() => syncPreviewAfterDropRef.current());
-  }, [
-    postToIframe,
-    prepareCanvasDrag,
-    registerCanvasIframe,
-    registerDropCommitted,
-    registerIframeBridge,
-    registerPrepareDrag,
-  ]);
+    registerDragBridge({
+      postToIframe,
+      getCanvasIframe: () => iframeRef.current,
+      getContent: () => contentRef.current,
+      prepareDrag: prepareCanvasDrag,
+      onDropCommitted: syncPreviewAfterDrop,
+    });
 
-  const { handleDragMessage } = useCanvasDnd({
-    canEdit,
-    getContent: () => contentRef.current,
-    moveBlock,
-    moveSection,
-    moveRow,
-    moveColumn,
-    selectBlock,
-    onPrepareDrag: prepareCanvasDrag,
-    onDropCommitted: () => syncPreviewAfterDropRef.current(),
-  });
-
-  const handleDragMessageRef = useRef(handleDragMessage);
-  handleDragMessageRef.current = handleDragMessage;
+    return () => registerDragBridge(null);
+  }, [postToIframe, prepareCanvasDrag, registerDragBridge, syncPreviewAfterDrop]);
 
   const postSelectBlock = useCallback(
     (blockId: string | null, label: string | null) => {
@@ -218,8 +182,7 @@ export function PreviewCanvas() {
         patchPreviewHtmlRef.current(htmlToRender, nextHash);
       },
       onSelectBlockPosted: postSelectBlock,
-      onDropTargetChange: (target) =>
-        handleDropTargetChangeRef.current(target),
+      onDropTargetChange: handleDropTargetChange,
     });
   }
 
@@ -289,20 +252,7 @@ export function PreviewCanvas() {
         return;
       }
 
-      if (isCanvasPaletteDragCommitMessage(event.data)) {
-        handlePaletteDragCommitRef.current(event.data.target);
-        return;
-      }
-
-      if (isCanvasDragActiveMessage(event.data)) {
-        setIsCanvasDragging(true);
-      }
-
-      if (isCanvasDragCommitMessage(event.data)) {
-        setIsCanvasDragging(false);
-      }
-
-      if (handleDragMessageRef.current(event.data)) {
+      if (handleIframeMessage(event.data)) {
         return;
       }
 
@@ -311,7 +261,7 @@ export function PreviewCanvas() {
 
     window.addEventListener("message", onMessage);
     return () => window.removeEventListener("message", onMessage);
-  }, [controller]);
+  }, [controller, handleIframeMessage]);
 
   useEffect(() => {
     if (!richtextSession) {
@@ -334,10 +284,6 @@ export function PreviewCanvas() {
   }, [selectedBlockId, selectedLabel, postSelectBlock]);
 
   const handleIframeLoad = useCallback(() => {
-    registerCanvasIframe(iframeRef.current);
-    controller.markIframeReady();
-    postSelectBlock(selectedBlockId, selectedLabel);
-
     const action = controller.resolvePreviewUpdate({
       effectiveHtml: htmlRef.current,
       layoutKey,
@@ -348,6 +294,9 @@ export function PreviewCanvas() {
       hasSrcDoc: Boolean(srcDocRef.current),
       iframeReady: true,
     });
+
+    controller.markIframeReady();
+    postSelectBlock(selectedBlockId, selectedLabel);
 
     if (action === "patch") {
       patchPreviewHtml(htmlRef.current, debouncedHash);
@@ -361,7 +310,6 @@ export function PreviewCanvas() {
     postSelectBlock,
     previewMatchesContent,
     previewPaused,
-    registerCanvasIframe,
     selectedBlockId,
     selectedLabel,
   ]);

@@ -2316,7 +2316,6 @@ function buildBridgeScript(canEdit: boolean): string {
       return;
     }
     if (data.type === "canvas-palette-drag-end") {
-      detachPaletteDragPointerListeners();
       clearDragSession();
       return;
     }
