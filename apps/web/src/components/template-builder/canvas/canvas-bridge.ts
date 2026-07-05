@@ -258,6 +258,8 @@ export function isCanvasDropTargetMessage(
 
 const CANVAS_BRIDGE_STYLES = (canEdit: boolean) => `<style id="canvas-bridge-styles">
 [data-block-id] { cursor: pointer; }
+[data-block-id][data-layout-role] { cursor: grab; }
+[data-block-id].canvas-bridge-dragging { cursor: grabbing; }
 [data-block-id] a[data-canvas-link-disabled] { cursor: inherit; text-decoration: inherit; color: inherit; }
 ${canEdit ? "[data-editable] { cursor: text; }\n[data-editable][contenteditable=\"true\"] { outline: none; box-shadow: none; }\n" : ""}html, body {
   overflow: visible !important;
@@ -290,7 +292,7 @@ ${canEdit ? "[data-editable] { cursor: text; }\n[data-editable][contenteditable=
   align-items: center;
   gap: 2px;
   height: 32px;
-  padding: 0 4px;
+  padding: 0 4px 0 0;
   background: rgba(55, 65, 81, 0.95);
   color: #fff;
   font-family: system-ui, -apple-system, sans-serif;
@@ -298,6 +300,16 @@ ${canEdit ? "[data-editable] { cursor: text; }\n[data-editable][contenteditable=
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.18);
   white-space: nowrap;
   pointer-events: auto;
+}
+.canvas-bridge-label {
+  padding: 0 8px;
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 1;
+  user-select: none;
+}
+.canvas-bridge-toolbar-below {
+  border-radius: 16px;
 }
 .canvas-bridge-toolbar-btn {
   display: flex;
@@ -369,6 +381,7 @@ function buildBridgeScript(canEdit: boolean): string {
   var hoverFrame = null;
   var selectionFrame = null;
   var toolbar = null;
+  var toolbarLabel = null;
   var toolbarActions = null;
   var dropIndicator = null;
   var selectedBlockId = null;
@@ -385,6 +398,7 @@ function buildBridgeScript(canEdit: boolean): string {
   var dragBlockId = null;
   var dragKind = null;
   var dragPointer = null;
+  var suppressBlockClick = false;
   var dragHandleSvg =
     '<svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true" focusable="false"><circle cx="4" cy="3" r="1.2" fill="currentColor"/><circle cx="10" cy="3" r="1.2" fill="currentColor"/><circle cx="4" cy="7" r="1.2" fill="currentColor"/><circle cx="10" cy="7" r="1.2" fill="currentColor"/><circle cx="4" cy="11" r="1.2" fill="currentColor"/><circle cx="10" cy="11" r="1.2" fill="currentColor"/></svg>';
 
@@ -782,6 +796,8 @@ function buildBridgeScript(canEdit: boolean): string {
       return;
     }
 
+    abortDragPointerSession();
+
     var block = element.closest("[data-block-id]");
     if (!block) {
       return;
@@ -807,6 +823,7 @@ function buildBridgeScript(canEdit: boolean): string {
 
     var range = document.createRange();
     range.selectNodeContents(element);
+    range.collapse(false);
     var selection = window.getSelection();
     if (selection) {
       selection.removeAllRanges();
@@ -823,6 +840,8 @@ function buildBridgeScript(canEdit: boolean): string {
     if (!canEdit || editingElement) {
       return;
     }
+
+    abortDragPointerSession();
 
     var blockId = block.getAttribute("data-block-id");
     if (!blockId) {
@@ -1149,8 +1168,11 @@ function buildBridgeScript(canEdit: boolean): string {
     dropIndicator.className = "canvas-bridge-drop-indicator";
     toolbar = document.createElement("div");
     toolbar.className = "canvas-bridge-toolbar";
+    toolbarLabel = document.createElement("span");
+    toolbarLabel.className = "canvas-bridge-label";
     toolbarActions = document.createElement("span");
     toolbarActions.className = "canvas-bridge-actions";
+    toolbar.appendChild(toolbarLabel);
     toolbar.appendChild(toolbarActions);
     layer.appendChild(hoverFrame);
     layer.appendChild(selectionFrame);
@@ -1159,38 +1181,51 @@ function buildBridgeScript(canEdit: boolean): string {
     document.body.appendChild(layer);
   }
 
-  function onDragHandlePointerDown(event) {
-    if (!canEdit || !selectedBlockId || isDragSession || dragPointer) {
-      return;
-    }
-
-    var handle = event.currentTarget;
-    var pointerId = event.pointerId;
-    var startX = event.clientX;
-    var startY = event.clientY;
-    var blockId = selectedBlockId;
-
-    event.preventDefault();
-    event.stopPropagation();
-    handle.setPointerCapture(pointerId);
-
-    dragPointer = {
-      blockId: blockId,
-      pointerId: pointerId,
-      startX: startX,
-      startY: startY,
-      active: false,
-    };
-
+  function postDragCommit(blockId, target) {
     window.parent.postMessage(
       {
-        type: "canvas-drag-handle-down",
+        type: "canvas-drag-commit",
         blockId: blockId,
-        clientX: startX,
-        clientY: startY,
+        target: target,
       },
       "*",
     );
+  }
+
+  function detachDragPointerListeners(session) {
+    var captureEl = session.captureEl;
+    if (!captureEl || !session.onPointerMove) {
+      return;
+    }
+
+    if (captureEl.hasPointerCapture(session.pointerId)) {
+      captureEl.releasePointerCapture(session.pointerId);
+    }
+
+    captureEl.removeEventListener("pointermove", session.onPointerMove);
+    captureEl.removeEventListener("pointerup", session.onPointerFinish);
+    captureEl.removeEventListener("pointercancel", session.onPointerFinish);
+  }
+
+  function abortDragPointerSession() {
+    if (!dragPointer) {
+      return;
+    }
+
+    var session = dragPointer;
+    detachDragPointerListeners(session);
+
+    if (session.active) {
+      postDragCommit(session.blockId, null);
+      clearDragSession();
+    }
+
+    dragPointer = null;
+  }
+
+  function startDragPointerSession(captureEl, blockId, pointerId, startX, startY) {
+    abortDragPointerSession();
+    captureEl.setPointerCapture(pointerId);
 
     function onPointerMove(moveEvent) {
       if (!dragPointer || moveEvent.pointerId !== pointerId) {
@@ -1207,12 +1242,13 @@ function buildBridgeScript(canEdit: boolean): string {
         commitEdit();
         dragPointer.active = true;
         setDragSessionActive(blockId);
-        dragKind = "content";
+        var block = findBlockElement(blockId);
+        dragKind = block ? resolveDragKind(block) : "content";
         window.parent.postMessage(
           {
             type: "canvas-drag-active",
             blockId: blockId,
-            dragKind: "content",
+            dragKind: dragKind,
           },
           "*",
         );
@@ -1221,36 +1257,107 @@ function buildBridgeScript(canEdit: boolean): string {
       handlePointerAtDuringDrag(moveEvent.clientX, moveEvent.clientY);
     }
 
-    function finishDrag(endEvent) {
+    function onPointerFinish(endEvent) {
       if (!dragPointer || endEvent.pointerId !== pointerId) {
         return;
       }
 
-      if (handle.hasPointerCapture(pointerId)) {
-        handle.releasePointerCapture(pointerId);
+      if (dragPointer.active) {
+        suppressBlockClick = true;
       }
 
-      handle.removeEventListener("pointermove", onPointerMove);
-      handle.removeEventListener("pointerup", finishDrag);
-      handle.removeEventListener("pointercancel", finishDrag);
+      detachDragPointerListeners(dragPointer);
 
-      window.parent.postMessage(
-        {
-          type: "canvas-drag-commit",
-          blockId: dragPointer.blockId,
-          target: activeDropTarget,
-        },
-        "*",
-      );
+      postDragCommit(dragPointer.blockId, activeDropTarget);
 
       clearDragSession();
       dragPointer = null;
       updatePositions();
     }
 
-    handle.addEventListener("pointermove", onPointerMove);
-    handle.addEventListener("pointerup", finishDrag);
-    handle.addEventListener("pointercancel", finishDrag);
+    dragPointer = {
+      blockId: blockId,
+      pointerId: pointerId,
+      startX: startX,
+      startY: startY,
+      active: false,
+      captureEl: captureEl,
+      onPointerMove: onPointerMove,
+      onPointerFinish: onPointerFinish,
+    };
+
+    window.parent.postMessage(
+      {
+        type: "canvas-drag-handle-down",
+        blockId: blockId,
+        clientX: startX,
+        clientY: startY,
+      },
+      "*",
+    );
+
+    captureEl.addEventListener("pointermove", onPointerMove);
+    captureEl.addEventListener("pointerup", onPointerFinish);
+    captureEl.addEventListener("pointercancel", onPointerFinish);
+  }
+
+  function canStartCanvasDrag(event) {
+    return (
+      canEdit &&
+      selectedBlockId &&
+      !isDragSession &&
+      !dragPointer &&
+      !editingElement &&
+      event.button === 0
+    );
+  }
+
+  function onDragHandlePointerDown(event) {
+    if (!canEdit || !selectedBlockId || isDragSession || dragPointer) {
+      return;
+    }
+
+    if (editingElement) {
+      commitEdit();
+    }
+
+    event.preventDefault();
+    event.stopPropagation();
+    startDragPointerSession(
+      event.currentTarget,
+      selectedBlockId,
+      event.pointerId,
+      event.clientX,
+      event.clientY,
+    );
+  }
+
+  function onSelectedBlockPointerDown(event) {
+    if (!canStartCanvasDrag(event)) {
+      return;
+    }
+
+    var target = resolveElement(event.target);
+    if (!target || target.closest(".canvas-bridge-toolbar")) {
+      return;
+    }
+
+    var block = target.closest("[data-block-id]");
+    if (
+      !block ||
+      block.getAttribute("data-block-id") !== selectedBlockId ||
+      isCanvasEditableBlock(block)
+    ) {
+      return;
+    }
+
+    startDragPointerSession(
+      block,
+      selectedBlockId,
+      event.pointerId,
+      event.clientX,
+      event.clientY,
+    );
   }
 
   function rebuildToolbarActions(block) {
@@ -1268,17 +1375,115 @@ function buildBridgeScript(canEdit: boolean): string {
     dragButton.setAttribute("aria-label", "Move");
     dragButton.title = "Move";
     dragButton.innerHTML = dragHandleSvg;
-
-    var isContentBlock =
-      block.hasAttribute("data-block-id") &&
-      !block.hasAttribute("data-layout-role");
-    if (!isContentBlock) {
-      dragButton.disabled = true;
-    } else {
-      dragButton.addEventListener("pointerdown", onDragHandlePointerDown);
-    }
+    dragButton.addEventListener("pointerdown", onDragHandlePointerDown);
 
     toolbarActions.appendChild(dragButton);
+  }
+
+  function resolveDragKind(block) {
+    var role = block.getAttribute("data-layout-role");
+    if (role === "section" || role === "row" || role === "column") {
+      return role;
+    }
+    return "content";
+  }
+
+  function filterDraggedSibling(elements, excludeBlockId) {
+    if (!excludeBlockId) {
+      return elements;
+    }
+    return elements.filter(function (element) {
+      return element.getAttribute("data-block-id") !== excludeBlockId;
+    });
+  }
+
+  function resolveBodySectionTarget(clientY, excludeBlockId) {
+    var sections = filterDraggedSibling(getSectionsInBody(), excludeBlockId);
+    if (sections.length === 0) {
+      return { kind: "body", index: 0 };
+    }
+    var index = resolveInsertionIndex(clientY, getVerticalBounds(sections));
+    return { kind: "body", index: index };
+  }
+
+  function resolveSectionRowTarget(clientX, clientY, excludeBlockId) {
+    var body = document.querySelector("[data-canvas-body]");
+    if (!body) {
+      return null;
+    }
+
+    var hit = document.elementFromPoint(clientX, clientY);
+    if (!hit || !body.contains(hit)) {
+      return null;
+    }
+
+    var section = hit.closest('[data-layout-role="section"]');
+    if (!section || !body.contains(section)) {
+      return null;
+    }
+
+    var sectionId = section.getAttribute("data-block-id");
+    if (!sectionId) {
+      return null;
+    }
+
+    var rows = filterDraggedSibling(getRowsInSection(section), excludeBlockId);
+    var index = resolveInsertionIndex(clientY, getVerticalBounds(rows));
+    return { kind: "section", sectionId: sectionId, index: index };
+  }
+
+  function resolveRowColumnTarget(clientX, clientY, excludeBlockId) {
+    var body = document.querySelector("[data-canvas-body]");
+    if (!body) {
+      return null;
+    }
+
+    var hit = document.elementFromPoint(clientX, clientY);
+    if (!hit || !body.contains(hit)) {
+      return null;
+    }
+
+    var row = hit.closest('[data-layout-role="row"]');
+    if (!row || !body.contains(row)) {
+      return null;
+    }
+
+    var rowId = row.getAttribute("data-block-id");
+    if (!rowId) {
+      return null;
+    }
+
+    var columns = filterDraggedSibling(getColumnsInRow(row), excludeBlockId);
+    var index = resolveInsertionIndex(clientX, getHorizontalBounds(columns));
+    return { kind: "row", rowId: rowId, index: index };
+  }
+
+  function resolveColumnContentTargetForDrag(clientX, clientY) {
+    var body = document.querySelector("[data-canvas-body]");
+    if (!body) {
+      return null;
+    }
+
+    var hit = document.elementFromPoint(clientX, clientY);
+    if (!hit || !body.contains(hit)) {
+      return null;
+    }
+
+    var contentBlock = hit.closest("[data-block-id]:not([data-layout-role])");
+    if (contentBlock && body.contains(contentBlock)) {
+      var contentColumn = contentBlock.closest('[data-layout-role="column"]');
+      if (!contentColumn) {
+        return null;
+      }
+      return resolveColumnContentTarget(contentColumn, clientY);
+    }
+
+    var column = hit.closest('[data-layout-role="column"]');
+    if (column && body.contains(column)) {
+      return resolveColumnContentTarget(column, clientY);
+    }
+
+    return null;
   }
 
   function hideDropIndicator() {
@@ -1288,22 +1493,172 @@ function buildBridgeScript(canEdit: boolean): string {
     dropIndicator.style.display = "none";
   }
 
-  function positionDropIndicator(left, top, width) {
+  function positionDropIndicatorHorizontal(left, top, width) {
     if (!dropIndicator) {
       return;
     }
     dropIndicator.style.display = "block";
+    dropIndicator.style.width = width + "px";
+    dropIndicator.style.height = "2px";
     dropIndicator.style.top = top + "px";
     dropIndicator.style.left = left + "px";
-    dropIndicator.style.width = width + "px";
   }
 
-  function showDropIndicator(target) {
-    if (!target || target.kind !== "column") {
+  function positionDropIndicatorVerticalBar(left, top, height) {
+    if (!dropIndicator) {
+      return;
+    }
+    dropIndicator.style.display = "block";
+    dropIndicator.style.width = "2px";
+    dropIndicator.style.height = height + "px";
+    dropIndicator.style.top = top + "px";
+    dropIndicator.style.left = left + "px";
+  }
+
+  function positionDropIndicator(left, top, width) {
+    positionDropIndicatorHorizontal(left, top, width);
+  }
+
+  function showBodySectionDropIndicator(target, excludeBlockId) {
+    var sections = filterDraggedSibling(getSectionsInBody(), excludeBlockId);
+    if (sections.length === 0) {
+      var body = document.querySelector("[data-canvas-body]");
+      if (!body) {
+        hideDropIndicator();
+        return;
+      }
+      var bodyRect = body.getBoundingClientRect();
+      positionDropIndicator(
+        bodyRect.left + window.scrollX,
+        bodyRect.top + window.scrollY,
+        bodyRect.width,
+      );
+      return;
+    }
+
+    if (target.index >= sections.length) {
+      var lastSection = sections[sections.length - 1];
+      var lastRect = lastSection.getBoundingClientRect();
+      positionDropIndicator(
+        lastRect.left + window.scrollX,
+        lastRect.bottom + window.scrollY,
+        lastRect.width,
+      );
+      return;
+    }
+
+    var nextSection = sections[target.index];
+    var nextRect = nextSection.getBoundingClientRect();
+    positionDropIndicator(
+      nextRect.left + window.scrollX,
+      nextRect.top + window.scrollY - 1,
+      nextRect.width,
+    );
+  }
+
+  function showSectionRowDropIndicator(target, excludeBlockId) {
+    var section = findBlockElement(target.sectionId);
+    if (!section) {
       hideDropIndicator();
       return;
     }
 
+    var rows = filterDraggedSibling(getRowsInSection(section), excludeBlockId);
+    if (rows.length === 0) {
+      var sectionRect = section.getBoundingClientRect();
+      positionDropIndicator(
+        sectionRect.left + window.scrollX,
+        sectionRect.top + window.scrollY + Math.max(0, sectionRect.height / 2 - 1),
+        sectionRect.width,
+      );
+      return;
+    }
+
+    if (target.index >= rows.length) {
+      var lastRow = rows[rows.length - 1];
+      var lastRect = lastRow.getBoundingClientRect();
+      positionDropIndicator(
+        lastRect.left + window.scrollX,
+        lastRect.bottom + window.scrollY,
+        lastRect.width,
+      );
+      return;
+    }
+
+    var nextRow = rows[target.index];
+    var nextRect = nextRow.getBoundingClientRect();
+    positionDropIndicator(
+      nextRect.left + window.scrollX,
+      nextRect.top + window.scrollY - 1,
+      nextRect.width,
+    );
+  }
+
+  function showRowColumnDropIndicator(target, excludeBlockId) {
+    var row = findBlockElement(target.rowId);
+    if (!row) {
+      hideDropIndicator();
+      return;
+    }
+
+    var columns = filterDraggedSibling(getColumnsInRow(row), excludeBlockId);
+    if (columns.length === 0) {
+      var rowRect = row.getBoundingClientRect();
+      positionDropIndicatorVerticalBar(
+        rowRect.left + window.scrollX + Math.max(0, rowRect.width / 2 - 1),
+        rowRect.top + window.scrollY,
+        rowRect.height,
+      );
+      return;
+    }
+
+    if (target.index >= columns.length) {
+      var lastColumn = columns[columns.length - 1];
+      var lastRect = lastColumn.getBoundingClientRect();
+      positionDropIndicatorVerticalBar(
+        lastRect.right + window.scrollX,
+        lastRect.top + window.scrollY,
+        lastRect.height,
+      );
+      return;
+    }
+
+    var nextColumn = columns[target.index];
+    var nextRect = nextColumn.getBoundingClientRect();
+    positionDropIndicatorVerticalBar(
+      nextRect.left + window.scrollX - 1,
+      nextRect.top + window.scrollY,
+      nextRect.height,
+    );
+  }
+
+  function showDropIndicator(target) {
+    if (!target) {
+      hideDropIndicator();
+      return;
+    }
+
+    if (target.kind === "column") {
+      showColumnContentDropIndicator(target);
+      return;
+    }
+
+    if (target.kind === "body") {
+      showBodySectionDropIndicator(target, dragBlockId);
+      return;
+    }
+
+    if (target.kind === "section") {
+      showSectionRowDropIndicator(target, dragBlockId);
+      return;
+    }
+
+    if (target.kind === "row") {
+      showRowColumnDropIndicator(target, dragBlockId);
+    }
+  }
+
+  function showColumnContentDropIndicator(target) {
     var column = findBlockElement(target.columnId);
     if (!column) {
       hideDropIndicator();
@@ -1369,25 +1724,37 @@ function buildBridgeScript(canEdit: boolean): string {
   }
 
   function resolveDropTargetForDrag(clientX, clientY) {
-    var target = resolveDropTarget(clientX, clientY);
-    if (!target || target.kind !== "column") {
+    if (!dragKind || !dragBlockId) {
       return null;
     }
-    return target;
+
+    if (dragKind === "content") {
+      return resolveColumnContentTargetForDrag(clientX, clientY);
+    }
+
+    if (dragKind === "section") {
+      return resolveBodySectionTarget(clientY, dragBlockId);
+    }
+
+    if (dragKind === "row") {
+      return resolveSectionRowTarget(clientX, clientY, dragBlockId);
+    }
+
+    if (dragKind === "column") {
+      return resolveRowColumnTarget(clientX, clientY, dragBlockId);
+    }
+
+    return null;
   }
 
   function handlePointerAtDuringDrag(x, y) {
     var target = resolveDropTargetForDrag(x, y);
-    if (dragKind === "content") {
-      if (target) {
-        showDropIndicator(target);
-        postDropTarget(target);
-      } else {
-        hideDropIndicator();
-        postDropTarget(null);
-      }
+    if (target) {
+      showDropIndicator(target);
+      postDropTarget(target);
       return;
     }
+
     hideDropIndicator();
     postDropTarget(null);
   }
@@ -1409,21 +1776,57 @@ function buildBridgeScript(canEdit: boolean): string {
     frame.style.height = rect.height + "px";
   }
 
-  function positionToolbar(element) {
-    var rect = element.getBoundingClientRect();
+  function resolveBlockLabel(element) {
+    var block = element.closest("[data-block-id]");
+    return block ? block.getAttribute("data-block-label") || "" : "";
+  }
+
+  function resolveLabel(element, label) {
+    if (label) {
+      return label;
+    }
+    return element.getAttribute("data-block-label") || resolveBlockLabel(element);
+  }
+
+  function positionToolbar(element, label) {
+    if (!toolbar || !toolbarLabel) {
+      return;
+    }
+
+    if (dragPointer || isDragSession) {
+      return;
+    }
+
+    var resolvedLabel = resolveLabel(element, label);
+    toolbarLabel.textContent = resolvedLabel;
     rebuildToolbarActions(element);
+
+    if (!resolvedLabel && toolbarActions.childElementCount === 0) {
+      hideToolbar();
+      return;
+    }
+
+    var rect = element.getBoundingClientRect();
     toolbar.style.display = "flex";
     toolbar.style.visibility = "hidden";
     toolbar.style.top = "0px";
     toolbar.style.left = "0px";
     var toolbarWidth = toolbar.offsetWidth;
+    var toolbarHeight = toolbar.offsetHeight;
     toolbar.style.visibility = "visible";
 
-    var inset = 6;
-    var top = rect.top + window.scrollY + inset;
-    var left = rect.right + window.scrollX - toolbarWidth - inset;
-    left = Math.max(rect.left + window.scrollX + inset, left);
-    top = Math.max(rect.top + window.scrollY + inset, top);
+    var gap = 4;
+    var top = rect.top + window.scrollY - toolbarHeight - gap;
+    var left = rect.right + window.scrollX - toolbarWidth;
+
+    if (top < window.scrollY) {
+      toolbar.classList.add("canvas-bridge-toolbar-below");
+      top = rect.bottom + window.scrollY + gap;
+    } else {
+      toolbar.classList.remove("canvas-bridge-toolbar-below");
+    }
+
+    left = Math.max(rect.left + window.scrollX, left);
 
     toolbar.style.top = top + "px";
     toolbar.style.left = left + "px";
@@ -1457,7 +1860,10 @@ function buildBridgeScript(canEdit: boolean): string {
     }
 
     positionFrame(selectionFrame, resolveChromeElement(selected));
-    positionToolbar(resolveChromeElement(selected));
+    positionToolbar(
+      resolveChromeElement(selected),
+      toolbarLabel ? toolbarLabel.textContent || null : null,
+    );
   }
 
   function observeSelectedBlock(element) {
@@ -1494,6 +1900,14 @@ function buildBridgeScript(canEdit: boolean): string {
   }
 
   function applySelection(blockId, label) {
+    if (blockId !== selectedBlockId && editingElement) {
+      commitEdit();
+    }
+
+    if (dragPointer && blockId !== dragPointer.blockId) {
+      abortDragPointerSession();
+    }
+
     selectedBlockId = blockId;
     ensureLayer();
 
@@ -1522,7 +1936,7 @@ function buildBridgeScript(canEdit: boolean): string {
 
     var chrome = resolveChromeElement(target);
     positionFrame(selectionFrame, chrome);
-    positionToolbar(chrome);
+    positionToolbar(chrome, label || null);
     observeSelectedBlock(chrome);
     reportRichtextFormatStateForBlock(blockId);
   }
@@ -1646,9 +2060,31 @@ function buildBridgeScript(canEdit: boolean): string {
 
   disableBlockLinks();
 
+  document.addEventListener("pointerdown", onSelectedBlockPointerDown, true);
+
+  window.addEventListener(
+    "pointerup",
+    function (event) {
+      if (!dragPointer || event.pointerId !== dragPointer.pointerId) {
+        return;
+      }
+      if (!dragPointer.captureEl.isConnected) {
+        abortDragPointerSession();
+      }
+    },
+    true,
+  );
+
   document.addEventListener(
     "click",
     function (event) {
+      if (suppressBlockClick) {
+        suppressBlockClick = false;
+        event.preventDefault();
+        event.stopPropagation();
+        return;
+      }
+
       if (blockLinkFromTarget(event.target)) {
         event.preventDefault();
       }
@@ -1672,20 +2108,6 @@ function buildBridgeScript(canEdit: boolean): string {
       var blockId = block.getAttribute("data-block-id");
       if (!blockId) {
         return;
-      }
-
-      var editable = canEdit ? findEditableTarget(event.target) : null;
-      if (editable) {
-        var editableBlock = findEditableBlock(event.target);
-        if (!editableBlock || !isRichtextEditableBlock(editableBlock)) {
-          event.preventDefault();
-          event.stopPropagation();
-          var target = editable;
-          setTimeout(function () {
-            startEdit(target);
-          }, 0);
-          return;
-        }
       }
 
       event.preventDefault();

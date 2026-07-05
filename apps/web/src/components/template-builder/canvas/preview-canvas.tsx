@@ -18,7 +18,7 @@ import {
   createCanvasPreviewController,
   resolveEffectiveHtml,
 } from "./canvas-preview-controller";
-import { useCanvasContentDnd } from "./use-canvas-content-dnd";
+import { useCanvasDnd } from "./use-canvas-dnd";
 import {
   useRichtextCanvasEdit,
   type RichtextCommand,
@@ -30,6 +30,9 @@ export function PreviewCanvas() {
   const selectedBlockId = useBuilder((s) => s.selectedBlockId);
   const selectBlock = useBuilder((s) => s.selectBlock);
   const moveBlock = useBuilder((s) => s.moveBlock);
+  const moveSection = useBuilder((s) => s.moveSection);
+  const moveRow = useBuilder((s) => s.moveRow);
+  const moveColumn = useBuilder((s) => s.moveColumn);
   const updateBlockProps = useBuilder((s) => s.updateBlockProps);
   const previewDevice = useBuilder((s) => s.previewDevice);
   const setPreviewDevice = useBuilder((s) => s.setPreviewDevice);
@@ -53,11 +56,8 @@ export function PreviewCanvas() {
   const [iframeSrcDoc, setIframeSrcDoc] = useState("");
   const [plainTextEditPaused, setPlainTextEditPaused] = useState(false);
   const previewPaused = plainTextEditPaused || richtextSession !== null;
-  const { html, debouncedHash, previewMatchesContent } = useRenderedPreview(
-    content,
-    true,
-    previewPaused,
-  );
+  const { html, debouncedHash, previewMatchesContent, syncDebouncedHash } =
+    useRenderedPreview(content, true, previewPaused);
 
   htmlRef.current = html;
 
@@ -81,16 +81,36 @@ export function PreviewCanvas() {
   const canEditRef = useRef(canEdit);
   canEditRef.current = canEdit;
 
-  const prepareCanvasDrag = useCallback(() => {
-    commitRichtextEdit();
-  }, [commitRichtextEdit]);
+  const controllerRef = useRef<ReturnType<
+    typeof createCanvasPreviewController
+  > | null>(null);
 
-  const { handleDragMessage } = useCanvasContentDnd({
+  const postToIframe = useCallback((message: object) => {
+    iframeRef.current?.contentWindow?.postMessage(message, "*");
+  }, []);
+
+  const prepareCanvasDrag = useCallback(() => {
+    postToIframe({ type: "canvas-prepare-drag" });
+    commitRichtextEdit();
+    setPlainTextEditPaused(false);
+  }, [commitRichtextEdit, postToIframe]);
+
+  const syncPreviewAfterDropRef = useRef<() => void>(() => {});
+  syncPreviewAfterDropRef.current = () => {
+    syncDebouncedHash();
+    controllerRef.current?.requestStructuralSync();
+  };
+
+  const { handleDragMessage } = useCanvasDnd({
     canEdit,
     getContent: () => contentRef.current,
     moveBlock,
+    moveSection,
+    moveRow,
+    moveColumn,
     selectBlock,
     onPrepareDrag: prepareCanvasDrag,
+    onDropCommitted: () => syncPreviewAfterDropRef.current(),
   });
 
   const handleDragMessageRef = useRef(handleDragMessage);
@@ -98,17 +118,11 @@ export function PreviewCanvas() {
 
   const postSelectBlock = useCallback(
     (blockId: string | null, label: string | null) => {
-      iframeRef.current?.contentWindow?.postMessage(
-        { type: "select-block", blockId, label },
-        "*",
-      );
+      postToIframe({ type: "select-block", blockId, label });
     },
-    [],
+    [postToIframe],
   );
 
-  const controllerRef = useRef<ReturnType<
-    typeof createCanvasPreviewController
-  > | null>(null);
   const reloadIframeSrcDocRef = useRef(
     (_htmlToRender: string, _nextLayoutKey: string, _nextHash: string) => {},
   );
@@ -117,10 +131,7 @@ export function PreviewCanvas() {
   );
 
   patchPreviewHtmlRef.current = (htmlToRender, nextHash) => {
-    iframeRef.current?.contentWindow?.postMessage(
-      { type: "update-preview", html: htmlToRender },
-      "*",
-    );
+    postToIframe({ type: "update-preview", html: htmlToRender });
     controllerRef.current!.appliedHtmlHashRef.current = nextHash;
   };
 

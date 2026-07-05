@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import type { TemplateContentData, TemplateSettings } from "@repo/shared";
 import type { PreviewDevice } from "@/lib/templates/preview-device";
@@ -68,10 +68,15 @@ export function useRenderedPreview(
 
   const html = query.data?.html ?? "";
 
+  const syncDebouncedHash = useCallback(() => {
+    setDebouncedHash(contentHash);
+  }, [contentHash]);
+
   return {
     html,
     isFetching: query.isFetching,
     debouncedHash,
+    syncDebouncedHash,
     previewMatchesContent: isPreviewHtmlReady({
       contentHash,
       debouncedHash,

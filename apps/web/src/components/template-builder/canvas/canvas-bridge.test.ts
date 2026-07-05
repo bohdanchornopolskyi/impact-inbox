@@ -64,9 +64,10 @@ describe("buildCanvasBridgeDocument", () => {
     expect(result).toContain("data-block-type");
     expect(result).toContain("plainTextEditableTypes");
     expect(result).toContain("richtextEditableTypes");
-    expect(result).not.toContain('label === "Heading"');
-    expect(result).not.toContain("canvas-bridge-toolbar-below");
-    expect(result).not.toContain("toolbarLabel");
+    expect(result).toContain("canvas-bridge-label");
+    expect(result).toContain("toolbarLabel");
+    expect(result).toContain("resolveLabel");
+    expect(result).toContain("canvas-bridge-toolbar-below");
     expect(result).toContain("startRichtextEdit");
     expect(result).toContain("editKind");
   });
@@ -100,7 +101,14 @@ describe("buildCanvasBridgeDocument", () => {
     expect(result).toContain("data-layout-role");
     expect(result).toContain("resolveDropTarget");
     expect(result).toContain("canvas-drop-target");
-    expect(result).toContain("data-canvas-empty-placeholder");
+    expect(result).toContain("postDragCommit");
+    expect(result).toContain("detachDragPointerListeners");
+    expect(result).toContain("canStartCanvasDrag");
+    expect(result).toContain("onSelectedBlockPointerDown");
+    expect(result).toContain("resolveBodySectionTarget");
+    expect(result).toContain("resolveSectionRowTarget");
+    expect(result).toContain("resolveRowColumnTarget");
+    expect(result).toContain("showRowColumnDropIndicator");
   });
 
   it("appends injection when body tag is missing", () => {

@@ -1,7 +1,13 @@
 import { describe, expect, it } from "vitest";
 import type { TemplateContentData } from "@repo/shared";
 import {
+  canDropAtTarget,
+  canDropColumnAtTarget,
   canDropContentBlockAtTarget,
+  canDropRowAtTarget,
+  canDropSectionAtTarget,
+  inferCanvasDragKind,
+  isCanvasDragActiveMessage,
   isCanvasDragCommitMessage,
   isCanvasDragHandleDownMessage,
 } from "./canvas-dnd";
@@ -40,6 +46,39 @@ const content: TemplateContentData = {
             },
           ],
         },
+        {
+          id: "row-2",
+          type: "row",
+          props: {},
+          children: [
+            {
+              id: "col-3",
+              type: "column",
+              props: {},
+              children: [],
+            },
+          ],
+        },
+      ],
+    },
+    {
+      id: "section-2",
+      type: "section",
+      props: {},
+      children: [
+        {
+          id: "row-3",
+          type: "row",
+          props: {},
+          children: [
+            {
+              id: "col-4",
+              type: "column",
+              props: {},
+              children: [],
+            },
+          ],
+        },
       ],
     },
   ],
@@ -58,13 +97,48 @@ describe("isCanvasDragHandleDownMessage", () => {
   });
 });
 
+describe("isCanvasDragActiveMessage", () => {
+  it("accepts all drag kinds", () => {
+    for (const dragKind of ["content", "section", "row", "column"] as const) {
+      expect(
+        isCanvasDragActiveMessage({
+          type: "canvas-drag-active",
+          blockId: "block-1",
+          dragKind,
+        }),
+      ).toBe(true);
+    }
+  });
+});
+
 describe("isCanvasDragCommitMessage", () => {
-  it("accepts commit messages with column targets", () => {
+  it("accepts commit messages with any valid drop target", () => {
     expect(
       isCanvasDragCommitMessage({
         type: "canvas-drag-commit",
         blockId: "heading-1",
         target: { kind: "column", columnId: "col-2", index: 0 },
+      }),
+    ).toBe(true);
+    expect(
+      isCanvasDragCommitMessage({
+        type: "canvas-drag-commit",
+        blockId: "section-1",
+        target: { kind: "body", index: 1 },
+      }),
+    ).toBe(true);
+    expect(
+      isCanvasDragCommitMessage({
+        type: "canvas-drag-commit",
+        blockId: "row-1",
+        target: { kind: "section", sectionId: "section-2", index: 0 },
+      }),
+    ).toBe(true);
+    expect(
+      isCanvasDragCommitMessage({
+        type: "canvas-drag-commit",
+        blockId: "col-1",
+        target: { kind: "row", rowId: "row-2", index: 0 },
       }),
     ).toBe(true);
     expect(
@@ -97,6 +171,117 @@ describe("canDropContentBlockAtTarget", () => {
     ).toBe(false);
     expect(
       canDropContentBlockAtTarget(content, "section-1", {
+        kind: "column",
+        columnId: "col-1",
+        index: 0,
+      }),
+    ).toBe(false);
+  });
+});
+
+describe("canDropSectionAtTarget", () => {
+  it("accepts body targets for sections", () => {
+    expect(
+      canDropSectionAtTarget(content, "section-1", { kind: "body", index: 0 }),
+    ).toBe(true);
+  });
+
+  it("rejects non-body targets", () => {
+    expect(
+      canDropSectionAtTarget(content, "section-1", {
+        kind: "section",
+        sectionId: "section-2",
+        index: 0,
+      }),
+    ).toBe(false);
+  });
+});
+
+describe("canDropRowAtTarget", () => {
+  it("accepts section targets for rows", () => {
+    expect(
+      canDropRowAtTarget(content, "row-1", {
+        kind: "section",
+        sectionId: "section-2",
+        index: 0,
+      }),
+    ).toBe(true);
+  });
+
+  it("rejects non-section targets", () => {
+    expect(
+      canDropRowAtTarget(content, "row-1", {
+        kind: "row",
+        rowId: "row-2",
+        index: 0,
+      }),
+    ).toBe(false);
+  });
+});
+
+describe("canDropColumnAtTarget", () => {
+  it("accepts row targets for columns", () => {
+    expect(
+      canDropColumnAtTarget(content, "col-1", {
+        kind: "row",
+        rowId: "row-2",
+        index: 0,
+      }),
+    ).toBe(true);
+  });
+
+  it("rejects non-row targets", () => {
+    expect(
+      canDropColumnAtTarget(content, "col-1", {
+        kind: "column",
+        columnId: "col-2",
+        index: 0,
+      }),
+    ).toBe(false);
+  });
+});
+
+describe("inferCanvasDragKind", () => {
+  it("maps block types to drag kinds", () => {
+    expect(inferCanvasDragKind(content, "heading-1")).toBe("content");
+    expect(inferCanvasDragKind(content, "section-1")).toBe("section");
+    expect(inferCanvasDragKind(content, "row-1")).toBe("row");
+    expect(inferCanvasDragKind(content, "col-1")).toBe("column");
+    expect(inferCanvasDragKind(content, "missing")).toBeNull();
+  });
+});
+
+describe("canDropAtTarget", () => {
+  it("dispatches validation by drag kind", () => {
+    expect(
+      canDropAtTarget(content, "heading-1", "content", {
+        kind: "column",
+        columnId: "col-2",
+        index: 0,
+      }),
+    ).toBe(true);
+    expect(
+      canDropAtTarget(content, "section-1", "section", { kind: "body", index: 1 }),
+    ).toBe(true);
+    expect(
+      canDropAtTarget(content, "row-1", "row", {
+        kind: "section",
+        sectionId: "section-2",
+        index: 0,
+      }),
+    ).toBe(true);
+    expect(
+      canDropAtTarget(content, "col-1", "column", {
+        kind: "row",
+        rowId: "row-2",
+        index: 0,
+      }),
+    ).toBe(true);
+  });
+
+  it("rejects mismatched drag kind and target", () => {
+    expect(
+      canDropAtTarget(content, "section-1", "section", {
         kind: "column",
         columnId: "col-1",
         index: 0,

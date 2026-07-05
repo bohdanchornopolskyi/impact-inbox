@@ -126,6 +126,7 @@ export type CanvasPreviewController = {
     iframeWindow: MessageEventSource | null,
   ) => void;
   clearRichtextPause: () => void;
+  requestStructuralSync: () => void;
 };
 
 export function createCanvasPreviewController(
@@ -250,6 +251,9 @@ export function createCanvasPreviewController(
     },
     clearRichtextPause: () => {
       pausedHtmlRef.current = null;
+    },
+    requestStructuralSync: () => {
+      appliedHtmlHashRef.current = "";
     },
     handleMessage(data, iframeWindow) {
       if (isBlockSelectMessage(data)) {

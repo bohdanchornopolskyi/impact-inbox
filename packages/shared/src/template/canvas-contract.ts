@@ -68,6 +68,48 @@ export function isColumnDropTarget(
   return target?.kind === "column";
 }
 
+export function isBodyDropTarget(
+  target: CanvasDropTarget | null,
+): target is Extract<CanvasDropTarget, { kind: "body" }> {
+  return target?.kind === "body";
+}
+
+export function isSectionDropTarget(
+  target: CanvasDropTarget | null,
+): target is Extract<CanvasDropTarget, { kind: "section" }> {
+  return target?.kind === "section";
+}
+
+export function isRowDropTarget(
+  target: CanvasDropTarget | null,
+): target is Extract<CanvasDropTarget, { kind: "row" }> {
+  return target?.kind === "row";
+}
+
+export function isCanvasDropTarget(value: unknown): value is CanvasDropTarget {
+  if (!value || typeof value !== "object") {
+    return false;
+  }
+
+  const target = value as Record<string, unknown>;
+  if (typeof target.index !== "number") {
+    return false;
+  }
+
+  switch (target.kind) {
+    case "body":
+      return true;
+    case "section":
+      return typeof target.sectionId === "string";
+    case "row":
+      return typeof target.rowId === "string";
+    case "column":
+      return typeof target.columnId === "string";
+    default:
+      return false;
+  }
+}
+
 export function canvasDropTargetsEqual(
   left: CanvasDropTarget | null,
   right: CanvasDropTarget | null,
