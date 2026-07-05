@@ -30,10 +30,34 @@ export type FoundBlock = {
   parentColumnId?: string;
 };
 
+export type TreeMutationReason =
+  | "noop"
+  | "block_not_found"
+  | "parent_not_found"
+  | "invalid_block_type"
+  | "invalid_target"
+  | "descendant_move";
+
 export type TreeMutationResult = {
   content: TemplateContentData;
-  blockId: string;
+  changed: boolean;
+  reason?: TreeMutationReason;
+  blockId?: string;
 };
+
+function unchanged(
+  content: TemplateContentData,
+  reason: TreeMutationReason,
+): TreeMutationResult {
+  return { content, changed: false, reason };
+}
+
+function changed(
+  content: TemplateContentData,
+  blockId?: string,
+): TreeMutationResult {
+  return { content, changed: true, blockId };
+}
 
 export function isContentBlock(block: TemplateBlock): block is ContentBlock {
   return !["section", "row", "column"].includes(block.type);
@@ -318,11 +342,15 @@ export function addContentBlock(
   blockType: ContentBlock["type"],
   index?: number,
 ): TreeMutationResult {
+  const targetColumn = findBlock(content, columnId);
+  if (!targetColumn || targetColumn.block.type !== "column") {
+    return unchanged(content, "parent_not_found");
+  }
+
   const block = createContentBlock(blockType);
 
-  return {
-    blockId: block.id,
-    content: mapSections(content, (section) => ({
+  return changed(
+    mapSections(content, (section) => ({
       ...section,
       children: section.children.map((row) => ({
         ...row,
@@ -331,7 +359,8 @@ export function addContentBlock(
         ),
       })),
     })),
-  };
+    block.id,
+  );
 }
 
 export function addSection(
@@ -344,7 +373,7 @@ export function addSection(
     index === undefined ? body.length : clampIndex(index, body.length);
   body.splice(targetIndex, 0, section);
 
-  return { blockId: section.id, content: { ...content, body } };
+  return changed({ ...content, body }, section.id);
 }
 
 export function addRow(
@@ -352,11 +381,15 @@ export function addRow(
   sectionId: string,
   index?: number,
 ): TreeMutationResult {
+  const targetSection = findBlock(content, sectionId);
+  if (!targetSection || targetSection.block.type !== "section") {
+    return unchanged(content, "parent_not_found");
+  }
+
   const row = createRowBlock();
 
-  return {
-    blockId: row.id,
-    content: mapSections(content, (section) => {
+  return changed(
+    mapSections(content, (section) => {
       if (section.id !== sectionId) {
         return section;
       }
@@ -368,7 +401,8 @@ export function addRow(
 
       return { ...section, children };
     }),
-  };
+    row.id,
+  );
 }
 
 export function addColumn(
@@ -376,11 +410,15 @@ export function addColumn(
   rowId: string,
   index?: number,
 ): TreeMutationResult {
+  const targetRow = findBlock(content, rowId);
+  if (!targetRow || targetRow.block.type !== "row") {
+    return unchanged(content, "parent_not_found");
+  }
+
   const column = createColumnBlock();
 
-  return {
-    blockId: column.id,
-    content: mapSections(content, (section) => ({
+  return changed(
+    mapSections(content, (section) => ({
       ...section,
       children: section.children.map((row) => {
         if (row.id !== rowId) {
@@ -395,7 +433,8 @@ export function addColumn(
         return rowWithRedistributedColumnWidths({ ...row, children });
       }),
     })),
-  };
+    column.id,
+  );
 }
 
 export function removeBlock(
@@ -663,26 +702,28 @@ export function moveSection(
   content: TemplateContentData,
   sectionId: string,
   targetIndex: number,
-): TemplateContentData {
+): TreeMutationResult {
   const found = findBlock(content, sectionId);
   if (!found || found.block.type !== "section") {
-    return content;
+    return unchanged(content, "block_not_found");
   }
 
   const sourceIndex = found.path.sectionIndex;
   if (sourceIndex === targetIndex || sourceIndex + 1 === targetIndex) {
-    return content;
+    return unchanged(content, "noop");
   }
 
   const extracted = extractSection(content, sectionId);
   if (!extracted) {
-    return content;
+    return unchanged(content, "block_not_found");
   }
 
   const adjustedIndex =
     sourceIndex < targetIndex ? targetIndex - 1 : targetIndex;
 
-  return insertSectionAt(extracted.content, extracted.block, adjustedIndex);
+  return changed(
+    insertSectionAt(extracted.content, extracted.block, adjustedIndex),
+  );
 }
 
 export function moveRow(
@@ -690,54 +731,58 @@ export function moveRow(
   rowId: string,
   targetSectionId: string,
   targetIndex: number,
-): TemplateContentData {
+): TreeMutationResult {
   const found = findBlock(content, rowId);
   if (!found || found.block.type !== "row" || found.path.rowIndex === undefined) {
-    return content;
+    return unchanged(content, "block_not_found");
   }
 
   const targetSection = findBlock(content, targetSectionId);
   if (!targetSection || targetSection.block.type !== "section") {
-    return content;
+    return unchanged(content, "parent_not_found");
   }
 
   if (isDescendantOf(content, rowId, targetSectionId)) {
-    return content;
+    return unchanged(content, "descendant_move");
   }
 
   const sourceSectionId = content.body[found.path.sectionIndex]?.id;
   if (!sourceSectionId) {
-    return content;
+    return unchanged(content, "block_not_found");
   }
 
   if (sourceSectionId === targetSectionId) {
     const sourceIndex = found.path.rowIndex;
     if (sourceIndex === targetIndex || sourceIndex + 1 === targetIndex) {
-      return content;
+      return unchanged(content, "noop");
     }
 
-    return mapSections(content, (section) => {
-      if (section.id !== targetSectionId) {
-        return section;
-      }
+    return changed(
+      mapSections(content, (section) => {
+        if (section.id !== targetSectionId) {
+          return section;
+        }
 
-      return {
-        ...section,
-        children: arrayMove(section.children, sourceIndex, targetIndex),
-      };
-    });
+        return {
+          ...section,
+          children: arrayMove(section.children, sourceIndex, targetIndex),
+        };
+      }),
+    );
   }
 
   const extracted = extractRow(content, rowId);
   if (!extracted) {
-    return content;
+    return unchanged(content, "block_not_found");
   }
 
-  return insertRowAt(
-    extracted.content,
-    targetSectionId,
-    extracted.block,
-    targetIndex,
+  return changed(
+    insertRowAt(
+      extracted.content,
+      targetSectionId,
+      extracted.block,
+      targetIndex,
+    ),
   );
 }
 
@@ -746,7 +791,7 @@ export function moveColumn(
   columnId: string,
   targetRowId: string,
   targetIndex: number,
-): TemplateContentData {
+): TreeMutationResult {
   const found = findBlock(content, columnId);
   if (
     !found ||
@@ -754,56 +799,111 @@ export function moveColumn(
     found.path.rowIndex === undefined ||
     found.path.columnIndex === undefined
   ) {
-    return content;
+    return unchanged(content, "block_not_found");
   }
 
   const targetRow = findBlock(content, targetRowId);
   if (!targetRow || targetRow.block.type !== "row") {
-    return content;
+    return unchanged(content, "parent_not_found");
   }
 
   if (isDescendantOf(content, columnId, targetRowId)) {
-    return content;
+    return unchanged(content, "descendant_move");
   }
 
   const sourceRowId =
     content.body[found.path.sectionIndex]?.children[found.path.rowIndex]?.id;
   if (!sourceRowId) {
-    return content;
+    return unchanged(content, "block_not_found");
   }
 
   if (sourceRowId === targetRowId) {
     const sourceIndex = found.path.columnIndex;
     if (sourceIndex === targetIndex || sourceIndex + 1 === targetIndex) {
-      return content;
+      return unchanged(content, "noop");
     }
 
-    return mapSections(content, (section) => ({
-      ...section,
-      children: section.children.map((row) => {
-        if (row.id !== targetRowId) {
-          return row;
-        }
+    return changed(
+      mapSections(content, (section) => ({
+        ...section,
+        children: section.children.map((row) => {
+          if (row.id !== targetRowId) {
+            return row;
+          }
 
-        return {
-          ...row,
-          children: arrayMove(row.children, sourceIndex, targetIndex),
-        };
-      }),
-    }));
+          return {
+            ...row,
+            children: arrayMove(row.children, sourceIndex, targetIndex),
+          };
+        }),
+      })),
+    );
   }
 
   const extracted = extractColumn(content, columnId);
   if (!extracted) {
-    return content;
+    return unchanged(content, "block_not_found");
   }
 
-  return insertColumnAt(
-    extracted.content,
-    targetRowId,
-    extracted.block,
-    targetIndex,
+  return changed(
+    insertColumnAt(
+      extracted.content,
+      targetRowId,
+      extracted.block,
+      targetIndex,
+    ),
   );
+}
+
+export function resolveStructurePanelContentTarget(
+  content: TemplateContentData,
+  activeId: string,
+  target:
+    | { kind: "append"; columnId: string }
+    | { kind: "column"; columnId: string }
+    | { kind: "content"; blockId: string },
+): { columnId: string; index: number } | null {
+  const activeFound = findBlock(content, activeId);
+  if (!activeFound || !isContentBlock(activeFound.block)) {
+    return null;
+  }
+
+  const sourceIndex = activeFound.path.contentIndex;
+  if (sourceIndex === undefined) {
+    return null;
+  }
+
+  if (target.kind === "append" || target.kind === "column") {
+    const column = findBlock(content, target.columnId);
+    if (!column || column.block.type !== "column") {
+      return null;
+    }
+
+    const appendIndex =
+      activeFound.parentColumnId === target.columnId
+        ? Math.max(0, column.block.children.length - 1)
+        : column.block.children.length;
+
+    return {
+      columnId: target.columnId,
+      index: appendIndex,
+    };
+  }
+
+  const overFound = findBlock(content, target.blockId);
+  if (
+    !overFound ||
+    !isContentBlock(overFound.block) ||
+    !overFound.parentColumnId ||
+    overFound.path.contentIndex === undefined
+  ) {
+    return null;
+  }
+
+  return {
+    columnId: overFound.parentColumnId,
+    index: overFound.path.contentIndex,
+  };
 }
 
 export function moveContentBlock(
@@ -811,52 +911,69 @@ export function moveContentBlock(
   blockId: string,
   targetColumnId: string,
   targetIndex: number,
-): TemplateContentData {
+): TreeMutationResult {
   const found = findBlock(content, blockId);
   if (!found || !isContentBlock(found.block)) {
-    return content;
+    return unchanged(content, "block_not_found");
   }
 
   const sourceIndex = found.path.contentIndex;
   if (sourceIndex === undefined) {
-    return content;
+    return unchanged(content, "block_not_found");
+  }
+
+  const targetColumn = findBlock(content, targetColumnId);
+  if (!targetColumn || targetColumn.block.type !== "column") {
+    return unchanged(content, "parent_not_found");
   }
 
   const sourceColumnId = found.parentColumnId;
   const block = found.block;
 
   if (sourceColumnId === targetColumnId) {
-    return mapSections(content, (section) => ({
-      ...section,
-      children: section.children.map((row) => ({
-        ...row,
-        children: row.children.map((column) => {
-          if (column.id !== targetColumnId) {
-            return column;
-          }
+    if (sourceIndex === targetIndex) {
+      return unchanged(content, "noop");
+    }
 
-          return {
-            ...column,
-            children: arrayMove(column.children, sourceIndex, targetIndex),
-          };
-        }),
+    return changed(
+      mapSections(content, (section) => ({
+        ...section,
+        children: section.children.map((row) => ({
+          ...row,
+          children: row.children.map((column) => {
+            if (column.id !== targetColumnId) {
+              return column;
+            }
+
+            return {
+              ...column,
+              children: arrayMove(column.children, sourceIndex, targetIndex),
+            };
+          }),
+        })),
       })),
-    }));
+    );
   }
 
   const withoutBlock = removeBlock(content, blockId);
+  const clampedIndex = clampIndex(
+    targetIndex,
+    targetColumn.block.children.length,
+  );
 
-  return mapSections(withoutBlock, (section) => ({
-    ...section,
-    children: section.children.map((row) => ({
-      ...row,
-      children: row.children.map((column) =>
-        column.id === targetColumnId
-          ? insertContentBlock(column, block, targetIndex)
-          : column,
-      ),
+  return changed(
+    mapSections(withoutBlock, (section) => ({
+      ...section,
+      children: section.children.map((row) => ({
+        ...row,
+        children: row.children.map((column) =>
+          column.id === targetColumnId
+            ? insertContentBlock(column, block, clampedIndex)
+            : column,
+        ),
+      })),
     })),
-  }));
+  );
 }
 
 export { ensureDefaultStructure } from "./create-block";

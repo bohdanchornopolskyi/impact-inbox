@@ -14,10 +14,10 @@ import {
 type UseCanvasDndOptions = {
   canEdit: boolean;
   getContent: () => TemplateContentData;
-  moveBlock: (blockId: string, targetColumnId: string, targetIndex: number) => void;
-  moveSection: (sectionId: string, targetIndex: number) => void;
-  moveRow: (rowId: string, targetSectionId: string, targetIndex: number) => void;
-  moveColumn: (columnId: string, targetRowId: string, targetIndex: number) => void;
+  moveBlock: (blockId: string, targetColumnId: string, targetIndex: number) => boolean;
+  moveSection: (sectionId: string, targetIndex: number) => boolean;
+  moveRow: (rowId: string, targetSectionId: string, targetIndex: number) => boolean;
+  moveColumn: (columnId: string, targetRowId: string, targetIndex: number) => boolean;
   selectBlock: (blockId: string) => void;
   onPrepareDrag: () => void;
   onDropCommitted: () => void;
@@ -31,26 +31,28 @@ function applyDrop(
     UseCanvasDndOptions,
     "moveBlock" | "moveSection" | "moveRow" | "moveColumn" | "selectBlock"
   >,
-): void {
+): boolean {
+  let changed = false;
+
   switch (dragKind) {
     case "content":
       if (target.kind === "column") {
-        actions.moveBlock(blockId, target.columnId, target.index);
+        changed = actions.moveBlock(blockId, target.columnId, target.index);
       }
       break;
     case "section":
       if (target.kind === "body") {
-        actions.moveSection(blockId, target.index);
+        changed = actions.moveSection(blockId, target.index);
       }
       break;
     case "row":
       if (target.kind === "section") {
-        actions.moveRow(blockId, target.sectionId, target.index);
+        changed = actions.moveRow(blockId, target.sectionId, target.index);
       }
       break;
     case "column":
       if (target.kind === "row") {
-        actions.moveColumn(blockId, target.rowId, target.index);
+        changed = actions.moveColumn(blockId, target.rowId, target.index);
       }
       break;
     default: {
@@ -59,7 +61,11 @@ function applyDrop(
     }
   }
 
-  actions.selectBlock(blockId);
+  if (changed) {
+    actions.selectBlock(blockId);
+  }
+
+  return changed;
 }
 
 export function useCanvasDnd({
@@ -106,14 +112,16 @@ export function useCanvasDnd({
             : null;
 
           if (target) {
-            applyDrop(data.blockId, dragKind, target, {
+            const changed = applyDrop(data.blockId, dragKind, target, {
               moveBlock,
               moveSection,
               moveRow,
               moveColumn,
               selectBlock,
             });
-            onDropCommitted();
+            if (changed) {
+              onDropCommitted();
+            }
           }
         }
 

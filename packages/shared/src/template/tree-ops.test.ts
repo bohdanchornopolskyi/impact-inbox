@@ -12,6 +12,8 @@ import {
   moveRow,
   moveSection,
   removeBlock,
+  resolveStructurePanelContentTarget,
+  type TreeMutationResult,
   updateBlockProps,
   updateSettings,
 } from "./tree-ops";
@@ -37,6 +39,7 @@ describe("tree-ops", () => {
     expect(columnId).toBeDefined();
 
     const withBlock = addContentBlock(base, columnId!, "heading");
+    expect(withBlock.changed).toBe(true);
     expect(withBlock.blockId).toBeTruthy();
     const heading = withBlock.content.body[0]?.children[0]?.children[0]?.children[0];
     expect(heading?.type).toBe("heading");
@@ -50,6 +53,7 @@ describe("tree-ops", () => {
     let content = createEmptyTemplateContent();
 
     const sectionResult = addSection(content);
+    expect(sectionResult.changed).toBe(true);
     expect(sectionResult.blockId).toBe(sectionResult.content.body.at(-1)?.id);
     content = sectionResult.content;
 
@@ -100,8 +104,9 @@ describe("tree-ops", () => {
     const blockId = content.body[0]!.children[0]!.children[0]!.children[0]!.id;
 
     const moved = moveContentBlock(content, blockId, secondColumnId, 0);
-    expect(moved.body[0]!.children[0]!.children[0]!.children).toHaveLength(0);
-    expect(moved.body[0]!.children[0]!.children[1]!.children[0]?.type).toBe(
+    expect(moved.changed).toBe(true);
+    expect(moved.content.body[0]!.children[0]!.children[0]!.children).toHaveLength(0);
+    expect(moved.content.body[0]!.children[0]!.children[1]!.children[0]?.type).toBe(
       "button",
     );
 
@@ -120,14 +125,16 @@ describe("tree-ops", () => {
 
     const column = () => content.body[0]!.children[0]!.children[0]!.children;
     const blockId = (index: number) => column()[index]!.id;
-    const blockTypes = (value: typeof content) =>
+    const blockTypes = (value: TreeMutationResult["content"]) =>
       value.body[0]!.children[0]!.children[0]!.children.map((child) => child.type);
 
     const movedDown = moveContentBlock(content, blockId(0), columnId, 2);
-    expect(blockTypes(movedDown)).toEqual(["text", "button", "heading", "divider"]);
+    expect(movedDown.changed).toBe(true);
+    expect(blockTypes(movedDown.content)).toEqual(["text", "button", "heading", "divider"]);
 
     const movedUp = moveContentBlock(content, blockId(3), columnId, 1);
-    expect(blockTypes(movedUp)).toEqual(["heading", "divider", "text", "button"]);
+    expect(movedUp.changed).toBe(true);
+    expect(blockTypes(movedUp.content)).toEqual(["heading", "divider", "text", "button"]);
 
     for (let from = 0; from < column().length; from += 1) {
       for (let to = 0; to < column().length; to += 1) {
@@ -140,7 +147,8 @@ describe("tree-ops", () => {
         const expected = [...originalTypes];
         expected.splice(to, 0, expected.splice(from, 1)[0]!);
 
-        expect(blockTypes(moved)).toEqual(expected);
+        expect(moved.changed).toBe(true);
+        expect(blockTypes(moved.content)).toEqual(expected);
       }
     }
   });
@@ -156,8 +164,9 @@ describe("tree-ops", () => {
     const blockId = content.body[0]!.children[0]!.children[0]!.children[0]!.id;
 
     const moved = moveContentBlock(content, blockId, emptyColumnId, 0);
-    expect(moved.body[0]!.children[0]!.children[1]!.children).toHaveLength(1);
-    expect(moved.body[0]!.children[0]!.children[1]!.children[0]?.type).toBe(
+    expect(moved.changed).toBe(true);
+    expect(moved.content.body[0]!.children[0]!.children[1]!.children).toHaveLength(1);
+    expect(moved.content.body[0]!.children[0]!.children[1]!.children[0]?.type).toBe(
       "heading",
     );
   });
@@ -182,7 +191,8 @@ describe("tree-ops", () => {
     const thirdSectionId = content.body[2]!.id;
 
     const moved = moveSection(content, thirdSectionId, 0);
-    expect(moved.body.map((section) => section.id)).toEqual([
+    expect(moved.changed).toBe(true);
+    expect(moved.content.body.map((section) => section.id)).toEqual([
       thirdSectionId,
       firstSectionId,
       secondSectionId,
@@ -205,9 +215,10 @@ describe("tree-ops", () => {
     const headingId = content.body[0]!.children[0]!.children[0]!.children[0]!.id;
 
     const moved = moveRow(content, sourceRowId, targetSectionId, 0);
-    expect(moved.body[0]!.children).toHaveLength(0);
-    expect(moved.body[1]!.children[0]!.id).toBe(sourceRowId);
-    expect(moved.body[1]!.children[0]!.children[0]!.children[0]!.id).toBe(
+    expect(moved.changed).toBe(true);
+    expect(moved.content.body[0]!.children).toHaveLength(0);
+    expect(moved.content.body[1]!.children[0]!.id).toBe(sourceRowId);
+    expect(moved.content.body[1]!.children[0]!.children[0]!.children[0]!.id).toBe(
       headingId,
     );
 
@@ -223,7 +234,8 @@ describe("tree-ops", () => {
     const secondColumnId = content.body[0]!.children[0]!.children[1]!.id;
 
     const moved = moveColumn(content, secondColumnId, rowId, 0);
-    expect(moved.body[0]!.children[0]!.children.map((column) => column.id)).toEqual([
+    expect(moved.changed).toBe(true);
+    expect(moved.content.body[0]!.children[0]!.children.map((column) => column.id)).toEqual([
       secondColumnId,
       firstColumnId,
     ]);
@@ -241,9 +253,10 @@ describe("tree-ops", () => {
     const textBlockId = content.body[0]!.children[0]!.children[0]!.children[0]!.id;
 
     const moved = moveColumn(content, sourceColumnId, targetRowId, 0);
-    expect(moved.body[0]!.children[0]!.children).toHaveLength(0);
-    expect(moved.body[0]!.children[1]!.children[0]!.id).toBe(sourceColumnId);
-    expect(moved.body[0]!.children[1]!.children[0]!.children[0]!.id).toBe(
+    expect(moved.changed).toBe(true);
+    expect(moved.content.body[0]!.children[0]!.children).toHaveLength(0);
+    expect(moved.content.body[0]!.children[1]!.children[0]!.id).toBe(sourceColumnId);
+    expect(moved.content.body[0]!.children[1]!.children[0]!.children[0]!.id).toBe(
       textBlockId,
     );
   });
@@ -254,11 +267,114 @@ describe("tree-ops", () => {
     const rowId = content.body[0]!.children[0]!.id;
     const columnId = content.body[0]!.children[0]!.children[0]!.id;
 
-    expect(moveSection(content, "missing-section", 0)).toBe(content);
-    expect(moveRow(content, rowId, "missing-section", 0)).toBe(content);
-    expect(moveColumn(content, columnId, "missing-row", 0)).toBe(content);
-    expect(moveSection(content, sectionId, 0)).toBe(content);
+    expect(moveSection(content, "missing-section", 0)).toEqual({
+      content,
+      changed: false,
+      reason: "block_not_found",
+    });
+    expect(moveRow(content, rowId, "missing-section", 0)).toEqual({
+      content,
+      changed: false,
+      reason: "parent_not_found",
+    });
+    expect(moveColumn(content, columnId, "missing-row", 0)).toEqual({
+      content,
+      changed: false,
+      reason: "parent_not_found",
+    });
+    expect(moveSection(content, sectionId, 0)).toEqual({
+      content,
+      changed: false,
+      reason: "noop",
+    });
     expect(isDescendantOf(content, sectionId, rowId)).toBe(true);
     expect(isDescendantOf(content, rowId, sectionId)).toBe(false);
+  });
+
+  it("does not drop content blocks when the target column is missing", () => {
+    const content = createEmptyTemplateContent();
+    const columnId = content.body[0]!.children[0]!.children[0]!.id;
+    const withBlock = addContentBlock(content, columnId, "heading");
+    const blockId = withBlock.content.body[0]!.children[0]!.children[0]!.children[0]!.id;
+
+    const outcome = moveContentBlock(
+      withBlock.content,
+      blockId!,
+      "missing-column",
+      0,
+    );
+
+    expect(outcome.changed).toBe(false);
+    expect(outcome.reason).toBe("parent_not_found");
+    expect(findBlock(outcome.content, blockId!)).toBeDefined();
+  });
+
+  it("does not return a selectable block id when insert parent is missing", () => {
+    const content = createEmptyTemplateContent();
+    const outcome = addContentBlock(content, "missing-column", "heading");
+
+    expect(outcome.changed).toBe(false);
+    expect(outcome.reason).toBe("parent_not_found");
+    expect(outcome.blockId).toBeUndefined();
+    expect(findBlock(outcome.content, outcome.blockId ?? "")).toBeUndefined();
+  });
+
+  it("reports no-op content moves without changing the tree", () => {
+    const content = createEmptyTemplateContent();
+    const columnId = content.body[0]!.children[0]!.children[0]!.id;
+    const withBlock = addContentBlock(content, columnId, "heading");
+    const blockId = withBlock.content.body[0]!.children[0]!.children[0]!.children[0]!.id;
+
+    const outcome = moveContentBlock(withBlock.content, blockId!, columnId, 0);
+
+    expect(outcome.changed).toBe(false);
+    expect(outcome.reason).toBe("noop");
+    expect(outcome.content).toBe(withBlock.content);
+  });
+
+  it("resolves structure panel same-column downward targets consistently", () => {
+    let content = createEmptyTemplateContent();
+    const columnId = content.body[0]!.children[0]!.children[0]!.id;
+
+    content = addContentBlock(content, columnId, "heading").content;
+    content = addContentBlock(content, columnId, "text").content;
+    content = addContentBlock(content, columnId, "button").content;
+    content = addContentBlock(content, columnId, "divider").content;
+
+    const blockId = (index: number) =>
+      content.body[0]!.children[0]!.children[0]!.children[index]!.id;
+
+    const target = resolveStructurePanelContentTarget(content, blockId(0), {
+      kind: "content",
+      blockId: blockId(2),
+    });
+    expect(target).toEqual({ columnId, index: 2 });
+
+    const moved = moveContentBlock(content, blockId(0), columnId, target!.index);
+    expect(moved.changed).toBe(true);
+    expect(
+      moved.content.body[0]!.children[0]!.children[0]!.children.map((child) => child.type),
+    ).toEqual(["text", "button", "heading", "divider"]);
+  });
+
+  it("resolves structure panel append targets within the same column", () => {
+    let content = createEmptyTemplateContent();
+    const columnId = content.body[0]!.children[0]!.children[0]!.id;
+
+    content = addContentBlock(content, columnId, "heading").content;
+    content = addContentBlock(content, columnId, "text").content;
+
+    const activeId = content.body[0]!.children[0]!.children[0]!.children[0]!.id;
+    const target = resolveStructurePanelContentTarget(content, activeId, {
+      kind: "append",
+      columnId,
+    });
+
+    expect(target).toEqual({ columnId, index: 1 });
+
+    const moved = moveContentBlock(content, activeId, columnId, target!.index);
+    expect(
+      moved.content.body[0]!.children[0]!.children[0]!.children.map((child) => child.type),
+    ).toEqual(["text", "heading"]);
   });
 });

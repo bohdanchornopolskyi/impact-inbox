@@ -37,6 +37,7 @@ import { TemplateConflictModal } from "./modals/template-conflict-modal";
 import { useSession } from "@/contexts/session-context";
 import { useWorkspace } from "@/contexts/workspace-context";
 import { getTemplate } from "@/lib/api/templates-api";
+import { applyBuilderMutation } from "./apply-builder-mutation";
 
 export type { SaveState } from "@/lib/templates/working-copy-persistence";
 export type InspectorMode = "block" | "templateSettings";
@@ -69,10 +70,22 @@ type BuilderState = {
   updateBlockStyles: (blockId: string, styles: Partial<BlockStyles>) => void;
   addBlock: (columnId: string, blockType: ContentBlockType, index?: number) => void;
   removeBlock: (blockId: string) => void;
-  moveBlock: (blockId: string, targetColumnId: string, targetIndex: number) => void;
-  moveSection: (sectionId: string, targetIndex: number) => void;
-  moveRow: (rowId: string, targetSectionId: string, targetIndex: number) => void;
-  moveColumn: (columnId: string, targetRowId: string, targetIndex: number) => void;
+  moveBlock: (
+    blockId: string,
+    targetColumnId: string,
+    targetIndex: number,
+  ) => boolean;
+  moveSection: (sectionId: string, targetIndex: number) => boolean;
+  moveRow: (
+    rowId: string,
+    targetSectionId: string,
+    targetIndex: number,
+  ) => boolean;
+  moveColumn: (
+    columnId: string,
+    targetRowId: string,
+    targetIndex: number,
+  ) => boolean;
   addSection: (index?: number) => void;
   addRow: (sectionId: string, index?: number) => void;
   addColumn: (rowId: string, index?: number) => void;
@@ -167,13 +180,11 @@ function createBuilderStore(canEdit: boolean): BuilderStore {
         })),
       addBlock: (columnId, blockType, index) =>
         set((state) => {
-          const result = addContentBlock(state.content, columnId, blockType, index);
-          return {
-            content: result.content,
-            selectedBlockId: result.blockId,
-            inspectorMode: "block",
-            saveState: "unsaved",
-          };
+          const outcome = addContentBlock(state.content, columnId, blockType, index);
+          const next = applyBuilderMutation(state, outcome, {
+            selectInsertedBlock: true,
+          });
+          return next ?? state;
         }),
       removeBlock: (blockId) =>
         set((state) => ({
@@ -182,60 +193,96 @@ function createBuilderStore(canEdit: boolean): BuilderStore {
             state.selectedBlockId === blockId ? null : state.selectedBlockId,
           saveState: "unsaved",
         })),
-      moveBlock: (blockId, targetColumnId, targetIndex) =>
-        set((state) => ({
-          content: moveContentBlock(
+      moveBlock: (blockId, targetColumnId, targetIndex) => {
+        let changed = false;
+        set((state) => {
+          const outcome = moveContentBlock(
             state.content,
             blockId,
             targetColumnId,
             targetIndex,
-          ),
-          saveState: "unsaved",
-        })),
-      moveSection: (sectionId, targetIndex) =>
-        set((state) => ({
-          content: moveSection(state.content, sectionId, targetIndex),
-          saveState: "unsaved",
-        })),
-      moveRow: (rowId, targetSectionId, targetIndex) =>
-        set((state) => ({
-          content: moveRow(state.content, rowId, targetSectionId, targetIndex),
-          saveState: "unsaved",
-        })),
-      moveColumn: (columnId, targetRowId, targetIndex) =>
-        set((state) => ({
-          content: moveColumn(state.content, columnId, targetRowId, targetIndex),
-          saveState: "unsaved",
-        })),
+          );
+          const next = applyBuilderMutation(state, outcome);
+          if (!next) {
+            return state;
+          }
+          changed = true;
+          return next;
+        });
+        return changed;
+      },
+      moveSection: (sectionId, targetIndex) => {
+        let changed = false;
+        set((state) => {
+          const outcome = moveSection(state.content, sectionId, targetIndex);
+          const next = applyBuilderMutation(state, outcome);
+          if (!next) {
+            return state;
+          }
+          changed = true;
+          return next;
+        });
+        return changed;
+      },
+      moveRow: (rowId, targetSectionId, targetIndex) => {
+        let changed = false;
+        set((state) => {
+          const outcome = moveRow(
+            state.content,
+            rowId,
+            targetSectionId,
+            targetIndex,
+          );
+          const next = applyBuilderMutation(state, outcome);
+          if (!next) {
+            return state;
+          }
+          changed = true;
+          return next;
+        });
+        return changed;
+      },
+      moveColumn: (columnId, targetRowId, targetIndex) => {
+        let changed = false;
+        set((state) => {
+          const outcome = moveColumn(
+            state.content,
+            columnId,
+            targetRowId,
+            targetIndex,
+          );
+          const next = applyBuilderMutation(state, outcome);
+          if (!next) {
+            return state;
+          }
+          changed = true;
+          return next;
+        });
+        return changed;
+      },
       addSection: (index) =>
         set((state) => {
-          const result = addSection(state.content, index);
-          return {
-            content: result.content,
-            selectedBlockId: result.blockId,
-            inspectorMode: "block",
-            saveState: "unsaved",
-          };
+          const outcome = addSection(state.content, index);
+          const next = applyBuilderMutation(state, outcome, {
+            selectInsertedBlock: true,
+          });
+          return next ?? state;
         }),
       addRow: (sectionId, index) =>
         set((state) => {
-          const result = addRow(state.content, sectionId, index);
-          return {
-            content: result.content,
-            selectedBlockId: result.blockId,
-            inspectorMode: "block",
-            saveState: "unsaved",
-          };
+          const outcome = addRow(state.content, sectionId, index);
+          const next = applyBuilderMutation(state, outcome, {
+            selectInsertedBlock: true,
+          });
+          return next ?? state;
         }),
       addColumn: (rowId, index) =>
         set((state) => {
-          const result = addColumn(state.content, rowId, index);
-          return {
-            content: result.content,
-            selectedBlockId: result.blockId,
-            inspectorMode: "block",
-            saveState: "unsaved",
-          };
+          const outcome = addColumn(state.content, rowId, index);
+          const next = applyBuilderMutation(state, outcome, {
+            selectInsertedBlock: true,
+          });
+          return next ?? state;
         }),
       selectBlock: (blockId) =>
         set((state) => ({

@@ -5,6 +5,7 @@ import {
   findBlock,
   getBlockTypeLabel,
   isContentBlock,
+  resolveStructurePanelContentTarget,
   type TemplateBlockType,
   type TemplateContentData,
 } from "@repo/shared";
@@ -97,11 +98,15 @@ function resolveDropPreviewForColumn(
     isContentBlock(overFound.block) &&
     overFound.parentColumnId === columnId
   ) {
-    if (activeFound.parentColumnId === columnId) {
+    const target = resolveStructurePanelContentTarget(content, activeId, {
+      kind: "content",
+      blockId: overId,
+    });
+    if (!target) {
       return null;
     }
 
-    return { insertAtIndex: overFound.path.contentIndex ?? 0 };
+    return { insertAtIndex: target.index };
   }
 
   return null;
@@ -377,40 +382,37 @@ export function StructurePanel() {
       return;
     }
 
-    const activeFound = findBlock(content, String(active.id));
-    if (!activeFound || !isContentBlock(activeFound.block)) {
-      return;
-    }
-
     const appendColumnId = parseColumnAppendDropId(String(over.id));
     if (appendColumnId) {
-      const column = findBlock(content, appendColumnId);
-      if (column?.block.type === "column") {
-        moveBlock(String(active.id), appendColumnId, column.block.children.length);
+      const target = resolveStructurePanelContentTarget(content, String(active.id), {
+        kind: "append",
+        columnId: appendColumnId,
+      });
+      if (target) {
+        moveBlock(String(active.id), target.columnId, target.index);
       }
       return;
     }
 
     const overFound = findBlock(content, String(over.id));
-    if (overFound && overFound.block.type === "column") {
-      const column = overFound.block;
-      moveBlock(String(active.id), column.id, column.children.length);
+    if (overFound?.block.type === "column") {
+      const target = resolveStructurePanelContentTarget(content, String(active.id), {
+        kind: "column",
+        columnId: overFound.block.id,
+      });
+      if (target) {
+        moveBlock(String(active.id), target.columnId, target.index);
+      }
       return;
     }
 
-    if (
-      !overFound ||
-      !isContentBlock(overFound.block) ||
-      !overFound.parentColumnId ||
-      overFound.path.contentIndex === undefined
-    ) {
-      return;
+    const target = resolveStructurePanelContentTarget(content, String(active.id), {
+      kind: "content",
+      blockId: String(over.id),
+    });
+    if (target) {
+      moveBlock(String(active.id), target.columnId, target.index);
     }
-
-    const targetColumnId = overFound.parentColumnId;
-    const targetIndex = overFound.path.contentIndex;
-
-    moveBlock(String(active.id), targetColumnId, targetIndex);
   }
 
   function handleDragCancel() {
