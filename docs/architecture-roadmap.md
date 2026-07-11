@@ -14,7 +14,7 @@ Email marketing platform (builder, campaigns, newsletters). Monorepo, contract-f
 | **Web** (`apps/web`) | Builder UI, campaigns, analytics, public unsubscribe preference pages |
 | **API** (`apps/api`) | Auth, org/workspace tenancy, business rules, queue processors (v1), webhooks |
 | **Shared** (`packages/shared`) | Zod schemas, API types, constants — single contract for API + web |
-| **DB** (`packages/db`) | Drizzle schema, migrations, typed queries |
+| **DB** (`packages/db`) | Drizzle schema, local `db:push`, typed queries |
 | **Queue** (`packages/queue`) | Job names + payload schemas only — no Redis/BullMQ client |
 | **Workers** (later) | Extract queue processors from API when load requires |
 
@@ -542,7 +542,7 @@ packages/db/src/schema/
 └── index.ts           # barrel — single schema export for Drizzle
 ```
 
-One table per file inside each domain folder. Migrate existing flat files (`workspaces.ts`, `templates.ts`, etc.) into domain folders incrementally. Migrations committed under `packages/db/drizzle/`.
+One table per file inside each domain folder. Migrate existing flat files (`workspaces.ts`, `templates.ts`, etc.) into domain folders incrementally. Local schema sync is `db:push` only — no committed migrations (see [deferred-work.md §5](./deferred-work.md#5-drizzle-migrations--ci-migrate)).
 
 ### API module layout (`apps/api`)
 
@@ -596,7 +596,7 @@ Contracts only — job names, payload Zod schemas, inferred types. No Redis/Bull
 - [x] Transactional registration (user + account + workspace + session)
 - [x] CORS for `apps/web`
 - [x] `GET /api/health`
-- [ ] Drizzle migrations committed + CI migrate → [deferred-work.md §5](./deferred-work.md#5-drizzle-migrations--ci-migrate)
+- [x] Local DB: `db:push` only (`wontfix` migrations/CI) → [deferred-work.md §5](./deferred-work.md#5-drizzle-migrations--ci-migrate)
 - [x] Auth + workspace E2E tests
 
 ### Phase 1 — Web shell (2–3 weeks)
@@ -757,7 +757,7 @@ Org-scoped pages include `orgId` in the URL — no server-side “active org” 
 ## 12. What to build next (recommended order)
 
 ```
-1. Close Phase 0 (CORS, health, migrations, E2E)
+1. Close Phase 0 (CORS, health, E2E; DB stays `db:push`)
 2. Phase 1 web shell + Phase 1b organizations
 3. Phase 2 — template revisions, builder, export, system email (ADR 0007)
 4. Contacts → lists (Phase 3)

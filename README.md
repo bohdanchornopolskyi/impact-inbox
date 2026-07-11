@@ -2,7 +2,7 @@
 
 Monorepo: `apps/api`, `apps/web`, and shared `packages/*`.
 
-**Local dev:** `pnpm dev:app` — see [docs/local-development.md](./docs/local-development.md) for package rebuild rules (`packages/*` → `dist/`; rebuild after changes).
+**Local dev:** `pnpm dev:app` — see [docs/local-development.md](./docs/local-development.md) for package rebuild rules (`packages/*` → `dist/`; rebuild after changes) and local DB sync via `db:push` (no migrations).
 
 ---
 

@@ -4,7 +4,7 @@
 
 Domain language: [CONTEXT.md](../CONTEXT.md) · Roadmap: [architecture-roadmap.md](./architecture-roadmap.md) §8
 
-**Status:** `not done` · `partial` (shipped interim — finish spec) · `done`
+**Status:** `not done` · `partial` (shipped interim — finish spec) · `done` · `deferred` · `wontfix`
 
 ---
 
@@ -14,17 +14,17 @@ Work in this order unless you have a reason to skip.
 
 | # | Item | Status | Spec / ADR | Blocks |
 | --- | --- | --- | --- | --- |
-| 1 | Email invite tokens | `not done` | [ADR 0011](./adr/0011-email-invite-tokens.md) | Phase 1b complete; inviting non-users |
-| 2 | Trial clock placement | `partial` | [deferred-work §2](#2-trial-clock-placement) · CONTEXT **Trial** | Spec accuracy; remove AuthGuard side-effect |
-| 3 | Workspace name/slug edit UI | `not done` | API: `PATCH /workspaces/:id` exists | Workspace settings completeness |
-| 5 | Drizzle migrations + CI migrate | `not done` | Roadmap Phase 0 | Production deploy |
-| 8 | Workspace overview stat placeholders | `not done` | design-brief §4 | — (polish) |
-| 9 | Org settings: billing + usage meters | `not done` | design-brief · ADR 0006 | Phase 6 billing |
-| 10 | E2E: org members, invites, templates | `not done` | — | Confidence before Phase 3+ |
-| 11 | DB schema domain folders | `not done` | Roadmap §7 | — (dev ergonomics) |
-| 12 | `OrganizationAccessService` consolidation | `not done` | ADR 0002 pattern | — (tech debt) |
-| 13 | `@repo/shared` package layout split | `not done` | Roadmap §7 | — (tech debt) |
-| 14 | `EmailService` vendor abstraction | `not done` | ADR 0005 | Multi-provider need |
+| 1 | Email invite tokens | `done` | [ADR 0011](./adr/0011-email-invite-tokens.md) | — |
+| 2 | Trial clock placement | `done` | [deferred-work §2](#2-trial-clock-placement) · CONTEXT **Trial** | — |
+| 3 | Workspace name/slug edit UI | `done` | API: `PATCH /workspaces/:id` exists | — |
+| 5 | Drizzle migrations + CI migrate | `wontfix` | [deferred-work §5](#5-drizzle-migrations--ci-migrate) | Local-only: `db:push` |
+| 8 | Workspace overview stat placeholders | `done` | design-brief §4 | — (polish) |
+| 9 | Org settings: billing + usage meters | `deferred` | design-brief · ADR 0006 | Phase 6 — no payment provider yet |
+| 10 | E2E: org members, invites, templates | `done` | — | — |
+| 11 | DB schema domain folders | `done` | Roadmap §7 | — |
+| 12 | `OrganizationAccessService` consolidation | `done` | ADR 0002 pattern | — |
+| 13 | `@repo/shared` package layout split | `done` | Roadmap §7 | template block defs → `constants/template.ts` |
+| 14 | `EmailService` vendor abstraction | `deferred` | ADR 0005 | Multi-provider need |
 | 15 | Template builder canvas DnD | `done` | [ADR 0013](./adr/0013-template-builder-canvas-dnd.md) | — |
 
 ---
@@ -99,23 +99,17 @@ Phase 2 M2 (templates, builder, revisions, export) is **done** per [ADR 0007](./
 
 ## 2. Trial clock placement
 
-**Status:** `partial` — works but runs too often.
+**Status:** `done`
 
 **Target (CONTEXT.md — Trial):** Clock starts when org owner’s email is verified **and** they have an active session — at verification (if still signed in from signup) or at next sign-in. **Not** on every authenticated request.
 
-**Current code:**
+**Shipped:**
 
-| Location | Today |
+| Location | Behavior |
 | --- | --- |
-| `apps/api/src/auth/auth.guard.ts` | Calls `startTrialIfEligible` every request — **remove** |
-| `apps/api/src/auth/credential.service.ts` | Calls on sign-in — **keep** |
-| `apps/api/src/auth/email-verification.service.ts` | Does not call — **add** |
-
-**Checklist:**
-
-- [ ] Remove from `auth.guard.ts`
-- [ ] Add to `email-verification.service.ts` after verify
-- [ ] Update `apps/api/test/auth-workspaces.e2e-spec.ts` if needed
+| `apps/api/src/auth/auth.guard.ts` | No trial start |
+| `apps/api/src/auth/credential.service.ts` | Starts trial on sign-in when eligible |
+| `apps/api/src/auth/auth.controller.ts` `confirmEmail` | Starts trial only when the request carries an active session for the verified user |
 
 ---
 
@@ -149,19 +143,17 @@ Phase 2 M2 (templates, builder, revisions, export) is **done** per [ADR 0007](./
 
 ## 5. Drizzle migrations + CI migrate
 
-**Status:** `not done`
+**Status:** `wontfix` (local project only)
 
-**Current behavior:** Schema in `packages/db/src/schema/`; no `packages/db/drizzle/`; local dev uses `db:push`.
+**Policy:** Do **not** generate, commit, or CI-run Drizzle migrations. There is no production database. Schema changes are applied locally with `db:push` only.
 
-**Decision:** Keep `db:push` through Phase 3. Pre-launch: generate migration batch, commit `drizzle/`, wire CI `db:migrate`.
+```sh
+pnpm --filter @repo/db db:push
+```
 
-**Checklist:**
+Do not add `packages/db/drizzle/`, do not add a migrate GitHub Action, and do not treat `db:generate` / `db:migrate` as part of the workflow (scripts may remain on the package for future use, but they are unused).
 
-- [ ] `pnpm --filter @repo/db db:generate` when schema is stable for deploy
-- [ ] Commit `packages/db/drizzle/`
-- [ ] CI job runs `db:migrate` before/with deploy
-
-**Note:** First migration batch should include `invites` when ADR 0011 ships.
+Revisit only if/when a real hosted database and deploy pipeline exist.
 
 ---
 
