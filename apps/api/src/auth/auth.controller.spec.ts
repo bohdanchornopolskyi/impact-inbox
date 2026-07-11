@@ -5,6 +5,7 @@ import { SessionsService } from "./sessions.service";
 import { RegistrationService } from "src/onboarding/registration.service";
 import { EmailVerificationService } from "./email-verification.service";
 import { UsersService } from "src/users/users.service";
+import { OrganizationsService } from "src/organizations/organizations.service";
 
 describe("AuthController", () => {
   let controller: AuthController;
@@ -19,6 +20,10 @@ describe("AuthController", () => {
     signUp: jest.fn(),
   };
 
+  const mockOrganizationsService = {
+    startTrialIfEligible: jest.fn(),
+  };
+
   beforeEach(async () => {
     const module = await Test.createTestingModule({
       controllers: [AuthController],
@@ -28,6 +33,10 @@ describe("AuthController", () => {
         { provide: RegistrationService, useValue: mockRegistrationService },
         { provide: EmailVerificationService, useValue: {} },
         { provide: UsersService, useValue: {} },
+        {
+          provide: OrganizationsService,
+          useValue: mockOrganizationsService,
+        },
       ],
     }).compile();
 

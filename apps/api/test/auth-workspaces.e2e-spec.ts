@@ -1,7 +1,7 @@
 import { INestApplication } from "@nestjs/common";
 import { randomUUID } from "crypto";
 import { eq, and } from "drizzle-orm";
-import { authTokens, db } from "@repo/db";
+import { authTokens, db, organizations, users } from "@repo/db";
 import request from "supertest";
 import { App } from "supertest/types";
 import { createE2eApp } from "./helpers/create-e2e-app";
@@ -121,18 +121,81 @@ describe("Auth and workspaces (e2e)", () => {
       });
   });
 
-  it("starts the trial after email verification on the next authenticated request", async () => {
+  it("starts the trial when email is confirmed while signed in", async () => {
+    const meResponse = await request(app.getHttpServer())
+      .get("/api/users/me")
+      .set("Authorization", `Bearer ${authToken}`)
+      .expect(200);
+
     const [verificationToken] = await db
       .select({ token: authTokens.token })
       .from(authTokens)
       .where(
         and(
           eq(authTokens.type, "email_verification"),
-          eq(authTokens.userId, (
-            await request(app.getHttpServer())
-              .get("/api/users/me")
-              .set("Authorization", `Bearer ${authToken}`)
-          ).body.data.id),
+          eq(authTokens.userId, meResponse.body.data.id),
+        ),
+      )
+      .limit(1);
+
+    expect(verificationToken).toBeDefined();
+
+    await request(app.getHttpServer())
+      .post("/api/auth/confirm-email")
+      .set("Authorization", `Bearer ${authToken}`)
+      .send({ token: verificationToken!.token })
+      .expect(201);
+
+    const [organization] = await db
+      .select({ trialEndsAt: organizations.trialEndsAt })
+      .from(organizations)
+      .where(eq(organizations.id, organizationId))
+      .limit(1);
+
+    expect(organization?.trialEndsAt).not.toBeNull();
+  });
+
+  it("does not start the trial on confirm-email without an active session", async () => {
+    const email = `e2e-confirm-no-session-${randomUUID()}@example.com`;
+
+    const signUpResponse = await request(app.getHttpServer())
+      .post("/api/auth/sign-up")
+      .send({
+        email,
+        name: "Confirm No Session",
+        password: testPassword,
+        confirmPassword: testPassword,
+      })
+      .expect(201);
+
+    const signupToken = signUpResponse.body.data.token as string;
+
+    const meResponse = await request(app.getHttpServer())
+      .get("/api/users/me")
+      .set("Authorization", `Bearer ${signupToken}`)
+      .expect(200);
+
+    const userId = meResponse.body.data.id as string;
+
+    const orgsResponse = await request(app.getHttpServer())
+      .get("/api/organizations")
+      .set("Authorization", `Bearer ${signupToken}`)
+      .expect(200);
+
+    const orgId = orgsResponse.body.data[0].id as string;
+
+    await request(app.getHttpServer())
+      .post("/api/auth/sign-out")
+      .set("Authorization", `Bearer ${signupToken}`)
+      .expect(201);
+
+    const [verificationToken] = await db
+      .select({ token: authTokens.token })
+      .from(authTokens)
+      .where(
+        and(
+          eq(authTokens.type, "email_verification"),
+          eq(authTokens.userId, userId),
         ),
       )
       .limit(1);
@@ -144,12 +207,86 @@ describe("Auth and workspaces (e2e)", () => {
       .send({ token: verificationToken!.token })
       .expect(201);
 
-    const response = await request(app.getHttpServer())
-      .get("/api/organizations")
-      .set("Authorization", `Bearer ${authToken}`)
+    const [beforeSignIn] = await db
+      .select({ trialEndsAt: organizations.trialEndsAt })
+      .from(organizations)
+      .where(eq(organizations.id, orgId))
+      .limit(1);
+
+    expect(beforeSignIn?.trialEndsAt).toBeNull();
+
+    await request(app.getHttpServer())
+      .post("/api/auth/sign-in")
+      .send({
+        email,
+        password: testPassword,
+      })
+      .expect(201);
+
+    const [afterSignIn] = await db
+      .select({ trialEndsAt: organizations.trialEndsAt })
+      .from(organizations)
+      .where(eq(organizations.id, orgId))
+      .limit(1);
+
+    expect(afterSignIn?.trialEndsAt).not.toBeNull();
+  });
+
+  it("starts the trial on sign-in when the owner is already verified", async () => {
+    const email = `e2e-verified-signin-${randomUUID()}@example.com`;
+
+    const signUpResponse = await request(app.getHttpServer())
+      .post("/api/auth/sign-up")
+      .send({
+        email,
+        name: "Verified Sign-In User",
+        password: testPassword,
+        confirmPassword: testPassword,
+      })
+      .expect(201);
+
+    const signupToken = signUpResponse.body.data.token as string;
+
+    const meResponse = await request(app.getHttpServer())
+      .get("/api/users/me")
+      .set("Authorization", `Bearer ${signupToken}`)
       .expect(200);
 
-    expect(response.body.data[0].trialEndsAt).not.toBeNull();
+    const userId = meResponse.body.data.id as string;
+
+    const orgsResponse = await request(app.getHttpServer())
+      .get("/api/organizations")
+      .set("Authorization", `Bearer ${signupToken}`)
+      .expect(200);
+
+    const orgId = orgsResponse.body.data[0].id as string;
+    expect(orgsResponse.body.data[0].trialEndsAt).toBeNull();
+
+    await request(app.getHttpServer())
+      .post("/api/auth/sign-out")
+      .set("Authorization", `Bearer ${signupToken}`)
+      .expect(201);
+
+    await db
+      .update(users)
+      .set({ emailVerifiedAt: new Date() })
+      .where(eq(users.id, userId));
+
+    await request(app.getHttpServer())
+      .post("/api/auth/sign-in")
+      .send({
+        email,
+        password: testPassword,
+      })
+      .expect(201);
+
+    const [organization] = await db
+      .select({ trialEndsAt: organizations.trialEndsAt })
+      .from(organizations)
+      .where(eq(organizations.id, orgId))
+      .limit(1);
+
+    expect(organization?.trialEndsAt).not.toBeNull();
   });
 
   it("rejects unauthenticated workspace access", () => {

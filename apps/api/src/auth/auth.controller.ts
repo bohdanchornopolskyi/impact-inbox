@@ -5,6 +5,7 @@ import { SessionsService } from "./sessions.service";
 import { EmailVerificationService } from "./email-verification.service";
 import { RegistrationService } from "src/onboarding/registration.service";
 import { UsersService } from "src/users/users.service";
+import { OrganizationsService } from "src/organizations/organizations.service";
 import { SignInDto } from "src/auth/dto/sign-in.dto";
 import { SignUpDto } from "src/auth/dto/sign-up.dto";
 import { ChangePasswordDto } from "src/auth/dto/change-password.dto";
@@ -23,6 +24,7 @@ export class AuthController {
     private readonly registrationService: RegistrationService,
     private readonly emailVerificationService: EmailVerificationService,
     private readonly usersService: UsersService,
+    private readonly organizationsService: OrganizationsService,
   ) {}
 
   @Public()
@@ -66,10 +68,21 @@ export class AuthController {
 
   @Public()
   @Post("confirm-email")
-  async confirmEmail(@Body() dto: ConfirmEmailDto): Promise<SuccessData> {
+  async confirmEmail(
+    @Body() dto: ConfirmEmailDto,
+    @CurrentUser() sessionUser?: UserProfileData,
+  ): Promise<SuccessData> {
     const userId =
       await this.emailVerificationService.consumeEmailVerificationToken(dto);
-    await this.usersService.verifyEmail(userId);
+    const verifiedUser = await this.usersService.verifyEmail(userId);
+
+    if (sessionUser?.id === verifiedUser.id) {
+      await this.organizationsService.startTrialIfEligible(
+        verifiedUser.id,
+        verifiedUser.emailVerifiedAt,
+      );
+    }
+
     return { success: true };
   }
 
