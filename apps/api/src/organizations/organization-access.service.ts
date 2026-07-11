@@ -49,6 +49,23 @@ export class OrganizationAccessService {
     return this.toAuthenticatedContext(organization, membership);
   }
 
+  async getMembership(
+    organizationId: string,
+    userId: string,
+  ): Promise<OrganizationMembersSelect | undefined> {
+    const [membership] = await this.db
+      .select()
+      .from(organizationMembers)
+      .where(
+        and(
+          eq(organizationMembers.organizationId, organizationId),
+          eq(organizationMembers.userId, userId),
+        ),
+      );
+
+    return membership;
+  }
+
   private toAuthenticatedContext(
     organization: OrganizationsSelect,
     membership: OrganizationMembersSelect,

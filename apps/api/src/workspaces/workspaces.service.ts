@@ -5,6 +5,7 @@ import {
   Injectable,
   InternalServerErrorException,
   NotFoundException,
+  forwardRef,
 } from "@nestjs/common";
 import { and, eq } from "drizzle-orm";
 import {
@@ -21,9 +22,11 @@ import {
   type WorkspaceDetailData,
   type WorkspaceListItemData,
   type WorkspaceMemberData,
+  type WorkspaceMemberInviteResultData,
   type WorkspaceMemberWithUserData,
 } from "@repo/shared";
 import { DATABASE_TOKEN } from "src/database/database.constants";
+import { InvitesService } from "src/invites/invites.service";
 import { OrganizationsService } from "src/organizations/organizations.service";
 import { UsersService } from "src/users/users.service";
 import { CreateWorkspaceDto } from "src/workspaces/dto/create-workspace.dto";
@@ -38,6 +41,8 @@ export class WorkspacesService {
     private readonly usersService: UsersService,
     private readonly workspaceAccessService: WorkspaceAccessService,
     private readonly organizationsService: OrganizationsService,
+    @Inject(forwardRef(() => InvitesService))
+    private readonly invitesService: InvitesService,
   ) {}
 
   async createWorkspace(
@@ -225,12 +230,20 @@ export class WorkspacesService {
   async addMember(
     workspaceId: string,
     dto: InviteMemberDto,
-  ): Promise<WorkspaceMemberData> {
+    invitedByUserId: string,
+  ): Promise<WorkspaceMemberInviteResultData> {
     const workspace = await this.getWorkspaceById(workspaceId);
     const user = await this.usersService.findUserByEmail({ email: dto.email });
 
     if (!user) {
-      throw new NotFoundException("User not found");
+      const invite = await this.invitesService.createWorkspaceInvite({
+        organizationId: workspace.organizationId,
+        workspaceId,
+        email: dto.email,
+        workspaceRole: dto.role,
+        invitedByUserId,
+      });
+      return { status: "pending_invite", invite };
     }
 
     const existingMembership = await this.workspaceAccessService.getMembership(
@@ -259,7 +272,7 @@ export class WorkspacesService {
       throw new InternalServerErrorException("Member invitation failed.");
     }
 
-    return membership;
+    return { status: "member", member: membership };
   }
 
   async removeMember(workspaceId: string, targetUserId: string): Promise<void> {

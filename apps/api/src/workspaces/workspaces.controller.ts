@@ -10,11 +10,13 @@ import {
 } from "@nestjs/common";
 import {
   type AuthenticatedWorkspaceContext,
+  type InviteData,
   type SuccessData,
   type UserProfileData,
   type WorkspaceDetailData,
   type WorkspaceListItemData,
   type WorkspaceMemberData,
+  type WorkspaceMemberInviteResultData,
   type WorkspaceMemberWithUserData,
 } from "@repo/shared";
 import { CurrentUser } from "src/auth/decorators/current-user.decorator";
@@ -26,10 +28,14 @@ import { UpdateWorkspaceDto } from "src/workspaces/dto/update-workspace.dto";
 import { UpdateMemberRoleDto } from "src/workspaces/dto/update-member-role.dto";
 import { WorkspaceGuard } from "src/workspaces/guards/workspace.guard";
 import { WorkspacesService } from "src/workspaces/workspaces.service";
+import { InvitesService } from "src/invites/invites.service";
 
 @Controller("workspaces")
 export class WorkspacesController {
-  constructor(private readonly workspacesService: WorkspacesService) {}
+  constructor(
+    private readonly workspacesService: WorkspacesService,
+    private readonly invitesService: InvitesService,
+  ) {}
 
   @Post()
   create(
@@ -117,9 +123,10 @@ export class WorkspacesController {
   @WorkspaceRoles("admin", "owner")
   addMember(
     @Param("id") workspaceId: string,
+    @CurrentUser() user: UserProfileData,
     @Body() dto: InviteMemberDto,
-  ): Promise<WorkspaceMemberData> {
-    return this.workspacesService.addMember(workspaceId, dto);
+  ): Promise<WorkspaceMemberInviteResultData> {
+    return this.workspacesService.addMember(workspaceId, dto, user.id);
   }
 
   @Patch(":id/members/:userId")
@@ -146,5 +153,33 @@ export class WorkspacesController {
   ): Promise<SuccessData> {
     await this.workspacesService.removeMember(workspaceId, userId);
     return { success: true };
+  }
+
+  @Get(":id/invites")
+  @UseGuards(WorkspaceGuard)
+  @WorkspaceRoles("admin", "owner")
+  listInvites(@Param("id") workspaceId: string): Promise<InviteData[]> {
+    return this.invitesService.listWorkspaceInvites(workspaceId);
+  }
+
+  @Delete(":id/invites/:inviteId")
+  @UseGuards(WorkspaceGuard)
+  @WorkspaceRoles("admin", "owner")
+  async revokeInvite(
+    @Param("id") workspaceId: string,
+    @Param("inviteId") inviteId: string,
+  ): Promise<SuccessData> {
+    await this.invitesService.revokeInvite(inviteId, { workspaceId });
+    return { success: true };
+  }
+
+  @Post(":id/invites/:inviteId/resend")
+  @UseGuards(WorkspaceGuard)
+  @WorkspaceRoles("admin", "owner")
+  resendInvite(
+    @Param("id") workspaceId: string,
+    @Param("inviteId") inviteId: string,
+  ): Promise<InviteData> {
+    return this.invitesService.resendInvite(inviteId, { workspaceId });
   }
 }

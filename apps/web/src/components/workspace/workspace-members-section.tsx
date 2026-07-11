@@ -9,19 +9,20 @@ import {
   MemberList,
   type MemberListItem,
 } from "@/components/members/member-list";
+import { PendingInvitesList } from "@/components/members/pending-invites-list";
 import { ConfirmModal } from "@/components/template-builder/modals/confirm-modal";
-import { isApiErrorCode } from "@/lib/api-error";
-import {
-  EXISTING_USER_INVITE_HINT,
-  WORKSPACE_MEMBER_ROLE_OPTIONS,
-} from "@/lib/members/member-role-options";
+import { WORKSPACE_MEMBER_ROLE_OPTIONS } from "@/lib/members/member-role-options";
 import { useOrganizationMembers } from "@/lib/org/org-hooks";
 import {
   useInviteWorkspaceMember,
   useRemoveWorkspaceMember,
+  useResendWorkspaceInvite,
+  useRevokeWorkspaceInvite,
   useUpdateWorkspaceMemberRole,
+  useWorkspaceInvites,
   useWorkspaceMembers,
 } from "@/lib/workspaces/workspace-member-hooks";
+import { showToast } from "@/stores/toast-store";
 import { useToastMutation } from "@/lib/use-toast-mutation";
 
 type WorkspaceMembersSectionProps = {
@@ -36,15 +37,19 @@ export function WorkspaceMembersSection({
   canManage,
 }: WorkspaceMembersSectionProps) {
   const membersQuery = useWorkspaceMembers(workspaceId);
+  const invitesQuery = useWorkspaceInvites(workspaceId, canManage);
   const orgMembersQuery = useOrganizationMembers(organizationId);
   const inviteMember = useInviteWorkspaceMember(workspaceId);
   const updateRole = useUpdateWorkspaceMemberRole(workspaceId);
   const removeMember = useRemoveWorkspaceMember(workspaceId);
+  const resendInvite = useResendWorkspaceInvite(workspaceId);
+  const revokeInvite = useRevokeWorkspaceInvite(workspaceId);
 
   const [inviteOpen, setInviteOpen] = useState(false);
   const [assignOpen, setAssignOpen] = useState(false);
   const [removeTarget, setRemoveTarget] = useState<MemberListItem | null>(null);
   const [pendingUserId, setPendingUserId] = useState<string | null>(null);
+  const [pendingInviteId, setPendingInviteId] = useState<string | null>(null);
 
   const members = useMemo(
     () =>
@@ -71,25 +76,18 @@ export function WorkspaceMembersSection({
   }, [members, orgMembersQuery.data]);
 
   const invite = useToastMutation({
-    mutationFn: async (input: { email: string; role: string }) => {
-      try {
-        return await inviteMember.mutateAsync({
-          email: input.email,
-          role: input.role as Exclude<WorkspaceRole, "owner">,
-        });
-      } catch (error) {
-        if (isApiErrorCode(error, "NOT_FOUND")) {
-          throw new Error(
-            "No account found for that email. They need to sign up before you can add them.",
-          );
-        }
-
-        throw error;
-      }
+    mutationFn: (input: { email: string; role: string }) =>
+      inviteMember.mutateAsync({
+        email: input.email,
+        role: input.role as Exclude<WorkspaceRole, "owner">,
+      }),
+    errorMessage: "Could not send invite",
+    onSuccess: (result) => {
+      setInviteOpen(false);
+      showToast(
+        result.status === "pending_invite" ? "Invite sent" : "Member added",
+      );
     },
-    successMessage: "Member added",
-    errorMessage: "Could not add member",
-    onSuccess: () => setInviteOpen(false),
   });
 
   const assign = useToastMutation({
@@ -98,9 +96,15 @@ export function WorkspaceMembersSection({
         email: input.email,
         role: input.role as Exclude<WorkspaceRole, "owner">,
       }),
-    successMessage: "Member added to workspace",
     errorMessage: "Could not add member",
-    onSuccess: () => setAssignOpen(false),
+    onSuccess: (result) => {
+      setAssignOpen(false);
+      showToast(
+        result.status === "pending_invite"
+          ? "Invite sent"
+          : "Member added to workspace",
+      );
+    },
   });
 
   const remove = useToastMutation({
@@ -108,6 +112,32 @@ export function WorkspaceMembersSection({
     successMessage: "Member removed",
     errorMessage: "Could not remove member",
     onSuccess: () => setRemoveTarget(null),
+  });
+
+  const resend = useToastMutation({
+    mutationFn: async (inviteId: string) => {
+      setPendingInviteId(inviteId);
+      try {
+        return await resendInvite.mutateAsync(inviteId);
+      } finally {
+        setPendingInviteId(null);
+      }
+    },
+    successMessage: "Invite resent",
+    errorMessage: "Could not resend invite",
+  });
+
+  const revoke = useToastMutation({
+    mutationFn: async (inviteId: string) => {
+      setPendingInviteId(inviteId);
+      try {
+        return await revokeInvite.mutateAsync(inviteId);
+      } finally {
+        setPendingInviteId(null);
+      }
+    },
+    successMessage: "Invite revoked",
+    errorMessage: "Could not revoke invite",
   });
 
   async function handleRoleChange(userId: string, role: string) {
@@ -124,39 +154,65 @@ export function WorkspaceMembersSection({
   }
 
   return (
-    <section className="space-y-4">
-      <div className="flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <h2 className="text-ui-lg font-medium text-text-primary">Members</h2>
-          <p className="mt-1 text-ui-sm text-text-secondary">
-            People who can access this workspace.
-          </p>
-        </div>
-        {canManage ? (
-          <div className="flex flex-wrap gap-2">
-            <Button variant="secondary" onClick={() => setAssignOpen(true)}>
-              Add org member
-            </Button>
-            <Button variant="primary" onClick={() => setInviteOpen(true)}>
-              Invite by email
-            </Button>
+    <section className="space-y-8">
+      <div className="space-y-4">
+        <div className="flex flex-wrap items-end justify-between gap-3">
+          <div>
+            <h2 className="text-ui-lg font-medium text-text-primary">Members</h2>
+            <p className="mt-1 text-ui-sm text-text-secondary">
+              People who can access this workspace.
+            </p>
           </div>
-        ) : null}
+          {canManage ? (
+            <div className="flex flex-wrap gap-2">
+              <Button variant="secondary" onClick={() => setAssignOpen(true)}>
+                Add org member
+              </Button>
+              <Button variant="primary" onClick={() => setInviteOpen(true)}>
+                Invite by email
+              </Button>
+            </div>
+          ) : null}
+        </div>
+
+        {membersQuery.isLoading ? (
+          <p className="text-ui-sm text-text-secondary">Loading members...</p>
+        ) : (
+          <MemberList
+            members={members}
+            canManage={canManage}
+            protectedRole="owner"
+            roleOptions={WORKSPACE_MEMBER_ROLE_OPTIONS}
+            pendingUserId={pendingUserId}
+            onRoleChange={handleRoleChange}
+            onRemove={setRemoveTarget}
+          />
+        )}
       </div>
 
-      {membersQuery.isLoading ? (
-        <p className="text-ui-sm text-text-secondary">Loading members...</p>
-      ) : (
-        <MemberList
-          members={members}
-          canManage={canManage}
-          protectedRole="owner"
-          roleOptions={WORKSPACE_MEMBER_ROLE_OPTIONS}
-          pendingUserId={pendingUserId}
-          onRoleChange={handleRoleChange}
-          onRemove={setRemoveTarget}
-        />
-      )}
+      {canManage ? (
+        <div className="space-y-4">
+          <div>
+            <h3 className="text-ui-md font-medium text-text-primary">
+              Pending invites
+            </h3>
+            <p className="mt-1 text-ui-sm text-text-secondary">
+              Invites waiting for someone without an account to accept.
+            </p>
+          </div>
+          {invitesQuery.isLoading ? (
+            <p className="text-ui-sm text-text-secondary">Loading invites...</p>
+          ) : (
+            <PendingInvitesList
+              invites={invitesQuery.data ?? []}
+              canManage={canManage}
+              pendingInviteId={pendingInviteId}
+              onResend={(inviteId) => resend.mutate(inviteId)}
+              onRevoke={(inviteId) => revoke.mutate(inviteId)}
+            />
+          )}
+        </div>
+      ) : null}
 
       <InviteMemberModal
         open={inviteOpen}
@@ -165,7 +221,6 @@ export function WorkspaceMembersSection({
         description="Add someone by email. They will join the organization if needed."
         roleOptions={WORKSPACE_MEMBER_ROLE_OPTIONS}
         defaultRole="member"
-        inviteHint={EXISTING_USER_INVITE_HINT}
         isPending={invite.isPending}
         onInvite={(input) => invite.mutate(input)}
       />

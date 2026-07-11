@@ -5,6 +5,7 @@ import {
   Injectable,
   InternalServerErrorException,
   NotFoundException,
+  forwardRef,
 } from "@nestjs/common";
 import { and, eq, inArray, isNull } from "drizzle-orm";
 import {
@@ -23,10 +24,13 @@ import {
   type OrganizationDetailData,
   type OrganizationListItemData,
   type OrganizationMemberData,
+  type OrganizationMemberInviteResultData,
   type OrganizationMemberWithUserData,
   type OrganizationRole,
 } from "@repo/shared";
 import { DATABASE_TOKEN } from "src/database/database.constants";
+import { InvitesService } from "src/invites/invites.service";
+import { OrganizationAccessService } from "src/organizations/organization-access.service";
 import { UsersService } from "src/users/users.service";
 
 @Injectable()
@@ -34,6 +38,9 @@ export class OrganizationsService {
   constructor(
     @Inject(DATABASE_TOKEN) private readonly db: Database,
     private readonly usersService: UsersService,
+    private readonly organizationAccessService: OrganizationAccessService,
+    @Inject(forwardRef(() => InvitesService))
+    private readonly invitesService: InvitesService,
   ) {}
 
   async createDefaultOrganizationForUser(
@@ -254,14 +261,24 @@ export class OrganizationsService {
   async addMember(
     organizationId: string,
     dto: InviteOrganizationMemberInput,
-  ): Promise<OrganizationMemberData> {
+    invitedByUserId: string,
+  ): Promise<OrganizationMemberInviteResultData> {
     const user = await this.usersService.findUserByEmail({ email: dto.email });
 
     if (!user) {
-      throw new NotFoundException("User not found");
+      const invite = await this.invitesService.createOrganizationInvite({
+        organizationId,
+        email: dto.email,
+        organizationRole: dto.role,
+        invitedByUserId,
+      });
+      return { status: "pending_invite", invite };
     }
 
-    const existing = await this.getMembership(organizationId, user.id);
+    const existing = await this.organizationAccessService.getMembership(
+      organizationId,
+      user.id,
+    );
     if (existing) {
       throw new ConflictException("User is already a member of this organization");
     }
@@ -279,7 +296,7 @@ export class OrganizationsService {
       throw new InternalServerErrorException("Organization membership creation failed.");
     }
 
-    return membership;
+    return { status: "member", member: membership };
   }
 
   async updateMemberRole(
@@ -287,7 +304,10 @@ export class OrganizationsService {
     targetUserId: string,
     role: OrganizationMemberData["role"],
   ): Promise<OrganizationMemberData> {
-    const membership = await this.getMembership(organizationId, targetUserId);
+    const membership = await this.organizationAccessService.getMembership(
+      organizationId,
+      targetUserId,
+    );
 
     if (!membership) {
       throw new NotFoundException("Member not found");
@@ -311,7 +331,10 @@ export class OrganizationsService {
   }
 
   async removeMember(organizationId: string, targetUserId: string): Promise<void> {
-    const membership = await this.getMembership(organizationId, targetUserId);
+    const membership = await this.organizationAccessService.getMembership(
+      organizationId,
+      targetUserId,
+    );
 
     if (!membership) {
       throw new NotFoundException("Member not found");
@@ -324,22 +347,5 @@ export class OrganizationsService {
     await this.db
       .delete(organizationMembers)
       .where(eq(organizationMembers.id, membership.id));
-  }
-
-  async getMembership(
-    organizationId: string,
-    userId: string,
-  ): Promise<OrganizationMembersSelect | undefined> {
-    const [membership] = await this.db
-      .select()
-      .from(organizationMembers)
-      .where(
-        and(
-          eq(organizationMembers.organizationId, organizationId),
-          eq(organizationMembers.userId, userId),
-        ),
-      );
-
-    return membership;
   }
 }

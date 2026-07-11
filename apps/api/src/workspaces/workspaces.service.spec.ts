@@ -1,6 +1,7 @@
 import { ForbiddenException } from "@nestjs/common";
 import { Test, TestingModule } from "@nestjs/testing";
 import { DATABASE_TOKEN } from "src/database/database.constants";
+import { InvitesService } from "src/invites/invites.service";
 import { OrganizationsService } from "src/organizations/organizations.service";
 import { UsersService } from "src/users/users.service";
 import { WorkspaceAccessService } from "./workspace-access.service";
@@ -62,6 +63,7 @@ describe("WorkspacesService", () => {
           provide: OrganizationsService,
           useValue: mockOrganizationsService,
         },
+        { provide: InvitesService, useValue: {} },
       ],
     }).compile();
 

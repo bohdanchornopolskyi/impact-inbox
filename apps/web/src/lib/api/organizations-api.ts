@@ -3,6 +3,7 @@ import type {
   OrganizationDetailData,
   OrganizationListItemData,
   OrganizationMemberData,
+  OrganizationMemberInviteResultData,
   OrganizationMemberWithUserData,
   UpdateOrganizationMemberRoleInput,
 } from "@repo/shared";
@@ -37,12 +38,15 @@ export function inviteOrganizationMember(
   token: string,
   orgId: string,
   input: InviteOrganizationMemberInput,
-): Promise<OrganizationMemberData> {
-  return apiRequest<OrganizationMemberData>(`/organizations/${orgId}/members`, {
-    token,
-    method: "POST",
-    body: input,
-  });
+): Promise<OrganizationMemberInviteResultData> {
+  return apiRequest<OrganizationMemberInviteResultData>(
+    `/organizations/${orgId}/members`,
+    {
+      token,
+      method: "POST",
+      body: input,
+    },
+  );
 }
 
 export function updateOrganizationMemberRole(

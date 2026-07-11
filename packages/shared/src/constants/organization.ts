@@ -7,6 +7,7 @@ const ORGANIZATION_ROLE_RANK = {
 } as const;
 
 const TRIAL_DURATION_MS = 7 * 24 * 60 * 60 * 1000;
+const INVITE_DURATION_MS = 7 * 24 * 60 * 60 * 1000;
 
 function deriveDefaultOrganizationName(userName: string): string {
   return `${userName}'s Organization`;
@@ -26,6 +27,7 @@ export {
   ORGANIZATION_ROLES,
   ORGANIZATION_ROLE_RANK,
   TRIAL_DURATION_MS,
+  INVITE_DURATION_MS,
   deriveDefaultOrganizationName,
   hasOrganizationRoleAtLeast,
 };

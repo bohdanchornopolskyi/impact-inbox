@@ -2,6 +2,7 @@ import { Test, TestingModule } from "@nestjs/testing";
 import { WorkspacesController } from "./workspaces.controller";
 import { WorkspacesService } from "./workspaces.service";
 import { WorkspaceGuard } from "./guards/workspace.guard";
+import { InvitesService } from "src/invites/invites.service";
 
 describe("WorkspacesController", () => {
   let controller: WorkspacesController;
@@ -20,6 +21,7 @@ describe("WorkspacesController", () => {
       controllers: [WorkspacesController],
       providers: [
         { provide: WorkspacesService, useValue: mockWorkspacesService },
+        { provide: InvitesService, useValue: {} },
       ],
     })
       .overrideGuard(WorkspaceGuard)

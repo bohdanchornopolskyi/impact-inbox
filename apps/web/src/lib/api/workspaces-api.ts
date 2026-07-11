@@ -6,6 +6,7 @@ import type {
   WorkspaceDetailData,
   WorkspaceListItemData,
   WorkspaceMemberData,
+  WorkspaceMemberInviteResultData,
   WorkspaceMemberWithUserData,
 } from "@repo/shared";
 import { apiRequest } from "@/lib/api-client";
@@ -60,8 +61,8 @@ export function inviteWorkspaceMember(
   token: string,
   workspaceId: string,
   input: InviteMemberInput,
-): Promise<WorkspaceMemberData> {
-  return apiRequest<WorkspaceMemberData>(
+): Promise<WorkspaceMemberInviteResultData> {
+  return apiRequest<WorkspaceMemberInviteResultData>(
     `/workspaces/${workspaceId}/members`,
     {
       token,

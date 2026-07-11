@@ -8,6 +8,11 @@ import type {
 } from "@repo/shared";
 import { useSession } from "@/contexts/session-context";
 import {
+  listWorkspaceInvites,
+  resendWorkspaceInvite,
+  revokeWorkspaceInvite,
+} from "@/lib/api/invites-api";
+import {
   inviteWorkspaceMember,
   listWorkspaceMembers,
   removeWorkspaceMember,
@@ -25,6 +30,16 @@ export function useWorkspaceMembers(workspaceId: string) {
   });
 }
 
+export function useWorkspaceInvites(workspaceId: string, enabled = true) {
+  const { token } = useSession();
+
+  return useQuery({
+    queryKey: workspaceQueryKeys.invites(workspaceId, token),
+    queryFn: () => listWorkspaceInvites(token, workspaceId),
+    enabled: Boolean(workspaceId) && enabled,
+  });
+}
+
 export function useInviteWorkspaceMember(workspaceId: string) {
   const { token } = useSession();
   const queryClient = useQueryClient();
@@ -35,6 +50,39 @@ export function useInviteWorkspaceMember(workspaceId: string) {
     onSuccess: () => {
       queryClient.invalidateQueries({
         queryKey: workspaceQueryKeys.members(workspaceId, token),
+      });
+      queryClient.invalidateQueries({
+        queryKey: workspaceQueryKeys.invites(workspaceId, token),
+      });
+    },
+  });
+}
+
+export function useResendWorkspaceInvite(workspaceId: string) {
+  const { token } = useSession();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (inviteId: string) =>
+      resendWorkspaceInvite(token, workspaceId, inviteId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: workspaceQueryKeys.invites(workspaceId, token),
+      });
+    },
+  });
+}
+
+export function useRevokeWorkspaceInvite(workspaceId: string) {
+  const { token } = useSession();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (inviteId: string) =>
+      revokeWorkspaceInvite(token, workspaceId, inviteId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: workspaceQueryKeys.invites(workspaceId, token),
       });
     },
   });

@@ -9,6 +9,7 @@ import { WorkspacesModule } from "src/workspaces/workspaces.module";
 import { TemplatesModule } from "src/templates/templates.module";
 import { ContactsModule } from "src/contacts/contacts.module";
 import { DatabaseModule } from "src/database/database.module";
+import { InvitesModule } from "src/invites/invites.module";
 
 @Module({
   imports: [
@@ -19,6 +20,7 @@ import { DatabaseModule } from "src/database/database.module";
     WorkspacesModule,
     TemplatesModule,
     ContactsModule,
+    InvitesModule,
     AuthModule,
   ],
   controllers: [AppController],

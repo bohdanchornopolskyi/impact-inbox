@@ -10,6 +10,11 @@ import type {
 import { useSession } from "@/contexts/session-context";
 import { sessionQueryKeys } from "@/lib/auth-session";
 import {
+  listOrganizationInvites,
+  resendOrganizationInvite,
+  revokeOrganizationInvite,
+} from "@/lib/api/invites-api";
+import {
   inviteOrganizationMember,
   listOrganizationMembers,
   removeOrganizationMember,
@@ -28,6 +33,16 @@ export function useOrganizationMembers(orgId: string) {
   });
 }
 
+export function useOrganizationInvites(orgId: string, enabled = true) {
+  const { token } = useSession();
+
+  return useQuery({
+    queryKey: orgQueryKeys.invites(orgId, token),
+    queryFn: () => listOrganizationInvites(token, orgId),
+    enabled: Boolean(orgId) && enabled,
+  });
+}
+
 export function useInviteOrganizationMember(orgId: string) {
   const { token } = useSession();
   const queryClient = useQueryClient();
@@ -38,6 +53,39 @@ export function useInviteOrganizationMember(orgId: string) {
     onSuccess: () => {
       queryClient.invalidateQueries({
         queryKey: orgQueryKeys.members(orgId, token),
+      });
+      queryClient.invalidateQueries({
+        queryKey: orgQueryKeys.invites(orgId, token),
+      });
+    },
+  });
+}
+
+export function useResendOrganizationInvite(orgId: string) {
+  const { token } = useSession();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (inviteId: string) =>
+      resendOrganizationInvite(token, orgId, inviteId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: orgQueryKeys.invites(orgId, token),
+      });
+    },
+  });
+}
+
+export function useRevokeOrganizationInvite(orgId: string) {
+  const { token } = useSession();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (inviteId: string) =>
+      revokeOrganizationInvite(token, orgId, inviteId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: orgQueryKeys.invites(orgId, token),
       });
     },
   });

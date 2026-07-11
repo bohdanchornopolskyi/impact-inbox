@@ -80,6 +80,23 @@ export class EmailService {
     });
   }
 
+  async sendInviteEmail(email: string, token: string): Promise<void> {
+    const acceptUrl = `${getWebOrigin()}/accept-invite?token=${encodeURIComponent(token)}`;
+
+    if (!this.resend) {
+      this.logger.log(`Invite email for ${email}: ${acceptUrl}`);
+      return;
+    }
+
+    await this.resend.emails.send({
+      from: this.from,
+      to: email,
+      subject: "You've been invited to Impact Inbox",
+      html: this.buildInviteHtml(acceptUrl),
+      text: `Accept your invite: ${acceptUrl}`,
+    });
+  }
+
   private buildVerificationHtml(verifyUrl: string): string {
     return `
       <div style="font-family:Geist,-apple-system,BlinkMacSystemFont,sans-serif;color:#18181b;line-height:1.5;">
@@ -126,6 +143,23 @@ export class EmailService {
         </a>
         <p style="font-size:12px;color:#71717a;margin:20px 0 0;">
           If you did not request this, you can ignore this email.
+        </p>
+      </div>
+    `.trim();
+  }
+
+  private buildInviteHtml(acceptUrl: string): string {
+    return `
+      <div style="font-family:Geist,-apple-system,BlinkMacSystemFont,sans-serif;color:#18181b;line-height:1.5;">
+        <h1 style="font-size:21px;font-weight:600;margin:0 0 12px;">You're invited</h1>
+        <p style="font-size:13px;color:#52525b;margin:0 0 20px;">
+          You've been invited to join a team on Impact Inbox. Accept the invite to get started.
+        </p>
+        <a href="${acceptUrl}" style="display:inline-block;padding:10px 16px;background:#4f46e5;color:#ffffff;text-decoration:none;border-radius:8px;font-size:13px;font-weight:600;">
+          Accept invite
+        </a>
+        <p style="font-size:12px;color:#71717a;margin:20px 0 0;">
+          If you were not expecting this invite, you can ignore this email.
         </p>
       </div>
     `.trim();

@@ -31,4 +31,11 @@ export class PlanLimitsService {
   ): Promise<void> {
     return;
   }
+
+  async assertCanInviteAdmin(
+    _organizationId: string,
+    _role: string,
+  ): Promise<void> {
+    return;
+  }
 }

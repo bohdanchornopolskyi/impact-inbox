@@ -26,7 +26,7 @@ Phase 1b member UI can add existing users by email. Unknown addresses need a pen
 - `invited_by_user_id`, `expires_at`, `accepted_at`, `revoked_at`, `created_at`
 - Unique partial index on pending `(organization_id, email)` where `accepted_at IS NULL AND revoked_at IS NULL`
 
-First committed Drizzle migration ships with this table (see [deferred-work.md](../deferred-work.md) — migrations batched pre-production).
+Schema applied locally via `db:push` (no migrations; see [deferred-work.md §5](../deferred-work.md#5-drizzle-migrations--ci-migrate)).
 
 ### API
 

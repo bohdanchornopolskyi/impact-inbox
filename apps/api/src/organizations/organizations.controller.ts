@@ -10,9 +10,11 @@ import {
 } from "@nestjs/common";
 import {
   type AuthenticatedOrganizationContext,
+  type InviteData,
   type OrganizationDetailData,
   type OrganizationListItemData,
   type OrganizationMemberData,
+  type OrganizationMemberInviteResultData,
   type OrganizationMemberWithUserData,
   type SuccessData,
   type UserProfileData,
@@ -24,10 +26,14 @@ import { InviteOrganizationMemberDto } from "src/organizations/dto/invite-organi
 import { UpdateOrganizationMemberRoleDto } from "src/organizations/dto/update-organization-member-role.dto";
 import { OrganizationGuard } from "src/organizations/guards/organization.guard";
 import { OrganizationsService } from "src/organizations/organizations.service";
+import { InvitesService } from "src/invites/invites.service";
 
 @Controller("organizations")
 export class OrganizationsController {
-  constructor(private readonly organizationsService: OrganizationsService) {}
+  constructor(
+    private readonly organizationsService: OrganizationsService,
+    private readonly invitesService: InvitesService,
+  ) {}
 
   @Get()
   list(
@@ -60,9 +66,10 @@ export class OrganizationsController {
   @OrganizationRoles("owner", "org_admin")
   addMember(
     @Param("orgId") orgId: string,
+    @CurrentUser() user: UserProfileData,
     @Body() dto: InviteOrganizationMemberDto,
-  ): Promise<OrganizationMemberData> {
-    return this.organizationsService.addMember(orgId, dto);
+  ): Promise<OrganizationMemberInviteResultData> {
+    return this.organizationsService.addMember(orgId, dto, user.id);
   }
 
   @Patch(":orgId/members/:userId")
@@ -85,5 +92,37 @@ export class OrganizationsController {
   ): Promise<SuccessData> {
     await this.organizationsService.removeMember(orgId, userId);
     return { success: true };
+  }
+
+  @Get(":orgId/invites")
+  @UseGuards(OrganizationGuard)
+  @OrganizationRoles("owner", "org_admin")
+  listInvites(@Param("orgId") orgId: string): Promise<InviteData[]> {
+    return this.invitesService.listOrganizationInvites(orgId);
+  }
+
+  @Delete(":orgId/invites/:inviteId")
+  @UseGuards(OrganizationGuard)
+  @OrganizationRoles("owner", "org_admin")
+  async revokeInvite(
+    @Param("orgId") orgId: string,
+    @Param("inviteId") inviteId: string,
+  ): Promise<SuccessData> {
+    await this.invitesService.revokeInvite(inviteId, {
+      organizationId: orgId,
+    });
+    return { success: true };
+  }
+
+  @Post(":orgId/invites/:inviteId/resend")
+  @UseGuards(OrganizationGuard)
+  @OrganizationRoles("owner", "org_admin")
+  resendInvite(
+    @Param("orgId") orgId: string,
+    @Param("inviteId") inviteId: string,
+  ): Promise<InviteData> {
+    return this.invitesService.resendInvite(inviteId, {
+      organizationId: orgId,
+    });
   }
 }
