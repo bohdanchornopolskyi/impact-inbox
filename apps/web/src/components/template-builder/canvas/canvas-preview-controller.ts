@@ -6,15 +6,6 @@ import {
   type CanvasDropTarget,
   type TemplateContentData,
 } from "@repo/shared";
-import type {
-  BlockEditCancelMessage,
-  BlockEditCommitMessage,
-  BlockEditStartMessage,
-  BlockEditSyncMessage,
-  RichtextFormatStateData,
-  RichtextFormatStateMessage,
-} from "./canvas-bridge";
-import { canShowDropIndicator } from "./canvas-dnd";
 import {
   isBlockEditCancelMessage,
   isBlockEditCommitMessage,
@@ -24,7 +15,14 @@ import {
   isCanvasDropTargetMessage,
   isPreviewNeedsReloadMessage,
   isRichtextFormatStateMessage,
-} from "./canvas-bridge";
+  type BlockEditCancelMessage,
+  type BlockEditCommitMessage,
+  type BlockEditStartMessage,
+  type BlockEditSyncMessage,
+  type RichtextFormatStateData,
+  type RichtextFormatStateMessage,
+} from "./canvas-bridge-protocol";
+import { canShowDropIndicator } from "./canvas-dnd";
 
 export type PreviewUpdateAction = "none" | "reload" | "patch";
 

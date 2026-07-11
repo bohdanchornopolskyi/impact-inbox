@@ -1,16 +1,18 @@
 import type { CanvasDropTarget, TemplateContentData } from "@repo/shared";
-import { isCanvasPaletteDragCommitMessage } from "./canvas-bridge";
+import type { ContentBlockType, TemplateBlockType } from "@repo/shared";
+import {
+  isCanvasDragActiveMessage,
+  isCanvasDragCommitMessage,
+  isCanvasDragHandleDownMessage,
+  isCanvasPaletteDragCommitMessage,
+  type CanvasDragKind,
+} from "./canvas-bridge-protocol";
 import {
   applyPaletteInsert,
   canDropAtTarget,
   canInsertBlockTypeAtTarget,
   inferCanvasDragKind,
-  isCanvasDragActiveMessage,
-  isCanvasDragCommitMessage,
-  isCanvasDragHandleDownMessage,
-  type CanvasDragKind,
 } from "./canvas-dnd";
-import type { ContentBlockType, TemplateBlockType } from "@repo/shared";
 
 export type PaletteDragSession = {
   blockType: TemplateBlockType;

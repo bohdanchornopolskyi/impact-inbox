@@ -11,9 +11,13 @@ import {
 } from "react";
 import { useBuilder } from "../builder-provider";
 import type {
+  RichtextCancelMessage,
+  RichtextCommitMessage,
+  RichtextFormatCommandMessage,
   RichtextFormatStateData,
   RichtextHeadingTag,
-} from "./canvas-bridge";
+  RichtextSetHeadingMessage,
+} from "./canvas-bridge-protocol";
 
 export type RichtextEditSession = {
   blockId: string;
@@ -22,10 +26,10 @@ export type RichtextEditSession = {
 export type RichtextFormatState = RichtextFormatStateData;
 
 export type RichtextCommand =
-  | { type: "richtext-format"; blockId: string; command: string; value?: string }
-  | { type: "richtext-set-heading"; blockId: string; tag: RichtextHeadingTag }
-  | { type: "richtext-commit" }
-  | { type: "richtext-cancel" };
+  | RichtextFormatCommandMessage
+  | RichtextSetHeadingMessage
+  | RichtextCommitMessage
+  | RichtextCancelMessage;
 
 type RichtextCommandSink = (command: RichtextCommand) => void;
 

@@ -1,6 +1,11 @@
 import { describe, expect, it, vi } from "vitest";
 import type { TemplateContentData } from "@repo/shared";
 import {
+  isCanvasDragActiveMessage,
+  isCanvasDragCommitMessage,
+  isCanvasDragHandleDownMessage,
+} from "./canvas-bridge-protocol";
+import {
   applyPaletteInsert,
   blockTypeToDragKind,
   canDropAtTarget,
@@ -12,9 +17,6 @@ import {
   canInsertBlockTypeAtTarget,
   canShowDropIndicator,
   inferCanvasDragKind,
-  isCanvasDragActiveMessage,
-  isCanvasDragCommitMessage,
-  isCanvasDragHandleDownMessage,
 } from "./canvas-dnd";
 
 const content: TemplateContentData = {

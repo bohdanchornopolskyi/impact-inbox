@@ -20,11 +20,11 @@ import {
 } from "@repo/shared";
 import { TemplateBlockIcon } from "../block-icons";
 import { useBuilder } from "../builder-provider";
-import { isCanvasPaletteDragCommitMessage } from "./canvas-bridge";
 import {
-  blockTypeToDragKind,
   isCanvasDragActiveMessage,
-} from "./canvas-dnd";
+  isCanvasPaletteDragCommitMessage,
+} from "./canvas-bridge-protocol";
+import { blockTypeToDragKind } from "./canvas-dnd";
 import {
   createCanvasDragSessionState,
   handleCanvasDragMessage,

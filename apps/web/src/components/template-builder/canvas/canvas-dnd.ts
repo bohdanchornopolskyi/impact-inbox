@@ -2,10 +2,10 @@ import {
   CONTENT_BLOCK_TYPES,
   findBlock,
   isBodyDropTarget,
-  isCanvasDropTarget,
   isColumnDropTarget,
   isContentBlock,
   isDescendantOf,
+  isDragKindValidForTargetKind,
   isRowDropTarget,
   isSectionDropTarget,
   type CanvasDropTarget,
@@ -13,91 +13,12 @@ import {
   type TemplateBlockType,
   type TemplateContentData,
 } from "@repo/shared";
+import {
+  CANVAS_DRAG_KINDS,
+  type CanvasDragKind,
+} from "./canvas-bridge-protocol";
 
-export const CANVAS_DRAG_KINDS = [
-  "content",
-  "section",
-  "row",
-  "column",
-] as const;
-
-export type CanvasDragKind = (typeof CANVAS_DRAG_KINDS)[number];
-
-export type CanvasDragHandleDownMessage = {
-  type: "canvas-drag-handle-down";
-  blockId: string;
-  clientX: number;
-  clientY: number;
-};
-
-export type CanvasDragActiveMessage = {
-  type: "canvas-drag-active";
-  blockId: string;
-  dragKind: CanvasDragKind;
-};
-
-export type CanvasDragCommitMessage = {
-  type: "canvas-drag-commit";
-  blockId: string;
-  target: CanvasDropTarget | null;
-};
-
-function isCanvasDragKind(value: unknown): value is CanvasDragKind {
-  return (
-    typeof value === "string" &&
-    (CANVAS_DRAG_KINDS as readonly string[]).includes(value)
-  );
-}
-
-export function isCanvasDragHandleDownMessage(
-  data: unknown,
-): data is CanvasDragHandleDownMessage {
-  if (!data || typeof data !== "object") {
-    return false;
-  }
-
-  const message = data as Record<string, unknown>;
-  return (
-    message.type === "canvas-drag-handle-down" &&
-    typeof message.blockId === "string" &&
-    typeof message.clientX === "number" &&
-    typeof message.clientY === "number"
-  );
-}
-
-export function isCanvasDragActiveMessage(
-  data: unknown,
-): data is CanvasDragActiveMessage {
-  if (!data || typeof data !== "object") {
-    return false;
-  }
-
-  const message = data as Record<string, unknown>;
-  return (
-    message.type === "canvas-drag-active" &&
-    typeof message.blockId === "string" &&
-    isCanvasDragKind(message.dragKind)
-  );
-}
-
-export function isCanvasDragCommitMessage(
-  data: unknown,
-): data is CanvasDragCommitMessage {
-  if (!data || typeof data !== "object") {
-    return false;
-  }
-
-  const message = data as Record<string, unknown>;
-  if (message.type !== "canvas-drag-commit" || typeof message.blockId !== "string") {
-    return false;
-  }
-
-  if (message.target === null) {
-    return true;
-  }
-
-  return isCanvasDropTarget(message.target);
-}
+export { CANVAS_DRAG_KINDS, type CanvasDragKind };
 
 export function inferCanvasDragKind(
   content: TemplateContentData,
@@ -228,24 +149,7 @@ export function canInsertAtTarget(
   dragKind: CanvasDragKind,
   target: CanvasDropTarget | null,
 ): boolean {
-  if (!target) {
-    return false;
-  }
-
-  switch (dragKind) {
-    case "content":
-      return isColumnDropTarget(target);
-    case "section":
-      return isBodyDropTarget(target);
-    case "row":
-      return isSectionDropTarget(target);
-    case "column":
-      return isRowDropTarget(target);
-    default: {
-      const unreachable: never = dragKind;
-      return unreachable;
-    }
-  }
+  return isDragKindValidForTargetKind(dragKind, target);
 }
 
 export function canInsertBlockTypeAtTarget(
