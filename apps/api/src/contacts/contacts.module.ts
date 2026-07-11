@@ -11,7 +11,6 @@ import { ContactListsService } from "src/contacts/contact-lists.service";
 import { ListMembersService } from "src/contacts/list-members.service";
 import { ListConfirmService } from "src/contacts/list-confirm.service";
 import { ContactImportsService } from "src/contacts/contact-imports.service";
-import { ContactImportProcessor } from "src/contacts/contact-import.processor";
 
 @Module({
   imports: [WorkspacesModule, BillingModule, EmailModule],
@@ -27,7 +26,6 @@ import { ContactImportProcessor } from "src/contacts/contact-import.processor";
     ListMembersService,
     ListConfirmService,
     ContactImportsService,
-    ContactImportProcessor,
   ],
   exports: [ContactsService, ContactListsService],
 })
