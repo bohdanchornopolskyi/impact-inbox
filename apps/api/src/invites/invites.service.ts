@@ -7,7 +7,6 @@ import {
   InternalServerErrorException,
   NotFoundException,
   UnauthorizedException,
-  forwardRef,
 } from "@nestjs/common";
 import { and, eq, isNull } from "drizzle-orm";
 import { randomUUID } from "crypto";
@@ -15,7 +14,6 @@ import {
   invites,
   organizations,
   users,
-  workspaceMembers,
   workspaces,
   type Database,
   type InvitesSelect,
@@ -32,7 +30,7 @@ import {
 } from "@repo/shared";
 import { DATABASE_TOKEN } from "src/database/database.constants";
 import { EmailService } from "src/email/email.service";
-import { OrganizationsService } from "src/organizations/organizations.service";
+import { MembershipCommandsService } from "src/membership/membership-commands.service";
 import { PlanLimitsService } from "src/billing/plan-limits.service";
 
 function normalizeEmail(email: string): string {
@@ -62,8 +60,7 @@ export class InvitesService {
     @Inject(DATABASE_TOKEN) private readonly db: Database,
     private readonly emailService: EmailService,
     private readonly planLimitsService: PlanLimitsService,
-    @Inject(forwardRef(() => OrganizationsService))
-    private readonly organizationsService: OrganizationsService,
+    private readonly membershipCommands: MembershipCommandsService,
   ) {}
 
   async createOrganizationInvite(input: {
@@ -211,11 +208,53 @@ export class InvitesService {
     };
   }
 
-  async accept(
+  async acceptInvite(
     input: InviteAcceptInput,
+    currentUser: UserProfileData | undefined,
+    signUp: (dto: {
+      email: string;
+      name: string;
+      password: string;
+      confirmPassword: string;
+    }) => Promise<{ token: string }>,
+  ): Promise<InviteAcceptResultData> {
+    const wantsSignUp =
+      input.name !== undefined ||
+      input.password !== undefined ||
+      input.confirmPassword !== undefined;
+
+    if (!wantsSignUp) {
+      return this.acceptForSession(input.token, currentUser);
+    }
+
+    if (currentUser) {
+      throw new BadRequestException(
+        "Sign out before creating an account for this invite",
+      );
+    }
+
+    if (!input.name || !input.password || !input.confirmPassword) {
+      throw new BadRequestException("Sign-up fields are required");
+    }
+
+    const invite = await this.requireAcceptableInvite(input.token);
+
+    const signUpResult = await signUp({
+      email: invite.email,
+      name: input.name,
+      password: input.password,
+      confirmPassword: input.confirmPassword,
+    });
+
+    await this.applyMembershipForEmail(invite, invite.email);
+    return { success: true, token: signUpResult.token };
+  }
+
+  private async acceptForSession(
+    tokenValue: string,
     currentUser?: UserProfileData,
   ): Promise<InviteAcceptResultData> {
-    const invite = await this.requireAcceptableInvite(input.token);
+    const invite = await this.requireAcceptableInvite(tokenValue);
 
     if (!currentUser) {
       throw new UnauthorizedException(
@@ -233,9 +272,10 @@ export class InvitesService {
     return { success: true };
   }
 
-  async acceptForEmail(tokenValue: string, email: string): Promise<void> {
-    const invite = await this.requireAcceptableInvite(tokenValue);
-
+  private async applyMembershipForEmail(
+    invite: InvitesSelect,
+    email: string,
+  ): Promise<void> {
     if (normalizeEmail(email) !== invite.email) {
       throw new ForbiddenException(
         "This invite was sent to a different email address",
@@ -283,7 +323,7 @@ export class InvitesService {
     userId: string,
   ): Promise<void> {
     await this.db.transaction(async (tx) => {
-      await this.organizationsService.ensureOrgMember(
+      await this.membershipCommands.ensureOrgMember(
         invite.organizationId,
         userId,
         invite.organizationRole,
@@ -291,32 +331,12 @@ export class InvitesService {
       );
 
       if (invite.workspaceId && invite.workspaceRole) {
-        const [existing] = await tx
-          .select()
-          .from(workspaceMembers)
-          .where(
-            and(
-              eq(workspaceMembers.workspaceId, invite.workspaceId),
-              eq(workspaceMembers.userId, userId),
-            ),
-          );
-
-        if (!existing) {
-          const [membership] = await tx
-            .insert(workspaceMembers)
-            .values({
-              workspaceId: invite.workspaceId,
-              userId,
-              role: invite.workspaceRole,
-            })
-            .returning();
-
-          if (!membership) {
-            throw new InternalServerErrorException(
-              "Workspace membership creation failed.",
-            );
-          }
-        }
+        await this.membershipCommands.ensureWorkspaceMember(
+          invite.workspaceId,
+          userId,
+          invite.workspaceRole,
+          tx,
+        );
       }
 
       const [updated] = await tx

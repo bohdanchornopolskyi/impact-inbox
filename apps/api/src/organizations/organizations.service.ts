@@ -5,13 +5,11 @@ import {
   Injectable,
   InternalServerErrorException,
   NotFoundException,
-  forwardRef,
 } from "@nestjs/common";
 import { and, eq, inArray, isNull } from "drizzle-orm";
 import {
   type Database,
   type OrganizationsSelect,
-  type OrganizationMembersSelect,
   type Transaction,
   organizationMembers,
   organizations,
@@ -39,7 +37,6 @@ export class OrganizationsService {
     @Inject(DATABASE_TOKEN) private readonly db: Database,
     private readonly usersService: UsersService,
     private readonly organizationAccessService: OrganizationAccessService,
-    @Inject(forwardRef(() => InvitesService))
     private readonly invitesService: InvitesService,
   ) {}
 
@@ -136,44 +133,6 @@ export class OrganizationsService {
     }
 
     return row;
-  }
-
-  async ensureOrgMember(
-    organizationId: string,
-    userId: string,
-    role: OrganizationRole = "member",
-    tx?: Transaction,
-  ): Promise<OrganizationMembersSelect> {
-    const db = tx ?? this.db;
-
-    const [existing] = await db
-      .select()
-      .from(organizationMembers)
-      .where(
-        and(
-          eq(organizationMembers.organizationId, organizationId),
-          eq(organizationMembers.userId, userId),
-        ),
-      );
-
-    if (existing) {
-      return existing;
-    }
-
-    const [membership] = await db
-      .insert(organizationMembers)
-      .values({
-        organizationId,
-        userId,
-        role,
-      })
-      .returning();
-
-    if (!membership) {
-      throw new InternalServerErrorException("Organization membership creation failed.");
-    }
-
-    return membership;
   }
 
   async assertCanManageWorkspaces(

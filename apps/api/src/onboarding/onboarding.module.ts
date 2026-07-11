@@ -1,4 +1,4 @@
-import { Module, forwardRef } from "@nestjs/common";
+import { Module } from "@nestjs/common";
 import { RegistrationService } from "./registration.service";
 import { UsersModule } from "src/users/users.module";
 import { AccountsModule } from "src/accounts/accounts.module";
@@ -12,7 +12,7 @@ import { EmailVerificationModule } from "src/auth/email-verification.module";
     UsersModule,
     AccountsModule,
     WorkspacesModule,
-    forwardRef(() => OrganizationsModule),
+    OrganizationsModule,
     SessionsModule,
     EmailVerificationModule,
   ],

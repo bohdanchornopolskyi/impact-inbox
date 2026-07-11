@@ -10,6 +10,7 @@ import { TemplatesModule } from "src/templates/templates.module";
 import { ContactsModule } from "src/contacts/contacts.module";
 import { DatabaseModule } from "src/database/database.module";
 import { InvitesModule } from "src/invites/invites.module";
+import { InviteAcceptModule } from "src/invites/invite-accept.module";
 
 @Module({
   imports: [
@@ -21,6 +22,7 @@ import { InvitesModule } from "src/invites/invites.module";
     TemplatesModule,
     ContactsModule,
     InvitesModule,
+    InviteAcceptModule,
     AuthModule,
   ],
   controllers: [AppController],

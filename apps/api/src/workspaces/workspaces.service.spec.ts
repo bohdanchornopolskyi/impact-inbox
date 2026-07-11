@@ -2,6 +2,7 @@ import { ForbiddenException } from "@nestjs/common";
 import { Test, TestingModule } from "@nestjs/testing";
 import { DATABASE_TOKEN } from "src/database/database.constants";
 import { InvitesService } from "src/invites/invites.service";
+import { MembershipCommandsService } from "src/membership/membership-commands.service";
 import { OrganizationsService } from "src/organizations/organizations.service";
 import { UsersService } from "src/users/users.service";
 import { WorkspaceAccessService } from "./workspace-access.service";
@@ -16,11 +17,16 @@ describe("WorkspacesService", () => {
 
   const mockWorkspaceAccessService = {
     resolve: jest.fn(),
+    getMembership: jest.fn(),
   };
 
   const mockOrganizationsService = {
     assertCanManageWorkspaces: jest.fn(),
+  };
+
+  const mockMembershipCommands = {
     ensureOrgMember: jest.fn(),
+    ensureWorkspaceMember: jest.fn(),
   };
 
   const mockSelect = jest.fn();
@@ -63,6 +69,10 @@ describe("WorkspacesService", () => {
           provide: OrganizationsService,
           useValue: mockOrganizationsService,
         },
+        {
+          provide: MembershipCommandsService,
+          useValue: mockMembershipCommands,
+        },
         { provide: InvitesService, useValue: {} },
       ],
     }).compile();
@@ -76,14 +86,12 @@ describe("WorkspacesService", () => {
 
   describe("removeMember", () => {
     it("prevents removing the workspace owner", async () => {
-      mockWhere.mockResolvedValueOnce([
-        {
-          id: "member-1",
-          workspaceId: "ws-1",
-          userId: "owner-1",
-          role: "owner" as const,
-        },
-      ]);
+      mockWorkspaceAccessService.getMembership.mockResolvedValueOnce({
+        id: "member-1",
+        workspaceId: "ws-1",
+        userId: "owner-1",
+        role: "owner" as const,
+      });
 
       await expect(
         service.removeMember("ws-1", "owner-1"),

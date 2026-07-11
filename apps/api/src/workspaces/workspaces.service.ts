@@ -5,7 +5,6 @@ import {
   Injectable,
   InternalServerErrorException,
   NotFoundException,
-  forwardRef,
 } from "@nestjs/common";
 import { and, eq } from "drizzle-orm";
 import {
@@ -27,6 +26,7 @@ import {
 } from "@repo/shared";
 import { DATABASE_TOKEN } from "src/database/database.constants";
 import { InvitesService } from "src/invites/invites.service";
+import { MembershipCommandsService } from "src/membership/membership-commands.service";
 import { OrganizationsService } from "src/organizations/organizations.service";
 import { UsersService } from "src/users/users.service";
 import { CreateWorkspaceDto } from "src/workspaces/dto/create-workspace.dto";
@@ -41,7 +41,7 @@ export class WorkspacesService {
     private readonly usersService: UsersService,
     private readonly workspaceAccessService: WorkspaceAccessService,
     private readonly organizationsService: OrganizationsService,
-    @Inject(forwardRef(() => InvitesService))
+    private readonly membershipCommands: MembershipCommandsService,
     private readonly invitesService: InvitesService,
   ) {}
 
@@ -254,7 +254,7 @@ export class WorkspacesService {
       throw new ConflictException("User is already a member of this workspace");
     }
 
-    await this.organizationsService.ensureOrgMember(
+    await this.membershipCommands.ensureOrgMember(
       workspace.organizationId,
       user.id,
     );
