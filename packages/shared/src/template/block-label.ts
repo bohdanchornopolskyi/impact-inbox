@@ -1,7 +1,7 @@
 import {
   TEMPLATE_BLOCK_DEFINITIONS,
   type TemplateBlockType,
-} from "../constants";
+} from "../constants/template";
 import type { TemplateBlock } from "./tree-ops";
 
 export function getBlockTypeLabel(type: TemplateBlockType): string {

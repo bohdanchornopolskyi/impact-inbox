@@ -1,6 +1,6 @@
 import type { ContentBlock } from "../schemas/template/blocks/content";
 import type { TemplateContentData } from "../schemas/template/content";
-import { TEMPLATE_BLOCK_DEFINITIONS } from "../constants";
+import { TEMPLATE_BLOCK_DEFINITIONS } from "../constants/template";
 import {
   findUnknownMergeTags,
   PHASE2_KNOWN_MERGE_TAG_NAMES,

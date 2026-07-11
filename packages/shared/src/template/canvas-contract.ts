@@ -1,5 +1,5 @@
 import type { ContentBlockType } from "../schemas/template/blocks/content";
-import { LAYOUT_BLOCK_TYPES } from "../constants";
+import { LAYOUT_BLOCK_TYPES } from "../constants/template";
 
 export const CANVAS_BLOCK_ID_ATTR = "data-block-id";
 export const CANVAS_BLOCK_TYPE_ATTR = "data-block-type";

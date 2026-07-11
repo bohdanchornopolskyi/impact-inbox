@@ -9,7 +9,7 @@ import type { TemplateContentData } from "../schemas/template/content";
 import {
   DEFAULT_TEMPLATE_CONTENT,
   TEMPLATE_BLOCK_DEFINITIONS,
-} from "../constants";
+} from "../constants/template";
 
 function createId(): string {
   return globalThis.crypto.randomUUID();
