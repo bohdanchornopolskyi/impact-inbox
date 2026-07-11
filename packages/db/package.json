@@ -11,7 +11,7 @@
     },
     "./schema": {
       "types": "./src/schema/index.ts",
-      "default": "./dist/schema.js"
+      "default": "./dist/schema/index.js"
     },
     "./types": {
       "types": "./src/types.ts",

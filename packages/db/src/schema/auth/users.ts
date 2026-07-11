@@ -1,7 +1,7 @@
 import { pgTable, text, uuid, timestamp } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
-import { organizationMembers } from "./organizations";
-import { workspaceMembers } from "./workspaces";
+import { organizationMembers } from "../organization/organization-members";
+import { workspaceMembers } from "../workspace/workspace-members";
 
 export const users = pgTable("users", {
   id: uuid().primaryKey().defaultRandom(),

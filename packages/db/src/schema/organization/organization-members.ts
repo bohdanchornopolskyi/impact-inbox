@@ -1,16 +1,8 @@
-import { pgTable, uuid, text, timestamp, index, unique } from "drizzle-orm/pg-core";
+import { pgTable, uuid, text, index, unique } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
-import { type OrganizationRole, type PlanTier } from "@repo/shared";
-import { users } from "./users";
-import { timestamps } from "./_helpers";
-
-export const organizations = pgTable("organizations", {
-  id: uuid("id").primaryKey().defaultRandom(),
-  name: text("name").notNull(),
-  planTier: text("plan_tier").$type<PlanTier | null>(),
-  trialEndsAt: timestamp("trial_ends_at"),
-  ...timestamps,
-});
+import { type OrganizationRole } from "@repo/shared";
+import { users } from "../auth/users";
+import { organizations } from "./organizations";
 
 export const organizationMembers = pgTable(
   "organization_members",
@@ -33,10 +25,6 @@ export const organizationMembers = pgTable(
     ),
   ],
 );
-
-export const organizationsRelations = relations(organizations, ({ many }) => ({
-  members: many(organizationMembers),
-}));
 
 export const organizationMembersRelations = relations(
   organizationMembers,

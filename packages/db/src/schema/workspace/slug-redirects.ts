@@ -1,7 +1,7 @@
 import { pgTable, uuid, text, index, unique } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
+import { timestamps } from "../_helpers";
 import { workspaces } from "./workspaces";
-import { timestamps } from "./_helpers";
 
 export const workspaceSlugRedirects = pgTable(
   "workspace_slug_redirects",
