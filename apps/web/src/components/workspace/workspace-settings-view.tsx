@@ -5,6 +5,7 @@ import { useWorkspace } from "@/contexts/workspace-context";
 import { formatRoleLabel } from "@/lib/members/format-role-label";
 import { WorkspaceMembersSection } from "@/components/workspace/workspace-members-section";
 import { WorkspaceGeneralSection } from "@/components/workspace/workspace-general-section";
+import { WorkspaceIdentitySection } from "@/components/workspace/workspace-identity-section";
 
 export function WorkspaceSettingsView() {
   const { workspace } = useWorkspace();
@@ -24,24 +25,7 @@ export function WorkspaceSettingsView() {
         </p>
       </div>
 
-      <section className="rounded-2xl border border-border-default bg-surface-card p-6 shadow-sm">
-        <dl className="grid gap-4 sm:grid-cols-2">
-          <div>
-            <dt className="text-ui-xs font-medium tracking-wide text-text-tertiary uppercase">
-              Name
-            </dt>
-            <dd className="mt-1 text-ui-sm text-text-primary">{workspace.name}</dd>
-          </div>
-          <div>
-            <dt className="text-ui-xs font-medium tracking-wide text-text-tertiary uppercase">
-              Slug
-            </dt>
-            <dd className="mt-1 font-mono text-ui-sm text-text-primary">
-              {workspace.slug}
-            </dd>
-          </div>
-        </dl>
-      </section>
+      <WorkspaceIdentitySection />
 
       <WorkspaceGeneralSection />
 

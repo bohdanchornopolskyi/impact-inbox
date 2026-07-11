@@ -3,6 +3,7 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import type { UpdateWorkspaceInput } from "@repo/shared";
 import { useSession } from "@/contexts/session-context";
+import { sessionQueryKeys } from "@/lib/auth-session";
 import { updateWorkspace } from "@/lib/api/workspaces-api";
 
 export function useUpdateWorkspaceSettings() {
@@ -18,7 +19,10 @@ export function useUpdateWorkspaceSettings() {
       input: UpdateWorkspaceInput;
     }) => updateWorkspace(token, workspaceId, input),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["workspaces"] });
+      queryClient.invalidateQueries({
+        queryKey: sessionQueryKeys.workspaces(token),
+      });
+      queryClient.invalidateQueries({ queryKey: ["workspace"] });
     },
   });
 }
