@@ -21,7 +21,7 @@ Post-M2 builder UX quality continues in [ADR 0013](./0013-template-builder-canva
 | Item | Phase | Reason |
 | --- | --- | --- |
 | Workspace `send_providers` | 4 | No campaigns to consume providers yet; ADR 0005 sequences providers with send queue |
-| Image upload / hosted assets | After 2 | External URLs sufficient for M2; upload adds storage/CDN scope |
+| Image upload / hosted assets | Prep | [ADR 0016](./0016-platform-object-storage.md) — R2/S3 + builder upload; URL still the only stored field |
 | Export cap enforcement | 6 | Billing + template access mode meters ship at public launch |
 | Hard delete templates | 4 | Requires campaign → revision reference check |
 | Platform image upload UI | TBD | Same content model; swap URL resolver in builder |

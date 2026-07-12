@@ -24,8 +24,13 @@ Work in this order unless you have a reason to skip.
 | 11 | DB schema domain folders | `done` | Roadmap §7 | — |
 | 12 | `OrganizationAccessService` consolidation | `done` | ADR 0002 pattern | — |
 | 13 | `@repo/shared` package layout split | `done` | Roadmap §7 | template block defs → `constants/template.ts` |
-| 14 | `EmailService` vendor abstraction | `deferred` | ADR 0005 | Multi-provider need |
+| 14 | System email `deliver` seam | `not done` | [ADR 0014](./adr/0014-system-email-deliver-seam.md) | Plug Resend key |
 | 15 | Template builder canvas DnD | `done` | [ADR 0013](./adr/0013-template-builder-canvas-dnd.md) | — |
+| 16 | Workspace send providers prep | `not done` | [ADR 0015](./adr/0015-workspace-send-providers-prep.md) | Test send before campaigns |
+| 17 | Platform object storage + image upload | `not done` | [ADR 0016](./adr/0016-platform-object-storage.md) | R2/S3 + builder UX |
+| 18 | Builder undo/redo | `not done` | [ADR 0017](./adr/0017-template-builder-undo-redo.md) | Document history |
+| 19 | Builder hardening dogfood | `not done` | design-partner readiness | Concurrency, export, permissions |
+| 20 | Support basics (monitoring/backups) | `not done` | ops | Hosted env |
 
 ---
 
@@ -199,7 +204,10 @@ Revisit only if/when a real hosted database and deploy pipeline exist.
 | DB schema domain folders | `not done` | `schema/organization/`, `workspace/`, `template/` per roadmap §7 |
 | `OrganizationsService.getMembership` vs `OrganizationAccessService` | `not done` | Consolidate per ADR 0002 |
 | `@repo/shared` layout | `not done` | Split monolithic `constants.ts`; `schemas/template/` |
-| `EmailService` vendor abstraction | `not done` | Resend-coupled OK until multi-provider (ADR 0005) |
+| `EmailService` / system **deliver** seam | `not done` | [ADR 0014](./adr/0014-system-email-deliver-seam.md) — Resend + log adapters |
+| Workspace send providers prep | `not done` | [ADR 0015](./adr/0015-workspace-send-providers-prep.md) |
+| Platform object storage + image upload | `not done` | [ADR 0016](./adr/0016-platform-object-storage.md) |
+| Builder undo/redo | `not done` | [ADR 0017](./adr/0017-template-builder-undo-redo.md) |
 
 ---
 

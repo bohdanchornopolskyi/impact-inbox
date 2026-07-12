@@ -85,8 +85,12 @@ The visual editor for template **Working copy**. v1: all **Block type** entries 
 _Avoid_: Curated palette that omits registered blocks, bespoke-only editor with no shared block registry, WYSIWYG HTML-as-primary mode, arbitrary free-form positioning outside section → row → column → content, always-on layout wireframes, desktop-only preview, separate mobile render pipeline, manual save required for working copy, autosave creating revisions, list previews rendered on every list load, hard-coded 600px with no user override, duplicating block render logic in the builder instead of iframe preview, a parent-document richtext editor overlaid on the iframe (coordinate/style sync hell), bridge script on the read-only Preview overlay
 
 **Block image source**:
-The URL on Image and Logo blocks. External URL only until platform upload ships; blocks always store a single resolved URL so upload can plug in without changing the content model.
-_Avoid_: Separate fields for external vs hosted assets, binary data in content JSON, upload-only with no URL path
+The URL on Image and Logo blocks. Blocks always store a single resolved URL — pasted external URL or a URL returned by platform **Object storage** upload. Upload does not change the content model.
+_Avoid_: Separate fields for external vs hosted assets, binary data in content JSON, upload-only with no URL path, storing signed/expiring URLs as the permanent `src`
+
+**Object storage**:
+App-level blob store for builder uploads (images/logos). v1 adapters: Cloudflare R2 and S3-compatible APIs; active adapter is env/config. Objects are served via **stable public URLs** for email HTML. Seam left for organization-owned buckets later; not per-workspace in v1. See [ADR 0016](./docs/adr/0016-platform-object-storage.md).
+_Avoid_: Per-workspace buckets in v1, embedding files in template JSON, signed URLs as the stored block source
 
 **Auth seam**:
 Where session tokens become `Session user` on the request. Only place DB user rows map to shared profile types.
@@ -97,16 +101,20 @@ Membership resolution + role comparison for a workspace id and user id. Single m
 _Avoid_: Duplicate membership queries in guard and service
 
 **Send provider**:
-A workspace-configured delivery backend (Resend, Mailchimp, SMTP/custom) for marketing sends. A workspace may have several; one is the default for new campaigns and newsletters. Each send stores which provider delivered it. Carries default sender identity (`from` name, email, reply-to); campaigns may override. Credentials are editable by workspace admin/owner and org owner. Workspace send providers ship with campaigns (Phase 4) — not the template builder phase.
-_Avoid_: Export-only sync to external ESP, single global provider lock-in, provider as analytics source of truth, auth/verification mail, org members without admin access viewing API keys, workspace send providers required before campaigns exist
+A workspace-configured delivery backend (Resend, Mailchimp, SMTP/custom) for marketing sends. A workspace may have several; one is the default for new campaigns and newsletters. Each send stores which provider delivered it. Carries default sender identity (`from` name, email, reply-to); campaigns may override. Credentials are editable by workspace admin/owner and org owner (masked on read). Settings, adapters, and **test send** (to the current session user’s email only) may ship before campaigns; bulk campaign delivery remains Phase 4. See [ADR 0015](./docs/adr/0015-workspace-send-providers-prep.md).
+_Avoid_: Export-only sync to external ESP, single global provider lock-in, provider as analytics source of truth, auth/verification mail, org members without admin access viewing API keys, arbitrary test-send recipients, requiring campaigns before provider settings exist
 
 **System email**:
-Platform-level transactional message (email verification, password reset). Sent via app-level delivery config, not workspace send providers — the recipient may not have a workspace yet.
-_Avoid_: Campaign, newsletter edition, workspace-scoped provider for sign-up flows
+Platform-level transactional message (email verification, password reset, invites, double opt-in). Sent via app-level **deliver** adapters (v1: Resend when configured, otherwise log) — not workspace send providers. See [ADR 0014](./docs/adr/0014-system-email-deliver-seam.md).
+_Avoid_: Campaign, newsletter edition, workspace-scoped provider for sign-up flows, Resend SDK imports in every call site
 
 **Working copy**:
-The live, editable content on a template — block tree plus **Template settings** — updated by autosave and builder edits. Never sent directly; execution snapshots it into a revision first. Version history is separate (see **Template revision**); there is no draft/published gate on the template. Builder autosave status uses working-copy language (e.g. Synced, Unsaved changes) — not draft.
+The live, editable content on a template — block tree plus **Template settings** — updated by autosave and builder edits. Never sent directly; execution snapshots it into a revision first. Version history is separate (see **Template revision**); there is no draft/published gate on the template. Builder autosave status uses working-copy language (e.g. Synced, Unsaved changes) — not draft. In-session **Builder edit history** (undo/redo) applies to the working copy only.
 _Avoid_: Template draft, published template, sent email source, draft in autosave UI copy
+
+**Builder edit history**:
+Document-level undo/redo stack for the **Template builder** working copy (structure, settings, committed prop edits). Discrete mutations and coalesced inspector bursts are steps; inline text/richtext commits as one step on blur/leave. Shortcuts plus toolbar buttons. Cleared on template switch; reset on revision restore. Not the same as **Template revision** history. See [ADR 0017](./docs/adr/0017-template-builder-undo-redo.md).
+_Avoid_: Per-keystroke global undo inside contenteditable, browser-only undo for DnD/settings, undoing across templates or server revision list ops
 
 **Template revision**:
 A frozen copy of the working copy at a point in time (full content JSON + settings). Stored separately. Created on explicit Save (version history) or automatically at send execution if the working copy changed since the last save. Each campaign pins exactly one revision so “what went out” never changes when the working copy is edited later. Restoring a revision snapshots the current working copy into a new revision first, then replaces the working copy — nothing is lost from history.

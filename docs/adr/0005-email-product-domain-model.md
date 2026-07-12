@@ -6,7 +6,7 @@ Impact Inbox is an email marketing platform (builder, campaigns, newsletters) �
 
 Workspace-scoped **Send providers** (Resend, Mailchimp, SMTP/custom) deliver rendered marketing mail. Impact Inbox owns orchestration, **Recipient send** records, and analytics. Providers are delivery backends — not export destinations. Multiple providers per workspace with a default; campaigns and newsletters pick a provider. Default sender identity on provider; campaigns may override `from` and physical address. Credentials editable by workspace admin/owner and org owner.
 
-**System email** (verification, password reset, double opt-in confirm) uses app-level delivery config and shares a `deliver({ to, subject, html })` interface with marketing sends — not workspace send providers.
+**System email** (verification, password reset, invite, double opt-in) uses app-level **deliver** adapters ([ADR 0014](./0014-system-email-deliver-seam.md)) and is not a workspace send provider. Marketing delivery uses workspace **Send providers** ([ADR 0015](./0015-workspace-send-providers-prep.md)).
 
 Bulk sends use a Redis **Send queue** (`packages/queue` job definitions). v1 processors run in the API; extract to `apps/worker` later without changing payloads. Campaign send returns `202`; lifecycle `draft` → `scheduled` → `sending` → `sent` | `failed`.
 
@@ -18,7 +18,7 @@ No `draft`/`published` template status — remove `TEMPLATE_STATUSES` draft/publ
 
 **Template settings** (subject, preheader, width 480–700px, colors, fonts) live inside working copy content — not separate template columns. Revisions store the full content JSON. **Subject line** defaults from settings; campaigns override per send.
 
-**Block image source:** external URL only in Phase 2; blocks store one resolved URL so platform upload can plug in without changing the content model (see ADR 0007).
+**Block image source:** single resolved URL — external paste or platform **Object storage** upload ([ADR 0016](./0016-platform-object-storage.md)); no binary in content JSON.
 
 Builder is block-native with an HTML block escape hatch (ADR 0004). All registered block types appear in the builder palette at launch; v1 property editors may be minimal or schema-driven. Canvas-first layout/content drag-and-drop is proposed in ADR 0013: sections, rows, columns, and content blocks move within valid parents, and palette blocks can be dragged to specific canvas targets. Preview: desktop at template width (default 600px, configurable 480–700px) and mobile viewport toggle. Working copy autosaves; explicit Save creates a template revision. **Template export** = HTML + plain text bundle; export authorization goes through **Plan limits** (stub until billing at launch).
 
