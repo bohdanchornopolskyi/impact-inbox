@@ -2,14 +2,23 @@
 
 import { createContext, useContext, useEffect, useRef, useState } from "react";
 import { createStore, useStore, type StoreApi } from "zustand";
-import type { ContentBlockType, TemplateContentData, TemplateData, BlockStyles } from "@repo/shared";
+import type {
+  BrandKitData,
+  BlockStyles,
+  ContentBlockType,
+  SectionBlock,
+  TemplateContentData,
+  TemplateData,
+} from "@repo/shared";
 import {
   addColumn,
   addContentBlock,
   addRow,
   addSection,
+  cloneSectionBlock,
   ensureDefaultStructure,
   findBlock,
+  insertSection,
   moveContentBlock,
   moveColumn,
   moveRow,
@@ -76,6 +85,7 @@ type BuilderState = {
   canEdit: boolean;
   conflictOpen: boolean;
   history: BuilderHistoryState;
+  brandKit: BrandKitData | null;
 
   init: (template: TemplateData) => void;
   applyServerTemplate: (template: TemplateData) => void;
@@ -114,6 +124,7 @@ type BuilderState = {
   addSection: (index?: number) => void;
   addRow: (sectionId: string, index?: number) => void;
   addColumn: (rowId: string, index?: number) => void;
+  insertSavedModule: (moduleContent: SectionBlock) => void;
   selectBlock: (blockId: string | null) => void;
   setInspectorMode: (mode: InspectorMode) => void;
   setPreviewOpen: (open: boolean) => void;
@@ -123,6 +134,7 @@ type BuilderState = {
   setPreviewDevice: (device: PreviewDevice) => void;
   setSaveState: (saveState: SaveState) => void;
   setConflictOpen: (open: boolean) => void;
+  setBrandKit: (brandKit: BrandKitData | null) => void;
   markSaved: (updatedAt: string) => void;
   applyRename: (template: Pick<TemplateData, "name" | "updatedAt">) => void;
   beginInlineEditSession: () => void;
@@ -148,7 +160,10 @@ function createWriteErrorHandlers(
   };
 }
 
-function createBuilderStore(canEdit: boolean): BuilderStore {
+function createBuilderStore(
+  canEdit: boolean,
+  brandKit: BrandKitData | null,
+): BuilderStore {
   return createStore<BuilderState>((set, get) => {
     function withRecordedContent(
       mode: ContentHistoryOptions["history"],
@@ -203,6 +218,7 @@ function createBuilderStore(canEdit: boolean): BuilderStore {
       canEdit,
       conflictOpen: false,
       history: createEmptyBuilderHistory(),
+      brandKit,
 
       init: (template) =>
         set({
@@ -259,6 +275,7 @@ function createBuilderStore(canEdit: boolean): BuilderStore {
             columnId,
             blockType,
             index,
+            state.brandKit,
           );
           return applyBuilderMutation(state, outcome, {
             selectInsertedBlock: true,
@@ -340,21 +357,41 @@ function createBuilderStore(canEdit: boolean): BuilderStore {
       },
       addSection: (index) =>
         withRecordedContent("record", undefined, (state) => {
-          const outcome = addSection(state.content, index);
+          const outcome = addSection(state.content, index, state.brandKit);
           return applyBuilderMutation(state, outcome, {
             selectInsertedBlock: true,
           });
         }),
       addRow: (sectionId, index) =>
         withRecordedContent("record", undefined, (state) => {
-          const outcome = addRow(state.content, sectionId, index);
+          const outcome = addRow(
+            state.content,
+            sectionId,
+            index,
+            state.brandKit,
+          );
           return applyBuilderMutation(state, outcome, {
             selectInsertedBlock: true,
           });
         }),
       addColumn: (rowId, index) =>
         withRecordedContent("record", undefined, (state) => {
-          const outcome = addColumn(state.content, rowId, index);
+          const outcome = addColumn(
+            state.content,
+            rowId,
+            index,
+            state.brandKit,
+          );
+          return applyBuilderMutation(state, outcome, {
+            selectInsertedBlock: true,
+          });
+        }),
+      insertSavedModule: (moduleContent) =>
+        withRecordedContent("record", undefined, (state) => {
+          const outcome = insertSection(
+            state.content,
+            cloneSectionBlock(moduleContent),
+          );
           return applyBuilderMutation(state, outcome, {
             selectInsertedBlock: true,
           });
@@ -373,6 +410,7 @@ function createBuilderStore(canEdit: boolean): BuilderStore {
       setPreviewDevice: (device) => set({ previewDevice: device }),
       setSaveState: (saveState) => set({ saveState }),
       setConflictOpen: (open) => set({ conflictOpen: open }),
+      setBrandKit: (brandKit) => set({ brandKit }),
       markSaved: (updatedAt) =>
         set((state) => ({
           updatedAt,
@@ -461,15 +499,21 @@ export function BuilderProvider({
   canEdit,
   children,
 }: BuilderProviderProps) {
+  const { workspace } = useWorkspace();
+  const brandKit = workspace.brandKit ?? null;
   const storeRef = useRef<BuilderStore | null>(null);
   if (!storeRef.current) {
-    storeRef.current = createBuilderStore(canEdit);
+    storeRef.current = createBuilderStore(canEdit, brandKit);
   }
   const store = storeRef.current;
 
   const { mutateAsync: updateTemplateAsync } = useUpdateTemplate(template.id);
   const { showError } = useToast();
   const autosaveRef = useRef<ReturnType<typeof subscribeAutosave> | null>(null);
+
+  useEffect(() => {
+    store.getState().setBrandKit(brandKit);
+  }, [brandKit, store]);
 
   useEffect(() => {
     store.getState().init(template);

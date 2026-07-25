@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { WORKSPACE_ROLES } from "../constants";
 import { physicalAddressSchema } from "./physical-address";
+import { brandKitSchema } from "./brand-kit";
 
 export const workspaceRoleSchema = z.enum(WORKSPACE_ROLES);
 
@@ -21,13 +22,15 @@ export const updateWorkspaceSchema = z
     name: z.string().min(1).max(255),
     slug: workspaceSlugSchema,
     physicalAddress: physicalAddressSchema,
+    brandKit: brandKitSchema,
   })
   .partial()
   .refine(
     (value) =>
       value.name !== undefined ||
       value.slug !== undefined ||
-      value.physicalAddress !== undefined,
+      value.physicalAddress !== undefined ||
+      value.brandKit !== undefined,
     {
       message: "At least one field is required",
     },
@@ -53,6 +56,7 @@ export const workspaceSchema = z.object({
   name: z.string(),
   slug: z.string(),
   physicalAddress: physicalAddressSchema,
+  brandKit: brandKitSchema,
   createdAt: z.coerce.date(),
   updatedAt: z.coerce.date(),
 });

@@ -7,6 +7,7 @@ import type {
 import type { TemplateContentData } from "../schemas/template/content";
 import type { TemplateSettings } from "../schemas/template/settings";
 import type { BlockStyles } from "../schemas/template/styles";
+import type { BrandKitData } from "../schemas/brand-kit";
 import { templateSettingsSchema } from "../schemas/template/settings";
 import { createContentBlock, createColumnBlock, createRowBlock, createSectionBlock } from "./create-block";
 import { rowWithRedistributedColumnWidths } from "./column-widths";
@@ -341,13 +342,14 @@ export function addContentBlock(
   columnId: string,
   blockType: ContentBlock["type"],
   index?: number,
+  brandKit?: BrandKitData | null,
 ): TreeMutationResult {
   const targetColumn = findBlock(content, columnId);
   if (!targetColumn || targetColumn.block.type !== "column") {
     return unchanged(content, "parent_not_found");
   }
 
-  const block = createContentBlock(blockType);
+  const block = createContentBlock(blockType, brandKit);
 
   return changed(
     mapSections(content, (section) => ({
@@ -366,8 +368,17 @@ export function addContentBlock(
 export function addSection(
   content: TemplateContentData,
   index?: number,
+  brandKit?: BrandKitData | null,
 ): TreeMutationResult {
-  const section = createSectionBlock();
+  const section = createSectionBlock(brandKit);
+  return insertSection(content, section, index);
+}
+
+export function insertSection(
+  content: TemplateContentData,
+  section: SectionBlock,
+  index?: number,
+): TreeMutationResult {
   const body = [...content.body];
   const targetIndex =
     index === undefined ? body.length : clampIndex(index, body.length);
@@ -380,13 +391,14 @@ export function addRow(
   content: TemplateContentData,
   sectionId: string,
   index?: number,
+  brandKit?: BrandKitData | null,
 ): TreeMutationResult {
   const targetSection = findBlock(content, sectionId);
   if (!targetSection || targetSection.block.type !== "section") {
     return unchanged(content, "parent_not_found");
   }
 
-  const row = createRowBlock();
+  const row = createRowBlock(brandKit);
 
   return changed(
     mapSections(content, (section) => {
@@ -409,13 +421,14 @@ export function addColumn(
   content: TemplateContentData,
   rowId: string,
   index?: number,
+  brandKit?: BrandKitData | null,
 ): TreeMutationResult {
   const targetRow = findBlock(content, rowId);
   if (!targetRow || targetRow.block.type !== "row") {
     return unchanged(content, "parent_not_found");
   }
 
-  const column = createColumnBlock();
+  const column = createColumnBlock(brandKit);
 
   return changed(
     mapSections(content, (section) => ({

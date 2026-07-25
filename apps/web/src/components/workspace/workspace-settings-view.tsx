@@ -6,6 +6,7 @@ import { formatRoleLabel } from "@/lib/members/format-role-label";
 import { WorkspaceMembersSection } from "@/components/workspace/workspace-members-section";
 import { WorkspaceGeneralSection } from "@/components/workspace/workspace-general-section";
 import { WorkspaceIdentitySection } from "@/components/workspace/workspace-identity-section";
+import { WorkspaceBrandSection } from "@/components/workspace/workspace-brand-section";
 
 export function WorkspaceSettingsView() {
   const { workspace } = useWorkspace();
@@ -26,6 +27,8 @@ export function WorkspaceSettingsView() {
       </div>
 
       <WorkspaceIdentitySection />
+
+      <WorkspaceBrandSection />
 
       <WorkspaceGeneralSection />
 

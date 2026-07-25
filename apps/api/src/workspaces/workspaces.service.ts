@@ -12,17 +12,21 @@ import {
   type Transaction,
   type WorkspacesSelect,
   workspaceMembers,
+  workspaceModules,
   workspaceSlugRedirects,
   workspaces,
   users,
 } from "@repo/db";
 import {
+  buildPlatformStarterModules,
   type AuthenticatedWorkspaceContext,
+  type CreateWorkspaceModuleInput,
   type WorkspaceDetailData,
   type WorkspaceListItemData,
   type WorkspaceMemberData,
   type WorkspaceMemberInviteResultData,
   type WorkspaceMemberWithUserData,
+  type WorkspaceModuleData,
 } from "@repo/shared";
 import { DATABASE_TOKEN } from "src/database/database.constants";
 import { InvitesService } from "src/invites/invites.service";
@@ -98,6 +102,22 @@ export class WorkspacesService {
       throw new InternalServerErrorException("Workspace membership creation failed.");
     }
 
+    const starters = buildPlatformStarterModules({
+      workspaceName: createdWorkspace.name,
+      physicalAddress: createdWorkspace.physicalAddress,
+      brandKit: createdWorkspace.brandKit ?? null,
+    });
+
+    if (starters.length > 0) {
+      await db.insert(workspaceModules).values(
+        starters.map((starter) => ({
+          workspaceId: createdWorkspace.id,
+          name: starter.name,
+          content: starter.content,
+        })),
+      );
+    }
+
     return this.toWorkspaceDetail(createdWorkspace, membership.role);
   }
 
@@ -122,6 +142,7 @@ export class WorkspacesService {
         name: workspaces.name,
         slug: workspaces.slug,
         physicalAddress: workspaces.physicalAddress,
+        brandKit: workspaces.brandKit,
         createdAt: workspaces.createdAt,
         updatedAt: workspaces.updatedAt,
         role: workspaceMembers.role,
@@ -130,7 +151,10 @@ export class WorkspacesService {
       .innerJoin(workspaces, eq(workspaceMembers.workspaceId, workspaces.id))
       .where(eq(workspaceMembers.userId, userId));
 
-    return rows;
+    return rows.map((row) => ({
+      ...row,
+      brandKit: row.brandKit ?? null,
+    }));
   }
 
   async getWorkspaceForUser(
@@ -213,6 +237,7 @@ export class WorkspacesService {
           ...(dto.physicalAddress !== undefined
             ? { physicalAddress: dto.physicalAddress }
             : {}),
+          ...(dto.brandKit !== undefined ? { brandKit: dto.brandKit } : {}),
         })
         .where(eq(workspaces.id, workspaceId))
         .returning();
@@ -399,6 +424,7 @@ export class WorkspacesService {
   ): WorkspaceDetailData {
     return {
       ...workspace,
+      brandKit: workspace.brandKit ?? null,
       role,
     };
   }
@@ -412,6 +438,78 @@ export class WorkspacesService {
       .slice(0, 50);
 
     return slug || "workspace";
+  }
+
+  async listModules(workspaceId: string): Promise<WorkspaceModuleData[]> {
+    const workspace = await this.getWorkspaceById(workspaceId);
+    const rows = await this.db
+      .select()
+      .from(workspaceModules)
+      .where(eq(workspaceModules.workspaceId, workspaceId));
+
+    if (rows.length > 0) {
+      return rows;
+    }
+
+    const starters = buildPlatformStarterModules({
+      workspaceName: workspace.name,
+      physicalAddress: workspace.physicalAddress,
+      brandKit: workspace.brandKit ?? null,
+    });
+
+    if (starters.length === 0) {
+      return rows;
+    }
+
+    await this.db.insert(workspaceModules).values(
+      starters.map((starter) => ({
+        workspaceId,
+        name: starter.name,
+        content: starter.content,
+      })),
+    );
+
+    return this.db
+      .select()
+      .from(workspaceModules)
+      .where(eq(workspaceModules.workspaceId, workspaceId));
+  }
+
+  async createModule(
+    workspaceId: string,
+    dto: CreateWorkspaceModuleInput,
+  ): Promise<WorkspaceModuleData> {
+    await this.getWorkspaceById(workspaceId);
+    const [created] = await this.db
+      .insert(workspaceModules)
+      .values({
+        workspaceId,
+        name: dto.name,
+        content: dto.content,
+      })
+      .returning();
+
+    if (!created) {
+      throw new InternalServerErrorException("Module creation failed.");
+    }
+
+    return created;
+  }
+
+  async deleteModule(workspaceId: string, moduleId: string): Promise<void> {
+    const [deleted] = await this.db
+      .delete(workspaceModules)
+      .where(
+        and(
+          eq(workspaceModules.id, moduleId),
+          eq(workspaceModules.workspaceId, workspaceId),
+        ),
+      )
+      .returning({ id: workspaceModules.id });
+
+    if (!deleted) {
+      throw new NotFoundException("Module not found");
+    }
   }
 
   private async generateUniqueSlug(

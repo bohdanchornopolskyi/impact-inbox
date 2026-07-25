@@ -8,6 +8,7 @@ import { invites } from "./organization/invites";
 import { workspaces } from "./workspace/workspaces";
 import { workspaceMembers } from "./workspace/workspace-members";
 import { workspaceSlugRedirects } from "./workspace/slug-redirects";
+import { workspaceModules } from "./workspace/workspace-modules";
 import { templates } from "./template/templates";
 import { templateRevisions } from "./template/template-revisions";
 import { contacts } from "./contact/contacts";
@@ -26,6 +27,7 @@ export {
   workspaces,
   workspaceMembers,
   workspaceSlugRedirects,
+  workspaceModules,
   templates,
   templateRevisions,
   invites,

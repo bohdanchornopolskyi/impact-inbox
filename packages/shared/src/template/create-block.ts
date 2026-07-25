@@ -6,78 +6,71 @@ import type {
 } from "../schemas/template/blocks/layout";
 import type { ContentBlock } from "../schemas/template/blocks/content";
 import type { TemplateContentData } from "../schemas/template/content";
-import type { BlockStyles } from "../schemas/template/styles";
-import type { TemplateBlockType } from "../constants/template";
+import type { BrandKitData } from "../schemas/brand-kit";
 import {
-  DEFAULT_TEMPLATE_CONTENT,
-  TEMPLATE_BLOCK_DEFINITIONS,
-} from "../constants/template";
+  resolveBlockDefaults,
+  resolveTemplateSettingsFromBrand,
+} from "./resolve-brand-defaults";
 
 function createId(): string {
   return globalThis.crypto.randomUUID();
 }
 
-function cloneDefaultProps(type: TemplateBlockType): Record<string, unknown> {
-  return structuredClone(TEMPLATE_BLOCK_DEFINITIONS[type].defaultProps);
-}
-
-function cloneDefaultStyles(type: TemplateBlockType): BlockStyles | undefined {
-  const definition = TEMPLATE_BLOCK_DEFINITIONS[type] as {
-    defaultStyles?: BlockStyles;
-  };
-  return definition.defaultStyles
-    ? structuredClone(definition.defaultStyles)
-    : undefined;
-}
-
-export function createSectionBlock(): SectionBlock {
-  const styles = cloneDefaultStyles("section");
+export function createSectionBlock(
+  brandKit?: BrandKitData | null,
+): SectionBlock {
+  const defaults = resolveBlockDefaults("section", brandKit);
   return {
     id: createId(),
     type: "section",
-    props: {},
-    children: [createRowBlock()],
-    ...(styles ? { styles } : {}),
+    props: defaults.props,
+    children: [createRowBlock(brandKit)],
+    ...(defaults.styles ? { styles: defaults.styles } : {}),
   };
 }
 
-export function createRowBlock(): RowBlock {
-  const styles = cloneDefaultStyles("row");
+export function createRowBlock(brandKit?: BrandKitData | null): RowBlock {
+  const defaults = resolveBlockDefaults("row", brandKit);
   return {
     id: createId(),
     type: "row",
-    props: {},
-    children: [createColumnBlock()],
-    ...(styles ? { styles } : {}),
+    props: defaults.props,
+    children: [createColumnBlock(brandKit)],
+    ...(defaults.styles ? { styles: defaults.styles } : {}),
   };
 }
 
-export function createColumnBlock(): ColumnBlock {
-  const styles = cloneDefaultStyles("column");
+export function createColumnBlock(
+  brandKit?: BrandKitData | null,
+): ColumnBlock {
+  const defaults = resolveBlockDefaults("column", brandKit);
   return {
     id: createId(),
     type: "column",
-    props: {},
+    props: defaults.props,
     children: [],
-    ...(styles ? { styles } : {}),
+    ...(defaults.styles ? { styles: defaults.styles } : {}),
   };
 }
 
-export function createContentBlock(type: ContentBlockType): ContentBlock {
+export function createContentBlock(
+  type: ContentBlockType,
+  brandKit?: BrandKitData | null,
+): ContentBlock {
   const id = createId();
-  const defaultProps = cloneDefaultProps(type);
-  const styles = cloneDefaultStyles(type);
+  const defaults = resolveBlockDefaults(type, brandKit);
 
   return {
     id,
     type,
-    props: defaultProps,
-    ...(styles ? { styles } : {}),
+    props: defaults.props,
+    ...(defaults.styles ? { styles: defaults.styles } : {}),
   } as ContentBlock;
 }
 
 export function ensureDefaultStructure(
   content: TemplateContentData,
+  brandKit?: BrandKitData | null,
 ): TemplateContentData {
   if (content.body.length > 0) {
     return content;
@@ -85,13 +78,19 @@ export function ensureDefaultStructure(
 
   return {
     ...content,
-    body: [createSectionBlock()],
+    body: [createSectionBlock(brandKit)],
   };
 }
 
-export function createEmptyTemplateContent(): TemplateContentData {
-  return ensureDefaultStructure({
-    ...DEFAULT_TEMPLATE_CONTENT,
-    settings: { ...DEFAULT_TEMPLATE_CONTENT.settings },
-  });
+export function createEmptyTemplateContent(
+  brandKit?: BrandKitData | null,
+): TemplateContentData {
+  return ensureDefaultStructure(
+    {
+      version: 1,
+      settings: resolveTemplateSettingsFromBrand(brandKit),
+      body: [],
+    },
+    brandKit,
+  );
 }

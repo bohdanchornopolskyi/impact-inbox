@@ -8,7 +8,7 @@ import {
 } from "@nestjs/common";
 import { and, eq, isNotNull, isNull } from "drizzle-orm";
 import { ZodError } from "zod";
-import { templates } from "@repo/db";
+import { templates, workspaces } from "@repo/db";
 import { renderTemplate } from "@repo/email-renderer";
 import {
   createEmptyTemplateContent,
@@ -118,12 +118,19 @@ export class TemplatesService {
     workspaceId: string,
     dto: CreateTemplateInput,
   ): Promise<TemplateData> {
+    const [workspace] = await this.db
+      .select({ brandKit: workspaces.brandKit })
+      .from(workspaces)
+      .where(eq(workspaces.id, workspaceId));
+
     const [createdTemplate] = await this.db
       .insert(templates)
       .values({
         workspaceId,
         name: dto.name,
-        content: dto.content ?? createEmptyTemplateContent(),
+        content:
+          dto.content ??
+          createEmptyTemplateContent(workspace?.brandKit ?? null),
         updatedAt: new Date(),
       })
       .returning();

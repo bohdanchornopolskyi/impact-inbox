@@ -1,12 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import { LayoutGrid, ListTree } from "lucide-react";
+import { Bookmark, LayoutGrid, ListTree } from "lucide-react";
 import { SegmentedControl } from "@repo/ui/client";
 import { BlockPalette } from "./block-palette";
+import { ModulesPanel } from "./modules-panel";
 import { StructurePanel } from "./structure-panel";
 
-type SidebarTab = "blocks" | "structure";
+type SidebarTab = "blocks" | "modules" | "structure";
 
 export function LeftSidebar() {
   const [tab, setTab] = useState<SidebarTab>("blocks");
@@ -24,6 +25,11 @@ export function LeftSidebar() {
               icon: <LayoutGrid className="size-4" strokeWidth={1.5} />,
             },
             {
+              value: "modules",
+              label: "Modules",
+              icon: <Bookmark className="size-4" strokeWidth={1.5} />,
+            },
+            {
               value: "structure",
               label: "Structure",
               icon: <ListTree className="size-4" strokeWidth={1.5} />,
@@ -32,7 +38,13 @@ export function LeftSidebar() {
         />
       </div>
       <div className="min-h-0 flex-1 overflow-hidden">
-        {tab === "blocks" ? <BlockPalette /> : <StructurePanel />}
+        {tab === "blocks" ? (
+          <BlockPalette />
+        ) : tab === "modules" ? (
+          <ModulesPanel />
+        ) : (
+          <StructurePanel />
+        )}
       </div>
     </div>
   );

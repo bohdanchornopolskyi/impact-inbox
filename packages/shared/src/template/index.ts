@@ -3,6 +3,8 @@ export * from "./canvas-contract";
 export * from "./canvas-drop-target";
 export * from "./column-widths";
 export * from "./create-block";
+export * from "./resolve-brand-defaults";
+export * from "./module-starters";
 export * from "./merge-tags";
 export * from "./merge-tag-scan";
 export * from "./preview-layout-snapshot";

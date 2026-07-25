@@ -1,5 +1,8 @@
 import { pgTable, uuid, index, text, unique, jsonb } from "drizzle-orm/pg-core";
-import { type PhysicalAddressData } from "@repo/shared";
+import {
+  type BrandKitData,
+  type PhysicalAddressData,
+} from "@repo/shared";
 import { relations } from "drizzle-orm";
 import { organizations } from "../organization/organizations";
 import { templates } from "../template/templates";
@@ -17,6 +20,7 @@ export const workspaces = pgTable("workspaces", {
   name: text("name").notNull(),
   slug: text("slug").notNull().unique(),
   physicalAddress: jsonb("physical_address").$type<PhysicalAddressData>(),
+  brandKit: jsonb("brand_kit").$type<BrandKitData>(),
   ...timestamps,
 });
 

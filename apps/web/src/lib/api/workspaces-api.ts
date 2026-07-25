@@ -1,5 +1,6 @@
 import type {
   CreateWorkspaceInput,
+  CreateWorkspaceModuleInput,
   InviteMemberInput,
   UpdateMemberRoleInput,
   UpdateWorkspaceInput,
@@ -8,6 +9,7 @@ import type {
   WorkspaceMemberData,
   WorkspaceMemberInviteResultData,
   WorkspaceMemberWithUserData,
+  WorkspaceModuleData,
 } from "@repo/shared";
 import { apiRequest } from "@/lib/api-client";
 
@@ -95,6 +97,45 @@ export function removeWorkspaceMember(
 ): Promise<{ success: true }> {
   return apiRequest<{ success: true }>(
     `/workspaces/${workspaceId}/members/${userId}`,
+    {
+      token,
+      method: "DELETE",
+    },
+  );
+}
+
+export function listWorkspaceModules(
+  token: string,
+  workspaceId: string,
+): Promise<WorkspaceModuleData[]> {
+  return apiRequest<WorkspaceModuleData[]>(
+    `/workspaces/${workspaceId}/modules`,
+    { token },
+  );
+}
+
+export function createWorkspaceModule(
+  token: string,
+  workspaceId: string,
+  input: CreateWorkspaceModuleInput,
+): Promise<WorkspaceModuleData> {
+  return apiRequest<WorkspaceModuleData>(
+    `/workspaces/${workspaceId}/modules`,
+    {
+      token,
+      method: "POST",
+      body: input,
+    },
+  );
+}
+
+export function deleteWorkspaceModule(
+  token: string,
+  workspaceId: string,
+  moduleId: string,
+): Promise<{ success: true }> {
+  return apiRequest<{ success: true }>(
+    `/workspaces/${workspaceId}/modules/${moduleId}`,
     {
       token,
       method: "DELETE",

@@ -120,6 +120,7 @@ export class WorkspaceAccessService {
         name: workspace.name,
         slug: workspace.slug,
         physicalAddress: workspace.physicalAddress,
+        brandKit: workspace.brandKit ?? null,
         createdAt: workspace.createdAt,
         updatedAt: workspace.updatedAt,
       },

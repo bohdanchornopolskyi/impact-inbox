@@ -30,6 +30,7 @@ describe("TemplatesController", () => {
       name: "Acme",
       slug: "acme",
       physicalAddress: null,
+      brandKit: null,
       createdAt: new Date(),
       updatedAt: new Date(),
     },

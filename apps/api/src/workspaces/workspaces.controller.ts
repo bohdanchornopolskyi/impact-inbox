@@ -18,11 +18,13 @@ import {
   type WorkspaceMemberData,
   type WorkspaceMemberInviteResultData,
   type WorkspaceMemberWithUserData,
+  type WorkspaceModuleData,
 } from "@repo/shared";
 import { CurrentUser } from "src/auth/decorators/current-user.decorator";
 import { CurrentWorkspace } from "src/workspaces/decorators/current-workspace.decorator";
 import { WorkspaceRoles } from "src/workspaces/decorators/workspace-roles.decorator";
 import { CreateWorkspaceDto } from "src/workspaces/dto/create-workspace.dto";
+import { CreateWorkspaceModuleDto } from "src/workspaces/dto/create-workspace-module.dto";
 import { InviteMemberDto } from "src/workspaces/dto/invite-member.dto";
 import { UpdateWorkspaceDto } from "src/workspaces/dto/update-workspace.dto";
 import { UpdateMemberRoleDto } from "src/workspaces/dto/update-member-role.dto";
@@ -181,5 +183,34 @@ export class WorkspacesController {
     @Param("inviteId") inviteId: string,
   ): Promise<InviteData> {
     return this.invitesService.resendInvite(inviteId, { workspaceId });
+  }
+
+  @Get(":id/modules")
+  @UseGuards(WorkspaceGuard)
+  listModules(
+    @Param("id") workspaceId: string,
+  ): Promise<WorkspaceModuleData[]> {
+    return this.workspacesService.listModules(workspaceId);
+  }
+
+  @Post(":id/modules")
+  @UseGuards(WorkspaceGuard)
+  @WorkspaceRoles("admin", "owner")
+  createModule(
+    @Param("id") workspaceId: string,
+    @Body() dto: CreateWorkspaceModuleDto,
+  ): Promise<WorkspaceModuleData> {
+    return this.workspacesService.createModule(workspaceId, dto);
+  }
+
+  @Delete(":id/modules/:moduleId")
+  @UseGuards(WorkspaceGuard)
+  @WorkspaceRoles("admin", "owner")
+  async deleteModule(
+    @Param("id") workspaceId: string,
+    @Param("moduleId") moduleId: string,
+  ): Promise<SuccessData> {
+    await this.workspacesService.deleteModule(workspaceId, moduleId);
+    return { success: true };
   }
 }
