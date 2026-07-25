@@ -29,12 +29,13 @@ export function ModulesPanel() {
   const createModule = useCreateWorkspaceModule(workspace.id);
   const deleteModule = useDeleteWorkspaceModule(workspace.id);
   const create = useToastMutation({
-    mutationFn: createModule.mutateAsync,
+    mutationFn: (input: Parameters<typeof createModule.mutateAsync>[0]) =>
+      createModule.mutateAsync(input),
     successMessage: "Saved to module library",
     errorMessage: "Could not save module",
   });
   const remove = useToastMutation({
-    mutationFn: deleteModule.mutateAsync,
+    mutationFn: (moduleId: string) => deleteModule.mutateAsync(moduleId),
     successMessage: "Module deleted",
     errorMessage: "Could not delete module",
   });

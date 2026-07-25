@@ -39,11 +39,13 @@ async function createEditHarness(bodyHtml: string) {
   const iframe = document.createElement("iframe");
   document.body.appendChild(iframe);
 
-  const iframeWindow = iframe.contentWindow;
-  const iframeDocument = iframe.contentDocument;
-  if (!iframeWindow || !iframeDocument) {
+  const contentWindow = iframe.contentWindow;
+  const contentDocument = iframe.contentDocument;
+  if (!contentWindow || !contentDocument) {
     throw new Error("iframe document unavailable");
   }
+  const iframeWindow = contentWindow;
+  const iframeDocument = contentDocument;
 
   const parentProxy = {
     postMessage(data: unknown) {
@@ -66,11 +68,13 @@ async function createEditHarness(bodyHtml: string) {
     `<html><body>${bodyHtml}</body></html>`,
     { canEdit: true },
   );
-  iframeWindow.eval(extractBridgeScript(bridged));
+  (iframeWindow as Window & { eval(code: string): unknown }).eval(
+    extractBridgeScript(bridged),
+  );
 
   function postFromParent(data: object) {
     iframeWindow.dispatchEvent(
-      new iframeWindow.MessageEvent("message", {
+      new MessageEvent("message", {
         data,
         source: parentProxy as MessageEventSource,
       }),
@@ -98,7 +102,7 @@ async function createEditHarness(bodyHtml: string) {
     postFromParent,
     clickBlock(blockId: string) {
       requireBlock(blockId).dispatchEvent(
-        new iframeWindow.MouseEvent("click", {
+        new MouseEvent("click", {
           bubbles: true,
           cancelable: true,
         }),
@@ -111,7 +115,7 @@ async function createEditHarness(bodyHtml: string) {
         (block.querySelector("h1,h2,h3,h4,h5,h6,p,span") as HTMLElement | null) ??
         (block as HTMLElement);
       editable.dispatchEvent(
-        new iframeWindow.MouseEvent("dblclick", {
+        new MouseEvent("dblclick", {
           bubbles: true,
           cancelable: true,
         }),
@@ -167,7 +171,7 @@ describe("canvas bridge edit lifecycle", () => {
     expect(editable.isContentEditable).toBe(true);
     editable.replaceChildren(harness.iframeDocument.createTextNode("Updated"));
     editable.dispatchEvent(
-      new harness.iframeWindow.FocusEvent("blur", { bubbles: true }),
+      new FocusEvent("blur", { bubbles: true }),
     );
 
     expect(harness.messagesOfType("block-edit-commit")).toEqual([
@@ -196,7 +200,7 @@ describe("canvas bridge edit lifecycle", () => {
     expect(harness.messagesOfType("block-edit-start")).toHaveLength(1);
     editable.replaceChildren(harness.iframeDocument.createTextNode("Changed"));
     editable.dispatchEvent(
-      new harness.iframeWindow.KeyboardEvent("keydown", {
+      new KeyboardEvent("keydown", {
         key: "Escape",
         bubbles: true,
         cancelable: true,
@@ -235,7 +239,7 @@ describe("canvas bridge edit lifecycle", () => {
     ) as HTMLElement;
     editable.innerHTML = "<p>Hello world</p>";
     editable.dispatchEvent(
-      new harness.iframeWindow.Event("input", { bubbles: true }),
+      new Event("input", { bubbles: true }),
     );
     await wait(250);
 
@@ -287,7 +291,7 @@ describe("canvas bridge edit lifecycle", () => {
     openHarnesses.push(harness);
 
     harness.iframeWindow.dispatchEvent(
-      new harness.iframeWindow.KeyboardEvent("keydown", {
+      new KeyboardEvent("keydown", {
         key: "z",
         metaKey: true,
         bubbles: true,
@@ -295,7 +299,7 @@ describe("canvas bridge edit lifecycle", () => {
       }),
     );
     harness.iframeWindow.dispatchEvent(
-      new harness.iframeWindow.KeyboardEvent("keydown", {
+      new KeyboardEvent("keydown", {
         key: "z",
         metaKey: true,
         shiftKey: true,
@@ -325,7 +329,7 @@ describe("canvas bridge edit lifecycle", () => {
     await wait(0);
 
     harness.iframeWindow.dispatchEvent(
-      new harness.iframeWindow.KeyboardEvent("keydown", {
+      new KeyboardEvent("keydown", {
         key: "s",
         metaKey: true,
         bubbles: true,
@@ -357,7 +361,7 @@ describe("canvas bridge edit lifecycle", () => {
     ]);
 
     harness.iframeWindow.dispatchEvent(
-      new harness.iframeWindow.KeyboardEvent("keydown", {
+      new KeyboardEvent("keydown", {
         key: "z",
         metaKey: true,
         bubbles: true,
