@@ -1,6 +1,25 @@
 import type { TemplateContentData } from "../schemas/template/content";
+import type { BlockStyles } from "../schemas/template/styles";
 
 const TEMPLATE_CONTENT_VERSION = 1 as const;
+
+const TEMPLATE_DEFAULT_COLORS = {
+  pageBackground: "#f3f4f6",
+  contentBackground: "#ffffff",
+  text: "#333333",
+  heading: "#111111",
+  link: "#2563eb",
+  buttonBackground: "#2563eb",
+  buttonText: "#ffffff",
+  divider: "#e5e7eb",
+  qrForeground: "#000000",
+  qrBackground: "#ffffff",
+} as const;
+
+const TEMPLATE_DEFAULT_SPACING = {
+  sectionPadding: 32,
+  contentBlockGap: 16,
+} as const;
 
 const LAYOUT_BLOCK_TYPES = ["section", "row", "column"] as const;
 
@@ -65,6 +84,7 @@ type TemplateBlockDefinition = {
   description: string;
   allowedParents: readonly TemplateBlockType[];
   defaultProps: Record<string, unknown>;
+  defaultStyles?: BlockStyles;
   mergeTagProps: readonly string[];
   fields: readonly BlockFieldDescriptor[];
   customEditor?: true;
@@ -87,6 +107,10 @@ const SHAPE_OPTIONS: readonly BlockFieldOption[] = [
   { value: "triangle", label: "Triangle" },
 ];
 
+const CONTENT_BLOCK_GAP_STYLES: BlockStyles = {
+  padding: { bottom: TEMPLATE_DEFAULT_SPACING.contentBlockGap },
+};
+
 const TEMPLATE_BLOCK_DEFINITIONS = {
   section: {
     type: "section",
@@ -95,6 +119,9 @@ const TEMPLATE_BLOCK_DEFINITIONS = {
     description: "Full-width container for rows",
     allowedParents: [],
     defaultProps: {},
+    defaultStyles: {
+      padding: TEMPLATE_DEFAULT_SPACING.sectionPadding,
+    },
     mergeTagProps: [],
     fields: [],
   },
@@ -124,7 +151,13 @@ const TEMPLATE_BLOCK_DEFINITIONS = {
     label: "Heading",
     description: "Title or headline text",
     allowedParents: ["column"],
-    defaultProps: { text: "Heading", level: 2 },
+    defaultProps: {
+      text: "Heading",
+      level: 2,
+      color: TEMPLATE_DEFAULT_COLORS.heading,
+      fontSize: 28,
+    },
+    defaultStyles: CONTENT_BLOCK_GAP_STYLES,
     mergeTagProps: ["text"],
     fields: [
       { prop: "text", label: "Text", kind: "text" },
@@ -139,7 +172,12 @@ const TEMPLATE_BLOCK_DEFINITIONS = {
     label: "Text",
     description: "Plain text paragraph",
     allowedParents: ["column"],
-    defaultProps: { text: "Add your text here." },
+    defaultProps: {
+      text: "Add your text here.",
+      color: TEMPLATE_DEFAULT_COLORS.text,
+      fontSize: 16,
+    },
+    defaultStyles: CONTENT_BLOCK_GAP_STYLES,
     mergeTagProps: ["text"],
     fields: [
       { prop: "text", label: "Text", kind: "multiline" },
@@ -153,7 +191,11 @@ const TEMPLATE_BLOCK_DEFINITIONS = {
     label: "Rich Text",
     description: "Formatted HTML content",
     allowedParents: ["column"],
-    defaultProps: { html: "<p>Add your text here.</p>" },
+    defaultProps: {
+      html: "<p>Add your text here.</p>",
+      color: TEMPLATE_DEFAULT_COLORS.text,
+    },
+    defaultStyles: CONTENT_BLOCK_GAP_STYLES,
     mergeTagProps: ["html"],
     fields: [
       { prop: "html", label: "HTML", kind: "multiline" },
@@ -166,7 +208,17 @@ const TEMPLATE_BLOCK_DEFINITIONS = {
     label: "Button",
     description: "Call-to-action link button",
     allowedParents: ["column"],
-    defaultProps: { text: "Click here", href: "https://example.com" },
+    defaultProps: {
+      text: "Click here",
+      href: "https://example.com",
+      backgroundColor: TEMPLATE_DEFAULT_COLORS.buttonBackground,
+      textColor: TEMPLATE_DEFAULT_COLORS.buttonText,
+      borderRadius: 6,
+      fontSize: 16,
+      paddingX: 24,
+      paddingY: 12,
+    },
+    defaultStyles: CONTENT_BLOCK_GAP_STYLES,
     mergeTagProps: ["text"],
     fields: [
       { prop: "text", label: "Label", kind: "text" },
@@ -183,6 +235,7 @@ const TEMPLATE_BLOCK_DEFINITIONS = {
     description: "Image with optional link",
     allowedParents: ["column"],
     defaultProps: { src: PLACEHOLDER_IMAGE_URL, alt: "Image" },
+    defaultStyles: CONTENT_BLOCK_GAP_STYLES,
     mergeTagProps: [],
     fields: [
       { prop: "src", label: "Image URL", kind: "url" },
@@ -198,6 +251,7 @@ const TEMPLATE_BLOCK_DEFINITIONS = {
     description: "Brand logo with optional link",
     allowedParents: ["column"],
     defaultProps: { src: PLACEHOLDER_IMAGE_URL, alt: "Logo", width: 120 },
+    defaultStyles: CONTENT_BLOCK_GAP_STYLES,
     mergeTagProps: [],
     fields: [
       { prop: "src", label: "Image URL", kind: "url" },
@@ -217,6 +271,7 @@ const TEMPLATE_BLOCK_DEFINITIONS = {
       videoUrl: "https://example.com/video",
       alt: "Video",
     },
+    defaultStyles: CONTENT_BLOCK_GAP_STYLES,
     mergeTagProps: [],
     fields: [
       { prop: "thumbnailSrc", label: "Thumbnail URL", kind: "url" },
@@ -230,7 +285,17 @@ const TEMPLATE_BLOCK_DEFINITIONS = {
     label: "Divider",
     description: "Horizontal separator line",
     allowedParents: ["column"],
-    defaultProps: { thickness: 1 },
+    defaultProps: {
+      thickness: 1,
+      color: TEMPLATE_DEFAULT_COLORS.divider,
+      style: "solid",
+    },
+    defaultStyles: {
+      padding: {
+        top: 8,
+        bottom: TEMPLATE_DEFAULT_SPACING.contentBlockGap,
+      },
+    },
     mergeTagProps: [],
     fields: [
       { prop: "color", label: "Color", kind: "color" },
@@ -264,6 +329,7 @@ const TEMPLATE_BLOCK_DEFINITIONS = {
     defaultProps: {
       links: [{ platform: "website", url: "https://example.com" }],
     },
+    defaultStyles: CONTENT_BLOCK_GAP_STYLES,
     mergeTagProps: [],
     fields: [],
     customEditor: true,
@@ -275,6 +341,7 @@ const TEMPLATE_BLOCK_DEFINITIONS = {
     description: "Custom raw HTML block",
     allowedParents: ["column"],
     defaultProps: { html: "<p>Custom HTML</p>" },
+    defaultStyles: CONTENT_BLOCK_GAP_STYLES,
     mergeTagProps: ["html"],
     fields: [{ prop: "html", label: "HTML", kind: "multiline" }],
   },
@@ -288,6 +355,7 @@ const TEMPLATE_BLOCK_DEFINITIONS = {
       columns: [{ header: "Column 1" }, { header: "Column 2" }],
       rows: [["Cell 1", "Cell 2"]],
     },
+    defaultStyles: CONTENT_BLOCK_GAP_STYLES,
     mergeTagProps: ["columns", "rows"],
     fields: [],
     customEditor: true,
@@ -302,8 +370,9 @@ const TEMPLATE_BLOCK_DEFINITIONS = {
       shape: "rectangle",
       width: 100,
       height: 4,
-      color: "#e4e4e7",
+      color: TEMPLATE_DEFAULT_COLORS.divider,
     },
+    defaultStyles: CONTENT_BLOCK_GAP_STYLES,
     mergeTagProps: [],
     fields: [
       { prop: "shape", label: "Shape", kind: "select", options: SHAPE_OPTIONS },
@@ -324,6 +393,7 @@ const TEMPLATE_BLOCK_DEFINITIONS = {
       unsubscribeUrl: "",
       unsubscribeLabel: "Unsubscribe",
     },
+    defaultStyles: CONTENT_BLOCK_GAP_STYLES,
     mergeTagProps: [
       "companyName",
       "address",
@@ -344,7 +414,13 @@ const TEMPLATE_BLOCK_DEFINITIONS = {
     label: "QR Code",
     description: "Scannable QR code image",
     allowedParents: ["column"],
-    defaultProps: { data: "https://example.com", size: 128 },
+    defaultProps: {
+      data: "https://example.com",
+      size: 128,
+      foregroundColor: TEMPLATE_DEFAULT_COLORS.qrForeground,
+      backgroundColor: TEMPLATE_DEFAULT_COLORS.qrBackground,
+    },
+    defaultStyles: CONTENT_BLOCK_GAP_STYLES,
     mergeTagProps: [],
     fields: [
       { prop: "data", label: "Data", kind: "text" },
@@ -357,6 +433,12 @@ const TEMPLATE_BLOCK_DEFINITIONS = {
 
 const DEFAULT_TEMPLATE_SETTINGS = {
   width: 600,
+  backgroundColor: TEMPLATE_DEFAULT_COLORS.pageBackground,
+  contentBackgroundColor: TEMPLATE_DEFAULT_COLORS.contentBackground,
+  textColor: TEMPLATE_DEFAULT_COLORS.text,
+  linkColor: TEMPLATE_DEFAULT_COLORS.link,
+  fontSize: 16,
+  lineHeight: 1.5,
 } as const;
 
 const DEFAULT_TEMPLATE_CONTENT: TemplateContentData = {
@@ -367,6 +449,8 @@ const DEFAULT_TEMPLATE_CONTENT: TemplateContentData = {
 
 export {
   TEMPLATE_CONTENT_VERSION,
+  TEMPLATE_DEFAULT_COLORS,
+  TEMPLATE_DEFAULT_SPACING,
   LAYOUT_BLOCK_TYPES,
   CONTENT_BLOCK_TYPES,
   TEMPLATE_BLOCK_TYPES,

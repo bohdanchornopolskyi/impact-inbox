@@ -1,6 +1,10 @@
 "use client";
 
 import { Button } from "@repo/ui/client";
+import {
+  DEFAULT_TEMPLATE_SETTINGS,
+  TEMPLATE_DEFAULT_COLORS,
+} from "@repo/shared";
 import { useBuilder } from "../builder-provider";
 import { ColorField, NumberField, TextField } from "./fields";
 import { MergeTagPicker } from "./merge-tag-picker";
@@ -52,11 +56,13 @@ export function TemplateSettingsInspector() {
       <ColorField
         label="Background color"
         value={settings.backgroundColor}
+        fallback={DEFAULT_TEMPLATE_SETTINGS.backgroundColor}
         onChange={(value) => updateSettings({ backgroundColor: value })}
       />
       <ColorField
         label="Content background"
         value={settings.contentBackgroundColor}
+        fallback={DEFAULT_TEMPLATE_SETTINGS.contentBackgroundColor}
         onChange={(value) => updateSettings({ contentBackgroundColor: value })}
       />
       <TextField
@@ -81,11 +87,13 @@ export function TemplateSettingsInspector() {
       <ColorField
         label="Text color"
         value={settings.textColor}
+        fallback={TEMPLATE_DEFAULT_COLORS.text}
         onChange={(value) => updateSettings({ textColor: value })}
       />
       <ColorField
         label="Link color"
         value={settings.linkColor}
+        fallback={TEMPLATE_DEFAULT_COLORS.link}
         onChange={(value) => updateSettings({ linkColor: value })}
       />
       <Button

@@ -1,5 +1,5 @@
 import { Text } from "@react-email/components";
-import type { TextBlock } from "@repo/shared";
+import { TEMPLATE_DEFAULT_COLORS, type TextBlock } from "@repo/shared";
 import { blockStylesToCss } from "../styles";
 import { editableText } from "./block-utils";
 import { registerBlock, type RenderContext } from "./content-block-registry";
@@ -12,7 +12,8 @@ export function renderTextBlock(block: TextBlock, context: RenderContext) {
       key={block.id}
       style={{
         ...blockStylesToCss(block.styles),
-        color: color ?? context.settings.textColor ?? "#333333",
+        color:
+          color ?? context.settings.textColor ?? TEMPLATE_DEFAULT_COLORS.text,
         fontSize: fontSize ?? context.settings.fontSize ?? 16,
         fontWeight: fontWeight ?? undefined,
         lineHeight: lineHeight ?? context.settings.lineHeight ?? 1.5,

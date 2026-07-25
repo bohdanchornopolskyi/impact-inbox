@@ -1,5 +1,5 @@
 import { Heading } from "@react-email/components";
-import type { HeadingBlock } from "@repo/shared";
+import { TEMPLATE_DEFAULT_COLORS, type HeadingBlock } from "@repo/shared";
 import { blockStylesToCss } from "../styles";
 import { editableText } from "./block-utils";
 import { registerBlock, type RenderContext } from "./content-block-registry";
@@ -22,7 +22,10 @@ export function renderHeadingBlock(block: HeadingBlock, context: RenderContext) 
       as={headingAs[level]}
       style={{
         ...blockStylesToCss(block.styles),
-        color: color ?? context.settings.textColor ?? "#111111",
+        color:
+          color ??
+          context.settings.textColor ??
+          TEMPLATE_DEFAULT_COLORS.heading,
         fontSize: fontSize ?? undefined,
         fontWeight: fontWeight ?? undefined,
         lineHeight: lineHeight ?? context.settings.lineHeight,

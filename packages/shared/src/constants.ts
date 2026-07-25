@@ -54,9 +54,12 @@ export {
   type BlockFieldKind,
   type BlockFieldOption,
   type BlockFieldDescriptor,
+  TEMPLATE_DEFAULT_COLORS,
+  TEMPLATE_DEFAULT_SPACING,
   DEFAULT_TEMPLATE_SETTINGS,
   DEFAULT_TEMPLATE_CONTENT,
 } from "./constants/template";
+
 
 export {
   ORGANIZATION_ROLES,

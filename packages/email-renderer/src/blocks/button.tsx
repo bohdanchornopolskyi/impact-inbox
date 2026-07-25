@@ -1,5 +1,5 @@
 import { Button, Section } from "@react-email/components";
-import type { ButtonBlock } from "@repo/shared";
+import { TEMPLATE_DEFAULT_COLORS, type ButtonBlock } from "@repo/shared";
 import { blockStylesToCss } from "../styles";
 import { registerBlock, type RenderContext } from "./content-block-registry";
 
@@ -23,8 +23,11 @@ export function renderButtonBlock(block: ButtonBlock, context: RenderContext) {
       <Button
         href={href}
         style={{
-          backgroundColor: backgroundColor ?? context.settings.linkColor ?? "#2563eb",
-          color: textColor ?? "#ffffff",
+          backgroundColor:
+            backgroundColor ??
+            context.settings.linkColor ??
+            TEMPLATE_DEFAULT_COLORS.buttonBackground,
+          color: textColor ?? TEMPLATE_DEFAULT_COLORS.buttonText,
           borderRadius: `${borderRadius ?? 6}px`,
           borderWidth: borderWidth ?? 0,
           borderColor: borderColor ?? "transparent",

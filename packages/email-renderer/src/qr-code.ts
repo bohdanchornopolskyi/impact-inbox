@@ -1,4 +1,9 @@
-import { walkContentBlocks, type QrBlock, type TemplateContentData } from "@repo/shared";
+import {
+  walkContentBlocks,
+  TEMPLATE_DEFAULT_COLORS,
+  type QrBlock,
+  type TemplateContentData,
+} from "@repo/shared";
 import QRCode from "qrcode";
 
 export async function generateQrDataUri(block: QrBlock): Promise<string> {
@@ -8,8 +13,8 @@ export async function generateQrDataUri(block: QrBlock): Promise<string> {
     width: size ?? 150,
     margin: 1,
     color: {
-      dark: foregroundColor ?? "#000000",
-      light: backgroundColor ?? "#ffffff",
+      dark: foregroundColor ?? TEMPLATE_DEFAULT_COLORS.qrForeground,
+      light: backgroundColor ?? TEMPLATE_DEFAULT_COLORS.qrBackground,
     },
   });
 }

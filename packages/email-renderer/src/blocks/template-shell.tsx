@@ -4,7 +4,12 @@ import {
   Html,
   Preview,
 } from "@react-email/components";
-import { walkContentBlocks, CANVAS_BODY_ATTR, type TemplateContentData } from "@repo/shared";
+import {
+  walkContentBlocks,
+  CANVAS_BODY_ATTR,
+  TEMPLATE_DEFAULT_COLORS,
+  type TemplateContentData,
+} from "@repo/shared";
 import { buildLayoutMobileStyles } from "../layout-styles";
 import { renderSectionBlock } from "./layout";
 import { renderContentBlockText } from "./content-block-registry";
@@ -17,7 +22,7 @@ export type TemplateEmailProps = {
 
 function buildGlobalStyles(content: TemplateContentData): string {
   const { settings } = content;
-  const linkColor = settings.linkColor ?? "#2563eb";
+  const linkColor = settings.linkColor ?? TEMPLATE_DEFAULT_COLORS.link;
   const mobileStyles = buildLayoutMobileStyles(content);
 
   return `
@@ -40,7 +45,8 @@ export function TemplateEmail({ content, qrImages }: TemplateEmailProps) {
         style={{
           margin: 0,
           padding: 0,
-          backgroundColor: settings.backgroundColor ?? "#f3f4f6",
+          backgroundColor:
+            settings.backgroundColor ?? TEMPLATE_DEFAULT_COLORS.pageBackground,
           fontFamily: settings.fontFamily ?? "Arial, sans-serif",
         }}
       >
@@ -50,7 +56,9 @@ export function TemplateEmail({ content, qrImages }: TemplateEmailProps) {
             width: `${settings.width}px`,
             maxWidth: "100%",
             margin: "0 auto",
-            backgroundColor: settings.contentBackgroundColor ?? "#ffffff",
+            backgroundColor:
+              settings.contentBackgroundColor ??
+              TEMPLATE_DEFAULT_COLORS.contentBackground,
           }}
         >
           {content.body.map((section) => renderSectionBlock(section, context))}

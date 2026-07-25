@@ -198,6 +198,12 @@ function BlockFields({
             key={field.prop}
             field={field}
             value={props[field.prop]}
+            fallback={
+              field.kind === "color" &&
+              typeof definition.defaultProps[field.prop] === "string"
+                ? (definition.defaultProps[field.prop] as string)
+                : undefined
+            }
             updateProps={updateProps}
             disabled={!canEdit}
           />
@@ -210,11 +216,13 @@ function BlockFields({
 function BlockField({
   field,
   value,
+  fallback,
   updateProps,
   disabled = false,
 }: {
   field: BlockFieldDescriptor;
   value: unknown;
+  fallback?: string;
   updateProps: UpdateProps;
   disabled?: boolean;
 }) {
@@ -259,6 +267,7 @@ function BlockField({
         <ColorField
           label={field.label}
           value={typeof value === "string" ? value : undefined}
+          fallback={fallback}
           disabled={disabled}
           onChange={(next) => updateProps({ [field.prop]: next })}
         />

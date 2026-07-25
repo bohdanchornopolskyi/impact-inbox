@@ -93,11 +93,13 @@ export function NumberField({
 export function ColorField({
   label,
   value,
+  fallback,
   onChange,
   disabled = false,
 }: {
   label: string;
   value: string | undefined;
+  fallback?: string;
   onChange: (value: string) => void;
   disabled?: boolean;
 }) {
@@ -105,6 +107,7 @@ export function ColorField({
     <ColorPickerField
       label={label}
       value={value}
+      fallback={fallback}
       disabled={disabled}
       onChange={onChange}
     />

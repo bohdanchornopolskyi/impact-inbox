@@ -1,5 +1,5 @@
 import { Hr } from "@react-email/components";
-import type { DividerBlock } from "@repo/shared";
+import { TEMPLATE_DEFAULT_COLORS, type DividerBlock } from "@repo/shared";
 import { blockStylesToCss } from "../styles";
 import { registerBlock } from "./content-block-registry";
 
@@ -11,7 +11,7 @@ export function renderDividerBlock(block: DividerBlock) {
       key={block.id}
       style={{
         ...blockStylesToCss(block.styles),
-        borderColor: color ?? "#e5e7eb",
+        borderColor: color ?? TEMPLATE_DEFAULT_COLORS.divider,
         borderWidth: `${thickness ?? 1}px`,
         borderStyle: style ?? "solid",
         width: typeof width === "number" ? `${width}px` : width ?? "100%",

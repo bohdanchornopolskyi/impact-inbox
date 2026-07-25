@@ -24,7 +24,7 @@ const PRESET_COLORS = [
   "#2563eb",
 ];
 
-function normalizeHex(value: string): string {
+export function normalizeHex(value: string): string {
   const trimmed = value.trim();
   if (/^#[0-9a-fA-F]{6}$/.test(trimmed)) {
     return trimmed.toLowerCase();
@@ -37,22 +37,43 @@ function normalizeHex(value: string): string {
   return "#000000";
 }
 
+export function resolveColorDraft(
+  value: string | undefined,
+  fallback?: string,
+): string {
+  return normalizeHex(value ?? fallback ?? "#000000");
+}
+
+export function shouldPersistColorDraft(
+  draft: string,
+  value: string | undefined,
+  fallback?: string,
+): boolean {
+  const normalized = normalizeHex(draft);
+  if (value === undefined) {
+    return normalized !== normalizeHex(fallback ?? "#000000");
+  }
+  return normalized !== normalizeHex(value);
+}
+
 export function ColorPickerField({
   label,
   value,
+  fallback,
   onChange,
   disabled = false,
 }: {
   label: string;
   value: string | undefined;
+  fallback?: string;
   onChange: (value: string) => void;
   disabled?: boolean;
 }) {
-  const [draft, setDraft] = useState(normalizeHex(value ?? "#000000"));
+  const [draft, setDraft] = useState(resolveColorDraft(value, fallback));
 
   useEffect(() => {
-    setDraft(normalizeHex(value ?? "#000000"));
-  }, [value]);
+    setDraft(resolveColorDraft(value, fallback));
+  }, [value, fallback]);
 
   function commit(next: string) {
     if (disabled) {
@@ -61,6 +82,19 @@ export function ColorPickerField({
 
     const normalized = normalizeHex(next);
     setDraft(normalized);
+    onChange(normalized);
+  }
+
+  function commitIfChanged() {
+    if (disabled) {
+      return;
+    }
+
+    const normalized = normalizeHex(draft);
+    setDraft(normalized);
+    if (!shouldPersistColorDraft(normalized, value, fallback)) {
+      return;
+    }
     onChange(normalized);
   }
 
@@ -102,7 +136,7 @@ export function ColorPickerField({
                   </div>
                   <Input
                     value={draft}
-                    placeholder="#000000"
+                    placeholder={resolveColorDraft(undefined, fallback)}
                     mono
                     disabled={disabled}
                     onChange={(event) => {
@@ -112,7 +146,7 @@ export function ColorPickerField({
                         commit(next);
                       }
                     }}
-                    onBlur={() => commit(draft)}
+                    onBlur={commitIfChanged}
                   />
                 </div>
               </BasePopover.Popup>
@@ -121,7 +155,7 @@ export function ColorPickerField({
         </BasePopover.Root>
         <Input
           value={draft}
-          placeholder="#000000"
+          placeholder={resolveColorDraft(undefined, fallback)}
           mono
           disabled={disabled}
           onChange={(event) => {
@@ -131,7 +165,7 @@ export function ColorPickerField({
               commit(next);
             }
           }}
-          onBlur={() => commit(draft)}
+          onBlur={commitIfChanged}
         />
       </div>
     </FieldRow>
