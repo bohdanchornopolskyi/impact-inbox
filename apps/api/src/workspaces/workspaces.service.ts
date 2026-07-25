@@ -21,6 +21,7 @@ import {
   buildPlatformStarterModules,
   type AuthenticatedWorkspaceContext,
   type CreateWorkspaceModuleInput,
+  type UpdateWorkspaceModuleInput,
   type WorkspaceDetailData,
   type WorkspaceListItemData,
   type WorkspaceMemberData,
@@ -494,6 +495,32 @@ export class WorkspacesService {
     }
 
     return created;
+  }
+
+  async updateModule(
+    workspaceId: string,
+    moduleId: string,
+    dto: UpdateWorkspaceModuleInput,
+  ): Promise<WorkspaceModuleData> {
+    const [updated] = await this.db
+      .update(workspaceModules)
+      .set({
+        ...(dto.name !== undefined ? { name: dto.name } : {}),
+        ...(dto.content !== undefined ? { content: dto.content } : {}),
+      })
+      .where(
+        and(
+          eq(workspaceModules.id, moduleId),
+          eq(workspaceModules.workspaceId, workspaceId),
+        ),
+      )
+      .returning();
+
+    if (!updated) {
+      throw new NotFoundException("Module not found");
+    }
+
+    return updated;
   }
 
   async deleteModule(workspaceId: string, moduleId: string): Promise<void> {

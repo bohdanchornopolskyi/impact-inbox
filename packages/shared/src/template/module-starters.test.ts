@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   buildPlatformStarterModules,
   cloneSectionBlock,
+  summarizeModuleContent,
 } from "./module-starters";
 
 describe("module-starters", () => {
@@ -41,5 +42,14 @@ describe("module-starters", () => {
       header!.content.children[0]?.children[0]?.id,
     );
     expect(cloned.type).toBe("section");
+  });
+
+  it("summarizes content block labels for the modules panel", () => {
+    const starters = buildPlatformStarterModules({
+      workspaceName: "Acme",
+    });
+    const header = starters.find((starter) => starter.name === "Header");
+    expect(header).toBeDefined();
+    expect(summarizeModuleContent(header!.content)).toBe("Logo, Heading");
   });
 });

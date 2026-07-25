@@ -4,6 +4,7 @@ import type {
   InviteMemberInput,
   UpdateMemberRoleInput,
   UpdateWorkspaceInput,
+  UpdateWorkspaceModuleInput,
   WorkspaceDetailData,
   WorkspaceListItemData,
   WorkspaceMemberData,
@@ -124,6 +125,22 @@ export function createWorkspaceModule(
     {
       token,
       method: "POST",
+      body: input,
+    },
+  );
+}
+
+export function updateWorkspaceModule(
+  token: string,
+  workspaceId: string,
+  moduleId: string,
+  input: UpdateWorkspaceModuleInput,
+): Promise<WorkspaceModuleData> {
+  return apiRequest<WorkspaceModuleData>(
+    `/workspaces/${workspaceId}/modules/${moduleId}`,
+    {
+      token,
+      method: "PATCH",
       body: input,
     },
   );

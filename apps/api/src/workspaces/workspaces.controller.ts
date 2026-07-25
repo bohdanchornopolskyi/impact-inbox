@@ -25,6 +25,7 @@ import { CurrentWorkspace } from "src/workspaces/decorators/current-workspace.de
 import { WorkspaceRoles } from "src/workspaces/decorators/workspace-roles.decorator";
 import { CreateWorkspaceDto } from "src/workspaces/dto/create-workspace.dto";
 import { CreateWorkspaceModuleDto } from "src/workspaces/dto/create-workspace-module.dto";
+import { UpdateWorkspaceModuleDto } from "src/workspaces/dto/update-workspace-module.dto";
 import { InviteMemberDto } from "src/workspaces/dto/invite-member.dto";
 import { UpdateWorkspaceDto } from "src/workspaces/dto/update-workspace.dto";
 import { UpdateMemberRoleDto } from "src/workspaces/dto/update-member-role.dto";
@@ -201,6 +202,17 @@ export class WorkspacesController {
     @Body() dto: CreateWorkspaceModuleDto,
   ): Promise<WorkspaceModuleData> {
     return this.workspacesService.createModule(workspaceId, dto);
+  }
+
+  @Patch(":id/modules/:moduleId")
+  @UseGuards(WorkspaceGuard)
+  @WorkspaceRoles("admin", "owner")
+  updateModule(
+    @Param("id") workspaceId: string,
+    @Param("moduleId") moduleId: string,
+    @Body() dto: UpdateWorkspaceModuleDto,
+  ): Promise<WorkspaceModuleData> {
+    return this.workspacesService.updateModule(workspaceId, moduleId, dto);
   }
 
   @Delete(":id/modules/:moduleId")

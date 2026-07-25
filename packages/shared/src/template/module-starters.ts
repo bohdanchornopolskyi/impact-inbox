@@ -7,6 +7,7 @@ import type {
   RowBlock,
   SectionBlock,
 } from "../schemas/template/blocks/layout";
+import { getBlockTypeLabel } from "./block-label";
 import { createContentBlock } from "./create-block";
 import { resolveBlockDefaults } from "./resolve-brand-defaults";
 
@@ -150,4 +151,18 @@ export function cloneSectionBlock(section: SectionBlock): SectionBlock {
 
   retargetIds(cloned);
   return cloned;
+}
+
+export function summarizeModuleContent(section: SectionBlock): string {
+  const labels: string[] = [];
+
+  for (const row of section.children) {
+    for (const column of row.children) {
+      for (const block of column.children) {
+        labels.push(getBlockTypeLabel(block.type));
+      }
+    }
+  }
+
+  return labels.length > 0 ? labels.join(", ") : "Empty section";
 }

@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type {
   CreateWorkspaceModuleInput,
   UpdateWorkspaceInput,
+  UpdateWorkspaceModuleInput,
 } from "@repo/shared";
 import { useSession } from "@/contexts/session-context";
 import { sessionQueryKeys } from "@/lib/auth-session";
@@ -12,6 +13,7 @@ import {
   deleteWorkspaceModule,
   listWorkspaceModules,
   updateWorkspace,
+  updateWorkspaceModule,
 } from "@/lib/api/workspaces-api";
 
 export function useUpdateWorkspaceSettings() {
@@ -52,6 +54,26 @@ export function useCreateWorkspaceModule(workspaceId: string) {
   return useMutation({
     mutationFn: (input: CreateWorkspaceModuleInput) =>
       createWorkspaceModule(token, workspaceId, input),
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: ["workspace-modules", workspaceId],
+      });
+    },
+  });
+}
+
+export function useUpdateWorkspaceModule(workspaceId: string) {
+  const { token } = useSession();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      moduleId,
+      input,
+    }: {
+      moduleId: string;
+      input: UpdateWorkspaceModuleInput;
+    }) => updateWorkspaceModule(token, workspaceId, moduleId, input),
     onSuccess: () => {
       queryClient.invalidateQueries({
         queryKey: ["workspace-modules", workspaceId],

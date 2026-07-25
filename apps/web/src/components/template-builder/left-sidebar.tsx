@@ -16,22 +16,24 @@ export function LeftSidebar() {
     <div className="flex h-full min-h-0 flex-col overflow-hidden border-r border-border-default bg-surface-card">
       <div className="shrink-0 border-b border-border-subtle px-4 py-3">
         <SegmentedControl
+          iconOnly
+          className="w-full"
           value={tab}
           onChange={(value) => setTab(value as SidebarTab)}
           options={[
             {
               value: "blocks",
-              label: "Blocks",
+              ariaLabel: "Blocks",
               icon: <LayoutGrid className="size-4" strokeWidth={1.5} />,
             },
             {
               value: "modules",
-              label: "Modules",
+              ariaLabel: "Modules",
               icon: <Bookmark className="size-4" strokeWidth={1.5} />,
             },
             {
               value: "structure",
-              label: "Structure",
+              ariaLabel: "Structure",
               icon: <ListTree className="size-4" strokeWidth={1.5} />,
             },
           ]}
