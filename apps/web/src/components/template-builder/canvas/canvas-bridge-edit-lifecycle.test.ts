@@ -279,4 +279,92 @@ describe("canvas bridge edit lifecycle", () => {
     expect(editable.innerHTML).toContain("Original");
     expect(harness.messagesOfType("block-edit-commit")).toEqual([]);
   });
+
+  it("posts history-undo and history-redo when not editing", async () => {
+    const harness = await createEditHarness(
+      `<div data-block-id="heading-1" data-block-type="heading"><h1 data-editable data-editable-prop="text">Hello</h1></div>`,
+    );
+    openHarnesses.push(harness);
+
+    harness.iframeWindow.dispatchEvent(
+      new harness.iframeWindow.KeyboardEvent("keydown", {
+        key: "z",
+        metaKey: true,
+        bubbles: true,
+        cancelable: true,
+      }),
+    );
+    harness.iframeWindow.dispatchEvent(
+      new harness.iframeWindow.KeyboardEvent("keydown", {
+        key: "z",
+        metaKey: true,
+        shiftKey: true,
+        bubbles: true,
+        cancelable: true,
+      }),
+    );
+
+    expect(harness.messagesOfType("builder-shortcut")).toEqual([
+      { type: "builder-shortcut", action: "undo" },
+      { type: "builder-shortcut", action: "redo" },
+    ]);
+  });
+
+  it("posts save even while inline editing", async () => {
+    const harness = await createEditHarness(
+      `<div data-block-id="heading-1" data-block-type="heading"><h1 data-editable data-editable-prop="text">Hello</h1></div>`,
+    );
+    openHarnesses.push(harness);
+
+    harness.postFromParent({
+      type: "select-block",
+      blockId: "heading-1",
+      label: "Heading",
+    });
+    harness.dblclickEditable("heading-1");
+    await wait(0);
+
+    harness.iframeWindow.dispatchEvent(
+      new harness.iframeWindow.KeyboardEvent("keydown", {
+        key: "s",
+        metaKey: true,
+        bubbles: true,
+        cancelable: true,
+      }),
+    );
+
+    expect(harness.messagesOfType("builder-shortcut")).toEqual([
+      { type: "builder-shortcut", action: "save" },
+    ]);
+  });
+
+  it("keeps native undo during inline edit", async () => {
+    const harness = await createEditHarness(
+      `<div data-block-id="heading-1" data-block-type="heading"><h1 data-editable data-editable-prop="text">Hello</h1></div>`,
+    );
+    openHarnesses.push(harness);
+
+    harness.postFromParent({
+      type: "select-block",
+      blockId: "heading-1",
+      label: "Heading",
+    });
+    harness.dblclickEditable("heading-1");
+    await wait(0);
+
+    expect(harness.messagesOfType("block-edit-start")).toEqual([
+      { type: "block-edit-start", blockId: "heading-1", editKind: "plain" },
+    ]);
+
+    harness.iframeWindow.dispatchEvent(
+      new harness.iframeWindow.KeyboardEvent("keydown", {
+        key: "z",
+        metaKey: true,
+        bubbles: true,
+        cancelable: true,
+      }),
+    );
+
+    expect(harness.messagesOfType("builder-shortcut")).toEqual([]);
+  });
 });

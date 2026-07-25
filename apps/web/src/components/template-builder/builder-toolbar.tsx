@@ -11,6 +11,8 @@ import {
   History,
   Loader2,
   Pencil,
+  Redo2,
+  Undo2,
   Upload,
 } from "lucide-react";
 import { Badge, Button } from "@repo/ui/client";
@@ -21,6 +23,7 @@ import {
   useSaveRevision,
 } from "./builder-provider";
 import { RenameTemplateModal } from "./modals/rename-template-modal";
+import { useBuilderShortcuts } from "./use-builder-shortcuts";
 
 const WORKING_COPY_SYNC_HELP =
   "Your working copy autosaves. Save creates a revision snapshot for history and campaigns.";
@@ -64,12 +67,17 @@ function WorkingCopySyncBadge() {
 }
 
 export function BuilderToolbar() {
+  useBuilderShortcuts();
   const { workspace } = useWorkspace();
   const templateId = useBuilder((s) => s.templateId);
   const name = useBuilder((s) => s.name);
   const updatedAt = useBuilder((s) => s.updatedAt);
   const canEdit = useBuilder((s) => s.canEdit);
   const saveState = useBuilder((s) => s.saveState);
+  const canUndo = useBuilder((s) => s.history.past.length > 0);
+  const canRedo = useBuilder((s) => s.history.future.length > 0);
+  const undo = useBuilder((s) => s.undo);
+  const redo = useBuilder((s) => s.redo);
   const setPreviewOpen = useBuilder((s) => s.setPreviewOpen);
   const setRevisionsOpen = useBuilder((s) => s.setRevisionsOpen);
   const setExportOpen = useBuilder((s) => s.setExportOpen);
@@ -117,10 +125,33 @@ export function BuilderToolbar() {
         )}
       </div>
       <WorkingCopySyncBadge />
+      {canEdit ? (
+        <div className="flex items-center gap-0.5">
+          <Button
+            variant="ghost"
+            size="sm"
+            disabled={!canUndo}
+            title="Undo (Ctrl/Cmd+Z)"
+            aria-label="Undo"
+            onClick={() => undo()}>
+            <Undo2 className="size-4" strokeWidth={1.5} />
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            disabled={!canRedo}
+            title="Redo (Ctrl/Cmd+Shift+Z)"
+            aria-label="Redo"
+            onClick={() => redo()}>
+            <Redo2 className="size-4" strokeWidth={1.5} />
+          </Button>
+        </div>
+      ) : null}
       <Button
         variant="ghost"
         size="sm"
         leftIcon={<Eye className="size-4" strokeWidth={1.5} />}
+        title="Preview (Ctrl/Cmd+P)"
         onClick={() => setPreviewOpen(true)}>
         Preview
       </Button>
@@ -144,7 +175,7 @@ export function BuilderToolbar() {
             variant="primary"
             size="sm"
             disabled={isSaving}
-            title="Create a revision snapshot for history and campaigns"
+            title="Create a revision snapshot (Ctrl/Cmd+S)"
             onClick={() => void handleSaveRevision()}>
             Save
           </Button>

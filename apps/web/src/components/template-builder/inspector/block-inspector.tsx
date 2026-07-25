@@ -127,7 +127,11 @@ export function BlockInspector() {
           </p>
         </div>
         {canEdit ? (
-          <Button variant="danger" size="sm" onClick={removeBlock}>
+          <Button
+            variant="danger"
+            size="sm"
+            title="Remove (Delete)"
+            onClick={removeBlock}>
             Remove
           </Button>
         ) : null}

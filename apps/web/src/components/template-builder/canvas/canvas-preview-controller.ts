@@ -96,7 +96,14 @@ export type CanvasPreviewControllerDeps = {
   getSelectedLabel: () => string | null;
   getCanEdit: () => boolean;
   selectBlock: (blockId: string) => void;
-  updateBlockProps: (blockId: string, props: Record<string, unknown>) => void;
+  updateBlockProps: (
+    blockId: string,
+    props: Record<string, unknown>,
+    options?: { history?: "record" | "skip" | "coalesce" },
+  ) => void;
+  beginInlineEditSession: () => void;
+  commitInlineEditSession: () => void;
+  revertInlineEditSession: () => void;
   onPlainTextEditPausedChange: (paused: boolean) => void;
   startRichtextEdit: (session: { blockId: string }) => void;
   endRichtextEdit: () => void;
@@ -170,6 +177,7 @@ export function createCanvasPreviewController(
 
   function handleEditStart(message: BlockEditStartMessage) {
     pausedHtmlRef.current = deps.getHtml();
+    deps.beginInlineEditSession();
     if (message.editKind === "richtext") {
       richtextSnapshotRef.current = {
         blockId: message.blockId,
@@ -184,9 +192,14 @@ export function createCanvasPreviewController(
   }
 
   function handleEditCommit(message: BlockEditCommitMessage) {
-    deps.updateBlockProps(message.blockId, {
-      [message.prop]: sanitizeEditValue(message.prop, message.value),
-    });
+    deps.updateBlockProps(
+      message.blockId,
+      {
+        [message.prop]: sanitizeEditValue(message.prop, message.value),
+      },
+      { history: "skip" },
+    );
+    deps.commitInlineEditSession();
     richtextSnapshotRef.current = null;
     pausedHtmlRef.current = null;
     appliedHtmlHashRef.current = "";
@@ -196,9 +209,13 @@ export function createCanvasPreviewController(
 
   function handleEditSync(message: BlockEditSyncMessage) {
     const value = sanitizeEditValue(message.prop, message.value);
-    deps.updateBlockProps(message.blockId, {
-      [message.prop]: value,
-    });
+    deps.updateBlockProps(
+      message.blockId,
+      {
+        [message.prop]: value,
+      },
+      { history: "skip" },
+    );
     if (message.prop === "html") {
       richtextSnapshotRef.current = {
         blockId: message.blockId,
@@ -208,10 +225,8 @@ export function createCanvasPreviewController(
   }
 
   function handleEditCancel(message: BlockEditCancelMessage) {
-    const snapshot = richtextSnapshotRef.current;
-    if (snapshot && snapshot.blockId === message.blockId) {
-      deps.updateBlockProps(snapshot.blockId, { html: snapshot.html });
-    }
+    void message;
+    deps.revertInlineEditSession();
     richtextSnapshotRef.current = null;
     pausedHtmlRef.current = null;
     deps.onPlainTextEditPausedChange(false);

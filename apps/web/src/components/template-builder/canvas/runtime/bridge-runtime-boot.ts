@@ -210,5 +210,76 @@ export function getCanvasBridgeBootRuntime(): string {
     },
     true,
   );
+
+  window.addEventListener(
+    "keydown",
+    function (event) {
+      var modifier = event.metaKey || event.ctrlKey;
+      var key = event.key.toLowerCase();
+
+      if (modifier && key === "s" && !event.shiftKey) {
+        event.preventDefault();
+        window.parent.postMessage(
+          { type: "builder-shortcut", action: "save" },
+          "*",
+        );
+        return;
+      }
+
+      if (modifier && key === "p" && !event.shiftKey) {
+        event.preventDefault();
+        window.parent.postMessage(
+          { type: "builder-shortcut", action: "preview" },
+          "*",
+        );
+        return;
+      }
+
+      if (editingElement) {
+        return;
+      }
+
+      if (modifier && key === "z" && event.shiftKey) {
+        event.preventDefault();
+        window.parent.postMessage(
+          { type: "builder-shortcut", action: "redo" },
+          "*",
+        );
+        return;
+      }
+      if (modifier && key === "z") {
+        event.preventDefault();
+        window.parent.postMessage(
+          { type: "builder-shortcut", action: "undo" },
+          "*",
+        );
+        return;
+      }
+      if (modifier && key === "y") {
+        event.preventDefault();
+        window.parent.postMessage(
+          { type: "builder-shortcut", action: "redo" },
+          "*",
+        );
+        return;
+      }
+      if (key === "escape") {
+        event.preventDefault();
+        window.parent.postMessage(
+          { type: "builder-shortcut", action: "deselect" },
+          "*",
+        );
+        return;
+      }
+      if (key === "delete" || key === "backspace") {
+        event.preventDefault();
+        window.parent.postMessage(
+          { type: "builder-shortcut", action: "delete" },
+          "*",
+        );
+      }
+    },
+    true,
+  );
 `;
 }

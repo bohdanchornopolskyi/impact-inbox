@@ -125,6 +125,9 @@ function createController(
     getCanEdit: () => true,
     selectBlock: vi.fn(),
     updateBlockProps: vi.fn(),
+    beginInlineEditSession: vi.fn(),
+    commitInlineEditSession: vi.fn(),
+    revertInlineEditSession: vi.fn(),
     onPlainTextEditPausedChange: vi.fn(),
     startRichtextEdit: vi.fn(),
     endRichtextEdit: vi.fn(),
@@ -191,12 +194,14 @@ describe("createCanvasPreviewController", () => {
     });
   });
 
-  it("updates richtext snapshot on sync", () => {
+  it("skips history on sync and reverts the inline session on cancel", () => {
     const updates: Array<Record<string, unknown>> = [];
+    const revertInlineEditSession = vi.fn();
     const controller = createController({
       updateBlockProps: (_blockId, props) => {
         updates.push(props);
       },
+      revertInlineEditSession,
     });
 
     controller.handleMessage(
@@ -217,21 +222,23 @@ describe("createCanvasPreviewController", () => {
       {
         html: '<h1 style="font-size:32px;font-weight:700;margin:0">Updated</h1>',
       },
-      {
-        html: '<h1 style="font-size:32px;font-weight:700;margin:0">Updated</h1>',
-      },
     ]);
+    expect(revertInlineEditSession).toHaveBeenCalledTimes(1);
   });
 
-  it("restores richtext snapshot on cancel without keeping pause state", () => {
+  it("begins and reverts an inline session on cancel without leaving pause state", () => {
     const updates: Array<Record<string, unknown>> = [];
     let paused = false;
     let ended = false;
+    const beginInlineEditSession = vi.fn();
+    const revertInlineEditSession = vi.fn();
 
     const controller = createController({
       updateBlockProps: (_blockId, props) => {
         updates.push(props);
       },
+      beginInlineEditSession,
+      revertInlineEditSession,
       onPlainTextEditPausedChange: (value) => {
         paused = value;
       },
@@ -249,7 +256,9 @@ describe("createCanvasPreviewController", () => {
       null,
     );
 
-    expect(updates).toEqual([{ html: "<p>Hi</p>" }]);
+    expect(beginInlineEditSession).toHaveBeenCalledTimes(1);
+    expect(revertInlineEditSession).toHaveBeenCalledTimes(1);
+    expect(updates).toEqual([]);
     expect(paused).toBe(false);
     expect(ended).toBe(true);
     expect(controller.pausedHtmlRef.current).toBeNull();

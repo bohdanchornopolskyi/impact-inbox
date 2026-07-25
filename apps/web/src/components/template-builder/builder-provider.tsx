@@ -38,10 +38,26 @@ import { useSession } from "@/contexts/session-context";
 import { useWorkspace } from "@/contexts/workspace-context";
 import { getTemplate } from "@/lib/api/templates-api";
 import { applyBuilderMutation } from "./apply-builder-mutation";
+import {
+  beginHistorySession,
+  clearBuilderHistory,
+  commitHistorySession,
+  createEmptyBuilderHistory,
+  recordHistoryEntry,
+  redoHistory,
+  revertHistorySession,
+  undoHistory,
+  type BuilderHistoryState,
+} from "./builder-edit-history";
 
 export type { SaveState } from "@/lib/templates/working-copy-persistence";
 export type InspectorMode = "block" | "templateSettings";
 export type { PreviewDevice } from "@/lib/templates/preview-device";
+
+type ContentHistoryOptions = {
+  history?: "record" | "skip" | "coalesce";
+  coalesceKey?: string;
+};
 
 type BuilderState = {
   templateId: string;
@@ -49,7 +65,6 @@ type BuilderState = {
   content: TemplateContentData;
   /** Last-known optimistic-concurrency token (ADR 0010). Serialized to ISO string on each write. */
   updatedAt: string;
-  // Selection / inspector / preview UI
   selectedBlockId: string | null;
   inspectorMode: InspectorMode;
   previewOpen: boolean;
@@ -57,17 +72,27 @@ type BuilderState = {
   exportOpen: boolean;
   restoreRevisionId: string | null;
   previewDevice: PreviewDevice;
-  // Persistence
   saveState: SaveState;
   canEdit: boolean;
   conflictOpen: boolean;
+  history: BuilderHistoryState;
 
-  // Actions (stable references)
   init: (template: TemplateData) => void;
   applyServerTemplate: (template: TemplateData) => void;
-  updateSettings: (settings: Partial<TemplateContentData["settings"]>) => void;
-  updateBlockProps: (blockId: string, props: Record<string, unknown>) => void;
-  updateBlockStyles: (blockId: string, styles: Partial<BlockStyles>) => void;
+  updateSettings: (
+    settings: Partial<TemplateContentData["settings"]>,
+    options?: ContentHistoryOptions,
+  ) => void;
+  updateBlockProps: (
+    blockId: string,
+    props: Record<string, unknown>,
+    options?: ContentHistoryOptions,
+  ) => void;
+  updateBlockStyles: (
+    blockId: string,
+    styles: Partial<BlockStyles>,
+    options?: ContentHistoryOptions,
+  ) => void;
   addBlock: (columnId: string, blockType: ContentBlockType, index?: number) => void;
   removeBlock: (blockId: string) => void;
   moveBlock: (
@@ -98,10 +123,13 @@ type BuilderState = {
   setPreviewDevice: (device: PreviewDevice) => void;
   setSaveState: (saveState: SaveState) => void;
   setConflictOpen: (open: boolean) => void;
-  /** Advance the concurrency token after a successful write without touching the working copy. */
   markSaved: (updatedAt: string) => void;
-  /** Adopt a rename from metadata-only PATCH without touching content or saveState. */
   applyRename: (template: Pick<TemplateData, "name" | "updatedAt">) => void;
+  beginInlineEditSession: () => void;
+  commitInlineEditSession: () => void;
+  revertInlineEditSession: () => void;
+  undo: () => void;
+  redo: () => void;
 };
 
 export type BuilderStore = StoreApi<BuilderState>;
@@ -121,7 +149,40 @@ function createWriteErrorHandlers(
 }
 
 function createBuilderStore(canEdit: boolean): BuilderStore {
-  return createStore<BuilderState>((set) => {
+  return createStore<BuilderState>((set, get) => {
+    function withRecordedContent(
+      mode: ContentHistoryOptions["history"],
+      coalesceKey: string | undefined,
+      apply: (state: BuilderState) => Partial<BuilderState> | null,
+    ) {
+      set((state) => {
+        if (!state.canEdit) {
+          return state;
+        }
+
+        const patch = apply(state);
+        if (!patch) {
+          return state;
+        }
+
+        let history = state.history;
+        if (mode === "skip" || state.history.sessionBaseline) {
+          history = state.history;
+        } else if (mode === "coalesce") {
+          history = recordHistoryEntry(state.history, state.content, {
+            coalesceKey,
+          });
+        } else {
+          history = recordHistoryEntry(state.history, state.content);
+        }
+
+        return {
+          ...patch,
+          history,
+        };
+      });
+    }
+
     return {
       templateId: "",
       name: "",
@@ -141,6 +202,7 @@ function createBuilderStore(canEdit: boolean): BuilderStore {
       saveState: "synced",
       canEdit,
       conflictOpen: false,
+      history: createEmptyBuilderHistory(),
 
       init: (template) =>
         set({
@@ -151,43 +213,59 @@ function createBuilderStore(canEdit: boolean): BuilderStore {
           selectedBlockId: null,
           inspectorMode: "templateSettings",
           saveState: "synced",
+          history: clearBuilderHistory(),
         }),
 
-      // Adopt server-returned content/updatedAt without resetting selection or
-      // toggling dirty (used after a successful write or restore).
       applyServerTemplate: (template) =>
         set({
           name: template.name,
           content: ensureDefaultStructure(template.content),
           updatedAt: toToken(template.updatedAt),
           saveState: "synced",
+          history: clearBuilderHistory(),
         }),
 
-      updateSettings: (settings) =>
-        set((state) => ({
-          content: updateSettings(state.content, settings),
-          saveState: "unsaved",
-        })),
-      updateBlockProps: (blockId, props) =>
-        set((state) => ({
-          content: updateBlockProps(state.content, blockId, props),
-          saveState: "unsaved",
-        })),
-      updateBlockStyles: (blockId, styles) =>
-        set((state) => ({
-          content: updateBlockStyles(state.content, blockId, styles),
-          saveState: "unsaved",
-        })),
+      updateSettings: (settings, options) =>
+        withRecordedContent(
+          options?.history ?? "coalesce",
+          options?.coalesceKey ?? "settings",
+          (state) => ({
+            content: updateSettings(state.content, settings),
+            saveState: "unsaved",
+          }),
+        ),
+      updateBlockProps: (blockId, props, options) =>
+        withRecordedContent(
+          options?.history ?? "coalesce",
+          options?.coalesceKey ?? `props:${blockId}`,
+          (state) => ({
+            content: updateBlockProps(state.content, blockId, props),
+            saveState: "unsaved",
+          }),
+        ),
+      updateBlockStyles: (blockId, styles, options) =>
+        withRecordedContent(
+          options?.history ?? "coalesce",
+          options?.coalesceKey ?? `styles:${blockId}`,
+          (state) => ({
+            content: updateBlockStyles(state.content, blockId, styles),
+            saveState: "unsaved",
+          }),
+        ),
       addBlock: (columnId, blockType, index) =>
-        set((state) => {
-          const outcome = addContentBlock(state.content, columnId, blockType, index);
-          const next = applyBuilderMutation(state, outcome, {
+        withRecordedContent("record", undefined, (state) => {
+          const outcome = addContentBlock(
+            state.content,
+            columnId,
+            blockType,
+            index,
+          );
+          return applyBuilderMutation(state, outcome, {
             selectInsertedBlock: true,
           });
-          return next ?? state;
         }),
       removeBlock: (blockId) =>
-        set((state) => ({
+        withRecordedContent("record", undefined, (state) => ({
           content: removeBlock(state.content, blockId),
           selectedBlockId:
             state.selectedBlockId === blockId ? null : state.selectedBlockId,
@@ -195,7 +273,7 @@ function createBuilderStore(canEdit: boolean): BuilderStore {
         })),
       moveBlock: (blockId, targetColumnId, targetIndex) => {
         let changed = false;
-        set((state) => {
+        withRecordedContent("record", undefined, (state) => {
           const outcome = moveContentBlock(
             state.content,
             blockId,
@@ -204,7 +282,7 @@ function createBuilderStore(canEdit: boolean): BuilderStore {
           );
           const next = applyBuilderMutation(state, outcome);
           if (!next) {
-            return state;
+            return null;
           }
           changed = true;
           return next;
@@ -213,11 +291,11 @@ function createBuilderStore(canEdit: boolean): BuilderStore {
       },
       moveSection: (sectionId, targetIndex) => {
         let changed = false;
-        set((state) => {
+        withRecordedContent("record", undefined, (state) => {
           const outcome = moveSection(state.content, sectionId, targetIndex);
           const next = applyBuilderMutation(state, outcome);
           if (!next) {
-            return state;
+            return null;
           }
           changed = true;
           return next;
@@ -226,7 +304,7 @@ function createBuilderStore(canEdit: boolean): BuilderStore {
       },
       moveRow: (rowId, targetSectionId, targetIndex) => {
         let changed = false;
-        set((state) => {
+        withRecordedContent("record", undefined, (state) => {
           const outcome = moveRow(
             state.content,
             rowId,
@@ -235,7 +313,7 @@ function createBuilderStore(canEdit: boolean): BuilderStore {
           );
           const next = applyBuilderMutation(state, outcome);
           if (!next) {
-            return state;
+            return null;
           }
           changed = true;
           return next;
@@ -244,7 +322,7 @@ function createBuilderStore(canEdit: boolean): BuilderStore {
       },
       moveColumn: (columnId, targetRowId, targetIndex) => {
         let changed = false;
-        set((state) => {
+        withRecordedContent("record", undefined, (state) => {
           const outcome = moveColumn(
             state.content,
             columnId,
@@ -253,7 +331,7 @@ function createBuilderStore(canEdit: boolean): BuilderStore {
           );
           const next = applyBuilderMutation(state, outcome);
           if (!next) {
-            return state;
+            return null;
           }
           changed = true;
           return next;
@@ -261,28 +339,25 @@ function createBuilderStore(canEdit: boolean): BuilderStore {
         return changed;
       },
       addSection: (index) =>
-        set((state) => {
+        withRecordedContent("record", undefined, (state) => {
           const outcome = addSection(state.content, index);
-          const next = applyBuilderMutation(state, outcome, {
+          return applyBuilderMutation(state, outcome, {
             selectInsertedBlock: true,
           });
-          return next ?? state;
         }),
       addRow: (sectionId, index) =>
-        set((state) => {
+        withRecordedContent("record", undefined, (state) => {
           const outcome = addRow(state.content, sectionId, index);
-          const next = applyBuilderMutation(state, outcome, {
+          return applyBuilderMutation(state, outcome, {
             selectInsertedBlock: true,
           });
-          return next ?? state;
         }),
       addColumn: (rowId, index) =>
-        set((state) => {
+        withRecordedContent("record", undefined, (state) => {
           const outcome = addColumn(state.content, rowId, index);
-          const next = applyBuilderMutation(state, outcome, {
+          return applyBuilderMutation(state, outcome, {
             selectInsertedBlock: true,
           });
-          return next ?? state;
         }),
       selectBlock: (blockId) =>
         set((state) => ({
@@ -301,8 +376,6 @@ function createBuilderStore(canEdit: boolean): BuilderStore {
       markSaved: (updatedAt) =>
         set((state) => ({
           updatedAt,
-          // Only declare synced if no edit landed while the write was in flight;
-          // a mid-flight edit will have flipped saveState back to "unsaved".
           saveState: state.saveState === "saving" ? "synced" : state.saveState,
         })),
       applyRename: (template) =>
@@ -310,6 +383,61 @@ function createBuilderStore(canEdit: boolean): BuilderStore {
           name: template.name,
           updatedAt: toToken(template.updatedAt),
         }),
+      beginInlineEditSession: () =>
+        set((state) => {
+          if (!state.canEdit) {
+            return state;
+          }
+          return {
+            history: beginHistorySession(state.history, state.content),
+          };
+        }),
+      commitInlineEditSession: () =>
+        set((state) => ({
+          history: commitHistorySession(state.history),
+        })),
+      revertInlineEditSession: () =>
+        set((state) => {
+          const reverted = revertHistorySession(state.history);
+          if (!reverted.content) {
+            return { history: reverted.history };
+          }
+          return {
+            content: reverted.content,
+            history: reverted.history,
+            saveState: "unsaved",
+          };
+        }),
+      undo: () => {
+        const state = get();
+        if (!state.canEdit) {
+          return;
+        }
+        const result = undoHistory(state.history, state.content);
+        if (!result) {
+          return;
+        }
+        set({
+          content: result.content,
+          history: result.history,
+          saveState: "unsaved",
+        });
+      },
+      redo: () => {
+        const state = get();
+        if (!state.canEdit) {
+          return;
+        }
+        const result = redoHistory(state.history, state.content);
+        if (!result) {
+          return;
+        }
+        set({
+          content: result.content,
+          history: result.history,
+          saveState: "unsaved",
+        });
+      },
     };
   });
 }

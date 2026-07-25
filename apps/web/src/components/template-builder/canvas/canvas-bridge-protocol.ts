@@ -107,6 +107,19 @@ export type CanvasDragPointerMessage = {
   clientY: number;
 };
 
+export type HistoryUndoMessage = {
+  type: "history-undo";
+};
+
+export type HistoryRedoMessage = {
+  type: "history-redo";
+};
+
+export type BuilderShortcutMessage = {
+  type: "builder-shortcut";
+  action: "undo" | "redo" | "save" | "preview" | "delete" | "deselect";
+};
+
 export type CanvasBridgeInboundMessage =
   | BlockSelectMessage
   | BlockEditStartMessage
@@ -120,7 +133,10 @@ export type CanvasBridgeInboundMessage =
   | CanvasDragHandleDownMessage
   | CanvasDragActiveMessage
   | CanvasDragCommitMessage
-  | CanvasDragPointerMessage;
+  | CanvasDragPointerMessage
+  | HistoryUndoMessage
+  | HistoryRedoMessage
+  | BuilderShortcutMessage;
 
 export type SelectBlockMessage = {
   type: "select-block";
@@ -406,4 +422,37 @@ export function isCanvasDragPointerMessage(
   }
 
   return data.type === "canvas-drag-pointer" && typeof data.clientY === "number";
+}
+
+export function isHistoryUndoMessage(
+  data: unknown,
+): data is HistoryUndoMessage {
+  return isRecord(data) && data.type === "history-undo";
+}
+
+export function isHistoryRedoMessage(
+  data: unknown,
+): data is HistoryRedoMessage {
+  return isRecord(data) && data.type === "history-redo";
+}
+
+const BUILDER_SHORTCUT_ACTIONS = [
+  "undo",
+  "redo",
+  "save",
+  "preview",
+  "delete",
+  "deselect",
+] as const;
+
+export function isBuilderShortcutMessage(
+  data: unknown,
+): data is BuilderShortcutMessage {
+  if (!isRecord(data) || data.type !== "builder-shortcut") {
+    return false;
+  }
+  return (
+    typeof data.action === "string" &&
+    (BUILDER_SHORTCUT_ACTIONS as readonly string[]).includes(data.action)
+  );
 }

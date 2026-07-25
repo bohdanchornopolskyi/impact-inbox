@@ -12,8 +12,10 @@ import {
   previewWidth,
   useRenderedPreview,
 } from "@/lib/templates/use-rendered-preview";
-import { useBuilder } from "../builder-provider";
+import { useBuilder, useSaveRevision } from "../builder-provider";
+import { runBuilderShortcut } from "../run-builder-shortcut";
 import { buildCanvasBridgeDocument } from "./canvas-bridge";
+import { isBuilderShortcutMessage } from "./canvas-bridge-protocol";
 import {
   createCanvasPreviewController,
   resolveEffectiveHtml,
@@ -30,9 +32,18 @@ export function PreviewCanvas() {
   const canEdit = useBuilder((s) => s.canEdit);
   const selectedBlockId = useBuilder((s) => s.selectedBlockId);
   const selectBlock = useBuilder((s) => s.selectBlock);
+  const removeBlock = useBuilder((s) => s.removeBlock);
   const updateBlockProps = useBuilder((s) => s.updateBlockProps);
+  const beginInlineEditSession = useBuilder((s) => s.beginInlineEditSession);
+  const commitInlineEditSession = useBuilder((s) => s.commitInlineEditSession);
+  const revertInlineEditSession = useBuilder((s) => s.revertInlineEditSession);
+  const undo = useBuilder((s) => s.undo);
+  const redo = useBuilder((s) => s.redo);
+  const previewOpen = useBuilder((s) => s.previewOpen);
+  const setPreviewOpen = useBuilder((s) => s.setPreviewOpen);
   const previewDevice = useBuilder((s) => s.previewDevice);
   const setPreviewDevice = useBuilder((s) => s.setPreviewDevice);
+  const { saveRevision, isPending: isSaving } = useSaveRevision();
   const {
     session: richtextSession,
     startEdit: startRichtextEdit,
@@ -167,6 +178,9 @@ export function PreviewCanvas() {
       getCanEdit: () => canEditRef.current,
       selectBlock,
       updateBlockProps,
+      beginInlineEditSession,
+      commitInlineEditSession,
+      revertInlineEditSession,
       onPlainTextEditPausedChange: setPlainTextEditPaused,
       startRichtextEdit,
       endRichtextEdit,
@@ -252,16 +266,48 @@ export function PreviewCanvas() {
         return;
       }
 
-      if (handleIframeMessage(event.data)) {
+      const data = event.data;
+      if (isBuilderShortcutMessage(data)) {
+        runBuilderShortcut(data.action, {
+          canEdit,
+          isSaving,
+          previewOpen,
+          selectedBlockId,
+          undo,
+          redo,
+          save: () => {
+            void saveRevision();
+          },
+          openPreview: () => setPreviewOpen(true),
+          removeBlock,
+          selectBlock,
+        });
         return;
       }
 
-      controller.handleMessage(event.data, event.source);
+      if (handleIframeMessage(data)) {
+        return;
+      }
+
+      controller.handleMessage(data, event.source);
     }
 
     window.addEventListener("message", onMessage);
     return () => window.removeEventListener("message", onMessage);
-  }, [controller, handleIframeMessage]);
+  }, [
+    canEdit,
+    controller,
+    handleIframeMessage,
+    isSaving,
+    previewOpen,
+    redo,
+    removeBlock,
+    saveRevision,
+    selectBlock,
+    selectedBlockId,
+    setPreviewOpen,
+    undo,
+  ]);
 
   useEffect(() => {
     if (!richtextSession) {
