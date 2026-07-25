@@ -8,6 +8,10 @@ import { useWorkspace } from "@/contexts/workspace-context";
 import { useUpdateContact } from "@/lib/contacts/contact-hooks";
 import { useContact } from "@/lib/contacts/contact-hooks";
 import { ContactStatusBadge } from "@/components/contacts/contact-status-badge";
+import {
+  WorkspacePageHeader,
+  WorkspacePageShell,
+} from "@/components/app/workspace-page-chrome";
 
 type ContactDetailViewProps = {
   contactId: string;
@@ -39,7 +43,7 @@ export function ContactDetailView({ contactId }: ContactDetailViewProps) {
   const contact = contactQuery.data;
 
   return (
-    <div className="mx-auto w-full max-w-3xl px-4 py-8 sm:px-6">
+    <WorkspacePageShell>
       <Link
         href={`/${workspace.slug}/contacts`}
         className="text-ui-sm text-text-secondary hover:underline"
@@ -47,19 +51,20 @@ export function ContactDetailView({ contactId }: ContactDetailViewProps) {
         ← All contacts
       </Link>
 
-      <div className="mt-4 space-y-6">
-        <div>
-          <h1 className="text-ui-2xl font-semibold text-text-primary">{contact.email}</h1>
-          <div className="mt-2 flex flex-wrap gap-2">
-            {contact.suppressedAt ? (
-              <ContactStatusBadge suppressed />
-            ) : null}
+      <WorkspacePageHeader
+        className="mt-4"
+        title={contact.email}
+        description={
+          <div className="flex flex-wrap gap-2">
+            {contact.suppressedAt ? <ContactStatusBadge suppressed /> : null}
             {contact.globalUnsubscribedAt ? (
               <ContactStatusBadge globallyUnsubscribed />
             ) : null}
           </div>
-        </div>
+        }
+      />
 
+      <div className="space-y-6">
         {canEdit ? (
           <section className="rounded-2xl border border-border-default bg-surface-card p-6">
             <div className="grid gap-4 sm:grid-cols-2">
@@ -93,16 +98,22 @@ export function ContactDetailView({ contactId }: ContactDetailViewProps) {
                   })
                 }
               >
-                {contact.globalUnsubscribedAt ? "Clear global unsub" : "Global unsubscribe"}
+                {contact.globalUnsubscribedAt
+                  ? "Clear global unsub"
+                  : "Global unsubscribe"}
               </Button>
             </div>
           </section>
         ) : null}
 
         <section className="rounded-2xl border border-border-default bg-surface-card p-6">
-          <h2 className="text-ui-lg font-medium text-text-primary">List memberships</h2>
+          <h2 className="text-ui-lg font-medium text-text-primary">
+            List memberships
+          </h2>
           {contact.listMemberships.length === 0 ? (
-            <p className="mt-2 text-ui-sm text-text-secondary">Not on any lists.</p>
+            <p className="mt-2 text-ui-sm text-text-secondary">
+              Not on any lists.
+            </p>
           ) : (
             <ul className="mt-3 space-y-2">
               {contact.listMemberships.map((membership) => (
@@ -123,6 +134,6 @@ export function ContactDetailView({ contactId }: ContactDetailViewProps) {
           )}
         </section>
       </div>
-    </div>
+    </WorkspacePageShell>
   );
 }

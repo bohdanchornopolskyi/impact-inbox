@@ -1,11 +1,14 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Bookmark, Trash2 } from "lucide-react";
+import Link from "next/link";
+import { Bookmark, RotateCcw, Trash2 } from "lucide-react";
 import { Button, Input, cn } from "@repo/ui/client";
 import {
   findBlock,
+  getPlatformStarterByName,
   hasWorkspaceRoleAtLeast,
+  isEmptyModuleSection,
   resolveSectionId,
   summarizeModuleContent,
   type SectionBlock,
@@ -19,7 +22,15 @@ import {
   useWorkspaceModules,
 } from "@/lib/workspaces/workspace-hooks";
 import { useToastMutation } from "@/lib/use-toast-mutation";
+import { showError } from "@/stores/toast-store";
 import { useBuilder } from "./builder-provider";
+import { ConfirmModal } from "./modals/confirm-modal";
+
+type PendingLibraryAction =
+  | { kind: "update"; module: WorkspaceModuleData; content: SectionBlock }
+  | { kind: "restore"; module: WorkspaceModuleData; content: SectionBlock }
+  | { kind: "delete"; moduleId: string }
+  | null;
 
 export function ModulesPanel() {
   const { workspace } = useWorkspace();
@@ -41,7 +52,7 @@ export function ModulesPanel() {
   const update = useToastMutation({
     mutationFn: (input: Parameters<typeof updateModule.mutateAsync>[0]) =>
       updateModule.mutateAsync(input),
-    successMessage: "Module updated",
+    successMessage: "Module library updated",
     errorMessage: "Could not update module",
   });
   const remove = useToastMutation({
@@ -52,6 +63,7 @@ export function ModulesPanel() {
   const [saveName, setSaveName] = useState("");
   const [selectedModuleId, setSelectedModuleId] = useState<string | null>(null);
   const [renameValue, setRenameValue] = useState("");
+  const [pendingAction, setPendingAction] = useState<PendingLibraryAction>(null);
 
   const sectionId = resolveSectionId(content, selectedBlockId);
   const foundSection =
@@ -59,10 +71,20 @@ export function ModulesPanel() {
   const selectedSection =
     foundSection?.block.type === "section" ? foundSection.block : undefined;
   const canSaveSection =
-    canManage && selectedSection !== undefined && Boolean(saveName.trim());
+    canManage &&
+    selectedSection !== undefined &&
+    !isEmptyModuleSection(selectedSection) &&
+    Boolean(saveName.trim());
 
   const selectedModule =
     modulesQuery.data?.find((module) => module.id === selectedModuleId) ?? null;
+  const starterForSelected = selectedModule
+    ? getPlatformStarterByName(selectedModule.name, {
+        workspaceName: workspace.name,
+        physicalAddress: workspace.physicalAddress,
+        brandKit: workspace.brandKit,
+      })
+    : undefined;
 
   useEffect(() => {
     if (!selectedModule) {
@@ -93,6 +115,10 @@ export function ModulesPanel() {
     if (!canSaveSection || !selectedSection) {
       return;
     }
+    if (isEmptyModuleSection(selectedSection)) {
+      showError("Choose a section that has content before saving.");
+      return;
+    }
     create.mutate(
       { name: saveName.trim(), content: selectedSection },
       {
@@ -115,32 +141,103 @@ export function ModulesPanel() {
     });
   }
 
-  function handleUpdateFromSelection(module: WorkspaceModuleData) {
+  function requestUpdateFromSelection(module: WorkspaceModuleData) {
     if (!canManage || !selectedSection) {
       return;
     }
-    update.mutate({
-      moduleId: module.id,
-      input: { content: selectedSection },
+    if (isEmptyModuleSection(selectedSection)) {
+      showError("Selected section is empty. Add blocks before updating the library.");
+      return;
+    }
+    setPendingAction({
+      kind: "update",
+      module,
+      content: selectedSection,
     });
   }
 
-  function handleDelete(moduleId: string) {
-    remove.mutate(moduleId, {
-      onSuccess: () => {
-        if (selectedModuleId === moduleId) {
-          setSelectedModuleId(null);
-        }
-      },
+  function requestRestoreStarter(module: WorkspaceModuleData) {
+    if (!canManage) {
+      return;
+    }
+    const starter = getPlatformStarterByName(module.name, {
+      workspaceName: workspace.name,
+      physicalAddress: workspace.physicalAddress,
+      brandKit: workspace.brandKit,
+    });
+    if (!starter) {
+      return;
+    }
+    setPendingAction({
+      kind: "restore",
+      module,
+      content: starter.content,
     });
   }
+
+  function requestDelete(moduleId: string) {
+    setPendingAction({ kind: "delete", moduleId });
+  }
+
+  async function confirmPendingAction() {
+    if (!pendingAction) {
+      return;
+    }
+
+    try {
+      if (pendingAction.kind === "delete") {
+        await remove.mutateAsync(pendingAction.moduleId);
+        if (selectedModuleId === pendingAction.moduleId) {
+          setSelectedModuleId(null);
+        }
+        setPendingAction(null);
+        return;
+      }
+
+      await update.mutateAsync({
+        moduleId: pendingAction.module.id,
+        input: { content: pendingAction.content },
+      });
+      setPendingAction(null);
+    } catch {
+      // Toast handled by useToastMutation; keep dialog open for retry.
+    }
+  }
+
+  const confirmTitle =
+    pendingAction?.kind === "delete"
+      ? "Delete module?"
+      : pendingAction?.kind === "restore"
+        ? "Restore starter content?"
+        : "Replace module content?";
+  const confirmDescription =
+    pendingAction?.kind === "delete"
+      ? "This removes the module from the workspace library. Template canvas undo (⌘Z) cannot reverse library changes."
+      : pendingAction?.kind === "restore"
+        ? `Replace “${pendingAction.module.name}” with the platform starter. This is not undoable with ⌘Z.`
+        : pendingAction
+          ? `Replace “${pendingAction.module.name}” with the selected canvas section. Library edits are not undoable with ⌘Z.`
+          : undefined;
+  const confirmLabel =
+    pendingAction?.kind === "delete"
+      ? "Delete"
+      : pendingAction?.kind === "restore"
+        ? "Restore starter"
+        : "Replace content";
 
   return (
     <div className="flex h-full min-h-0 flex-col overflow-hidden">
       <div className="shrink-0 border-b border-border-subtle px-4 py-3">
         <h2 className="text-ui-sm font-semibold text-text-primary">Modules</h2>
         <p className="mt-0.5 text-ui-xs text-text-tertiary">
-          Select a module to preview, then insert a copy.
+          Insert a copy into this template.{" "}
+          <Link
+            href={`/${workspace.slug}/settings?tab=modules`}
+            className="text-accent-text underline-offset-2 hover:underline"
+          >
+            Manage library in settings
+          </Link>
+          .
         </p>
       </div>
 
@@ -148,7 +245,7 @@ export function ModulesPanel() {
         {canManage ? (
           <div className="mb-4 space-y-2 rounded-lg border border-border-default bg-surface-muted p-3">
             <p className="text-ui-xs font-medium text-text-secondary">
-              Save selected section
+              Save canvas section to library
             </p>
             <Input
               value={saveName}
@@ -168,6 +265,10 @@ export function ModulesPanel() {
             {!selectedSection ? (
               <p className="text-ui-xs text-text-tertiary">
                 Select a section (or a block inside one) first.
+              </p>
+            ) : isEmptyModuleSection(selectedSection) ? (
+              <p className="text-ui-xs text-text-tertiary">
+                Selected section is empty — add blocks before saving.
               </p>
             ) : null}
           </div>
@@ -256,7 +357,7 @@ export function ModulesPanel() {
               variant="primary"
               size="sm"
               className="w-full"
-              disabled={!canEdit}
+              disabled={!canEdit || isEmptyModuleSection(selectedModule.content)}
               onClick={() => handleInsert(selectedModule.content)}
             >
               Insert into template
@@ -269,8 +370,12 @@ export function ModulesPanel() {
                   variant="secondary"
                   size="sm"
                   className="w-full"
-                  disabled={!selectedSection || update.isPending}
-                  onClick={() => handleUpdateFromSelection(selectedModule)}
+                  disabled={
+                    !selectedSection ||
+                    isEmptyModuleSection(selectedSection) ||
+                    update.isPending
+                  }
+                  onClick={() => requestUpdateFromSelection(selectedModule)}
                 >
                   Update from selection
                 </Button>
@@ -278,6 +383,27 @@ export function ModulesPanel() {
                   <p className="text-ui-xs text-text-tertiary">
                     Select a canvas section to replace this module’s content.
                   </p>
+                ) : isEmptyModuleSection(selectedSection) ? (
+                  <p className="text-ui-xs text-text-tertiary">
+                    Selected section is empty — library updates need content.
+                  </p>
+                ) : (
+                  <p className="text-ui-xs text-text-tertiary">
+                    Library changes are separate from canvas undo (⌘Z).
+                  </p>
+                )}
+                {starterForSelected ? (
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    size="sm"
+                    className="w-full"
+                    disabled={update.isPending}
+                    onClick={() => requestRestoreStarter(selectedModule)}
+                  >
+                    <RotateCcw className="mr-1.5 size-3.5" strokeWidth={1.5} />
+                    Restore starter
+                  </Button>
                 ) : null}
                 <Button
                   type="button"
@@ -285,7 +411,7 @@ export function ModulesPanel() {
                   size="sm"
                   className="w-full text-danger"
                   disabled={remove.isPending}
-                  onClick={() => handleDelete(selectedModule.id)}
+                  onClick={() => requestDelete(selectedModule.id)}
                 >
                   <Trash2 className="mr-1.5 size-3.5" strokeWidth={1.5} />
                   Delete module
@@ -299,6 +425,21 @@ export function ModulesPanel() {
           </p>
         ) : null}
       </div>
+
+      <ConfirmModal
+        open={pendingAction !== null}
+        onOpenChange={(open) => {
+          if (!open) {
+            setPendingAction(null);
+          }
+        }}
+        title={confirmTitle}
+        description={confirmDescription}
+        confirmLabel={confirmLabel}
+        variant={pendingAction?.kind === "delete" ? "danger" : "primary"}
+        isPending={update.isPending || remove.isPending}
+        onConfirm={confirmPendingAction}
+      />
     </div>
   );
 }

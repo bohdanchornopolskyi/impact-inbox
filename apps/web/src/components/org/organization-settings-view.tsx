@@ -11,6 +11,10 @@ import { hasOrganizationRoleAtLeast } from "@repo/shared";
 import { Button } from "@repo/ui/client";
 import { CreateWorkspaceModal } from "@/components/org/create-workspace-modal";
 import { OrgMembersSection } from "@/components/org/org-members-section";
+import {
+  WorkspacePageHeader,
+  WorkspacePageShell,
+} from "@/components/app/workspace-page-chrome";
 import { formatDateTime } from "@/lib/format-date";
 import { formatRoleLabel } from "@/lib/members/format-role-label";
 
@@ -39,18 +43,11 @@ export function OrganizationSettingsView({
   );
 
   return (
-    <div className="mx-auto flex w-full max-w-3xl flex-col gap-8 px-4 py-10 sm:px-6">
-      <div className="space-y-2">
-        <p className="text-ui-xs font-medium tracking-[0.2em] text-text-tertiary uppercase">
-          Organization
-        </p>
-        <h1 className="text-ui-3xl font-semibold tracking-tight text-text-primary">
-          {organization.name}
-        </h1>
-        <p className="text-ui-sm text-text-secondary">
-          Your role: {formatRoleLabel(organization.role)}
-        </p>
-      </div>
+    <WorkspacePageShell className="flex flex-col gap-8">
+      <WorkspacePageHeader
+        title={organization.name}
+        description={`Your role: ${formatRoleLabel(organization.role)}`}
+      />
 
       <section className="rounded-2xl border border-border-default bg-surface-card p-6 shadow-sm">
         <dl className="grid gap-4 sm:grid-cols-2">
@@ -139,6 +136,6 @@ export function OrganizationSettingsView({
         onOpenChange={setCreateWorkspaceOpen}
         organizationId={organization.id}
       />
-    </div>
+    </WorkspacePageShell>
   );
 }

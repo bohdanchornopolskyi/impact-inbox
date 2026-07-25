@@ -10,6 +10,10 @@ import { isTemplateAccessMode } from "@/lib/org/template-access-mode";
 import { useContactLists } from "@/lib/contacts/contact-hooks";
 import { FeatureLock } from "@/components/contacts/feature-lock";
 import { CreateListModal } from "@/components/contacts/modals/create-list-modal";
+import {
+  WorkspacePageHeader,
+  WorkspacePageShell,
+} from "@/components/app/workspace-page-chrome";
 
 export function ContactListsView() {
   const { workspace } = useWorkspace();
@@ -21,23 +25,24 @@ export function ContactListsView() {
   const [createOpen, setCreateOpen] = useState(false);
 
   return (
-    <div className="mx-auto w-full max-w-5xl px-4 py-8 sm:px-6">
-      <div className="mb-5 flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <Link
-            href={`/${workspace.slug}/contacts`}
-            className="text-ui-sm text-text-secondary hover:underline"
-          >
-            ← Contacts
-          </Link>
-          <h1 className="mt-2 text-ui-2xl font-semibold text-text-primary">Lists</h1>
-        </div>
-        {canEdit && !locked ? (
-          <Button variant="primary" onClick={() => setCreateOpen(true)}>
-            New list
-          </Button>
-        ) : null}
-      </div>
+    <WorkspacePageShell>
+      <Link
+        href={`/${workspace.slug}/contacts`}
+        className="mb-2 inline-block text-ui-sm text-text-secondary hover:underline"
+      >
+        ← Contacts
+      </Link>
+      <WorkspacePageHeader
+        title="Lists"
+        description="Group contacts for campaigns and imports."
+        actions={
+          canEdit && !locked ? (
+            <Button variant="primary" onClick={() => setCreateOpen(true)}>
+              New list
+            </Button>
+          ) : null
+        }
+      />
 
       <FeatureLock locked={locked} orgId={workspace.organizationId}>
         {listsQuery.isLoading ? (
@@ -63,6 +68,6 @@ export function ContactListsView() {
       </FeatureLock>
 
       <CreateListModal open={createOpen} onOpenChange={setCreateOpen} />
-    </div>
+    </WorkspacePageShell>
   );
 }

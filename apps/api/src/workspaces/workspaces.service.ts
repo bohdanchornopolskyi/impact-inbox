@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   ConflictException,
   ForbiddenException,
   Inject,
@@ -19,6 +20,7 @@ import {
 } from "@repo/db";
 import {
   buildPlatformStarterModules,
+  isEmptyModuleSection,
   type AuthenticatedWorkspaceContext,
   type CreateWorkspaceModuleInput,
   type UpdateWorkspaceModuleInput,
@@ -430,6 +432,16 @@ export class WorkspacesService {
     };
   }
 
+  private assertModuleContent(
+    content: CreateWorkspaceModuleInput["content"],
+  ): void {
+    if (isEmptyModuleSection(content)) {
+      throw new BadRequestException(
+        "Module content must include at least one block.",
+      );
+    }
+  }
+
   private slugify(name: string): string {
     const slug = name
       .toLowerCase()
@@ -481,6 +493,7 @@ export class WorkspacesService {
     dto: CreateWorkspaceModuleInput,
   ): Promise<WorkspaceModuleData> {
     await this.getWorkspaceById(workspaceId);
+    this.assertModuleContent(dto.content);
     const [created] = await this.db
       .insert(workspaceModules)
       .values({
@@ -502,6 +515,10 @@ export class WorkspacesService {
     moduleId: string,
     dto: UpdateWorkspaceModuleInput,
   ): Promise<WorkspaceModuleData> {
+    if (dto.content !== undefined) {
+      this.assertModuleContent(dto.content);
+    }
+
     const [updated] = await this.db
       .update(workspaceModules)
       .set({

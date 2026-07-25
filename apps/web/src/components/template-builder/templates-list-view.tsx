@@ -19,6 +19,10 @@ import { CreateTemplateModal } from "@/components/template-builder/modals/create
 import { RenameTemplateModal } from "@/components/template-builder/modals/rename-template-modal";
 import { RestoreTemplateModal } from "@/components/template-builder/modals/restore-template-modal";
 import { TemplateThumbnail } from "@/components/template-builder/template-thumbnail";
+import {
+  WorkspacePageHeader,
+  WorkspacePageShell,
+} from "@/components/app/workspace-page-chrome";
 
 function toUpdatedAtToken(updatedAt: Date | string): string {
   return updatedAt instanceof Date ? updatedAt.toISOString() : String(updatedAt);
@@ -56,22 +60,18 @@ export function TemplatesListView() {
   }, [search, templatesQuery.data]);
 
   return (
-    <div className="mx-auto w-full max-w-5xl px-4 py-8 sm:px-6">
-      <div className="mb-5 flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <h1 className="text-ui-2xl font-semibold tracking-snug text-text-primary">
-            Templates
-          </h1>
-          <p className="mt-1 text-ui-sm text-text-secondary">
-            Design and reuse email layouts for your campaigns.
-          </p>
-        </div>
-        {canEdit ? (
-          <Button variant="primary" onClick={() => setCreateOpen(true)}>
-            New template
-          </Button>
-        ) : null}
-      </div>
+    <WorkspacePageShell>
+      <WorkspacePageHeader
+        title="Templates"
+        description="Design and reuse email layouts for your campaigns."
+        actions={
+          canEdit ? (
+            <Button variant="primary" onClick={() => setCreateOpen(true)}>
+              New template
+            </Button>
+          ) : null
+        }
+      />
 
       <div className="mb-5 flex flex-wrap items-center gap-3">
         <div className="w-full max-w-xs flex-1">
@@ -246,6 +246,6 @@ export function TemplatesListView() {
             }
           })()
         : null}
-    </div>
+    </WorkspacePageShell>
   );
 }

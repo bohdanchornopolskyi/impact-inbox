@@ -1,7 +1,10 @@
 import { describe, expect, it } from "vitest";
 import {
+  buildModuleContentFromSource,
   buildPlatformStarterModules,
   cloneSectionBlock,
+  getPlatformStarterByName,
+  isEmptyModuleSection,
   summarizeModuleContent,
 } from "./module-starters";
 
@@ -52,4 +55,48 @@ describe("module-starters", () => {
     expect(header).toBeDefined();
     expect(summarizeModuleContent(header!.content)).toBe("Logo, Heading");
   });
+
+  it("detects empty module sections and resolves starters by name", () => {
+    const empty = createEmptySection();
+    expect(isEmptyModuleSection(empty)).toBe(true);
+    expect(summarizeModuleContent(empty)).toBe("Empty section");
+
+    const footer = getPlatformStarterByName("Footer", {
+      workspaceName: "Acme",
+    });
+    expect(footer?.name).toBe("Footer");
+    expect(isEmptyModuleSection(footer!.content)).toBe(false);
+    expect(getPlatformStarterByName("Missing", { workspaceName: "Acme" })).toBeUndefined();
+    expect(
+      getPlatformStarterByName("Custom Header", { workspaceName: "Acme" }),
+    ).toBeUndefined();
+  });
+
+  it("builds blank and starter content for settings create", () => {
+    const blank = buildModuleContentFromSource("blank", {
+      workspaceName: "Acme",
+    });
+    expect(isEmptyModuleSection(blank)).toBe(false);
+    expect(summarizeModuleContent(blank)).toBe("Text");
+
+    const header = buildModuleContentFromSource("Header", {
+      workspaceName: "Acme",
+    });
+    expect(summarizeModuleContent(header)).toBe("Logo, Heading");
+  });
 });
+
+function createEmptySection() {
+  const starters = buildPlatformStarterModules({ workspaceName: "Acme" });
+  const header = starters[0]!.content;
+  return {
+    ...header,
+    children: header.children.map((row) => ({
+      ...row,
+      children: row.children.map((column) => ({
+        ...column,
+        children: [],
+      })),
+    })),
+  };
+}

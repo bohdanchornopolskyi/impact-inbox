@@ -123,14 +123,69 @@ export function createCtaStarterModule(
   return sectionWith(ctx.brandKit, [heading, text, button]);
 }
 
+export function createBlankStarterModule(
+  ctx: ModulePrefillContext,
+): SectionBlock {
+  const text = createContentBlock("text", ctx.brandKit);
+  text.props = {
+    ...text.props,
+    text: "New module — edit this section in a template, then update the library.",
+  };
+  return sectionWith(ctx.brandKit, [text]);
+}
+
+export const PLATFORM_STARTER_NAMES = ["Header", "Footer", "CTA band"] as const;
+
+export type PlatformStarterName = (typeof PLATFORM_STARTER_NAMES)[number];
+
+export type ModuleCreateSource = "blank" | PlatformStarterName;
+
+const PLATFORM_STARTER_BUILDERS: Record<
+  PlatformStarterName,
+  (ctx: ModulePrefillContext) => SectionBlock
+> = {
+  Header: createHeaderStarterModule,
+  Footer: createFooterStarterModule,
+  "CTA band": createCtaStarterModule,
+};
+
+export const MODULE_CREATE_SOURCES: Array<{
+  value: ModuleCreateSource;
+  label: string;
+}> = [
+  { value: "blank", label: "Blank section" },
+  { value: "Header", label: "Header starter" },
+  { value: "Footer", label: "Footer starter" },
+  { value: "CTA band", label: "CTA band starter" },
+];
+
+export function isPlatformStarterName(
+  name: string,
+): name is PlatformStarterName {
+  return (PLATFORM_STARTER_NAMES as readonly string[]).includes(name);
+}
+
+export function buildModuleContentFromSource(
+  source: ModuleCreateSource,
+  ctx: ModulePrefillContext,
+): SectionBlock {
+  switch (source) {
+    case "blank":
+      return createBlankStarterModule(ctx);
+    case "Header":
+    case "Footer":
+    case "CTA band":
+      return PLATFORM_STARTER_BUILDERS[source](ctx);
+  }
+}
+
 export function buildPlatformStarterModules(
   ctx: ModulePrefillContext,
-): Array<{ name: string; content: SectionBlock }> {
-  return [
-    { name: "Header", content: createHeaderStarterModule(ctx) },
-    { name: "Footer", content: createFooterStarterModule(ctx) },
-    { name: "CTA band", content: createCtaStarterModule(ctx) },
-  ];
+): Array<{ name: PlatformStarterName; content: SectionBlock }> {
+  return PLATFORM_STARTER_NAMES.map((name) => ({
+    name,
+    content: PLATFORM_STARTER_BUILDERS[name](ctx),
+  }));
 }
 
 export function cloneSectionBlock(section: SectionBlock): SectionBlock {
@@ -165,4 +220,28 @@ export function summarizeModuleContent(section: SectionBlock): string {
   }
 
   return labels.length > 0 ? labels.join(", ") : "Empty section";
+}
+
+export function isEmptyModuleSection(section: SectionBlock): boolean {
+  for (const row of section.children) {
+    for (const column of row.children) {
+      if (column.children.length > 0) {
+        return false;
+      }
+    }
+  }
+  return true;
+}
+
+export function getPlatformStarterByName(
+  name: string,
+  ctx: ModulePrefillContext,
+): { name: PlatformStarterName; content: SectionBlock } | undefined {
+  if (!isPlatformStarterName(name)) {
+    return undefined;
+  }
+  return {
+    name,
+    content: PLATFORM_STARTER_BUILDERS[name](ctx),
+  };
 }

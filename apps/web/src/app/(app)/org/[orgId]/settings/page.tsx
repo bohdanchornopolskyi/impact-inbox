@@ -40,7 +40,7 @@ export default function OrganizationSettingsPage() {
     return (
       <>
         <AppHeader title="Organization settings" />
-        <div className="mx-auto flex w-full max-w-3xl flex-col gap-4 px-4 py-10 sm:px-6">
+        <div className="mx-auto flex w-full max-w-5xl flex-col gap-4 px-4 py-8 sm:px-6">
           <ApiFormError
             error={
               organizationQuery.error ??

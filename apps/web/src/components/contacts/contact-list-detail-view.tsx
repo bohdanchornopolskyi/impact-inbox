@@ -12,6 +12,10 @@ import {
 } from "@/lib/contacts/contact-hooks";
 import { ContactStatusBadge } from "@/components/contacts/contact-status-badge";
 import { ImportWizardModal } from "@/components/contacts/import/import-wizard-modal";
+import {
+  WorkspacePageHeader,
+  WorkspacePageShell,
+} from "@/components/app/workspace-page-chrome";
 
 type ContactListDetailViewProps = {
   listId: string;
@@ -37,7 +41,7 @@ export function ContactListDetailView({ listId }: ContactListDetailViewProps) {
   const members = membersQuery.data ?? [];
 
   return (
-    <div className="mx-auto w-full max-w-5xl px-4 py-8 sm:px-6">
+    <WorkspacePageShell>
       <Link
         href={`/${workspace.slug}/contacts/lists`}
         className="text-ui-sm text-text-secondary hover:underline"
@@ -45,36 +49,41 @@ export function ContactListDetailView({ listId }: ContactListDetailViewProps) {
         ← Lists
       </Link>
 
-      <div className="mt-4 flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <h1 className="text-ui-2xl font-semibold text-text-primary">{list.name}</h1>
-          <p className="mt-1 text-ui-sm text-text-secondary">
-            {list.memberCount} members
-          </p>
-        </div>
-        {canEdit ? (
-          <div className="flex gap-2">
-            <Button variant="secondary" onClick={() => setImportOpen(true)}>
-              Import CSV
-            </Button>
-            <Button
-              variant="secondary"
-              onClick={() =>
-                updateList.mutate({ doubleOptInEnabled: !list.doubleOptInEnabled })
-              }
-            >
-              {list.doubleOptInEnabled ? "Disable" : "Enable"} double opt-in
-            </Button>
-          </div>
-        ) : null}
-      </div>
+      <WorkspacePageHeader
+        className="mt-4"
+        title={list.name}
+        description={`${list.memberCount} members`}
+        actions={
+          canEdit ? (
+            <div className="flex gap-2">
+              <Button variant="secondary" onClick={() => setImportOpen(true)}>
+                Import CSV
+              </Button>
+              <Button
+                variant="secondary"
+                onClick={() =>
+                  updateList.mutate({
+                    doubleOptInEnabled: !list.doubleOptInEnabled,
+                  })
+                }
+              >
+                {list.doubleOptInEnabled ? "Disable" : "Enable"} double opt-in
+              </Button>
+            </div>
+          ) : null
+        }
+      />
 
-      <div className="mt-6 overflow-hidden rounded-2xl border border-border-default">
+      <div className="overflow-hidden rounded-2xl border border-border-default">
         <table className="min-w-full divide-y divide-border-default text-ui-sm">
           <thead className="bg-surface-inset">
             <tr>
-              <th className="px-4 py-3 text-left font-medium text-text-secondary">Email</th>
-              <th className="px-4 py-3 text-left font-medium text-text-secondary">Status</th>
+              <th className="px-4 py-3 text-left font-medium text-text-secondary">
+                Email
+              </th>
+              <th className="px-4 py-3 text-left font-medium text-text-secondary">
+                Status
+              </th>
             </tr>
           </thead>
           <tbody className="divide-y divide-border-default bg-surface-card">
@@ -106,6 +115,6 @@ export function ContactListDetailView({ listId }: ContactListDetailViewProps) {
         open={importOpen}
         onOpenChange={setImportOpen}
       />
-    </div>
+    </WorkspacePageShell>
   );
 }
