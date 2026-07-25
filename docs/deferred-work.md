@@ -29,6 +29,7 @@ Work in this order unless you have a reason to skip.
 | 16 | Workspace send providers prep | `not done` | [ADR 0015](./adr/0015-workspace-send-providers-prep.md) | Test send before campaigns |
 | 17 | Platform object storage + image upload | `not done` | [ADR 0016](./adr/0016-platform-object-storage.md) | R2/S3 + builder UX |
 | 18 | Builder undo/redo | `done` | [ADR 0017](./adr/0017-template-builder-undo-redo.md) | Document history |
+| 21 | Workspace brand kit + saved modules | `not done` | [ADR 0018](./adr/0018-workspace-brand-kit-and-saved-modules.md) | Design UX; bake-at-insert |
 | 19 | Builder hardening dogfood | `not done` | design-partner readiness | Concurrency, export, permissions |
 | 20 | Support basics (monitoring/backups) | `not done` | ops | Hosted env |
 
@@ -209,6 +210,7 @@ Revisit only if/when a real hosted database and deploy pipeline exist.
 | Workspace send providers prep | `not done` | [ADR 0015](./adr/0015-workspace-send-providers-prep.md) |
 | Platform object storage + image upload | `not done` | [ADR 0016](./adr/0016-platform-object-storage.md) |
 | Builder undo/redo | `done` | [ADR 0017](./adr/0017-template-builder-undo-redo.md) — document history + shortcuts |
+| Workspace brand kit + saved modules | `not done` | [ADR 0018](./adr/0018-workspace-brand-kit-and-saved-modules.md) |
 
 ---
 
@@ -222,3 +224,4 @@ Revisit only if/when a real hosted database and deploy pipeline exist.
 | [ADR 0008](./adr/0008-canvas-interaction-deferred.md) | Canvas interaction — **implemented** |
 | [ADR 0013](./adr/0013-template-builder-canvas-dnd.md) | Template builder canvas DnD — **implemented** |
 | [ADR 0017](./adr/0017-template-builder-undo-redo.md) | Builder undo/redo — **implemented** |
+| [ADR 0018](./adr/0018-workspace-brand-kit-and-saved-modules.md) | Workspace brand kit + saved modules |
