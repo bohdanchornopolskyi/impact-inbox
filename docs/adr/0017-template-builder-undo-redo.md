@@ -1,6 +1,6 @@
 # Template builder undo and redo
 
-**Status:** Accepted (2026-07-12)
+**Status:** Implemented (2026-07-25) — Accepted (2026-07-12)
 
 The **Template builder** needs document-level undo/redo comparable to tools like Stripo or Figma: structure, settings, and content commits must be reversible. ADR 0009 places working-copy state in a zustand store with pure `@repo/shared` tree-ops; there is no history stack today.
 
