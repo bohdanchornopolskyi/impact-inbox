@@ -97,7 +97,7 @@ The URL on Image and Logo blocks. Blocks always store a single resolved URL — 
 _Avoid_: Separate fields for external vs hosted assets, binary data in content JSON, upload-only with no URL path, storing signed/expiring URLs as the permanent `src`
 
 **Object storage**:
-App-level blob store for builder uploads (images/logos). v1 adapters: Cloudflare R2 and S3-compatible APIs; active adapter is env/config. Objects are served via **stable public URLs** for email HTML. Seam left for organization-owned buckets later; not per-workspace in v1. See [ADR 0016](./docs/adr/0016-platform-object-storage.md).
+App-level blob store for builder uploads (images/logos). v1 adapters: Cloudflare R2 and S3-compatible APIs; active adapter is env/config. Objects are served via **stable public URLs** for email HTML. Metadata is stored per **Organization** so each company’s library is isolated (list/rename/delete scoped by org). Seam left for organization-owned buckets later; not per-workspace in v1. See [ADR 0016](./docs/adr/0016-platform-object-storage.md).
 _Avoid_: Per-workspace buckets in v1, embedding files in template JSON, signed URLs as the stored block source
 
 **Auth seam**:

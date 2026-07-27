@@ -27,7 +27,7 @@ Work in this order unless you have a reason to skip.
 | 14 | System email `deliver` seam | `not done` | [ADR 0014](./adr/0014-system-email-deliver-seam.md) | Plug Resend key |
 | 15 | Template builder canvas DnD | `done` | [ADR 0013](./adr/0013-template-builder-canvas-dnd.md) | — |
 | 16 | Workspace send providers prep | `not done` | [ADR 0015](./adr/0015-workspace-send-providers-prep.md) | Test send before campaigns |
-| 17 | Platform object storage + image upload | `not done` | [ADR 0016](./adr/0016-platform-object-storage.md) | R2/S3 + builder UX |
+| 17 | Platform object storage + image upload | `done` | [ADR 0016](./adr/0016-platform-object-storage.md) | R2/S3 + builder UX |
 | 18 | Builder undo/redo | `done` | [ADR 0017](./adr/0017-template-builder-undo-redo.md) | Document history |
 | 21 | Workspace brand kit + saved modules | `done` | [ADR 0018](./adr/0018-workspace-brand-kit-and-saved-modules.md) | Bake-at-insert; clone modules |
 
@@ -210,7 +210,7 @@ Revisit only if/when a real hosted database and deploy pipeline exist.
 | `@repo/shared` layout | `not done` | Split monolithic `constants.ts`; `schemas/template/` |
 | `EmailService` / system **deliver** seam | `not done` | [ADR 0014](./adr/0014-system-email-deliver-seam.md) — Resend + log adapters |
 | Workspace send providers prep | `not done` | [ADR 0015](./adr/0015-workspace-send-providers-prep.md) |
-| Platform object storage + image upload | `not done` | [ADR 0016](./adr/0016-platform-object-storage.md) |
+| Platform object storage + image upload | `done` | [ADR 0016](./adr/0016-platform-object-storage.md) — S3-compatible adapter (R2 or AWS) + builder/brand upload |
 | Builder undo/redo | `done` | [ADR 0017](./adr/0017-template-builder-undo-redo.md) — document history + shortcuts |
 | Workspace brand kit + saved modules | `done` | [ADR 0018](./adr/0018-workspace-brand-kit-and-saved-modules.md) |
 

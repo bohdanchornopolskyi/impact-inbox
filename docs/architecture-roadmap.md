@@ -633,7 +633,7 @@ Goal: M2 — build template, Save revision, preview, export. See [ADR 0007](./ad
 | [x] Template export API | HTML + plain text; `PlanLimitsService.canExport` stub |
 | [x] Template list + builder UI | Full palette, structure panel, autosave, revision history |
 | [x] Archive-only | No hard delete until Phase 4 |
-| [x] Image blocks | External URL only (upload later) |
+| [x] Image blocks | External URL + platform upload ([ADR 0016](./adr/0016-platform-object-storage.md)) |
 | [x] Optimistic concurrency | ADR 0010 — all template writes guard on `updatedAt` |
 
 ### Phase 3 — Contacts & lists (2–3 weeks)
