@@ -16,7 +16,7 @@ import type {
   UpdateContactListInput,
   UpdateListMemberStatusInput,
 } from "@repo/shared";
-import { apiRequest, ApiClientError } from "@/lib/api-client";
+import { apiRequest, apiUploadRequest } from "@/lib/api-client";
 
 function contactsPath(workspaceId: string, suffix = ""): string {
   return `/workspaces/${workspaceId}/contacts${suffix}`;
@@ -263,26 +263,4 @@ export function acceptListConfirm(
     method: "POST",
     body: { token: confirmToken },
   });
-}
-
-async function apiUploadRequest<T>(
-  path: string,
-  token: string | null,
-  formData: FormData,
-): Promise<T> {
-  const baseUrl = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000/api";
-  const response = await fetch(`${baseUrl}${path}`, {
-    method: "POST",
-    headers: token ? { Authorization: `Bearer ${token}` } : {},
-    body: formData,
-  });
-
-  const payload = await response.json();
-  if (!response.ok) {
-    if (payload?.error) {
-      throw new ApiClientError(payload.error);
-    }
-    throw new ApiClientError({ code: "UNKNOWN_ERROR", message: "Upload failed" });
-  }
-  return payload.data as T;
 }

@@ -35,6 +35,24 @@ export async function apiRequest<T>(
     body: body === undefined ? undefined : JSON.stringify(body),
   });
 
+  return parseApiResponse<T>(response);
+}
+
+export async function apiUploadRequest<T>(
+  path: string,
+  token: string | null,
+  formData: FormData,
+): Promise<T> {
+  const response = await fetch(`${getApiBaseUrl()}${path}`, {
+    method: "POST",
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+    body: formData,
+  });
+
+  return parseApiResponse<T>(response);
+}
+
+async function parseApiResponse<T>(response: Response): Promise<T> {
   const payload = (await response.json()) as ApiSuccess<T> | ApiFailure;
 
   if (!response.ok) {
