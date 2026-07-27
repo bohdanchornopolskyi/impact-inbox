@@ -237,6 +237,16 @@ import {
   type ListConfirmAcceptInput,
 } from "./contact";
 import {
+  uploadedAssetSchema,
+  organizationAssetSchema,
+  updateOrganizationAssetSchema,
+  organizationAssetUsageSchema,
+  type UploadedAssetData,
+  type OrganizationAssetData,
+  type UpdateOrganizationAssetInput,
+  type OrganizationAssetUsageData,
+} from "./asset";
+import {
   inviteSchema,
   invitePreviewSchema,
   inviteAcceptSchema,
@@ -472,6 +482,14 @@ export {
   type ContactImportJobData,
   type ListConfirmPreviewData,
   type ListConfirmAcceptInput,
+  uploadedAssetSchema,
+  type UploadedAssetData,
+  organizationAssetSchema,
+  updateOrganizationAssetSchema,
+  organizationAssetUsageSchema,
+  type OrganizationAssetData,
+  type UpdateOrganizationAssetInput,
+  type OrganizationAssetUsageData,
   inviteSchema,
   invitePreviewSchema,
   inviteAcceptSchema,

@@ -10,3 +10,4 @@ export * from "./merge-tag-scan";
 export * from "./preview-layout-snapshot";
 export * from "./tree-ops";
 export * from "./walk-content-blocks";
+export * from "./asset-url-usage";

@@ -56,6 +56,7 @@ export {
   type BlockFieldDescriptor,
   TEMPLATE_DEFAULT_COLORS,
   TEMPLATE_DEFAULT_SPACING,
+  PLACEHOLDER_IMAGE_URL,
   DEFAULT_TEMPLATE_SETTINGS,
   DEFAULT_TEMPLATE_CONTENT,
 } from "./constants/template";
@@ -80,3 +81,11 @@ export {
   CONTACT_ATTRIBUTE_KEY_PATTERN,
   CONTACT_IMPORT_MAX_FILE_BYTES,
 } from "./constants/contact";
+
+export {
+  ASSET_UPLOAD_MAX_BYTES,
+  ASSET_UPLOAD_ALLOWED_MIME_TYPES,
+  ASSET_UPLOAD_MIME_EXTENSIONS,
+  isAssetUploadMimeType,
+  type AssetUploadMimeType,
+} from "./constants/asset";
