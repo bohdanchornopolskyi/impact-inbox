@@ -24,6 +24,8 @@ import {
   moveRow,
   moveSection,
   removeBlock,
+  stripAssetUrlFromContent,
+  templateContentUsesAssetUrl,
   updateBlockProps,
   updateBlockStyles,
   updateSettings,
@@ -125,6 +127,7 @@ type BuilderState = {
   addRow: (sectionId: string, index?: number) => void;
   addColumn: (rowId: string, index?: number) => void;
   insertSavedModule: (moduleContent: SectionBlock) => void;
+  stripAssetUrl: (url: string) => void;
   selectBlock: (blockId: string | null) => void;
   setInspectorMode: (mode: InspectorMode) => void;
   setPreviewOpen: (open: boolean) => void;
@@ -395,6 +398,16 @@ function createBuilderStore(
           return applyBuilderMutation(state, outcome, {
             selectInsertedBlock: true,
           });
+        }),
+      stripAssetUrl: (url) =>
+        withRecordedContent("record", undefined, (state) => {
+          if (!templateContentUsesAssetUrl(state.content, url)) {
+            return null;
+          }
+          return {
+            content: stripAssetUrlFromContent(state.content, url),
+            saveState: "unsaved",
+          };
         }),
       selectBlock: (blockId) =>
         set((state) => ({

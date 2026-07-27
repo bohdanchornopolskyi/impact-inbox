@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { Button, Input } from "@repo/ui/client";
 import {
+  ASSET_UPLOAD_ALLOWED_MIME_TYPES,
   brandKitFromData,
   hasWorkspaceRoleAtLeast,
   normalizeBrandKit,
@@ -12,8 +13,11 @@ import {
 } from "@repo/shared";
 import { useWorkspace } from "@/contexts/workspace-context";
 import { useUpdateWorkspaceSettings } from "@/lib/workspaces/workspace-hooks";
+import { useWorkspaceImageUpload } from "@/lib/workspaces/use-workspace-image-upload";
 import { useToastMutation } from "@/lib/use-toast-mutation";
 import { ColorPickerField } from "@/components/template-builder/inspector/color-picker-field";
+
+const LOGO_ACCEPT = ASSET_UPLOAD_ALLOWED_MIME_TYPES.join(",");
 
 export function WorkspaceBrandSection() {
   const { workspace } = useWorkspace();
@@ -29,6 +33,8 @@ export function WorkspaceBrandSection() {
   const [fields, setFields] = useState<BrandKitFields>(() =>
     brandKitFromData(workspace.brandKit),
   );
+  const { token, inputRef, isUploading, uploadSelectedFile, openFilePicker } =
+    useWorkspaceImageUpload();
 
   useEffect(() => {
     setFields(brandKitFromData(workspace.brandKit));
@@ -123,10 +129,39 @@ export function WorkspaceBrandSection() {
           <Input
             value={fields.logoUrl ?? ""}
             placeholder="https://"
+            disabled={!canManage || isUploading}
             onChange={(event) =>
               setFields((prev) => ({ ...prev, logoUrl: event.target.value }))
             }
           />
+          {canManage ? (
+            <div className="flex items-center gap-2">
+              <input
+                ref={inputRef}
+                type="file"
+                accept={LOGO_ACCEPT}
+                className="sr-only"
+                disabled={isUploading || !token}
+                onChange={(event) => {
+                  void uploadSelectedFile(event.target.files?.[0], (url) => {
+                    setFields((prev) => ({ ...prev, logoUrl: url }));
+                  });
+                }}
+              />
+              <Button
+                type="button"
+                variant="secondary"
+                size="sm"
+                disabled={isUploading || !token}
+                onClick={openFilePicker}
+              >
+                {isUploading ? "Uploading…" : "Upload"}
+              </Button>
+              <span className="text-ui-xs text-text-tertiary">
+                or paste a URL
+              </span>
+            </div>
+          ) : null}
         </label>
 
         <label className="block space-y-1.5">

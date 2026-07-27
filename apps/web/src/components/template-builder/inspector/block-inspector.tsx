@@ -17,6 +17,7 @@ import {
   UrlField,
   resolveImageUrl,
 } from "./fields";
+import { ImageSourceField } from "./image-source-field";
 import { SocialLinksEditor, TableEditor } from "./custom-editors";
 import { RichtextFormatFields } from "./richtext-inspector-toolbar";
 import { BlockAppearanceInspector } from "./block-appearance-inspector";
@@ -247,19 +248,26 @@ function BlockField({
         />
       );
     case "url":
+      if (field.prop === "src" || field.prop === "thumbnailSrc") {
+        return (
+          <ImageSourceField
+            label={field.label}
+            value={asString(value)}
+            disabled={disabled}
+            onChange={(next) =>
+              updateProps({
+                [field.prop]: resolveImageUrl(next),
+              })
+            }
+          />
+        );
+      }
       return (
         <UrlField
           label={field.label}
           value={asString(value)}
           disabled={disabled}
-          onChange={(next) =>
-            updateProps({
-              [field.prop]:
-                field.prop === "src" || field.prop === "thumbnailSrc"
-                  ? resolveImageUrl(next)
-                  : next,
-            })
-          }
+          onChange={(next) => updateProps({ [field.prop]: next })}
         />
       );
     case "color":

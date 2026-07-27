@@ -12,13 +12,12 @@ export type ConfirmModalProps = {
   variant?: "danger" | "primary";
   onConfirm: () => Promise<void> | void;
   isPending: boolean;
+  confirmDisabled?: boolean;
+  hideConfirm?: boolean;
+  cancelLabel?: string;
   children?: ReactNode;
 };
 
-/**
- * Reusable confirm dialog built on the shared Modal primitive. The archive /
- * restore / restore-revision modals are thin configs over this component.
- */
 export function ConfirmModal({
   open,
   onOpenChange,
@@ -28,6 +27,9 @@ export function ConfirmModal({
   variant = "primary",
   onConfirm,
   isPending,
+  confirmDisabled = false,
+  hideConfirm = false,
+  cancelLabel = "Cancel",
   children,
 }: ConfirmModalProps) {
   return (
@@ -39,15 +41,17 @@ export function ConfirmModal({
       footer={
         <>
           <Button variant="secondary" onClick={() => onOpenChange(false)}>
-            Cancel
+            {cancelLabel}
           </Button>
-          <Button
-            variant={variant}
-            disabled={isPending}
-            onClick={() => void onConfirm()}
-          >
-            {confirmLabel}
-          </Button>
+          {hideConfirm ? null : (
+            <Button
+              variant={variant}
+              disabled={isPending || confirmDisabled}
+              onClick={() => void onConfirm()}
+            >
+              {confirmLabel}
+            </Button>
+          )}
         </>
       }
     >
