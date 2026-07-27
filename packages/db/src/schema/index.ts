@@ -9,6 +9,7 @@ import { workspaces } from "./workspace/workspaces";
 import { workspaceMembers } from "./workspace/workspace-members";
 import { workspaceSlugRedirects } from "./workspace/slug-redirects";
 import { workspaceModules } from "./workspace/workspace-modules";
+import { organizationAssets } from "./workspace/organization-assets";
 import { templates } from "./template/templates";
 import { templateRevisions } from "./template/template-revisions";
 import { contacts } from "./contact/contacts";
@@ -28,6 +29,7 @@ export {
   workspaceMembers,
   workspaceSlugRedirects,
   workspaceModules,
+  organizationAssets,
   templates,
   templateRevisions,
   invites,

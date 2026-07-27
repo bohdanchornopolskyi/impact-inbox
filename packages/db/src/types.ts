@@ -16,6 +16,7 @@ import {
   listConfirmTokens,
   contactImports,
   invites,
+  organizationAssets,
 } from "./schema";
 import { db } from "./index";
 
@@ -59,6 +60,8 @@ type ContactImportsSelect = InferSelectModel<typeof contactImports>;
 type ContactImportsInsert = InferInsertModel<typeof contactImports>;
 type InvitesSelect = InferSelectModel<typeof invites>;
 type InvitesInsert = InferInsertModel<typeof invites>;
+type OrganizationAssetsSelect = InferSelectModel<typeof organizationAssets>;
+type OrganizationAssetsInsert = InferInsertModel<typeof organizationAssets>;
 
 export {
   type UsersInsert,
@@ -93,4 +96,6 @@ export {
   type ContactImportsSelect,
   type InvitesInsert,
   type InvitesSelect,
+  type OrganizationAssetsInsert,
+  type OrganizationAssetsSelect,
 };
