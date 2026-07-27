@@ -11,6 +11,7 @@ import { ContactsModule } from "src/contacts/contacts.module";
 import { DatabaseModule } from "src/database/database.module";
 import { InvitesModule } from "src/invites/invites.module";
 import { InviteAcceptModule } from "src/invites/invite-accept.module";
+import { StorageModule } from "src/storage/storage.module";
 
 @Module({
   imports: [
@@ -23,6 +24,7 @@ import { InviteAcceptModule } from "src/invites/invite-accept.module";
     ContactsModule,
     InvitesModule,
     InviteAcceptModule,
+    StorageModule,
     AuthModule,
   ],
   controllers: [AppController],
