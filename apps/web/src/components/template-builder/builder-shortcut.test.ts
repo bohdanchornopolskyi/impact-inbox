@@ -36,6 +36,9 @@ describe("matchBuilderShortcut", () => {
     expect(matchBuilderShortcut(keyEvent({ key: "Escape" }))).toBe("deselect");
     expect(matchBuilderShortcut(keyEvent({ key: "Delete" }))).toBe("delete");
     expect(matchBuilderShortcut(keyEvent({ key: "Backspace" }))).toBe("delete");
+    expect(matchBuilderShortcut(keyEvent({ key: "d", metaKey: true }))).toBe(
+      "duplicate",
+    );
   });
 
   it("keeps save and preview inside editable fields", () => {
@@ -51,6 +54,9 @@ describe("matchBuilderShortcut", () => {
     ).toBeNull();
     expect(
       matchBuilderShortcut(keyEvent({ key: "Backspace", target: input })),
+    ).toBeNull();
+    expect(
+      matchBuilderShortcut(keyEvent({ key: "d", metaKey: true, target: input })),
     ).toBeNull();
   });
 });

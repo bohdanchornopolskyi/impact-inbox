@@ -11,12 +11,13 @@ export function useBuilderShortcuts() {
   const redo = useBuilder((s) => s.redo);
   const selectBlock = useBuilder((s) => s.selectBlock);
   const removeBlock = useBuilder((s) => s.removeBlock);
+  const duplicateBlock = useBuilder((s) => s.duplicateBlock);
   const selectedBlockId = useBuilder((s) => s.selectedBlockId);
   const setPreviewOpen = useBuilder((s) => s.setPreviewOpen);
   const previewOpen = useBuilder((s) => s.previewOpen);
   const { saveRevision, isPending } = useSaveRevision();
 
-  const handlersRef = useRef({
+  const handlers = {
     canEdit,
     isSaving: isPending,
     previewOpen,
@@ -28,23 +29,12 @@ export function useBuilderShortcuts() {
     },
     openPreview: () => setPreviewOpen(true),
     removeBlock,
-    selectBlock,
-  });
-
-  handlersRef.current = {
-    canEdit,
-    isSaving: isPending,
-    previewOpen,
-    selectedBlockId,
-    undo,
-    redo,
-    save: () => {
-      void saveRevision();
-    },
-    openPreview: () => setPreviewOpen(true),
-    removeBlock,
+    duplicateBlock,
     selectBlock,
   };
+
+  const handlersRef = useRef(handlers);
+  handlersRef.current = handlers;
 
   useEffect(() => {
     function onKeyDown(event: KeyboardEvent) {

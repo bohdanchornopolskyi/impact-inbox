@@ -263,6 +263,14 @@ export function getCanvasBridgeBootRuntime(): string {
         );
         return;
       }
+      if (modifier && key === "d" && !event.shiftKey) {
+        event.preventDefault();
+        window.parent.postMessage(
+          { type: "builder-shortcut", action: "duplicate" },
+          "*",
+        );
+        return;
+      }
       if (key === "escape") {
         event.preventDefault();
         window.parent.postMessage(

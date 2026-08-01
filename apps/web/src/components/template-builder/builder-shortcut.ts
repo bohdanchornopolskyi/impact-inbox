@@ -4,6 +4,7 @@ export type BuilderShortcutAction =
   | "save"
   | "preview"
   | "delete"
+  | "duplicate"
   | "deselect";
 
 export function isEditableShortcutTarget(target: EventTarget | null): boolean {
@@ -33,6 +34,10 @@ export function matchBuilderShortcut(
 
   if (isEditableShortcutTarget(event.target)) {
     return null;
+  }
+
+  if (modifier && key === "d" && !event.shiftKey) {
+    return "duplicate";
   }
 
   if (modifier && key === "z" && event.shiftKey) {

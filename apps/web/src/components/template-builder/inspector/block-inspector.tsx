@@ -30,7 +30,6 @@ export function BlockInspector() {
   const canEdit = useBuilder((s) => s.canEdit);
   const updateBlockProps = useBuilder((s) => s.updateBlockProps);
   const updateBlockStyles = useBuilder((s) => s.updateBlockStyles);
-  const removeBlockAction = useBuilder((s) => s.removeBlock);
 
   if (!selectedBlock) {
     return (
@@ -65,13 +64,16 @@ export function BlockInspector() {
 
     return (
       <div className="space-y-4">
-        <div>
-          <h2 className="text-ui-sm font-semibold capitalize text-text-primary">
-            {layoutBlock.type}
-          </h2>
-          <p className="mt-0.5 text-ui-xs text-text-tertiary">
-            Layout spacing and background for this {layoutBlock.type}.
-          </p>
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <h2 className="text-ui-sm font-semibold capitalize text-text-primary">
+              {layoutBlock.type}
+            </h2>
+            <p className="mt-0.5 text-ui-xs text-text-tertiary">
+              Layout spacing and background for this {layoutBlock.type}.
+            </p>
+          </div>
+          <BlockActions blockId={layoutBlock.id} canEdit={canEdit} />
         </div>
         <LayoutBlockPropsInspector
           block={layoutBlock}
@@ -106,14 +108,6 @@ export function BlockInspector() {
     updateBlockStyles(block.id, styles);
   }
 
-  function removeBlock() {
-    if (!canEdit) {
-      return;
-    }
-
-    removeBlockAction(block.id);
-  }
-
   const definition = TEMPLATE_BLOCK_DEFINITIONS[block.type];
 
   return (
@@ -127,15 +121,7 @@ export function BlockInspector() {
             {block.id}
           </p>
         </div>
-        {canEdit ? (
-          <Button
-            variant="danger"
-            size="sm"
-            title="Remove (Delete)"
-            onClick={removeBlock}>
-            Remove
-          </Button>
-        ) : null}
+        <BlockActions blockId={block.id} canEdit={canEdit} />
       </div>
       <BlockFields
         block={block}
@@ -149,6 +135,40 @@ export function BlockInspector() {
         updateStyles={updateStyles}
         updateProps={updateProps}
       />
+    </div>
+  );
+}
+
+function BlockActions({
+  blockId,
+  canEdit,
+}: {
+  blockId: string;
+  canEdit: boolean;
+}) {
+  const removeBlock = useBuilder((s) => s.removeBlock);
+  const duplicateBlock = useBuilder((s) => s.duplicateBlock);
+
+  if (!canEdit) {
+    return null;
+  }
+
+  return (
+    <div className="flex shrink-0 items-center gap-2">
+      <Button
+        variant="secondary"
+        size="sm"
+        title="Duplicate (Ctrl/Cmd+D)"
+        onClick={() => duplicateBlock(blockId)}>
+        Duplicate
+      </Button>
+      <Button
+        variant="danger"
+        size="sm"
+        title="Remove (Delete)"
+        onClick={() => removeBlock(blockId)}>
+        Remove
+      </Button>
     </div>
   );
 }

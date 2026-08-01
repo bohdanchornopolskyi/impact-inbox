@@ -33,6 +33,7 @@ export function PreviewCanvas() {
   const selectedBlockId = useBuilder((s) => s.selectedBlockId);
   const selectBlock = useBuilder((s) => s.selectBlock);
   const removeBlock = useBuilder((s) => s.removeBlock);
+  const duplicateBlock = useBuilder((s) => s.duplicateBlock);
   const updateBlockProps = useBuilder((s) => s.updateBlockProps);
   const beginInlineEditSession = useBuilder((s) => s.beginInlineEditSession);
   const commitInlineEditSession = useBuilder((s) => s.commitInlineEditSession);
@@ -280,6 +281,7 @@ export function PreviewCanvas() {
           },
           openPreview: () => setPreviewOpen(true),
           removeBlock,
+          duplicateBlock,
           selectBlock,
         });
         return;
@@ -297,6 +299,7 @@ export function PreviewCanvas() {
   }, [
     canEdit,
     controller,
+    duplicateBlock,
     handleIframeMessage,
     isSaving,
     previewOpen,

@@ -10,6 +10,7 @@ export type BuilderShortcutHandlers = {
   save: () => void;
   openPreview: () => void;
   removeBlock: (blockId: string) => void;
+  duplicateBlock: (blockId: string) => void;
   selectBlock: (blockId: string | null) => void;
 };
 
@@ -39,6 +40,11 @@ export function runBuilderShortcut(
     case "delete":
       if (handlers.canEdit && handlers.selectedBlockId) {
         handlers.removeBlock(handlers.selectedBlockId);
+      }
+      return;
+    case "duplicate":
+      if (handlers.canEdit && handlers.selectedBlockId) {
+        handlers.duplicateBlock(handlers.selectedBlockId);
       }
       return;
     case "deselect":

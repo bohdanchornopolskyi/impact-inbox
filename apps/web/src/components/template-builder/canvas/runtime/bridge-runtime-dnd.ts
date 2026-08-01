@@ -406,6 +406,28 @@ export function getCanvasBridgeDndRuntime(): string {
     );
   }
 
+  function postBuilderShortcut(action) {
+    window.parent.postMessage(
+      { type: "builder-shortcut", action: action },
+      "*",
+    );
+  }
+
+  function createToolbarActionButton(label, svg, action) {
+    var button = document.createElement("button");
+    button.type = "button";
+    button.className = "canvas-bridge-toolbar-btn";
+    button.setAttribute("aria-label", label);
+    button.title = label;
+    button.innerHTML = svg;
+    button.addEventListener("click", function (event) {
+      event.preventDefault();
+      event.stopPropagation();
+      postBuilderShortcut(action);
+    });
+    return button;
+  }
+
   function rebuildToolbarActions(block) {
     if (!toolbarActions) {
       return;
@@ -424,6 +446,12 @@ export function getCanvasBridgeDndRuntime(): string {
     dragButton.addEventListener("pointerdown", onDragHandlePointerDown);
 
     toolbarActions.appendChild(dragButton);
+    toolbarActions.appendChild(
+      createToolbarActionButton("Duplicate", duplicateSvg, "duplicate"),
+    );
+    toolbarActions.appendChild(
+      createToolbarActionButton("Delete", deleteSvg, "delete"),
+    );
   }
 
   function resolveDragKind(block) {

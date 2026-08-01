@@ -16,6 +16,7 @@ import {
   addRow,
   addSection,
   cloneSectionBlock,
+  duplicateBlock,
   ensureDefaultStructure,
   findBlock,
   insertSection,
@@ -107,6 +108,7 @@ type BuilderState = {
   ) => void;
   addBlock: (columnId: string, blockType: ContentBlockType, index?: number) => void;
   removeBlock: (blockId: string) => void;
+  duplicateBlock: (blockId: string) => void;
   moveBlock: (
     blockId: string,
     targetColumnId: string,
@@ -291,6 +293,12 @@ function createBuilderStore(
             state.selectedBlockId === blockId ? null : state.selectedBlockId,
           saveState: "unsaved",
         })),
+      duplicateBlock: (blockId) =>
+        withRecordedContent("record", undefined, (state) =>
+          applyBuilderMutation(state, duplicateBlock(state.content, blockId), {
+            selectInsertedBlock: true,
+          }),
+        ),
       moveBlock: (blockId, targetColumnId, targetIndex) => {
         let changed = false;
         withRecordedContent("record", undefined, (state) => {

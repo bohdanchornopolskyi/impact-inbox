@@ -117,7 +117,14 @@ export type HistoryRedoMessage = {
 
 export type BuilderShortcutMessage = {
   type: "builder-shortcut";
-  action: "undo" | "redo" | "save" | "preview" | "delete" | "deselect";
+  action:
+    | "undo"
+    | "redo"
+    | "save"
+    | "preview"
+    | "delete"
+    | "duplicate"
+    | "deselect";
 };
 
 export type CanvasBridgeInboundMessage =
@@ -442,6 +449,7 @@ const BUILDER_SHORTCUT_ACTIONS = [
   "save",
   "preview",
   "delete",
+  "duplicate",
   "deselect",
 ] as const;
 

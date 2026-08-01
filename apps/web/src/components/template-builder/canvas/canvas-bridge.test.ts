@@ -38,6 +38,20 @@ describe("buildCanvasBridgeDocument", () => {
     );
   });
 
+  it("wires duplicate and delete into the selection toolbar", () => {
+    const result = buildCanvasBridgeDocument(sampleHtml, { canEdit: true });
+
+    expect(result).toContain("var duplicateSvg");
+    expect(result).toContain("var deleteSvg");
+    expect(result).toContain(
+      'createToolbarActionButton("Duplicate", duplicateSvg, "duplicate")',
+    );
+    expect(result).toContain(
+      'createToolbarActionButton("Delete", deleteSvg, "delete")',
+    );
+    expect(result).toContain('action: "duplicate"');
+  });
+
   it("serializes canEdit into the bridge script", () => {
     const editable = buildCanvasBridgeDocument(sampleHtml, { canEdit: true });
     const readOnly = buildCanvasBridgeDocument(sampleHtml, { canEdit: false });
