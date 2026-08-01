@@ -619,7 +619,7 @@ Goal: authenticate, org/workspace navigation, slug URLs.
 - [x] Workspace slug change with redirects table
 - [x] Org roles: owner, org admin, member (API + guard)
 - [x] Org member management UI, create-workspace UI
-- [ ] Email invite tokens — [ADR 0011](./adr/0011-email-invite-tokens.md); interim: existing users only ([deferred-work.md](./deferred-work.md))
+- [x] Email invite tokens — [ADR 0011](./adr/0011-email-invite-tokens.md)
 
 ### Phase 2 — Templates & builder (3–4 weeks)
 
@@ -635,19 +635,20 @@ Goal: M2 — build template, Save revision, preview, export. See [ADR 0007](./ad
 | [x] Archive-only | No hard delete until Phase 4 |
 | [x] Image blocks | External URL + platform upload ([ADR 0016](./adr/0016-platform-object-storage.md)) |
 | [x] Optimistic concurrency | ADR 0010 — all template writes guard on `updatedAt` |
+| [x] Builder duplicate + canvas block actions | [ADR 0019](./adr/0019-builder-duplicate-and-block-actions.md) — block/template duplicate, merge-tag insert |
 
-### Phase 3 — Contacts & lists (2–3 weeks)
+### Phase 3 — Contacts & lists ✅
 
 Goal: M3 — import contacts, create list, double opt-in optional. See [ADR 0012](./adr/0012-phase-3-contacts-scope.md).
 
 | Task | Notes |
 |------|-------|
-| `contacts`, `contact_lists`, `list_members`, `list_confirm_tokens`, `contact_imports` | `subscribed` / `pending` / unsubscribed |
-| `workspaces.physical_address` | Workspace settings + PATCH API |
-| Import CSV | Preview → execute; sync ≤1k rows; async above; merge duplicates |
-| Unsubscribe model | List + global via admin; `/u/[token]` deferred to Phase 4 |
-| Double opt-in per list | Confirm via system email + `/confirm-subscription` |
-| Builder merge tags | Custom contact `attributes` join allowlist |
+| [x] `contacts`, `contact_lists`, `list_members`, `list_confirm_tokens`, `contact_imports` | `subscribed` / `pending` / unsubscribed |
+| [x] `workspaces.physical_address` | Workspace settings + PATCH API |
+| [x] Import CSV | Preview → execute; sync ≤1k rows; async above; merge duplicates |
+| [x] Unsubscribe model | List + global via admin; `/u/[token]` deferred to Phase 4 |
+| [x] Double opt-in per list | Confirm via system email + `/confirm-subscription` |
+| [x] Builder merge tags | Custom contact `attributes` join allowlist |
 
 ### Phase 4 — Campaigns & sends (4–5 weeks)
 
@@ -757,14 +758,16 @@ Org-scoped pages include `orgId` in the URL — no server-side “active org” 
 ## 12. What to build next (recommended order)
 
 ```
-1. Close Phase 0 (CORS, health, E2E; DB stays `db:push`)
-2. Phase 1 web shell + Phase 1b organizations
-3. Phase 2 — template revisions, builder, export, system email (ADR 0007)
-4. Contacts → lists (Phase 3)
-5. Campaigns + workspace send providers + send queue (Phase 4)
-6. Tracking + webhooks + analytics (Phase 5)
-7. Billing + trial + template access mode  ← public launch gate (Phase 6)
-8. Extract apps/worker when needed
+1. Close Phase 0 (CORS, health, E2E; DB stays `db:push`)          ✅
+2. Phase 1 web shell + Phase 1b organizations                     ✅
+3. Phase 2 — template revisions, builder, export, system email    ✅ (ADR 0007)
+4. Contacts → lists (Phase 3)                                     ✅ (ADR 0012)
+5. System email deliver seam                                      ← next (ADR 0014)
+6. Workspace send providers + test send                            (ADR 0015)
+7. Campaigns + send queue (Phase 4)
+8. Tracking + webhooks + analytics (Phase 5)
+9. Billing + trial + template access mode  ← public launch gate (Phase 6)
+10. Extract apps/worker when needed
 ```
 
 ---

@@ -30,6 +30,7 @@ Work in this order unless you have a reason to skip.
 | 17 | Platform object storage + image upload | `done` | [ADR 0016](./adr/0016-platform-object-storage.md) | R2/S3 + builder UX |
 | 18 | Builder undo/redo | `done` | [ADR 0017](./adr/0017-template-builder-undo-redo.md) | Document history |
 | 21 | Workspace brand kit + saved modules | `done` | [ADR 0018](./adr/0018-workspace-brand-kit-and-saved-modules.md) | Bake-at-insert; clone modules |
+| 22 | Builder duplicate + canvas block actions | `done` | [ADR 0019](./adr/0019-builder-duplicate-and-block-actions.md) | Block/template duplicate; merge-tag insert |
 
 | 19 | Builder hardening dogfood | `not done` | design-partner readiness | Concurrency, export, permissions |
 | 20 | Support basics (monitoring/backups) | `not done` | ops | Hosted env |
@@ -54,6 +55,7 @@ Do not re-implement unless fixing bugs.
 | Builder undo/redo — document history, toolbar, Ctrl/Cmd+Z | `done` — [ADR 0017](./adr/0017-template-builder-undo-redo.md) |
 | Workspace brand kit + saved modules — settings Brand UI, bake-at-insert, Modules sidebar | `done` — [ADR 0018](./adr/0018-workspace-brand-kit-and-saved-modules.md) |
 | Template list previews — cached HTML on Save, list thumbnails | `done` — CONTEXT **Template list preview** |
+| Builder duplicate — block/section duplicate, canvas Move/Duplicate/Delete toolbar, merge-tag insert, template duplicate | `done` — [ADR 0019](./adr/0019-builder-duplicate-and-block-actions.md) |
 
 Phase 2 M2 (templates, builder, revisions, export) is **done** per [ADR 0007](./adr/0007-phase-2-templates-scope.md). Intentionally out of scope there stays out of this backlog (image upload, export cap enforcement, etc.). Canvas interaction shipped post–M2 per ADR 0008.
 
@@ -81,9 +83,21 @@ Phase 2 M2 (templates, builder, revisions, export) is **done** per [ADR 0007](./
 
 ---
 
+## Done — builder duplicate and block actions (ADR 0019)
+
+**Status:** `done` (2026-08)
+
+**Shipped:** `duplicateBlock` tree-op (content/column/row/section, fresh ids via shared `cloneBlockWithNewIds`, one undo step, copy selected, column widths redistributed). Canvas selection toolbar now carries Move / Duplicate / Delete via the existing `builder-shortcut` message; inspector shows Duplicate + Remove for layout blocks too. `Ctrl/Cmd+D` in the builder and inside the iframe. Merge-tag picker inserts at the caret in subject/preheader (clipboard elsewhere). `POST …/templates/:id/duplicate` copies working copy + list preview with a ` (copy)` name and no revision history.
+
+**Code:** `@repo/shared` `template/clone-block.ts` + `tree-ops.duplicateBlock`, `builder-provider.tsx`, `canvas/runtime/bridge-runtime-dnd.ts`, `inspector/block-inspector.tsx`, `inspector/insert-at-selection.ts`, `apps/api/src/templates/`.
+
+**Deferred here:** add-block-below on the canvas toolbar; merge-tag insert into block content (see ADR 0019 *Considered*).
+
+---
+
 ## 1. Email invite tokens
 
-**Status:** `not done`
+**Status:** `done` — see master checklist #1 (this section predates the shipped ADR 0011 flow)
 
 **Current behavior:** `POST …/members` returns 404 for unknown email. Web shows interim hint (`EXISTING_USER_INVITE_HINT`).
 
@@ -124,7 +138,7 @@ Phase 2 M2 (templates, builder, revisions, export) is **done** per [ADR 0007](./
 
 ## 3. Workspace name/slug edit UI
 
-**Status:** `not done`
+**Status:** `done` — see master checklist #3 (editable name/slug shipped in workspace settings)
 
 **Current behavior:** Workspace settings shows name/slug read-only. `PATCH /workspaces/:id` and slug redirects exist in API.
 
@@ -188,16 +202,16 @@ Revisit only if/when a real hosted database and deploy pipeline exist.
 
 ## 10. E2E coverage
 
-**Status:** `not done`
+**Status:** `done` — see master checklist #10 (members, invites, templates specs landed)
 
-**Current behavior:** `apps/api/test/auth-workspaces.e2e-spec.ts` only.
+**Previous behavior:** `apps/api/test/auth-workspaces.e2e-spec.ts` only.
 
 **Checklist:**
 
-- [ ] Org member CRUD
-- [ ] Workspace member CRUD
-- [ ] Invite accept flow (after ADR 0011)
-- [ ] Template save / export smoke
+- [x] Org member CRUD
+- [x] Workspace member CRUD
+- [x] Invite accept flow (after ADR 0011)
+- [x] Template save / export smoke
 
 ---
 
@@ -205,14 +219,15 @@ Revisit only if/when a real hosted database and deploy pipeline exist.
 
 | Item | Status | Notes |
 | --- | --- | --- |
-| DB schema domain folders | `not done` | `schema/organization/`, `workspace/`, `template/` per roadmap §7 |
-| `OrganizationsService.getMembership` vs `OrganizationAccessService` | `not done` | Consolidate per ADR 0002 |
-| `@repo/shared` layout | `not done` | Split monolithic `constants.ts`; `schemas/template/` |
+| DB schema domain folders | `done` | `schema/auth/`, `contact/`, `organization/`, `template/`, `workspace/` |
+| `OrganizationsService.getMembership` vs `OrganizationAccessService` | `done` | Consolidated per ADR 0002 |
+| `@repo/shared` layout | `done` | `constants/*`, `schemas/template/*`, `schemas/contact/*` |
 | `EmailService` / system **deliver** seam | `not done` | [ADR 0014](./adr/0014-system-email-deliver-seam.md) — Resend + log adapters |
 | Workspace send providers prep | `not done` | [ADR 0015](./adr/0015-workspace-send-providers-prep.md) |
 | Platform object storage + image upload | `done` | [ADR 0016](./adr/0016-platform-object-storage.md) — S3-compatible adapter (R2 or AWS) + builder/brand upload |
 | Builder undo/redo | `done` | [ADR 0017](./adr/0017-template-builder-undo-redo.md) — document history + shortcuts |
 | Workspace brand kit + saved modules | `done` | [ADR 0018](./adr/0018-workspace-brand-kit-and-saved-modules.md) |
+| Builder duplicate + canvas block actions | `done` | [ADR 0019](./adr/0019-builder-duplicate-and-block-actions.md) |
 
 
 ---
@@ -228,4 +243,5 @@ Revisit only if/when a real hosted database and deploy pipeline exist.
 | [ADR 0013](./adr/0013-template-builder-canvas-dnd.md) | Template builder canvas DnD — **implemented** |
 | [ADR 0017](./adr/0017-template-builder-undo-redo.md) | Builder undo/redo — **implemented** |
 | [ADR 0018](./adr/0018-workspace-brand-kit-and-saved-modules.md) | Workspace brand kit + saved modules — **implemented** |
+| [ADR 0019](./adr/0019-builder-duplicate-and-block-actions.md) | Builder duplicate + canvas block actions — **implemented** |
 
