@@ -76,7 +76,7 @@ const SPACING_SIDE_LABELS: Record<SpacingSide, string> = {
 
 /**
  * Four-side editor. Values are resolved the way the renderer expands them, so a
- * block built from defaults (`{ bottom: 16 }`) shows that 16 instead of blank.
+ * block built from defaults (`{ bottom: 8 }`) shows that 8 instead of blank.
  */
 function SpacingField({
   label,

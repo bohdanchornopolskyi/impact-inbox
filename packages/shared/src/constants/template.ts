@@ -17,8 +17,8 @@ const TEMPLATE_DEFAULT_COLORS = {
 } as const;
 
 const TEMPLATE_DEFAULT_SPACING = {
-  sectionPadding: 32,
-  contentBlockGap: 16,
+  sectionPadding: 24,
+  contentBlockGap: 8,
 } as const;
 
 const LAYOUT_BLOCK_TYPES = ["section", "row", "column"] as const;
@@ -107,6 +107,11 @@ const SHAPE_OPTIONS: readonly BlockFieldOption[] = [
   { value: "triangle", label: "Triangle" },
 ];
 
+/**
+ * Stacked blocks are spaced by their own bottom padding, not margin — padding on
+ * the block is the only vertical spacing every email client honours. Keep it
+ * small; a bigger gap belongs to the section padding or an explicit spacer.
+ */
 const CONTENT_BLOCK_GAP_STYLES: BlockStyles = {
   padding: { bottom: TEMPLATE_DEFAULT_SPACING.contentBlockGap },
 };
@@ -155,7 +160,7 @@ const TEMPLATE_BLOCK_DEFINITIONS = {
       text: "Heading",
       level: 2,
       color: TEMPLATE_DEFAULT_COLORS.heading,
-      fontSize: 28,
+      fontSize: 24,
       lineHeight: 1.25,
     },
     defaultStyles: CONTENT_BLOCK_GAP_STYLES,
@@ -293,8 +298,9 @@ const TEMPLATE_BLOCK_DEFINITIONS = {
       style: "solid",
     },
     defaultStyles: {
+      // A rule reads as a separator only with equal space on both sides.
       padding: {
-        top: 8,
+        top: TEMPLATE_DEFAULT_SPACING.contentBlockGap,
         bottom: TEMPLATE_DEFAULT_SPACING.contentBlockGap,
       },
     },
