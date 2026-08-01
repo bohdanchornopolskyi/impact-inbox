@@ -74,6 +74,20 @@ export function updateTemplate(
   );
 }
 
+export function duplicateTemplate(
+  token: string,
+  workspaceId: string,
+  templateId: string,
+): Promise<TemplateData> {
+  return apiRequest<TemplateData>(
+    templatesPath(workspaceId, `/${templateId}/duplicate`),
+    {
+      method: "POST",
+      token,
+    },
+  );
+}
+
 export function previewTemplateContent(
   token: string,
   workspaceId: string,

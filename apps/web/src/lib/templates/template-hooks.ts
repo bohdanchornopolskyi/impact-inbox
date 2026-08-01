@@ -12,6 +12,7 @@ import { useSession } from "@/contexts/session-context";
 import { useWorkspace } from "@/contexts/workspace-context";
 import {
   createTemplate,
+  duplicateTemplate,
   exportTemplate,
   getTemplate,
   listTemplateRevisions,
@@ -67,6 +68,22 @@ export function useCreateTemplate() {
   return useMutation({
     mutationFn: (input: CreateTemplateInput) =>
       createTemplate(token, workspace.id, input),
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: ["templates", workspace.id],
+      });
+    },
+  });
+}
+
+export function useDuplicateTemplate() {
+  const { token } = useSession();
+  const { workspace } = useWorkspace();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (templateId: string) =>
+      duplicateTemplate(token, workspace.id, templateId),
     onSuccess: () => {
       queryClient.invalidateQueries({
         queryKey: ["templates", workspace.id],

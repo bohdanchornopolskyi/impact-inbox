@@ -162,6 +162,49 @@ describe("Templates (e2e)", () => {
     expect(exported.text).toContain("Hello from e2e template");
   });
 
+  it("duplicates a template without carrying revision history", async () => {
+    const createResponse = await request(app.getHttpServer())
+      .post(`/api/workspaces/${workspaceId}/templates`)
+      .set("Authorization", `Bearer ${authToken}`)
+      .send({ name: "Newsletter", content: buildWorkingContent() })
+      .expect(201);
+
+    const source = createResponse.body.data as TemplateData;
+
+    await request(app.getHttpServer())
+      .post(`/api/workspaces/${workspaceId}/templates/${source.id}/revisions`)
+      .set("Authorization", `Bearer ${authToken}`)
+      .send({
+        content: source.content,
+        expectedUpdatedAt: source.updatedAt,
+      })
+      .expect(201);
+
+    const duplicateResponse = await request(app.getHttpServer())
+      .post(`/api/workspaces/${workspaceId}/templates/${source.id}/duplicate`)
+      .set("Authorization", `Bearer ${authToken}`)
+      .expect(201);
+
+    const copy = duplicateResponse.body.data as TemplateData;
+    expect(copy.id).not.toBe(source.id);
+    expect(copy.name).toBe("Newsletter (copy)");
+    expect(copy.workspaceId).toBe(workspaceId);
+    expect(copy.content).toEqual(source.content);
+    expect(copy.archivedAt).toBeNull();
+
+    const copyRevisions = await request(app.getHttpServer())
+      .get(`/api/workspaces/${workspaceId}/templates/${copy.id}/revisions`)
+      .set("Authorization", `Bearer ${authToken}`)
+      .expect(200);
+
+    expect(copyRevisions.body.data).toEqual([]);
+
+    await request(app.getHttpServer())
+      .post(`/api/workspaces/${workspaceId}/templates/${source.id}/duplicate`)
+      .set("Authorization", `Bearer ${otherAuthToken}`)
+      .expect(403);
+  });
+
   it("rejects unauthorized and wrong-workspace access", async () => {
     const createResponse = await request(app.getHttpServer())
       .post(`/api/workspaces/${workspaceId}/templates`)

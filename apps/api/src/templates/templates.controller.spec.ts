@@ -15,6 +15,7 @@ describe("TemplatesController", () => {
     previewTemplate: jest.fn(),
     previewContent: jest.fn(),
     exportTemplate: jest.fn(),
+    duplicateTemplate: jest.fn(),
   };
 
   const mockTemplateRevisionsService = {
@@ -76,6 +77,19 @@ describe("TemplatesController", () => {
     expect(mockTemplatesService.createTemplate).toHaveBeenCalledWith(
       "ws-1",
       dto,
+    );
+  });
+
+  it("duplicates a template", async () => {
+    const created = { id: "tpl-2", name: "Welcome (copy)" };
+    mockTemplatesService.duplicateTemplate.mockResolvedValue(created);
+
+    await expect(controller.duplicate("ws-1", "tpl-1")).resolves.toEqual(
+      created,
+    );
+    expect(mockTemplatesService.duplicateTemplate).toHaveBeenCalledWith(
+      "ws-1",
+      "tpl-1",
     );
   });
 

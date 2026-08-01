@@ -62,6 +62,20 @@ export function nextUpdatedAt(expectedUpdatedAt?: Date): Date {
   return now;
 }
 
+/** Matches `createTemplateSchema.name` so a duplicate can be renamed later. */
+const TEMPLATE_NAME_MAX_LENGTH = 255;
+const DUPLICATE_NAME_SUFFIX = " (copy)";
+
+export function duplicateTemplateName(name: string): string {
+  const withSuffix = `${name}${DUPLICATE_NAME_SUFFIX}`;
+  if (withSuffix.length <= TEMPLATE_NAME_MAX_LENGTH) {
+    return withSuffix;
+  }
+
+  const room = TEMPLATE_NAME_MAX_LENGTH - DUPLICATE_NAME_SUFFIX.length;
+  return `${name.slice(0, room).trimEnd()}${DUPLICATE_NAME_SUFFIX}`;
+}
+
 function sanitizeFileName(name: string): string {
   const sanitized = name
     .trim()
@@ -137,6 +151,35 @@ export class TemplatesService {
 
     if (!createdTemplate) {
       throw new InternalServerErrorException("Template creation failed.");
+    }
+
+    return toTemplateData(createdTemplate);
+  }
+
+  /**
+   * Copies a template's working copy into a new template. Revision history stays
+   * with the original; the copy starts with none. Block ids are reused — they only
+   * need to be unique inside one content tree.
+   */
+  async duplicateTemplate(
+    workspaceId: string,
+    templateId: string,
+  ): Promise<TemplateData> {
+    const template = await this.findTemplate(workspaceId, templateId);
+
+    const [createdTemplate] = await this.db
+      .insert(templates)
+      .values({
+        workspaceId,
+        name: duplicateTemplateName(template.name),
+        content: template.content,
+        listPreviewHtml: template.listPreviewHtml,
+        updatedAt: new Date(),
+      })
+      .returning();
+
+    if (!createdTemplate) {
+      throw new InternalServerErrorException("Template duplication failed.");
     }
 
     return toTemplateData(createdTemplate);

@@ -8,7 +8,7 @@ import { renderTemplate } from "@repo/email-renderer";
 import { DEFAULT_TEMPLATE_CONTENT } from "@repo/shared";
 import { PlanLimitsService } from "src/billing/plan-limits.service";
 import { DATABASE_TOKEN } from "src/database/database.constants";
-import { TemplatesService } from "./templates.service";
+import { duplicateTemplateName, TemplatesService } from "./templates.service";
 
 jest.mock("@repo/email-renderer", () => ({
   renderTemplate: jest.fn(),
@@ -158,6 +158,58 @@ describe("TemplatesService", () => {
       expect(result.name).toBe("Welcome");
       expect(result.content).toEqual(DEFAULT_TEMPLATE_CONTENT);
       expect(result.archivedAt).toBeNull();
+    });
+  });
+
+  describe("duplicateTemplate", () => {
+    it("copies name, content, and list preview into a new template", async () => {
+      const source = {
+        ...templateRow,
+        listPreviewHtml: "<html>preview</html>",
+      };
+      mockWhere.mockResolvedValueOnce([source]);
+
+      const values = jest.fn().mockReturnValue({
+        returning: jest.fn().mockResolvedValue([
+          { ...source, id: "tpl-2", name: "Welcome (copy)" },
+        ]),
+      });
+      mockInsert.mockReturnValueOnce({ values });
+
+      const result = await service.duplicateTemplate("ws-1", "tpl-1");
+
+      expect(values).toHaveBeenCalledWith(
+        expect.objectContaining({
+          workspaceId: "ws-1",
+          name: "Welcome (copy)",
+          content: source.content,
+          listPreviewHtml: source.listPreviewHtml,
+        }),
+      );
+      expect(result.id).toBe("tpl-2");
+      expect(result.name).toBe("Welcome (copy)");
+    });
+
+    it("throws when the source template is missing", async () => {
+      mockWhere.mockResolvedValueOnce([]);
+
+      await expect(
+        service.duplicateTemplate("ws-1", "missing"),
+      ).rejects.toBeInstanceOf(NotFoundException);
+    });
+  });
+
+  describe("duplicateTemplateName", () => {
+    it("appends a copy suffix", () => {
+      expect(duplicateTemplateName("Welcome")).toBe("Welcome (copy)");
+    });
+
+    it("keeps the result within the name length limit", () => {
+      const name = "a".repeat(255);
+      const duplicated = duplicateTemplateName(name);
+
+      expect(duplicated).toHaveLength(255);
+      expect(duplicated.endsWith(" (copy)")).toBe(true);
     });
   });
 

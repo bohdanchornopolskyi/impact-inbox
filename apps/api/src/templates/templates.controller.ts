@@ -77,6 +77,15 @@ export class TemplatesController {
     return this.templatesService.updateTemplate(workspaceId, templateId, dto);
   }
 
+  @Post(":templateId/duplicate")
+  @WorkspaceRoles("admin", "owner")
+  duplicate(
+    @Param("id") workspaceId: string,
+    @Param("templateId") templateId: string,
+  ): Promise<TemplateData> {
+    return this.templatesService.duplicateTemplate(workspaceId, templateId);
+  }
+
   @Post(":templateId/preview")
   preview(
     @Param("id") workspaceId: string,

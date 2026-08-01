@@ -13,7 +13,11 @@ import {
 import { hasWorkspaceRoleAtLeast } from "@repo/shared";
 import { useWorkspace } from "@/contexts/workspace-context";
 import { formatDateTime } from "@/lib/format-date";
-import { useTemplates } from "@/lib/templates/template-hooks";
+import {
+  useDuplicateTemplate,
+  useTemplates,
+} from "@/lib/templates/template-hooks";
+import { useToast } from "@/components/ui/toast";
 import { ArchiveTemplateModal } from "@/components/template-builder/modals/archive-template-modal";
 import { CreateTemplateModal } from "@/components/template-builder/modals/create-template-modal";
 import { RenameTemplateModal } from "@/components/template-builder/modals/rename-template-modal";
@@ -45,6 +49,15 @@ export function TemplatesListView() {
   const [actionTarget, setActionTarget] = useState<ActionTarget | null>(null);
 
   const templatesQuery = useTemplates({ archived: filter === "archived" });
+  const duplicateTemplate = useDuplicateTemplate();
+  const { showToast, showError } = useToast();
+
+  function handleDuplicate(templateId: string) {
+    duplicateTemplate.mutate(templateId, {
+      onSuccess: (template) => showToast(`Duplicated as ${template.name}`),
+      onError: () => showError("Could not duplicate template"),
+    });
+  }
 
   const filteredTemplates = useMemo(() => {
     const query = search.trim().toLowerCase();
@@ -160,6 +173,10 @@ export function TemplatesListView() {
                                   updatedAt: toUpdatedAtToken(template.updatedAt),
                                   kind: "rename" as const,
                                 }),
+                            },
+                            {
+                              label: "Duplicate",
+                              onSelect: () => handleDuplicate(template.id),
                             },
                             {
                               label: "Archive",
