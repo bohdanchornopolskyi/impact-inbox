@@ -1,4 +1,4 @@
-import type { InputHTMLAttributes, ReactNode } from "react";
+import type { InputHTMLAttributes, ReactNode, Ref } from "react";
 import { cn } from "../../lib/cn";
 import {
   fieldControlClass,
@@ -19,6 +19,8 @@ export type InputProps = Omit<InputHTMLAttributes<HTMLInputElement>, "size"> & {
   suffix?: ReactNode;
   mono?: boolean;
   fieldClassName?: string;
+  /** Forwarded to the inner `input` (React 19 ref-as-prop). */
+  ref?: Ref<HTMLInputElement>;
 };
 
 export function Input({

@@ -1,6 +1,6 @@
 "use client";
 
-import type { ReactNode } from "react";
+import type { ReactNode, Ref } from "react";
 import { Input } from "@repo/ui/client";
 import { ColorPickerField } from "./color-picker-field";
 
@@ -25,6 +25,8 @@ export function TextField({
   label,
   value,
   onChange,
+  onFocus,
+  inputRef,
   placeholder,
   multiline = false,
   disabled = false,
@@ -32,6 +34,9 @@ export function TextField({
   label: string;
   value: string;
   onChange: (value: string) => void;
+  onFocus?: () => void;
+  /** Single-line only — lets callers read the caret position (merge-tag insert). */
+  inputRef?: Ref<HTMLInputElement>;
   placeholder?: string;
   multiline?: boolean;
   disabled?: boolean;
@@ -43,14 +48,17 @@ export function TextField({
           value={value}
           placeholder={placeholder}
           disabled={disabled}
+          onFocus={onFocus}
           onChange={(event) => onChange(event.target.value)}
           className="min-h-24 w-full rounded-md border border-border-strong bg-surface-card px-3 py-2 text-ui-sm text-text-primary outline-none disabled:cursor-not-allowed disabled:opacity-50"
         />
       ) : (
         <Input
+          ref={inputRef}
           value={value}
           placeholder={placeholder}
           disabled={disabled}
+          onFocus={onFocus}
           onChange={(event) => onChange(event.target.value)}
         />
       )}

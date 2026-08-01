@@ -1,5 +1,6 @@
 "use client";
 
+import { useRef } from "react";
 import { Button } from "@repo/ui/client";
 import {
   DEFAULT_TEMPLATE_SETTINGS,
@@ -7,7 +8,10 @@ import {
 } from "@repo/shared";
 import { useBuilder } from "../builder-provider";
 import { ColorField, NumberField, TextField } from "./fields";
+import { insertAtSelection } from "./insert-at-selection";
 import { MergeTagPicker } from "./merge-tag-picker";
+
+type MergeTagField = "subject" | "preheader";
 
 export function TemplateSettingsInspector() {
   const canEdit = useBuilder((s) => s.canEdit);
@@ -15,12 +19,40 @@ export function TemplateSettingsInspector() {
   const updateSettingsAction = useBuilder((s) => s.updateSettings);
   const selectBlock = useBuilder((s) => s.selectBlock);
 
+  const subjectRef = useRef<HTMLInputElement>(null);
+  const preheaderRef = useRef<HTMLInputElement>(null);
+  const mergeTagFieldRef = useRef<MergeTagField>("subject");
+
   function updateSettings(partial: Partial<typeof settings>) {
     if (!canEdit) {
       return;
     }
 
     updateSettingsAction(partial);
+  }
+
+  /** Writes the tag into whichever of subject/preheader was focused last. */
+  function insertMergeTag(formattedTag: string) {
+    if (!canEdit) {
+      return;
+    }
+
+    const field = mergeTagFieldRef.current;
+    const input =
+      field === "subject" ? subjectRef.current : preheaderRef.current;
+    const next = insertAtSelection(
+      settings[field] ?? "",
+      formattedTag,
+      input?.selectionStart,
+      input?.selectionEnd,
+    );
+
+    updateSettings({ [field]: next.value });
+
+    requestAnimationFrame(() => {
+      input?.focus();
+      input?.setSelectionRange(next.caret, next.caret);
+    });
   }
 
   return (
@@ -34,16 +66,24 @@ export function TemplateSettingsInspector() {
             Subject, layout, and default styles for this template.
           </p>
         </div>
-        <MergeTagPicker />
+        <MergeTagPicker onInsert={insertMergeTag} />
       </div>
       <TextField
         label="Subject"
         value={settings.subject ?? ""}
+        inputRef={subjectRef}
+        onFocus={() => {
+          mergeTagFieldRef.current = "subject";
+        }}
         onChange={(value) => updateSettings({ subject: value })}
       />
       <TextField
         label="Preheader"
         value={settings.preheader ?? ""}
+        inputRef={preheaderRef}
+        onFocus={() => {
+          mergeTagFieldRef.current = "preheader";
+        }}
         onChange={(value) => updateSettings({ preheader: value })}
       />
       <NumberField

@@ -4,13 +4,28 @@ import { ALL_MERGE_TAGS, formatMergeTag } from "@repo/shared";
 import { Popover } from "@repo/ui/client";
 import { useToast } from "@/components/ui/toast";
 
-export function MergeTagPicker() {
+/**
+ * Merge-tag list. With `onInsert` the tag is written into the caller's field;
+ * without it the tag is copied so it can be pasted into block content.
+ */
+export function MergeTagPicker({
+  onInsert,
+}: {
+  onInsert?: (formattedTag: string) => void;
+}) {
   const { showToast, showError } = useToast();
 
-  async function copyTag(tag: string) {
+  async function selectTag(tag: string) {
+    const formatted = formatMergeTag(tag);
+
+    if (onInsert) {
+      onInsert(formatted);
+      return;
+    }
+
     try {
-      await navigator.clipboard.writeText(formatMergeTag(tag));
-      showToast(`Copied ${formatMergeTag(tag)}`);
+      await navigator.clipboard.writeText(formatted);
+      showToast(`Copied ${formatted}`);
     } catch {
       showError("Could not copy merge tag");
     }
@@ -26,7 +41,7 @@ export function MergeTagPicker() {
           <button
             key={entry.tag}
             type="button"
-            onClick={() => void copyTag(entry.tag)}
+            onClick={() => void selectTag(entry.tag)}
             className="flex w-full flex-col rounded-md px-2 py-1.5 text-left hover:bg-surface-muted"
           >
             <span className="font-mono text-ui-xs text-accent-text">
