@@ -4,6 +4,7 @@ import {
   addColumn,
   addRow,
   addSection,
+  duplicateBlock,
   ensureDefaultStructure,
   findBlock,
   isDescendantOf,
@@ -376,5 +377,81 @@ describe("tree-ops", () => {
     expect(
       moved.content.body[0]!.children[0]!.children[0]!.children.map((child) => child.type),
     ).toEqual(["text", "heading"]);
+  });
+
+  it("duplicates a content block directly after the original", () => {
+    let content = createEmptyTemplateContent();
+    const columnId = content.body[0]!.children[0]!.children[0]!.id;
+
+    content = addContentBlock(content, columnId, "heading").content;
+    content = addContentBlock(content, columnId, "text").content;
+
+    const heading = content.body[0]!.children[0]!.children[0]!.children[0]!;
+    const result = duplicateBlock(content, heading.id);
+    expect(result.changed).toBe(true);
+
+    const children = result.content.body[0]!.children[0]!.children[0]!.children;
+    expect(children.map((child) => child.type)).toEqual([
+      "heading",
+      "heading",
+      "text",
+    ]);
+
+    const clone = children[1]!;
+    expect(result.blockId).toBe(clone.id);
+    expect(clone.id).not.toBe(heading.id);
+    expect(clone.props).toEqual(heading.props);
+  });
+
+  it("duplicates a section with fresh ids on every descendant", () => {
+    let content = createEmptyTemplateContent();
+    const columnId = content.body[0]!.children[0]!.children[0]!.id;
+    content = addContentBlock(content, columnId, "heading").content;
+
+    const section = content.body[0]!;
+    const result = duplicateBlock(content, section.id);
+    expect(result.changed).toBe(true);
+    expect(result.content.body).toHaveLength(2);
+
+    const clone = result.content.body[1]!;
+    expect(result.blockId).toBe(clone.id);
+
+    const ids = [
+      clone.id,
+      ...clone.children.flatMap((row) => [
+        row.id,
+        ...row.children.flatMap((column) => [
+          column.id,
+          ...column.children.map((child) => child.id),
+        ]),
+      ]),
+    ];
+    expect(new Set(ids).size).toBe(ids.length);
+    expect(ids).not.toContain(section.id);
+    expect(ids).not.toContain(columnId);
+    expect(clone.children[0]!.children[0]!.children[0]!.type).toBe("heading");
+  });
+
+  it("duplicates a column and redistributes row widths", () => {
+    const content = createEmptyTemplateContent();
+    const row = content.body[0]!.children[0]!;
+    const column = row.children[0]!;
+
+    const result = duplicateBlock(content, column.id);
+    expect(result.changed).toBe(true);
+
+    const duplicatedRow = result.content.body[0]!.children[0]!;
+    expect(duplicatedRow.children).toHaveLength(2);
+    expect(duplicatedRow.props.columnWidths).toEqual([50, 50]);
+    expect(duplicatedRow.children[1]!.id).not.toBe(column.id);
+  });
+
+  it("reports block_not_found when duplicating an unknown block", () => {
+    const content = createEmptyTemplateContent();
+    const result = duplicateBlock(content, "missing-id");
+
+    expect(result.changed).toBe(false);
+    expect(result.reason).toBe("block_not_found");
+    expect(result.content).toBe(content);
   });
 });

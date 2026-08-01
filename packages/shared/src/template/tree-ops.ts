@@ -10,6 +10,7 @@ import type { BlockStyles } from "../schemas/template/styles";
 import type { BrandKitData } from "../schemas/brand-kit";
 import { templateSettingsSchema } from "../schemas/template/settings";
 import { createContentBlock, createColumnBlock, createRowBlock, createSectionBlock } from "./create-block";
+import { cloneBlockWithNewIds } from "./clone-block";
 import { rowWithRedistributedColumnWidths } from "./column-widths";
 
 export type TemplateBlock =
@@ -533,6 +534,87 @@ export function removeBlock(
 
   const body = content.body.filter((_, i) => i !== path.sectionIndex);
   return { ...content, body };
+}
+
+/**
+ * Inserts a copy of a block directly after the original, with fresh ids across the
+ * whole subtree. Duplicating a column redistributes the row's column widths.
+ */
+export function duplicateBlock(
+  content: TemplateContentData,
+  blockId: string,
+): TreeMutationResult {
+  const found = findBlock(content, blockId);
+  if (!found) {
+    return unchanged(content, "block_not_found");
+  }
+
+  const { block, path } = found;
+
+  if (block.type === "section") {
+    const clone = cloneBlockWithNewIds(block);
+    return changed(
+      insertSectionAt(content, clone, path.sectionIndex + 1),
+      clone.id,
+    );
+  }
+
+  if (block.type === "row" && path.rowIndex !== undefined) {
+    const sectionId = content.body[path.sectionIndex]?.id;
+    if (!sectionId) {
+      return unchanged(content, "parent_not_found");
+    }
+
+    const clone = cloneBlockWithNewIds(block);
+    return changed(
+      insertRowAt(content, sectionId, clone, path.rowIndex + 1),
+      clone.id,
+    );
+  }
+
+  if (
+    block.type === "column" &&
+    path.rowIndex !== undefined &&
+    path.columnIndex !== undefined
+  ) {
+    const rowId = content.body[path.sectionIndex]?.children[path.rowIndex]?.id;
+    if (!rowId) {
+      return unchanged(content, "parent_not_found");
+    }
+
+    const clone = cloneBlockWithNewIds(block);
+    return changed(
+      insertColumnAt(content, rowId, clone, path.columnIndex + 1),
+      clone.id,
+    );
+  }
+
+  if (
+    !isContentBlock(block) ||
+    !found.parentColumnId ||
+    path.contentIndex === undefined
+  ) {
+    return unchanged(content, "block_not_found");
+  }
+
+  const columnId = found.parentColumnId;
+  const targetIndex = path.contentIndex + 1;
+  const clone = cloneBlockWithNewIds(block);
+
+  return changed(
+    mapSections(content, (section) => ({
+      ...section,
+      children: section.children.map((row) => ({
+        ...row,
+        children: row.children.map((column) =>
+          column.id === columnId
+            ? insertContentBlock(column, clone, targetIndex)
+            : column,
+        ),
+      })),
+    })),
+    clone.id,
+  );
 }
 
 function arrayMove<T>(array: readonly T[], from: number, to: number): T[] {

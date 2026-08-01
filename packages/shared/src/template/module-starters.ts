@@ -8,6 +8,7 @@ import type {
   SectionBlock,
 } from "../schemas/template/blocks/layout";
 import { getBlockTypeLabel } from "./block-label";
+import { cloneBlockWithNewIds } from "./clone-block";
 import { createContentBlock } from "./create-block";
 import { resolveBlockDefaults } from "./resolve-brand-defaults";
 
@@ -189,23 +190,7 @@ export function buildPlatformStarterModules(
 }
 
 export function cloneSectionBlock(section: SectionBlock): SectionBlock {
-  const cloned = structuredClone(section);
-
-  function retargetIds(node: {
-    id: string;
-    children?: Array<{ id: string; children?: unknown[] }>;
-  }) {
-    node.id = createId();
-    if (!node.children) {
-      return;
-    }
-    for (const child of node.children) {
-      retargetIds(child as { id: string; children?: Array<{ id: string }> });
-    }
-  }
-
-  retargetIds(cloned);
-  return cloned;
+  return cloneBlockWithNewIds(section);
 }
 
 export function summarizeModuleContent(section: SectionBlock): string {

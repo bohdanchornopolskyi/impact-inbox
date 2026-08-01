@@ -1,6 +1,7 @@
 export * from "./block-label";
 export * from "./canvas-contract";
 export * from "./canvas-drop-target";
+export * from "./clone-block";
 export * from "./column-widths";
 export * from "./create-block";
 export * from "./resolve-brand-defaults";
