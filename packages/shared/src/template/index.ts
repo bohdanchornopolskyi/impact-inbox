@@ -5,6 +5,7 @@ export * from "./clone-block";
 export * from "./column-widths";
 export * from "./create-block";
 export * from "./resolve-brand-defaults";
+export * from "./spacing";
 export * from "./module-starters";
 export * from "./merge-tags";
 export * from "./merge-tag-scan";

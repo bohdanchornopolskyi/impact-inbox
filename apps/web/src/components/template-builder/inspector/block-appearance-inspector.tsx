@@ -9,6 +9,12 @@ import type {
   TextTransform,
 } from "@repo/shared";
 import {
+  resolveSpacingSides,
+  spacingFromSides,
+  SPACING_SIDES,
+  type SpacingSide,
+} from "@repo/shared";
+import {
   AlignCenter,
   AlignJustify,
   AlignLeft,
@@ -59,8 +65,52 @@ const BORDER_STYLE_OPTIONS = [
   { value: "dotted", label: "Dotted" },
 ];
 
-function spacingValue(spacing: BlockStyles["padding"]): number | undefined {
-  return typeof spacing === "number" ? spacing : undefined;
+const SPACING_SIDE_LABELS: Record<SpacingSide, string> = {
+  top: "Top",
+  right: "Right",
+  bottom: "Bottom",
+  left: "Left",
+};
+
+/**
+ * Four-side editor. Values are resolved the way the renderer expands them, so a
+ * block built from defaults (`{ bottom: 16 }`) shows that 16 instead of blank.
+ */
+function SpacingField({
+  label,
+  spacing,
+  disabled,
+  onChange,
+}: {
+  label: string;
+  spacing: BlockStyles["padding"];
+  disabled: boolean;
+  onChange: (next: BlockStyles["padding"]) => void;
+}) {
+  const sides = resolveSpacingSides(spacing);
+
+  return (
+    <div className="space-y-1.5">
+      <span className="block text-ui-xs font-medium text-text-secondary">
+        {label}
+      </span>
+      <div className="grid grid-cols-2 gap-2">
+        {SPACING_SIDES.map((side) => (
+          <NumberField
+            key={side}
+            label={SPACING_SIDE_LABELS[side]}
+            value={sides[side]}
+            min={0}
+            max={120}
+            disabled={disabled}
+            onChange={(next) =>
+              onChange(spacingFromSides({ ...sides, [side]: next ?? 0 }))
+            }
+          />
+        ))}
+      </div>
+    </div>
+  );
 }
 
 function hasTypographyControls(block: TemplateBlock): block is ContentBlock {
@@ -217,19 +267,15 @@ export function BlockAppearanceInspector({
 
       <CollapsibleSection title="Spacing" defaultOpen>
         <div className="space-y-3">
-          <NumberField
+          <SpacingField
             label="Padding"
-            value={spacingValue(styles.padding)}
-            min={0}
-            max={120}
+            spacing={styles.padding}
             disabled={disabled}
             onChange={(next) => patchStyles({ padding: next })}
           />
-          <NumberField
+          <SpacingField
             label="Margin"
-            value={spacingValue(styles.margin)}
-            min={0}
-            max={120}
+            spacing={styles.margin}
             disabled={disabled}
             onChange={(next) => patchStyles({ margin: next })}
           />

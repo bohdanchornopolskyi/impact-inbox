@@ -10,6 +10,7 @@ export function renderRichtextBlock(block: RichtextBlock, context: RenderContext
     <div
       key={block.id}
       style={{
+        margin: 0,
         ...blockStylesToCss(block.styles),
         color:
           color ?? context.settings.textColor ?? TEMPLATE_DEFAULT_COLORS.text,
@@ -17,7 +18,6 @@ export function renderRichtextBlock(block: RichtextBlock, context: RenderContext
         lineHeight: lineHeight ?? context.settings.lineHeight ?? 1.5,
         fontFamily: context.settings.fontFamily,
         fontWeight: 400,
-        margin: 0,
       }}
     >
       {editableRichtext(html)}

@@ -10,12 +10,12 @@ export function renderDividerBlock(block: DividerBlock) {
     <Hr
       key={block.id}
       style={{
+        margin: 0,
         ...blockStylesToCss(block.styles),
         borderColor: color ?? TEMPLATE_DEFAULT_COLORS.divider,
         borderWidth: `${thickness ?? 1}px`,
         borderStyle: style ?? "solid",
         width: typeof width === "number" ? `${width}px` : width ?? "100%",
-        margin: 0,
       }}
     />
   );

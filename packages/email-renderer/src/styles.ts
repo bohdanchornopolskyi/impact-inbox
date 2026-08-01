@@ -1,4 +1,4 @@
-import type { BlockStyles, Spacing } from "@repo/shared";
+import { resolveSpacingSides, type BlockStyles, type Spacing } from "@repo/shared";
 import type { CSSProperties } from "react";
 
 function spacingToCss(spacing: Spacing): string {
@@ -6,10 +6,7 @@ function spacingToCss(spacing: Spacing): string {
     return `${spacing}px`;
   }
 
-  const top = spacing.top ?? 0;
-  const right = spacing.right ?? top;
-  const bottom = spacing.bottom ?? top;
-  const left = spacing.left ?? right;
+  const { top, right, bottom, left } = resolveSpacingSides(spacing);
 
   return `${top}px ${right}px ${bottom}px ${left}px`;
 }

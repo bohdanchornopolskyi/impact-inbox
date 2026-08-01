@@ -21,6 +21,7 @@ export function renderHeadingBlock(block: HeadingBlock, context: RenderContext) 
       key={block.id}
       as={headingAs[level]}
       style={{
+        margin: 0,
         ...blockStylesToCss(block.styles),
         color:
           color ??
@@ -31,7 +32,6 @@ export function renderHeadingBlock(block: HeadingBlock, context: RenderContext) 
         lineHeight: lineHeight ?? context.settings.lineHeight,
         textTransform: textTransform ?? undefined,
         fontFamily: context.settings.fontFamily,
-        margin: 0,
       }}
     >
       {editableText(text)}

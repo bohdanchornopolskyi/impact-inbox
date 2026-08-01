@@ -156,6 +156,7 @@ const TEMPLATE_BLOCK_DEFINITIONS = {
       level: 2,
       color: TEMPLATE_DEFAULT_COLORS.heading,
       fontSize: 28,
+      lineHeight: 1.25,
     },
     defaultStyles: CONTENT_BLOCK_GAP_STYLES,
     mergeTagProps: ["text"],

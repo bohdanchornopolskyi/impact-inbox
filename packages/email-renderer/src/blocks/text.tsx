@@ -11,6 +11,7 @@ export function renderTextBlock(block: TextBlock, context: RenderContext) {
     <Text
       key={block.id}
       style={{
+        margin: 0,
         ...blockStylesToCss(block.styles),
         color:
           color ?? context.settings.textColor ?? TEMPLATE_DEFAULT_COLORS.text,
@@ -19,7 +20,6 @@ export function renderTextBlock(block: TextBlock, context: RenderContext) {
         lineHeight: lineHeight ?? context.settings.lineHeight ?? 1.5,
         textTransform: textTransform ?? undefined,
         fontFamily: context.settings.fontFamily,
-        margin: 0,
       }}
     >
       {editableText(text)}
