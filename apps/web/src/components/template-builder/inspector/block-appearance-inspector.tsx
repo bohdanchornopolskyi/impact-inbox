@@ -25,8 +25,10 @@ import {
   RemoveFormatting,
 } from "lucide-react";
 import { CollapsibleSection, SegmentedControl } from "@repo/ui/client";
+import { useBuilder } from "../builder-provider";
 import { ColorPickerField } from "./color-picker-field";
 import { NumberField, SelectField } from "./fields";
+import { inheritedLineHeight } from "./inherited-typography";
 
 type UpdateStyles = (styles: Partial<BlockStyles>) => void;
 type UpdateProps = (props: Record<string, unknown>) => void;
@@ -154,6 +156,7 @@ export function BlockAppearanceInspector({
   updateProps: UpdateProps;
   canEdit: boolean;
 }) {
+  const settings = useBuilder((s) => s.content.settings);
   const disabled = !canEdit;
   const styles = block.styles ?? {};
   const props = ("props" in block ? block.props : {}) as Record<string, unknown>;
@@ -195,6 +198,7 @@ export function BlockAppearanceInspector({
                 value={typeof props.lineHeight === "number" ? props.lineHeight : undefined}
                 min={1}
                 max={3}
+                placeholder={inheritedLineHeight(block.type, settings)?.toString()}
                 disabled={disabled}
                 onChange={(next) => updateProps({ lineHeight: next })}
               />

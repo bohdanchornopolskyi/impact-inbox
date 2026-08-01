@@ -72,6 +72,7 @@ export function NumberField({
   onChange,
   min,
   max,
+  placeholder,
   disabled = false,
 }: {
   label: string;
@@ -79,6 +80,8 @@ export function NumberField({
   onChange: (value: number | undefined) => void;
   min?: number;
   max?: number;
+  /** Shown when the field is empty — use it for an inherited value. */
+  placeholder?: string;
   disabled?: boolean;
 }) {
   return (
@@ -88,6 +91,7 @@ export function NumberField({
         value={value ?? ""}
         min={min}
         max={max}
+        placeholder={placeholder}
         disabled={disabled}
         onChange={(event) => {
           const next = event.target.value;

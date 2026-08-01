@@ -201,6 +201,7 @@ const TEMPLATE_BLOCK_DEFINITIONS = {
     fields: [
       { prop: "html", label: "HTML", kind: "multiline" },
       { prop: "color", label: "Color", kind: "color" },
+      { prop: "fontSize", label: "Font size", kind: "number", min: 8, max: 72 },
     ],
   },
   button: {

@@ -18,6 +18,7 @@ import {
   resolveImageUrl,
 } from "./fields";
 import { ImageSourceField } from "./image-source-field";
+import { inheritedFontSize } from "./inherited-typography";
 import { SocialLinksEditor, TableEditor } from "./custom-editors";
 import { RichtextFormatFields } from "./richtext-inspector-toolbar";
 import { BlockAppearanceInspector } from "./block-appearance-inspector";
@@ -184,6 +185,8 @@ function BlockFields({
   updateProps: UpdateProps;
   canEdit: boolean;
 }) {
+  const settings = useBuilder((s) => s.content.settings);
+
   if (definition.customEditor) {
     if (block.type === "social") {
       return (
@@ -219,6 +222,11 @@ function BlockFields({
             key={field.prop}
             field={field}
             value={props[field.prop]}
+            placeholder={
+              field.prop === "fontSize"
+                ? inheritedFontSize(block.type, settings)?.toString()
+                : undefined
+            }
             fallback={
               field.kind === "color" &&
               typeof definition.defaultProps[field.prop] === "string"
@@ -238,12 +246,15 @@ function BlockField({
   field,
   value,
   fallback,
+  placeholder,
   updateProps,
   disabled = false,
 }: {
   field: BlockFieldDescriptor;
   value: unknown;
   fallback?: string;
+  /** Inherited value shown when a number field is empty. */
+  placeholder?: string;
   updateProps: UpdateProps;
   disabled?: boolean;
 }) {
@@ -307,6 +318,7 @@ function BlockField({
           value={typeof value === "number" ? value : undefined}
           min={field.min}
           max={field.max}
+          placeholder={placeholder}
           disabled={disabled}
           onChange={(next) => updateProps({ [field.prop]: next })}
         />
