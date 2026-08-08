@@ -1,0 +1,1011 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Architecture review — impact-inbox-new</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script type="module">
+      import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs";
+      mermaid.initialize({ startOnLoad: true, theme: "neutral", securityLevel: "loose", flowchart: { curve: "basis" } });
+    </script>
+    <style>
+      .seam { stroke-dasharray: 4 4; }
+      .mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+      .label { font-size: 10px; letter-spacing: .12em; text-transform: uppercase; }
+      .mermaid { display: flex; justify-content: center; }
+      .mermaid svg { max-width: 100%; height: auto; }
+      details > summary { cursor: pointer; }
+      details > summary::-webkit-details-marker { color: #94a3b8; }
+    </style>
+  </head>
+  <body class="bg-stone-50 text-slate-900 font-sans antialiased">
+    <main class="max-w-5xl mx-auto px-6 py-14 space-y-14">
+
+      <!-- header -->
+      <header class="space-y-6">
+        <div class="flex flex-wrap items-end justify-between gap-4">
+          <div>
+            <h1 class="font-serif text-4xl tracking-tight">Architecture review</h1>
+            <p class="mono text-sm text-slate-500 mt-1">impact-inbox-new &middot; 2026-08-01 &middot; 42,937 LOC across 6 packages, 2 apps</p>
+          </div>
+          <div class="text-right text-xs text-slate-500 leading-relaxed">
+            <div><span class="font-semibold text-slate-700">12</span> deepening candidates</div>
+            <div><span class="font-semibold text-emerald-700">8</span> strong &middot; <span class="font-semibold text-amber-700">3</span> worth exploring &middot; <span class="font-semibold text-slate-600">1</span> speculative</div>
+          </div>
+        </div>
+
+        <div class="rounded-lg border border-slate-200 bg-white px-5 py-4">
+          <div class="label text-slate-400 mb-3">Legend</div>
+          <div class="flex flex-wrap gap-x-8 gap-y-3 text-xs text-slate-600">
+            <span class="flex items-center gap-2"><span class="inline-block w-8 h-4 border border-slate-400 bg-white"></span> module</span>
+            <span class="flex items-center gap-2"><svg width="34" height="6"><line x1="0" y1="3" x2="34" y2="3" stroke="#64748b" stroke-width="2" class="seam"/></svg> seam</span>
+            <span class="flex items-center gap-2"><svg width="34" height="8"><line x1="0" y1="4" x2="28" y2="4" stroke="#dc2626" stroke-width="2"/><path d="M28 1 L34 4 L28 7 Z" fill="#dc2626"/></svg> leakage</span>
+            <span class="flex items-center gap-2"><span class="inline-block w-8 h-4 border-2 border-slate-900 bg-slate-900"></span> deep module</span>
+            <span class="flex items-center gap-2"><span class="inline-block w-8 h-4 border border-slate-300 bg-slate-100"></span> absorbed / now internal</span>
+          </div>
+        </div>
+
+        <div class="rounded-lg border border-slate-900 bg-slate-900 text-slate-100 px-5 py-4 text-sm leading-relaxed">
+          <span class="label text-slate-400 block mb-2">Three facts that shape everything below</span>
+          <ol class="list-decimal list-inside space-y-1 text-slate-200">
+            <li><span class="mono text-xs bg-slate-800 px-1.5 py-0.5 rounded">turbo.json</span> declares no <span class="mono">test</span> task, and neither <span class="mono">@repo/shared</span> nor <span class="mono">@repo/email-renderer</span> has a <span class="mono">check-types</span> script — the two packages holding the domain. Every drift below is invisible to the pipeline.</li>
+            <li>Defaults are described twice — once as a zod schema, once as an untyped table — and the renderer describes them a third time as literals. Two have already diverged in ways that ship.</li>
+            <li>The two biggest seams in the product (the iframe bridge, the web&#8596;api envelope) are typed but not enforced: both have a live contract mismatch that compiles clean.</li>
+          </ol>
+        </div>
+      </header>
+
+      <section id="candidates" class="space-y-12">
+
+        <!-- C1 -->
+        <article id="c1" class="rounded-xl border border-slate-200 bg-white p-7 space-y-6 shadow-sm">
+          <div class="space-y-3">
+            <div class="flex flex-wrap items-center gap-2">
+              <span class="rounded-full bg-emerald-100 text-emerald-800 px-2.5 py-0.5 text-xs font-semibold">Strong</span>
+              <span class="rounded-full bg-slate-100 text-slate-600 px-2.5 py-0.5 text-xs mono">in-process + mock</span>
+              <span class="text-xs text-slate-400">C1</span>
+            </div>
+            <h2 class="font-serif text-2xl">Give the canvas bridge one typed ingress</h2>
+            <p class="mono text-sm text-slate-500 leading-relaxed">
+              canvas/canvas-bridge-protocol.ts:130,209 &middot; canvas/canvas-bridge.ts:15 &middot; canvas-preview-controller.ts:272 &middot; canvas-drag-session.ts:159 &middot; palette-canvas-dnd-context.tsx:219 &middot; preview-canvas.tsx:264 &middot; use-canvas-viewport-auto-scroll.ts:45 &middot; runtime/bridge-runtime-boot.ts:100
+            </p>
+          </div>
+
+          <div class="grid md:grid-cols-2 gap-5">
+            <div class="rounded-lg border border-slate-200 bg-stone-50 p-4">
+              <div class="label text-slate-400 mb-3">Before &middot; five dispatchers, no router</div>
+              <pre class="mermaid">
+flowchart TD
+  RT[iframe runtime string] -->|postMessage| W((window))
+  W --> D1[preview-canvas if-chain]
+  W --> D2[preview-controller if-chain]
+  W --> D3[drag-session if-chain]
+  W --> D4[palette-dnd if-chain]
+  W --> D5[auto-scroll cast]
+  P[canvas-bridge-protocol<br/>unions + 9 guards]
+  P -.imported by nobody.-> D1
+  classDef dead fill:#fee2e2,stroke:#dc2626,color:#7f1d1d;
+  class P dead
+              </pre>
+            </div>
+            <div class="rounded-lg border-2 border-slate-900 bg-white p-4">
+              <div class="label text-slate-400 mb-3">After &middot; one ingress, one send</div>
+              <pre class="mermaid">
+flowchart TD
+  RT[iframe runtime] -->|postMessage| B[createCanvasBridge]
+  B --> PARSE[parseInbound]
+  PARSE --> H{handler table}
+  H --> A1[selection]
+  H --> A2[edit]
+  H --> A3[drag]
+  B --> S[send: typed outbound]
+  S --> RT
+  classDef deep fill:#0f172a,stroke:#0f172a,color:#f8fafc;
+  class B,PARSE deep
+              </pre>
+            </div>
+          </div>
+
+          <div class="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-900">
+            <span class="label text-red-500 block mb-1">Live contract mismatch, compiles clean</span>
+            <span class="mono text-xs">canvas-bridge-protocol.ts:205</span> declares <span class="mono text-xs">canvas-palette-drag-finish</span> as <span class="mono text-xs">{ type }</span> with no coordinates.
+            <span class="mono text-xs">palette-canvas-dnd-context.tsx:356</span> sends coordinates anyway; <span class="mono text-xs">bridge-runtime-boot.ts:121-133</span> commits <span class="mono text-xs">target: null</span> without them.
+            Nothing catches it because the sender is typed <span class="mono text-xs">postToIframe(message: object)</span> (<span class="mono text-xs">preview-canvas.tsx:106</span>). "Fixing" the sender to match its declared type silently turns every palette drop into a no-op.
+          </div>
+
+          <div class="grid md:grid-cols-2 gap-6 text-sm">
+            <div class="space-y-3">
+              <div><span class="label text-slate-400 block mb-1">Problem</span>The protocol module is a type registry nothing routes through, so the message vocabulary is re-stated in five hand-written if-chains and one <span class="mono text-xs">as</span> cast.</div>
+              <div><span class="label text-slate-400 block mb-1">Solution</span>One module owns the single <span class="mono text-xs">window</span> listener, parses inbound once, and exposes a typed <span class="mono text-xs">send</span>; call sites register handlers instead of matching strings.</div>
+            </div>
+            <div>
+              <span class="label text-slate-400 block mb-1">Wins</span>
+              <ul class="space-y-1.5 text-slate-700">
+                <li>&middot; leverage: one union, N handlers</li>
+                <li>&middot; a new message is two edits, not seven</li>
+                <li>&middot; unrouted message becomes a compile error</li>
+                <li>&middot; interface is the test surface: contract test per message</li>
+                <li>&middot; deletes 3 dead guards, 2 dead message types</li>
+              </ul>
+            </div>
+          </div>
+
+          <details class="text-sm text-slate-600">
+            <summary class="label text-slate-400">Supporting evidence</summary>
+            <ul class="mt-3 space-y-1.5 pl-4 list-disc">
+              <li><span class="mono text-xs">history-undo</span>/<span class="mono text-xs">history-redo</span> types + guards (<span class="mono text-xs">:110,144,434</span>) are dead — the runtime uses <span class="mono text-xs">builder-shortcut</span>. The test title at <span class="mono text-xs">canvas-bridge-edit-lifecycle.test.ts:287</span> still names them while asserting the other thing.</li>
+              <li><span class="mono text-xs">isCanvasDropTargetMessage</span> (<span class="mono text-xs">:349</span>) never validates <span class="mono text-xs">dragKind</span>, but <span class="mono text-xs">canvas-preview-controller.ts:304</span> reads it as one and feeds <span class="mono text-xs">canDropAtTarget</span>, whose <span class="mono text-xs">never</span> default returns the string — truthy.</li>
+              <li>The runtime half of the seam is a 2,088-line template string; <span class="mono text-xs">bridge-runtime-dnd.ts</span> (858 lines, all drop geometry) has no test, and the same <span class="mono text-xs">elementFromPoint</span> preamble appears five times.</li>
+            </ul>
+          </details>
+        </article>
+
+        <!-- C2 -->
+        <article id="c2" class="rounded-xl border border-slate-200 bg-white p-7 space-y-6 shadow-sm">
+          <div class="space-y-3">
+            <div class="flex flex-wrap items-center gap-2">
+              <span class="rounded-full bg-emerald-100 text-emerald-800 px-2.5 py-0.5 text-xs font-semibold">Strong</span>
+              <span class="rounded-full bg-slate-100 text-slate-600 px-2.5 py-0.5 text-xs mono">in-process</span>
+              <span class="text-xs text-slate-400">C2</span>
+            </div>
+            <h2 class="font-serif text-2xl">One content door in the builder store</h2>
+            <p class="mono text-sm text-slate-500 leading-relaxed">
+              template-builder/builder-provider.tsx:93-149,173,249-419 &middot; packages/shared/src/template/tree-ops.ts:211,226,282,341,454 &middot; apply-builder-mutation.ts:16
+            </p>
+          </div>
+
+          <div class="grid md:grid-cols-2 gap-5">
+            <div class="rounded-lg border border-slate-200 bg-stone-50 p-4">
+              <div class="label text-slate-400 mb-3">Before &middot; interface mass ≈ implementation mass</div>
+              <svg viewBox="0 0 300 200" class="w-full h-[200px]">
+                <rect x="20" y="18" width="260" height="96" fill="#fff" stroke="#64748b"/>
+                <text x="150" y="14" text-anchor="middle" class="label" fill="#64748b">interface — 34 members</text>
+                <g font-size="9" fill="#334155" font-family="ui-monospace,monospace">
+                  <text x="30" y="36">updateBlockProps  updateBlockStyles  addBlock</text>
+                  <text x="30" y="50">removeBlock  duplicateBlock  addSection  addRow</text>
+                  <text x="30" y="64">addColumn  insertSavedModule  stripAssetUrl</text>
+                  <text x="30" y="78" fill="#dc2626">moveBlock  moveSection  moveRow  moveColumn</text>
+                  <text x="30" y="92">setInspectorMode  setPreviewOpen  setExportOpen …</text>
+                  <text x="30" y="106" fill="#94a3b8">setSaveState  setConflictOpen  markSaved  (no UI caller)</text>
+                </g>
+                <rect x="20" y="126" width="260" height="52" fill="#f1f5f9" stroke="#94a3b8"/>
+                <text x="150" y="146" text-anchor="middle" font-size="10" fill="#475569">implementation: withRecordedContent + tree-ops</text>
+                <text x="150" y="162" text-anchor="middle" font-size="10" fill="#475569">12 members are one line of delegation</text>
+              </svg>
+            </div>
+            <div class="rounded-lg border-2 border-slate-900 bg-white p-4">
+              <div class="label text-slate-400 mb-3">After &middot; short interface, absorbed body</div>
+              <svg viewBox="0 0 300 200" class="w-full h-[200px]">
+                <rect x="20" y="18" width="260" height="34" fill="#0f172a" stroke="#0f172a"/>
+                <text x="150" y="14" text-anchor="middle" class="label" fill="#64748b">interface</text>
+                <text x="150" y="39" text-anchor="middle" font-size="10" fill="#f8fafc" font-family="ui-monospace,monospace">applyContentMutation(mutate, opts) · uiSlice</text>
+                <rect x="20" y="60" width="260" height="118" fill="#f8fafc" stroke="#0f172a" stroke-width="2"/>
+                <g font-size="9" fill="#64748b" font-family="ui-monospace,monospace">
+                  <text x="30" y="78">permission gate · history mode · coalescing</text>
+                  <text x="30" y="92">selection invariant (id + inspectorMode)</text>
+                  <text x="30" y="106">saveState transition</text>
+                  <text x="30" y="120">returns TreeMutationResult.changed</text>
+                </g>
+                <text x="150" y="146" text-anchor="middle" font-size="9" fill="#94a3b8">4 move* clones → 1 call · 12 pass-throughs → call-site one-liners</text>
+                <text x="150" y="162" text-anchor="middle" font-size="9" fill="#94a3b8">persistence trio moves behind an explicit adapter</text>
+              </svg>
+            </div>
+          </div>
+
+          <div class="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-900 space-y-2">
+            <span class="label text-red-500 block">Two defects the duplication is hiding</span>
+            <div><span class="mono text-xs">removeBlock</span> is the one mutator that returns bare content (<span class="mono text-xs">tree-ops.ts:454</span>) and silently refuses on the last row/column (<span class="mono text-xs">:509,:526</span>). The caller (<span class="mono text-xs">builder-provider.tsx:289</span>) still flips <span class="mono text-xs">saveState</span> to unsaved and pushes an undo step — remove the only column and nothing happens except one wasted Ctrl+Z.</div>
+            <div><span class="mono text-xs">removeBlock</span> clears <span class="mono text-xs">selectedBlockId</span> but not <span class="mono text-xs">inspectorMode</span>, while every insert path sets both via <span class="mono text-xs">apply-builder-mutation.ts:23</span>. Delete the selected block and the inspector shows the dead-end "Select a block in the structure tree" (<span class="mono text-xs">block-inspector.tsx:35</span>).</div>
+          </div>
+
+          <div class="grid md:grid-cols-2 gap-6 text-sm">
+            <div class="space-y-3">
+              <div><span class="label text-slate-400 block mb-1">Problem</span>Each action assembles its own patch, so the four <span class="mono text-xs">move*</span> members are 17-line copies of each other, the store's result contract varies per operation, and the selection invariant exists in two places that have already drifted.</div>
+              <div><span class="label text-slate-400 block mb-1">Solution</span>One content door taking a <span class="mono text-xs">(content) =&gt; TreeMutationResult</span> mutator; every tree-op returns that same result; the nine booleans move to their own slice and the persistence trio off the public interface.</div>
+            </div>
+            <div>
+              <span class="label text-slate-400 block mb-1">Wins</span>
+              <ul class="space-y-1.5 text-slate-700">
+                <li>&middot; locality: history, permission, selection in one place</li>
+                <li>&middot; deletes ~120 lines of clones</li>
+                <li>&middot; kills the <span class="mono text-xs">let changed</span> closure smuggled out of <span class="mono text-xs">set</span></li>
+                <li>&middot; the store is plain zustand — testable today, no test exists</li>
+                <li>&middot; consistent with ADR 0009: no domain logic enters the store</li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="rounded-lg border border-amber-200 bg-amber-50 px-4 py-2.5 text-sm text-amber-900">
+            ADR 0009 fixes "store actions are thin wrappers over tree-ops" — this keeps that and only collapses the wrappers into one. Nothing in the ADR asks for four copies of the same wrapper.
+          </div>
+        </article>
+
+        <!-- C3 -->
+        <article id="c3" class="rounded-xl border border-slate-200 bg-white p-7 space-y-6 shadow-sm">
+          <div class="space-y-3">
+            <div class="flex flex-wrap items-center gap-2">
+              <span class="rounded-full bg-emerald-100 text-emerald-800 px-2.5 py-0.5 text-xs font-semibold">Strong</span>
+              <span class="rounded-full bg-slate-100 text-slate-600 px-2.5 py-0.5 text-xs mono">in-process</span>
+              <span class="text-xs text-slate-400">C3</span>
+            </div>
+            <h2 class="font-serif text-2xl">Resolve <span class="mono text-xl">Block type</span> render props once</h2>
+            <p class="mono text-sm text-slate-500 leading-relaxed">
+              email-renderer/src/blocks/{shape,qr,text,richtext,button,divider,table,footer,video}.tsx &middot; email-renderer/src/styles.ts:5 &middot; shared/src/constants/template.ts:377,425,448 &middot; web/inspector/inherited-typography.ts:8 &middot; web/inspector/block-appearance-inspector.tsx:118-146
+            </p>
+          </div>
+
+          <div class="grid md:grid-cols-2 gap-5">
+            <div class="rounded-lg border border-slate-200 bg-stone-50 p-4">
+              <div class="label text-slate-400 mb-3">Before &middot; one rule, three descriptions</div>
+              <pre class="mermaid">
+flowchart LR
+  DP[defaultProps table<br/>shape grey · qr 128] --> CB[createBlock]
+  RB[renderer literals<br/>shape blue · qr 150] --> HTML[email HTML]
+  IT[inherited-typography<br/>mirror of the chain] --> INSP[inspector placeholder]
+  DP -.must agree.-> RB
+  RB -.must agree.-> IT
+  classDef leak stroke:#dc2626,stroke-width:2px,fill:#fee2e2,color:#7f1d1d;
+  class DP,RB,IT leak
+              </pre>
+            </div>
+            <div class="rounded-lg border-2 border-slate-900 bg-white p-4">
+              <div class="label text-slate-400 mb-3">After &middot; one resolver, three readers</div>
+              <pre class="mermaid">
+flowchart LR
+  DEF[block definitions] --> R[resolveBlockRenderProps<br/>block + settings]
+  SET[Template settings] --> R
+  R --> HTML[email HTML]
+  R --> INSP[inspector placeholder]
+  R --> CB[createBlock]
+  classDef deep fill:#0f172a,stroke:#0f172a,color:#f8fafc;
+  class R deep
+              </pre>
+            </div>
+          </div>
+
+          <div class="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-900 space-y-2">
+            <span class="label text-red-500 block">Already contradicting, in production</span>
+            <div class="mono text-xs leading-relaxed">
+              shape.tsx:9 &nbsp;color ?? "#2563eb" (blue)&nbsp; vs &nbsp;constants/template.ts:381 &nbsp;color: divider (#e5e7eb, grey)<br/>
+              shape.tsx:12-13 &nbsp;80×80&nbsp; / &nbsp;:34-35 &nbsp;80×80&nbsp; / &nbsp;:46-47 &nbsp;120×2&nbsp; vs &nbsp;:379-380 &nbsp;100×4 — three fallback pairs, none matching the default<br/>
+              qr.tsx:15 &nbsp;size ?? 150&nbsp; vs &nbsp;:427 &nbsp;size: 128<br/>
+              video.tsx:73 &nbsp;"▶ Watch Video"&nbsp; vs &nbsp;:85 &nbsp;"Watch Video" — HTML and plain text disagree
+            </div>
+            <div class="text-xs">Clear a shape's colour in the inspector and it renders blue; add a new shape and it is grey. 24 renderer literals duplicate a named constant two imports away.</div>
+          </div>
+
+          <div class="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-900">
+            <span class="label text-red-500 block mb-1">Also: <span class="mono">props</span> and <span class="mono">styles</span> are two presentation vocabularies with no precedence rule</span>
+            <span class="mono text-xs">borderRadius</span>, <span class="mono text-xs">borderWidth</span>, <span class="mono text-xs">width</span>, <span class="mono text-xs">textAlign</span> exist in both <span class="mono text-xs">blockStylesSchema</span> and per-block props, and each renderer resolves them differently:
+            <span class="mono text-xs">button.tsx:22</span> applies styles to the enclosing <span class="mono text-xs">&lt;Section&gt;</span> while <span class="mono text-xs">:31</span> applies props to the <span class="mono text-xs">&lt;Button&gt;</span> — different elements. The inspector exposes both, side by side (<span class="mono text-xs">block-appearance-inspector.tsx:396</span> and <span class="mono text-xs">:437</span>), so "Border radius" rounds the section and leaves the button square.
+          </div>
+
+          <div class="grid md:grid-cols-2 gap-6 text-sm">
+            <div class="space-y-3">
+              <div><span class="label text-slate-400 block mb-1">Problem</span>The <span class="mono text-xs">props.x ?? settings.x ?? literal</span> chain is written once per renderer and mirrored a third time in the inspector, held together by a comment.</div>
+              <div><span class="label text-slate-400 block mb-1">Solution</span>One resolver in <span class="mono text-xs">@repo/shared</span> returning fully-resolved props plus <span class="mono text-xs">{ outer, inner }</span> css; renderers and the inspector both read it.</div>
+            </div>
+            <div>
+              <span class="label text-slate-400 block mb-1">Wins</span>
+              <ul class="space-y-1.5 text-slate-700">
+                <li>&middot; locality: the fallback chain exists once</li>
+                <li>&middot; <span class="mono text-xs">inherited-typography.ts</span> deletes — no mirror to keep</li>
+                <li>&middot; props-vs-styles precedence stops being per-renderer</li>
+                <li>&middot; interface is the test surface: assert resolved values, which the current 196-line registry test cannot (it only asserts <span class="mono text-xs">not.toThrow</span>)</li>
+              </ul>
+            </div>
+          </div>
+        </article>
+
+        <!-- C4 -->
+        <article id="c4" class="rounded-xl border border-slate-200 bg-white p-7 space-y-6 shadow-sm ring-1 ring-emerald-200">
+          <div class="space-y-3">
+            <div class="flex flex-wrap items-center gap-2">
+              <span class="rounded-full bg-emerald-100 text-emerald-800 px-2.5 py-0.5 text-xs font-semibold">Strong</span>
+              <span class="rounded-full bg-slate-100 text-slate-600 px-2.5 py-0.5 text-xs mono">in-process</span>
+              <span class="rounded-full bg-emerald-600 text-white px-2.5 py-0.5 text-xs font-semibold">smallest diff</span>
+              <span class="text-xs text-slate-400">C4</span>
+            </div>
+            <h2 class="font-serif text-2xl">Make the block definition table answer to its zod description</h2>
+            <p class="mono text-sm text-slate-500 leading-relaxed">
+              shared/src/constants/template.ts:86,93,172,191,235,251,267,310,388 &middot; shared/src/schemas/template/blocks/content.ts:18,27,50,88,106,121,187,283 &middot; shared/src/template/resolve-brand-defaults.ts:71 &middot; web/inspector/block-inspector.tsx:337 &middot; api/src/templates/templates.service.ts:270
+            </p>
+          </div>
+
+          <div class="grid md:grid-cols-2 gap-5">
+            <div class="rounded-lg border border-slate-200 bg-stone-50 p-4">
+              <div class="label text-slate-400 mb-3">Before &middot; two descriptions, one cast between them</div>
+              <svg viewBox="0 0 320 210" class="w-full h-[210px]">
+                <rect x="10" y="24" width="130" height="80" fill="#fff" stroke="#64748b"/>
+                <text x="75" y="18" text-anchor="middle" class="label" fill="#64748b">zod prop schema</text>
+                <g font-size="9" font-family="ui-monospace,monospace" fill="#334155">
+                  <text x="18" y="42">fontSize .min(8)</text>
+                  <text x="18" y="55">.max(96)</text>
+                  <text x="18" y="70">level: 1|2|3|4|5|6</text>
+                  <text x="18" y="84">.strict()</text>
+                </g>
+                <rect x="180" y="24" width="130" height="80" fill="#fff" stroke="#64748b"/>
+                <text x="245" y="18" text-anchor="middle" class="label" fill="#64748b">definition table</text>
+                <g font-size="9" font-family="ui-monospace,monospace" fill="#334155">
+                  <text x="188" y="42">defaultProps:</text>
+                  <text x="188" y="55" fill="#dc2626">Record&lt;string,unknown&gt;</text>
+                  <text x="188" y="70">fields: no min/max</text>
+                  <text x="188" y="84" fill="#dc2626">options: String(level)</text>
+                </g>
+                <line x1="140" y1="64" x2="180" y2="64" stroke="#dc2626" stroke-width="2" class="seam"/>
+                <text x="160" y="58" text-anchor="middle" font-size="8" fill="#dc2626">no check</text>
+                <rect x="60" y="130" width="200" height="30" fill="#fee2e2" stroke="#dc2626"/>
+                <text x="160" y="149" text-anchor="middle" font-size="10" fill="#7f1d1d">inspector accepts fontSize 200</text>
+                <path d="M160 160 L160 174" stroke="#dc2626" stroke-width="2"/>
+                <path d="M156 174 L160 182 L164 174 Z" fill="#dc2626"/>
+                <text x="160" y="198" text-anchor="middle" font-size="10" fill="#7f1d1d">save → 400 Invalid template content, no block named</text>
+              </svg>
+            </div>
+            <div class="rounded-lg border-2 border-slate-900 bg-white p-4">
+              <div class="label text-slate-400 mb-3">After &middot; one description, descriptors derived</div>
+              <svg viewBox="0 0 320 210" class="w-full h-[210px]">
+                <rect x="60" y="22" width="200" height="46" fill="#0f172a" stroke="#0f172a"/>
+                <text x="160" y="16" text-anchor="middle" class="label" fill="#64748b">zod prop schema — sole description</text>
+                <text x="160" y="42" text-anchor="middle" font-size="9" fill="#f8fafc" font-family="ui-monospace,monospace">bounds · types · enums · strictness</text>
+                <text x="160" y="58" text-anchor="middle" font-size="9" fill="#94a3b8">defaultProps typed as z.input&lt;…&gt;["props"]</text>
+                <path d="M120 68 L100 96" stroke="#0f172a" stroke-width="1.5"/>
+                <path d="M200 68 L220 96" stroke="#0f172a" stroke-width="1.5"/>
+                <rect x="24" y="98" width="150" height="34" fill="#f8fafc" stroke="#94a3b8"/>
+                <text x="99" y="119" text-anchor="middle" font-size="9" fill="#475569">field descriptors (label only)</text>
+                <rect x="182" y="98" width="120" height="34" fill="#f8fafc" stroke="#94a3b8"/>
+                <text x="242" y="119" text-anchor="middle" font-size="9" fill="#475569">inspector min / max</text>
+                <rect x="60" y="152" width="200" height="42" fill="#ecfdf5" stroke="#059669"/>
+                <text x="160" y="169" text-anchor="middle" font-size="9" fill="#065f46">one table-driven test:</text>
+                <text x="160" y="184" text-anchor="middle" font-size="8.5" fill="#065f46" font-family="ui-monospace,monospace">every defaultProps parses · every field.prop exists</text>
+              </svg>
+            </div>
+          </div>
+
+          <div class="grid md:grid-cols-3 gap-4 text-sm">
+            <div class="rounded-lg border border-slate-200 p-4">
+              <div class="label text-slate-400 mb-2">Drift class 1 — latent</div>
+              <span class="mono text-xs">defaultProps: Record&lt;string, unknown&gt;</span> (<span class="mono text-xs">:86</span>), and <span class="mono text-xs">resolve-brand-defaults.ts:71</span> casts the <span class="mono text-xs">satisfies</span> typing away. A typo like <span class="mono text-xs">fontsize: 24</span> compiles, ships, and fails at the api's <span class="mono text-xs">safeParse</span>.
+            </div>
+            <div class="rounded-lg border border-red-200 bg-red-50 p-4 text-red-900">
+              <div class="label text-red-500 mb-2">Drift class 2 — live</div>
+              7 of 10 numeric field descriptors omit the bound their zod prop enforces: heading/text <span class="mono text-xs">fontSize</span>, button <span class="mono text-xs">borderRadius</span>, divider <span class="mono text-xs">thickness</span>, shape <span class="mono text-xs">width/height</span>, image/logo <span class="mono text-xs">width</span>. Three do carry it — proving intent.
+            </div>
+            <div class="rounded-lg border border-red-200 bg-red-50 p-4 text-red-900">
+              <div class="label text-red-500 mb-2">Drift class 3 — patched downstream</div>
+              The table stringifies heading levels (<span class="mono text-xs">:93</span>) while zod wants numeric literals, so the consumer guesses: <span class="mono text-xs">block-inspector.tsx:341</span> <span class="mono text-xs">Number()</span>s any option set that looks like digits.
+            </div>
+          </div>
+
+          <div class="grid md:grid-cols-2 gap-6 text-sm">
+            <div class="space-y-3">
+              <div><span class="label text-slate-400 block mb-1">Problem</span>Two independent descriptions of one <span class="mono text-xs">Block type</span>, with no compile-time or test-time check between them — and <span class="mono text-xs">constants/template.ts</span> (476 lines) plus <span class="mono text-xs">blocks/content.ts</span> (329 lines) both have zero tests.</div>
+              <div><span class="label text-slate-400 block mb-1">Solution</span>Type <span class="mono text-xs">defaultProps</span> from the schema, derive <span class="mono text-xs">min</span>/<span class="mono text-xs">max</span>/<span class="mono text-xs">kind</span> from the zod prop, and add one table-driven test over all 15 block types.</div>
+            </div>
+            <div>
+              <span class="label text-slate-400 block mb-1">Wins</span>
+              <ul class="space-y-1.5 text-slate-700">
+                <li>&middot; closes all three drift classes with one test</li>
+                <li>&middot; deletes <span class="mono text-xs">coerceSelectValue</span>'s digit-sniffing</li>
+                <li>&middot; adding a <span class="mono text-xs">Block type</span> goes from 13 files (8 silent) toward compile-enforced</li>
+                <li>&middot; leverage: the table every builder module reads becomes trustworthy</li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="rounded-lg border border-slate-200 bg-stone-50 px-4 py-3 text-xs text-slate-600">
+            <span class="label text-slate-400 block mb-1">Dead weight to remove while in here</span>
+            <span class="mono">allowedParents</span> (declared on all 18 entries, read by nobody — the real parent rule lives in <span class="mono">canvas-drop-target.ts:41</span>), <span class="mono">description</span>, <span class="mono">category</span>, <span class="mono">BLOCK_CATEGORIES</span>, and <span class="mono">TEMPLATE_CONTENT_VERSION</span> (every writer hardcodes <span class="mono">version: 1</span>).
+          </div>
+        </article>
+
+        <!-- C5 -->
+        <article id="c5" class="rounded-xl border border-slate-200 bg-white p-7 space-y-6 shadow-sm">
+          <div class="space-y-3">
+            <div class="flex flex-wrap items-center gap-2">
+              <span class="rounded-full bg-emerald-100 text-emerald-800 px-2.5 py-0.5 text-xs font-semibold">Strong</span>
+              <span class="rounded-full bg-slate-100 text-slate-600 px-2.5 py-0.5 text-xs mono">ports &amp; adapters</span>
+              <span class="text-xs text-slate-400">C5</span>
+            </div>
+            <h2 class="font-serif text-2xl">One HTTP module that parses at the web&#8596;api seam</h2>
+            <p class="mono text-sm text-slate-500 leading-relaxed">
+              web/src/lib/api-client.ts:55,76 &middot; web/src/lib/api/{assets,auth,contacts,invites,organizations,templates,users,workspaces}-api.ts &middot; web/src/lib/format-date.ts:3 &middot; web/src/lib/templates/working-copy-persistence.ts:52 &middot; web/components/template-builder/templates-list-view.tsx:31
+            </p>
+          </div>
+
+          <div class="rounded-lg border border-slate-200 bg-stone-50 p-4">
+            <div class="label text-slate-400 mb-3">Cross-section &middot; what a request passes through</div>
+            <div class="space-y-1.5">
+              <div class="flex items-center gap-3"><span class="mono text-xs w-40 text-right text-slate-500">call site</span><div class="flex-1 h-9 border-l-4 border-slate-400 bg-white flex items-center px-3 text-xs">hook supplies <span class="mono mx-1">token</span> from <span class="mono mx-1">useSession()</span> — ~45 sites</div></div>
+              <div class="flex items-center gap-3"><span class="mono text-xs w-40 text-right text-red-600">*-api.ts</span><div class="flex-1 h-9 border-l-4 border-red-400 bg-red-50 flex items-center px-3 text-xs text-red-900">70 functions &middot; <span class="font-semibold mx-1">64 contain nothing but</span> <span class="mono mx-1">return apiRequest(...)</span></div></div>
+              <div class="flex items-center gap-3"><span class="mono text-xs w-40 text-right text-slate-500">apiRequest</span><div class="flex-1 h-9 border-l-4 border-slate-400 bg-white flex items-center px-3 text-xs">headers + JSON body</div></div>
+              <div class="flex items-center gap-3"><span class="mono text-xs w-40 text-right text-red-600">parseApiResponse</span><div class="flex-1 h-9 border-l-4 border-red-400 bg-red-50 flex items-center px-3 text-xs text-red-900"><span class="mono mr-1">response.json()</span> before the <span class="mono mx-1">ok</span> check &middot; <span class="mono mx-1">payload.data</span> <span class="font-semibold">cast, never parsed</span></div></div>
+              <div class="flex items-center gap-3"><span class="mono text-xs w-40 text-right text-red-600">downstream</span><div class="flex-1 h-9 border-l-4 border-red-400 bg-red-50 flex items-center px-3 text-xs text-red-900"><span class="mono mr-1">parseApiDate</span> &middot; <span class="mono mx-1">toUpdatedAtToken</span> &times;2 verbatim — hand-written <span class="mono mx-1">Date | string</span> repairs</div></div>
+              <div class="mt-4 flex items-center gap-3"><span class="mono text-xs w-40 text-right text-emerald-700">after</span><div class="flex-1 h-16 border-l-4 border-slate-900 bg-slate-900 text-slate-100 flex flex-col justify-center px-3 text-xs"><span><span class="mono">api.get(path, { schema })</span> / <span class="mono">api.send(method, path, body, { schema })</span></span><span class="text-slate-400 mt-0.5">reads the token itself &middot; classifies transport failure &middot; returns parsed shared types</span></div></div>
+            </div>
+          </div>
+
+          <div class="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-900">
+            <span class="label text-red-500 block mb-1">The declared type is wrong at runtime, everywhere</span>
+            34 shared schemas use <span class="mono text-xs">z.coerce.date()</span>, so <span class="mono text-xs">WorkspaceListItemData.createdAt</span> is typed <span class="mono text-xs">Date</span>. <span class="mono text-xs">res.json()</span> makes it a string; <span class="mono text-xs">api-client.ts:56</span> casts. Any new call site that trusts the type — <span class="mono text-xs">organization.createdAt.getTime()</span> — type-checks clean and throws. The three <span class="mono text-xs">Date | string</span> adapters already written downstream are the tell.
+          </div>
+
+          <div class="grid md:grid-cols-2 gap-6 text-sm">
+            <div class="space-y-3">
+              <div><span class="label text-slate-400 block mb-1">Deletion test</span>Deleting the <span class="mono text-xs">*-api.ts</span> tier only <em>moves</em> 64 path strings into the <span class="mono text-xs">queryFn</span> closures that already know the workspace id — no concentration. The concentration runs the other way: fold the tier into the HTTP module and give it a <span class="mono text-xs">schema</span>. Verdict: deepen the client, retire the tier.</div>
+              <div><span class="label text-slate-400 block mb-1">Solution</span>One module that reads the token from the session source, classifies non-JSON / empty / network failures as <span class="mono text-xs">ApiClientError</span>, and parses <span class="mono text-xs">payload.data</span> with the shared schema.</div>
+            </div>
+            <div>
+              <span class="label text-slate-400 block mb-1">Wins</span>
+              <ul class="space-y-1.5 text-slate-700">
+                <li>&middot; one adapter at the seam replaces four downstream repairs</li>
+                <li>&middot; <span class="mono text-xs">token</span> leaves 70 signatures and ~45 call sites</li>
+                <li>&middot; "Unexpected token '&lt;' … is not valid JSON" stops reaching the sign-in form</li>
+                <li>&middot; leverage: <span class="mono text-xs">signal</span> and query-string serialisation become free, not hand-rolled per resource</li>
+                <li>&middot; 77 lines become the highest-value test file in <span class="mono text-xs">apps/web</span> (currently zero tests in this area)</li>
+              </ul>
+            </div>
+          </div>
+        </article>
+
+        <!-- C6 -->
+        <article id="c6" class="rounded-xl border border-slate-200 bg-white p-7 space-y-6 shadow-sm">
+          <div class="space-y-3">
+            <div class="flex flex-wrap items-center gap-2">
+              <span class="rounded-full bg-emerald-100 text-emerald-800 px-2.5 py-0.5 text-xs font-semibold">Strong</span>
+              <span class="rounded-full bg-slate-100 text-slate-600 px-2.5 py-0.5 text-xs mono">in-process</span>
+              <span class="text-xs text-slate-400">C6</span>
+            </div>
+            <h2 class="font-serif text-2xl">One membership module, two scope adapters</h2>
+            <p class="mono text-sm text-slate-500 leading-relaxed">
+              api: workspaces/workspaces.service.ts:306,346,377,390 &middot; organizations/organizations.service.ts:261,292 &middot; workspaces/guards/workspace.guard.ts:20 &middot; organizations/guards/organization.guard.ts:20 &middot; workspace-access.service.ts:112 &middot; organization-access.service.ts:69<br/>
+              web: lib/org/org-hooks.ts:53-127 &middot; lib/workspaces/workspace-member-hooks.ts:50-124 &middot; components/org/org-members-section.tsx &middot; components/workspace/workspace-members-section.tsx
+            </p>
+          </div>
+
+          <div class="grid md:grid-cols-2 gap-5">
+            <div class="rounded-lg border border-slate-200 bg-stone-50 p-4">
+              <div class="label text-slate-400 mb-3">Before &middot; the same shape, twice, top to bottom</div>
+              <pre class="mermaid">
+flowchart TB
+  subgraph ORG[organization scope]
+    OG[OrganizationGuard] --> OA[organization-access]
+    OS[organizations.service<br/>updateMemberRole · removeMember]
+    OH[org-hooks] --> OV[org-members-section]
+  end
+  subgraph WS[workspace scope]
+    WG[WorkspaceGuard] --> WA[workspace-access]
+    WSS[workspaces.service<br/>removeMember · updateRole<br/>deleteWorkspace · leave]
+    WH[workspace-member-hooks] --> WV[workspace-members-section]
+  end
+  OG -.identical modulo param key.- WG
+  OS -.owner rule written 6x.- WSS
+  OH -.identical modulo noun.- WH
+              </pre>
+            </div>
+            <div class="rounded-lg border-2 border-slate-900 bg-white p-4">
+              <div class="label text-slate-400 mb-3">After &middot; one implementation, scope as data</div>
+              <pre class="mermaid">
+flowchart TB
+  G[ScopeGuard<br/>param key + role predicate as metadata] --> M[membership module<br/>of · assertAtLeast<br/>changeRole · remove · leave]
+  M --> DB[(drizzle)]
+  H[useMembership<br/>keys + invalidation policy] --> V[MembersSection]
+  OA[org adapter ~15 lines] --> M
+  WA[workspace adapter ~15 lines] --> M
+  OA2[org adapter] --> H
+  WA2[workspace adapter] --> H
+  classDef deep fill:#0f172a,stroke:#0f172a,color:#f8fafc;
+  class M,H deep
+              </pre>
+            </div>
+          </div>
+
+          <div class="grid md:grid-cols-4 gap-3 text-sm">
+            <div class="rounded-lg border border-red-200 bg-red-50 p-3 text-red-900"><div class="text-2xl font-serif">6&times;</div><div class="text-xs mt-1">implementations of the owner-is-immutable invariant. A seventh operation omits it silently.</div></div>
+            <div class="rounded-lg border border-red-200 bg-red-50 p-3 text-red-900"><div class="text-2xl font-serif">13&times;</div><div class="text-xs mt-1"><span class="mono">and(eq(scopeId), eq(userId))</span> — the most duplicated expression in <span class="mono">apps/api/src</span>.</div></div>
+            <div class="rounded-lg border border-red-200 bg-red-50 p-3 text-red-900"><div class="text-2xl font-serif">2&times;</div><div class="text-xs mt-1">"is this user privileged": <span class="mono">organizations.service.ts:152</span> re-derives what <span class="mono">hasOrganizationRoleAtLeast</span> already answers for the guard.</div></div>
+            <div class="rounded-lg border border-red-200 bg-red-50 p-3 text-red-900"><div class="text-2xl font-serif">~740</div><div class="text-xs mt-1">lines of twinned web hooks + member views, none tested.</div></div>
+          </div>
+
+          <div class="grid md:grid-cols-2 gap-6 text-sm">
+            <div class="space-y-3">
+              <div><span class="label text-slate-400 block mb-1">Problem</span>Organization and workspace membership are the same operations over a different scope column, implemented separately at every level — guard, access resolution, mutation, hook, view.</div>
+              <div><span class="label text-slate-400 block mb-1">Solution</span>One membership module owning the role lattice and the owner rule, with two small scope adapters; one <span class="mono text-xs">useMembership</span> owning the keys and invalidation policy.</div>
+            </div>
+            <div>
+              <span class="label text-slate-400 block mb-1">Wins</span>
+              <ul class="space-y-1.5 text-slate-700">
+                <li>&middot; locality: authorization invariants concentrate in one module</li>
+                <li>&middot; interface is the test surface: one suite covers both scopes</li>
+                <li>&middot; the invite/member invalidation set stops being written six times</li>
+                <li>&middot; two adapters justify the seam — it is real, not hypothetical</li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="rounded-lg border border-amber-200 bg-amber-50 px-4 py-2.5 text-sm text-amber-900">
+            Extends ADR 0002, which already consolidated the workspace half ("guards do not query Drizzle directly") — the org half was then built as a second copy. ADR 0006 calls org membership "a separate layer"; that stays true of the <em>seam</em> (org membership is still required before workspace access) — only the implementation unifies.
+          </div>
+        </article>
+
+        <!-- C7 -->
+        <article id="c7" class="rounded-xl border border-slate-200 bg-white p-7 space-y-6 shadow-sm">
+          <div class="space-y-3">
+            <div class="flex flex-wrap items-center gap-2">
+              <span class="rounded-full bg-emerald-100 text-emerald-800 px-2.5 py-0.5 text-xs font-semibold">Strong</span>
+              <span class="rounded-full bg-slate-100 text-slate-600 px-2.5 py-0.5 text-xs mono">local-substitutable</span>
+              <span class="text-xs text-slate-400">C7</span>
+            </div>
+            <h2 class="font-serif text-2xl">Provisioning owns its transaction — take <span class="mono text-xl">tx?</span> off 19 signatures</h2>
+            <p class="mono text-sm text-slate-500 leading-relaxed">
+              api/src/workspaces/workspaces.service.ts:55-125 &middot; organizations/organizations.service.ts:43-75 &middot; onboarding/registration.service.ts:39-86 &middot; users/users.service.ts:31,40,52,77,91,105 &middot; accounts/accounts.service.ts:18,37,58 &middot; auth/auth-tokens.service.ts:37,61,79,102 &middot; membership/membership-commands.service.ts:28,68
+            </p>
+          </div>
+
+          <div class="rounded-lg border-2 border-red-300 bg-red-50 px-4 py-4 text-sm text-red-900 space-y-2">
+            <span class="label text-red-500 block">Authorization is keyed on a transaction argument</span>
+            <pre class="mono text-xs bg-white/70 rounded p-3 overflow-x-auto">const db = tx ?? this.db;
+
+if (!tx) {
+  await this.organizationsService.assertCanManageWorkspaces(userId, dto.organizationId);
+}   // ← workspaces.service.ts:60-67</pre>
+            <div>Pass a transaction and the permission check is skipped. Called from HTTP (<span class="mono text-xs">workspaces.controller.ts:48</span>) there is <em>no</em> transaction at all, so the four writes — slug check, workspace, owner membership, starter <span class="mono text-xs">Saved module</span>s — are unguarded: a failure after the workspace insert leaves a workspace with no owner. Same shape in <span class="mono text-xs">organizations.service.ts:43</span>.</div>
+          </div>
+
+          <div class="grid md:grid-cols-2 gap-5">
+            <div class="rounded-lg border border-slate-200 bg-stone-50 p-4">
+              <div class="label text-slate-400 mb-3">Before &middot; transaction plumbing is public interface</div>
+              <pre class="mermaid">
+flowchart LR
+  R[registration.service<br/>owns the ordering] -->|tx| U[users.service]
+  R -->|tx| A[accounts.service]
+  R -->|tx| T[auth-tokens.service]
+  R -->|tx| O[organizations.service]
+  R -->|tx| W[workspaces.service]
+  R -->|tx| S[sessions.service]
+  W -.tx also disables<br/>the permission check.-> X[assertCanManageWorkspaces]
+  classDef leak stroke:#dc2626,stroke-width:2px,fill:#fee2e2,color:#7f1d1d;
+  class X leak
+              </pre>
+            </div>
+            <div class="rounded-lg border-2 border-slate-900 bg-white p-4">
+              <div class="label text-slate-400 mb-3">After &middot; the seam that owns Drizzle owns the transaction</div>
+              <pre class="mermaid">
+flowchart LR
+  R[registerUser<br/>one operation] --> RT[runInTransaction]
+  RT --> U[users]
+  RT --> A[accounts]
+  RT --> O[organizations]
+  RT --> W[provisionWorkspace<br/>always authorizes]
+  R --> MAIL[dispatch System email<br/>after commit]
+  classDef deep fill:#0f172a,stroke:#0f172a,color:#f8fafc;
+  class RT,W deep
+              </pre>
+            </div>
+          </div>
+
+          <div class="grid md:grid-cols-2 gap-6 text-sm">
+            <div class="space-y-3">
+              <div><span class="label text-slate-400 block mb-1">Problem</span>~19 write methods publish an optional <span class="mono text-xs">tx</span> purely so one caller can compose them, and the composition's invariants — ordering, "mail only after commit", "authorize exactly once" — live in that caller's body.</div>
+              <div><span class="label text-slate-400 block mb-1">Solution</span>Ambient transaction context resolved by the module that owns Drizzle; <span class="mono text-xs">provisionWorkspace</span> opens its own and always authorizes, with the sign-up case as a distinct named operation rather than a <span class="mono text-xs">tx</span> flag.</div>
+            </div>
+            <div>
+              <span class="label text-slate-400 block mb-1">Wins</span>
+              <ul class="space-y-1.5 text-slate-700">
+                <li>&middot; closes a live authorization hole</li>
+                <li>&middot; <span class="mono text-xs">tx?</span> leaves 19 interfaces</li>
+                <li>&middot; no orphan workspaces or ownerless memberships</li>
+                <li>&middot; same fix applies to <span class="mono text-xs">Contact</span> + <span class="mono text-xs">Contact list</span> creation, sequenced today by <span class="mono text-xs">contacts.controller.ts:61</span></li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="rounded-lg border border-slate-200 bg-stone-50 px-4 py-3 text-xs text-slate-600">
+            <span class="label text-slate-400 block mb-1">Adjacent, same category</span>
+            <span class="mono">ensureOrgMember</span>/<span class="mono">ensureWorkspaceMember</span> (<span class="mono">membership-commands.service.ts:30,70</span>) and <span class="mono">upsertPendingInvite</span> (<span class="mono">invites.service.ts:360</span>) are check-then-insert, not upserts — two concurrent <span class="mono">Invite</span>s to one address create two pending rows, and mail goes out at <span class="mono">:427</span> regardless of commit. The <span class="mono">onConflictDoUpdate</span> pattern is already in the repo at <span class="mono">assets.service.ts:127</span>.
+          </div>
+        </article>
+
+        <!-- C8 -->
+        <article id="c8" class="rounded-xl border border-slate-200 bg-white p-7 space-y-6 shadow-sm">
+          <div class="space-y-3">
+            <div class="flex flex-wrap items-center gap-2">
+              <span class="rounded-full bg-amber-100 text-amber-800 px-2.5 py-0.5 text-xs font-semibold">Worth exploring</span>
+              <span class="rounded-full bg-slate-100 text-slate-600 px-2.5 py-0.5 text-xs mono">local-substitutable</span>
+              <span class="text-xs text-slate-400">C8</span>
+            </div>
+            <h2 class="font-serif text-2xl">Give <span class="mono text-xl">Contact import</span> a state machine it owns</h2>
+            <p class="mono text-sm text-slate-500 leading-relaxed">
+              api/src/contacts/contact-imports.service.ts:99-129,170-265,262 &middot; contacts/contact.mapper.ts:46 &middot; contacts/list-members.service.ts:120,223 &middot; test/contacts.e2e-spec.ts:113
+            </p>
+          </div>
+
+          <div class="rounded-lg border-2 border-red-300 bg-red-50 px-4 py-4 text-sm text-red-900 space-y-2">
+            <span class="label text-red-500 block">Confirmed defect: every completed import reports zero rows</span>
+            <pre class="mono text-xs bg-white/70 rounded p-3 overflow-x-auto">runImport()  … :262   parsedRows: []      // cleared on completion
+contact.mapper.ts:46   rowCount: job.parsedRows.length   // → 0</pre>
+            <div>The e2e test asserts only <span class="mono text-xs">status</span> and <span class="mono text-xs">processedCount</span> (<span class="mono text-xs">:113</span>), so nothing catches it. Separately, <span class="mono text-xs">:127</span> starts the work as <span class="mono text-xs">void this.processImport(importId)</span> — a process restart mid-import leaves the row in <span class="mono text-xs">processing</span> forever, and the checkpoint at <span class="mono text-xs">:245</span> only fires every 50 <em>processed</em> rows, so an all-error import never checkpoints at all.</div>
+          </div>
+
+          <div class="grid md:grid-cols-2 gap-5">
+            <div class="rounded-lg border border-slate-200 bg-stone-50 p-4">
+              <div class="label text-slate-400 mb-3">Before &middot; state spread across three methods and a <span class="mono">void</span></div>
+              <pre class="mermaid">
+stateDiagram-v2
+  [*] --> pending
+  pending --> processing: startImport :114
+  processing --> processing: void processImport :127
+  processing --> completed: runImport :262 clears parsedRows
+  processing --> failed: markFailed :316
+  processing --> stuck: process restart
+  note right of stuck: no recovery path
+              </pre>
+            </div>
+            <div class="rounded-lg border-2 border-slate-900 bg-white p-4">
+              <div class="label text-slate-400 mb-3">After &middot; one module, resumable, queue-fed</div>
+              <pre class="mermaid">
+flowchart TB
+  API[POST import] --> M[import module<br/>start · advance · finish]
+  M --> Q[(Send queue<br/>IMPORT_CONTACTS_JOB)]
+  Q --> M
+  M --> S[subscribe: one operation<br/>status + double opt-in token]
+  M --> P[(persisted rowCount<br/>resumable cursor)]
+  classDef deep fill:#0f172a,stroke:#0f172a,color:#f8fafc;
+  class M deep
+              </pre>
+            </div>
+          </div>
+
+          <div class="grid md:grid-cols-2 gap-6 text-sm">
+            <div class="space-y-3">
+              <div><span class="label text-slate-400 block mb-1">Problem</span>The job's state transitions, its progress accounting, and its background execution are three separate implementations, and <span class="mono text-xs">List membership status</span> derivation is written twice (<span class="mono text-xs">:120</span> and <span class="mono text-xs">:223</span>) with the second copy untested and taking pre-fetched rows so the caller owns the freshness invariant.</div>
+              <div><span class="label text-slate-400 block mb-1">Solution</span>One import module owning the state machine with a persisted row count and a resumable cursor, plus one <span class="mono text-xs">subscribe(listId, contactId)</span> that derives status and issues the double-opt-in token in a single transaction.</div>
+            </div>
+            <div>
+              <span class="label text-slate-400 block mb-1">Wins</span>
+              <ul class="space-y-1.5 text-slate-700">
+                <li>&middot; fixes <span class="mono text-xs">rowCount: 0</span> and the stuck-<span class="mono text-xs">processing</span> row</li>
+                <li>&middot; locality: consent rules in one place, tested once</li>
+                <li>&middot; <span class="mono text-xs">mapRow</span>/<span class="mono text-xs">toAttributeKey</span> (<span class="mono text-xs">:267-314</span>) are pure and currently untested — free coverage</li>
+                <li>&middot; the <span class="mono text-xs">Send queue</span> job payload already exists; this is its first real adapter</li>
+              </ul>
+            </div>
+          </div>
+        </article>
+
+        <!-- C9 -->
+        <article id="c9" class="rounded-xl border border-slate-200 bg-white p-7 space-y-6 shadow-sm">
+          <div class="space-y-3">
+            <div class="flex flex-wrap items-center gap-2">
+              <span class="rounded-full bg-amber-100 text-amber-800 px-2.5 py-0.5 text-xs font-semibold">Worth exploring</span>
+              <span class="rounded-full bg-slate-100 text-slate-600 px-2.5 py-0.5 text-xs mono">ports &amp; adapters</span>
+              <span class="text-xs text-slate-400">C9</span>
+            </div>
+            <h2 class="font-serif text-2xl">One <span class="mono text-xl">Object storage</span> reference module; order the delete</h2>
+            <p class="mono text-sm text-slate-500 leading-relaxed">
+              api/src/storage/assets.service.ts:58-75,77-135,240-268,270-367,369-458 &middot; storage/disabled-object-storage.ts:9-24 &middot; storage/assets.controller.ts:41-57
+            </p>
+          </div>
+
+          <div class="grid md:grid-cols-2 gap-5">
+            <div class="rounded-lg border border-slate-200 bg-stone-50 p-4">
+              <div class="label text-slate-400 mb-3">Before &middot; two walks, one destructive order</div>
+              <svg viewBox="0 0 320 220" class="w-full h-[220px]">
+                <text x="10" y="14" class="label" fill="#64748b">detachAssetUrl :270-367</text>
+                <text x="180" y="14" class="label" fill="#64748b">findAssetUsage :369-458</text>
+                <g font-size="8.5" font-family="ui-monospace,monospace" fill="#334155">
+                  <rect x="10" y="22" width="130" height="76" fill="#fff" stroke="#dc2626"/>
+                  <text x="18" y="38">workspaces.brandKit</text>
+                  <text x="18" y="52">templates.content</text>
+                  <text x="18" y="66">templateRevisions.content</text>
+                  <text x="18" y="80">workspaceModules.content</text>
+                  <text x="18" y="94" fill="#dc2626">as SectionBlock ×3</text>
+                  <rect x="180" y="22" width="130" height="76" fill="#fff" stroke="#dc2626"/>
+                  <text x="188" y="38">workspaces.brandKit</text>
+                  <text x="188" y="52">templates.content</text>
+                  <text x="188" y="66">templateRevisions.content</text>
+                  <text x="188" y="80">workspaceModules.content</text>
+                  <text x="188" y="94" fill="#dc2626">as SectionBlock ×3</text>
+                </g>
+                <text x="160" y="116" text-anchor="middle" font-size="9" fill="#dc2626">188 lines, same predicates, one counts and one strips</text>
+                <text x="10" y="140" class="label" fill="#64748b">deleteAsset :240-268 — no transaction</text>
+                <g font-size="9" fill="#7f1d1d">
+                  <rect x="10" y="148" width="88" height="26" fill="#fee2e2" stroke="#dc2626"/><text x="54" y="165" text-anchor="middle">detach refs</text>
+                  <rect x="112" y="148" width="88" height="26" fill="#fee2e2" stroke="#dc2626"/><text x="156" y="165" text-anchor="middle">delete bytes</text>
+                  <rect x="214" y="148" width="96" height="26" fill="#fee2e2" stroke="#dc2626"/><text x="262" y="165" text-anchor="middle">delete row → 404</text>
+                </g>
+                <path d="M98 161 L110 161" stroke="#dc2626" stroke-width="2"/><path d="M200 161 L212 161" stroke="#dc2626" stroke-width="2"/>
+                <text x="160" y="192" text-anchor="middle" font-size="9" fill="#7f1d1d">the 404 for "already gone" fires after the bytes are destroyed</text>
+                <text x="160" y="208" text-anchor="middle" font-size="9" fill="#7f1d1d">and listAssets writes rows on a GET (:77-135, errors swallowed :131)</text>
+              </svg>
+            </div>
+            <div class="rounded-lg border-2 border-slate-900 bg-white p-4">
+              <div class="label text-slate-400 mb-3">After &middot; one traversal, retryable tail</div>
+              <pre class="mermaid">
+flowchart TB
+  R[references orgId, url<br/>one walk] --> U[usage report]
+  R --> D[detach references]
+  subgraph TXN[one transaction]
+    D --> ROW[delete metadata row]
+  end
+  ROW --> B[delete bytes: retryable tail]
+  L[listAssets: pure read] --> REC[reconcile: explicit operation]
+  classDef deep fill:#0f172a,stroke:#0f172a,color:#f8fafc;
+  class R deep
+              </pre>
+            </div>
+          </div>
+
+          <div class="grid md:grid-cols-2 gap-6 text-sm">
+            <div class="space-y-3">
+              <div><span class="label text-slate-400 block mb-1">Problem</span>The same four-table walk is written twice, deletion orders three irreversible steps outside a transaction, and a read performs writes. 507 lines with zero tests and no e2e spec.</div>
+              <div><span class="label text-slate-400 block mb-1">Solution</span>One reference module (<span class="mono text-xs">references()</span> + <span class="mono text-xs">detach()</span>) shared by usage-reporting and deletion; metadata and references in one transaction with the object delete as the final retryable step.</div>
+            </div>
+            <div>
+              <span class="label text-slate-400 block mb-1">Wins</span>
+              <ul class="space-y-1.5 text-slate-700">
+                <li>&middot; a new content-bearing table is one edit, not two</li>
+                <li>&middot; leverage: the walk is the thing to test, once</li>
+                <li>&middot; the <span class="mono text-xs">ObjectStorage</span> seam stays — two adapters justify it</li>
+                <li>&middot; fixes <span class="mono text-xs">DisabledObjectStorage.listObjects</span> returning <span class="mono text-xs">[]</span> while its siblings throw, so an unconfigured deployment reports "no assets" instead of failing</li>
+              </ul>
+            </div>
+          </div>
+        </article>
+
+        <!-- C10 -->
+        <article id="c10" class="rounded-xl border border-slate-200 bg-white p-7 space-y-6 shadow-sm">
+          <div class="space-y-3">
+            <div class="flex flex-wrap items-center gap-2">
+              <span class="rounded-full bg-amber-100 text-amber-800 px-2.5 py-0.5 text-xs font-semibold">Worth exploring</span>
+              <span class="rounded-full bg-slate-100 text-slate-600 px-2.5 py-0.5 text-xs mono">ports &amp; adapters</span>
+              <span class="text-xs text-slate-400">C10</span>
+            </div>
+            <h2 class="font-serif text-2xl">Build the <span class="mono text-xl">System email</span> deliver seam ADR 0014 already specifies</h2>
+            <p class="mono text-sm text-slate-500 leading-relaxed">
+              api/src/email/email.service.ts:1-22,24-98,100-166
+            </p>
+          </div>
+
+          <div class="grid md:grid-cols-2 gap-5">
+            <div class="rounded-lg border border-slate-200 bg-stone-50 p-4">
+              <div class="label text-slate-400 mb-3">Before &middot; call-graph, four times over</div>
+              <svg viewBox="0 0 300 190" class="w-full h-[190px]">
+                <g font-size="9" font-family="ui-monospace,monospace">
+                  <rect x="8" y="16" width="136" height="72" fill="#fff" stroke="#dc2626"/>
+                  <text x="14" y="30" fill="#7f1d1d">sendVerificationEmail</text>
+                  <text x="20" y="44" fill="#475569">build url</text>
+                  <text x="20" y="56" fill="#475569">if !client → log</text>
+                  <text x="20" y="68" fill="#475569">resend.emails.send</text>
+                  <text x="20" y="82" fill="#475569">inline-styled html</text>
+                  <rect x="156" y="16" width="136" height="72" fill="#fff" stroke="#dc2626"/>
+                  <text x="162" y="30" fill="#7f1d1d">sendPasswordReset</text>
+                  <text x="168" y="44" fill="#475569">build url</text>
+                  <text x="168" y="56" fill="#475569">if !client → log</text>
+                  <text x="168" y="68" fill="#475569">resend.emails.send</text>
+                  <text x="168" y="82" fill="#475569">inline-styled html</text>
+                  <rect x="8" y="98" width="136" height="72" fill="#fff" stroke="#dc2626"/>
+                  <text x="14" y="112" fill="#7f1d1d">sendInvite</text>
+                  <text x="20" y="126" fill="#475569">build url</text>
+                  <text x="20" y="138" fill="#475569">if !client → log</text>
+                  <text x="20" y="150" fill="#475569">resend.emails.send</text>
+                  <text x="20" y="164" fill="#475569">inline-styled html</text>
+                  <rect x="156" y="98" width="136" height="72" fill="#fff" stroke="#dc2626"/>
+                  <text x="162" y="112" fill="#7f1d1d">sendListConfirm</text>
+                  <text x="168" y="126" fill="#475569">build url</text>
+                  <text x="168" y="138" fill="#475569">if !client → log</text>
+                  <text x="168" y="150" fill="#475569">resend.emails.send</text>
+                  <text x="168" y="164" fill="#475569">inline-styled html</text>
+                </g>
+              </svg>
+              <p class="text-xs text-red-800 mt-2"><span class="mono">new Resend(process.env.RESEND_API_KEY)</span> at <span class="mono">:1-22</span>, plus <span class="mono">getWebOrigin()</span>/<span class="mono">getEmailFrom()</span> reading env per call.</p>
+            </div>
+            <div class="rounded-lg border-2 border-slate-900 bg-white p-4">
+              <div class="label text-slate-400 mb-3">After &middot; collapsed, with the calls faded inside</div>
+              <svg viewBox="0 0 300 190" class="w-full h-[190px]">
+                <rect x="20" y="18" width="260" height="30" fill="#0f172a" stroke="#0f172a"/>
+                <text x="150" y="38" text-anchor="middle" font-size="10" fill="#f8fafc" font-family="ui-monospace,monospace">send(kind, to, vars)</text>
+                <rect x="20" y="56" width="260" height="72" fill="#f8fafc" stroke="#0f172a" stroke-width="2"/>
+                <g font-size="9" font-family="ui-monospace,monospace" fill="#94a3b8">
+                  <text x="30" y="74">table: subject · heading · cta per kind</text>
+                  <text x="30" y="88">render via @repo/email-renderer</text>
+                  <text x="30" y="102">verification · reset · invite · list-confirm</text>
+                  <text x="30" y="116">(now internal)</text>
+                </g>
+                <line x1="150" y1="128" x2="150" y2="142" stroke="#64748b" stroke-width="2" class="seam"/>
+                <rect x="24" y="146" width="120" height="30" fill="#fff" stroke="#64748b"/>
+                <text x="84" y="165" text-anchor="middle" font-size="9" fill="#475569">Resend adapter</text>
+                <rect x="156" y="146" width="120" height="30" fill="#fff" stroke="#64748b"/>
+                <text x="216" y="165" text-anchor="middle" font-size="9" fill="#475569">log adapter (tests)</text>
+              </svg>
+            </div>
+          </div>
+
+          <div class="grid md:grid-cols-2 gap-6 text-sm">
+            <div class="space-y-3">
+              <div><span class="label text-slate-400 block mb-1">Problem</span>Four copies of "build url → if no client, log → send" and four copies of the same inline-styled markup, with the Resend SDK constructed from env inside the module that also writes the HTML.</div>
+              <div><span class="label text-slate-400 block mb-1">Solution</span>One <span class="mono text-xs">send(kind, to, vars)</span> over a table of subject/heading/CTA, rendered by the renderer already in the repo, behind a deliver seam with a Resend adapter and a log adapter.</div>
+            </div>
+            <div>
+              <span class="label text-slate-400 block mb-1">Wins</span>
+              <ul class="space-y-1.5 text-slate-700">
+                <li>&middot; a new <span class="mono text-xs">System email</span> is one table row</li>
+                <li>&middot; two adapters make the seam real, mirroring <span class="mono text-xs">ObjectStorage</span></li>
+                <li>&middot; mail becomes assertable without env</li>
+                <li>&middot; leverage: the existing renderer replaces four hand-written HTML blocks — no new dependency</li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="rounded-lg border border-amber-200 bg-amber-50 px-4 py-2.5 text-sm text-amber-900">
+            Not a new decision: ADR 0014 records this seam, and <span class="mono text-xs">CONTEXT.md</span> &rarr; <span class="mono text-xs">System email</span> already says "app-level <strong>deliver</strong> adapters (v1: Resend when configured, otherwise log)" and lists "Resend SDK imports in every call site" under <em>Avoid</em>. This candidate is the unbuilt half of an accepted ADR.
+          </div>
+        </article>
+
+        <!-- C11 -->
+        <article id="c11" class="rounded-xl border border-slate-200 bg-white p-7 space-y-6 shadow-sm">
+          <div class="space-y-3">
+            <div class="flex flex-wrap items-center gap-2">
+              <span class="rounded-full bg-slate-200 text-slate-700 px-2.5 py-0.5 text-xs font-semibold">Speculative</span>
+              <span class="rounded-full bg-slate-100 text-slate-600 px-2.5 py-0.5 text-xs mono">in-process</span>
+              <span class="text-xs text-slate-400">C11</span>
+            </div>
+            <h2 class="font-serif text-2xl">Render the builder preview in the builder</h2>
+            <p class="mono text-sm text-slate-500 leading-relaxed">
+              web/package.json (no <span class="mono">@repo/email-renderer</span>) &middot; lib/templates/use-rendered-preview.ts:45-67 &middot; canvas/canvas-preview-controller.ts:43-84 &middot; canvas/preview-canvas.tsx:157 &middot; shared/src/template/preview-layout-snapshot.ts:58 &middot; email-renderer/src/index.ts:12
+            </p>
+          </div>
+
+          <div class="rounded-lg border-2 border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+            <span class="label text-amber-600 block mb-1">Contradicts ADR 0013 — surfaced because the friction is structural, not stylistic</span>
+            ADR 0013 rejects "Replace iframe with a React canvas tree" and keeps "the server-rendered iframe preview and <span class="mono text-xs">@repo/email-renderer</span> as the rendered source of truth". Two things worth separating when reopening it: the ADR's stated risk is <em>preview/send drift from a parallel renderer</em> — calling the <em>same</em> <span class="mono text-xs">renderTemplate</span> in the browser introduces no second renderer, and the iframe stays. What would change is only <em>where</em> the same function runs.
+          </div>
+
+          <div class="grid md:grid-cols-2 gap-5">
+            <div class="rounded-lg border border-slate-200 bg-stone-50 p-4">
+              <div class="label text-slate-400 mb-3">Before &middot; a keystroke's round trip</div>
+              <pre class="mermaid">
+sequenceDiagram
+  participant U as keystroke
+  participant S as builder store
+  participant D as debounce + hash
+  participant A as api renderPreview
+  participant I as iframe
+  U->>S: mutate content
+  S->>D: content changed
+  D->>A: POST full content
+  A-->>D: html
+  D->>I: patch or reload
+  Note over D,I: previewMatchesContent · pausedHtml<br/>layoutKey · iframeReady
+              </pre>
+            </div>
+            <div class="rounded-lg border-2 border-slate-900 bg-white p-4">
+              <div class="label text-slate-400 mb-3">After &middot; the same function, no network</div>
+              <pre class="mermaid">
+sequenceDiagram
+  participant U as keystroke
+  participant S as builder store
+  participant R as renderTemplate same module
+  participant I as iframe
+  U->>S: mutate content
+  S->>R: content
+  R->>I: html
+  Note over S,I: no debounce, no hash key,<br/>no pause/resume state
+              </pre>
+            </div>
+          </div>
+
+          <div class="grid md:grid-cols-2 gap-6 text-sm">
+            <div class="space-y-3">
+              <div><span class="label text-slate-400 block mb-1">Problem</span>The builder cannot answer "what does this content render as" without a network call, which is the root reason the inspector re-derives renderer knowledge (C3) and why the preview needs a hash key, a debounce, a pause/resume pair, and a layout key.</div>
+              <div><span class="label text-slate-400 block mb-1">Solution</span>Add <span class="mono text-xs">@repo/email-renderer</span> to <span class="mono text-xs">apps/web</span> and render locally; keep the api endpoint for export, <span class="mono text-xs">Template list preview</span>, and campaign send.</div>
+            </div>
+            <div>
+              <span class="label text-slate-400 block mb-1">Wins &amp; open questions</span>
+              <ul class="space-y-1.5 text-slate-700">
+                <li>&middot; deletes <span class="mono text-xs">preview-sync</span>, the debounce, and most of <span class="mono text-xs">resolvePreviewUpdate</span>'s state</li>
+                <li>&middot; removes the reason C3's mirror exists</li>
+                <li class="text-amber-800">? <span class="mono text-xs">react-dom/server</span> + <span class="mono text-xs">qr-code</span> in a browser bundle — needs a size and compatibility check first</li>
+                <li class="text-amber-800">? do it <em>after</em> C3, so there is one resolver to share rather than two</li>
+              </ul>
+            </div>
+          </div>
+        </article>
+
+        <!-- C12 -->
+        <article id="c12" class="rounded-xl border border-slate-200 bg-white p-7 space-y-6 shadow-sm">
+          <div class="space-y-3">
+            <div class="flex flex-wrap items-center gap-2">
+              <span class="rounded-full bg-emerald-100 text-emerald-800 px-2.5 py-0.5 text-xs font-semibold">Strong</span>
+              <span class="rounded-full bg-slate-100 text-slate-600 px-2.5 py-0.5 text-xs mono">no seam — deletion</span>
+              <span class="text-xs text-slate-400">C12</span>
+            </div>
+            <h2 class="font-serif text-2xl">Let the pipeline see any of this — and delete what fails the deletion test</h2>
+            <p class="mono text-sm text-slate-500 leading-relaxed">
+              turbo.json:4-20 &middot; package.json:5-11 &middot; packages/shared/package.json &middot; packages/email-renderer/package.json &middot; packages/queue/src/index.ts &middot; packages/db/client.ts &middot; packages/db/src/index.ts:6-9 &middot; packages/db/src/types.ts:21
+            </p>
+          </div>
+
+          <div class="grid md:grid-cols-2 gap-5">
+            <div class="rounded-lg border border-slate-200 bg-stone-50 p-4">
+              <div class="label text-slate-400 mb-3">What the pipeline covers today</div>
+              <table class="w-full text-xs">
+                <thead class="text-slate-400"><tr class="text-left"><th class="py-1">package</th><th>impl</th><th>test</th><th>in CI</th></tr></thead>
+                <tbody class="mono">
+                  <tr class="border-t border-slate-200"><td class="py-1">shared</td><td>5,622</td><td>1,354</td><td class="text-red-600">no test task</td></tr>
+                  <tr class="border-t border-slate-200"><td class="py-1">email-renderer</td><td>1,423</td><td>441</td><td class="text-red-600">no test task</td></tr>
+                  <tr class="border-t border-slate-200"><td class="py-1">db</td><td>849</td><td class="text-red-600">0</td><td class="text-red-600">—</td></tr>
+                  <tr class="border-t border-slate-200"><td class="py-1">ui</td><td>1,170</td><td class="text-red-600">0</td><td>lint only</td></tr>
+                  <tr class="border-t border-slate-200"><td class="py-1">queue</td><td>14</td><td class="text-red-600">0</td><td>—</td></tr>
+                </tbody>
+              </table>
+              <p class="text-xs text-red-800 mt-3">
+                <span class="mono">turbo.json</span> declares <span class="mono">build</span>, <span class="mono">lint</span>, <span class="mono">check-types</span>, <span class="mono">dev</span> — no <span class="mono">test</span>, and the root has no <span class="mono">test</span> script. Neither <span class="mono">@repo/shared</span> nor <span class="mono">@repo/email-renderer</span> has a <span class="mono">check-types</span> or <span class="mono">lint</span> script, so <span class="mono">turbo run check-types</span> skips both packages that hold the domain.
+              </p>
+            </div>
+            <div class="rounded-lg border border-slate-200 bg-white p-4 space-y-3 text-sm">
+              <div class="label text-slate-400">Deletion test verdicts</div>
+              <div class="rounded border border-red-200 bg-red-50 p-3 text-red-900">
+                <div class="font-semibold text-xs mono">@repo/queue — delete</div>
+                14 lines, one const and a one-field schema. Grep for <span class="mono text-xs">@repo/queue</span> returns exactly one hit: its own <span class="mono text-xs">package.json</span>. Not a dependency of either app. Complexity does not move; it vanishes. If a <span class="mono text-xs">Send queue</span> lands, the job name belongs beside the existing import schemas in <span class="mono text-xs">@repo/shared</span>.
+              </div>
+              <div class="rounded border border-red-200 bg-red-50 p-3 text-red-900">
+                <div class="font-semibold text-xs mono">packages/db/client.ts — delete</div>
+                A byte-for-byte duplicate of <span class="mono text-xs">src/index.ts:1-9</span> that opens a <em>second</em> connection pool. Zero references anywhere.
+              </div>
+              <div class="rounded border border-slate-200 bg-stone-50 p-3">
+                <div class="font-semibold text-xs mono">PlanLimitsService — keep</div>
+                Four no-op stubs, 6 call sites. Deleting it would scatter future metering across all six. Correctly shallow; <span class="mono text-xs">CONTEXT.md</span> &rarr; <span class="mono text-xs">Plan limits</span> names it. (Worth noting <span class="mono text-xs">assertCanCreateContact</span> is called per row inside the import loop at <span class="mono text-xs">contact-imports.service.ts:212</span> — N queries once it does real work.)
+              </div>
+              <div class="rounded border border-slate-200 bg-stone-50 p-3">
+                <div class="font-semibold text-xs mono">ObjectStorage seam — keep</div>
+                Two adapters (S3-compatible, disabled). It is what keeps <span class="mono text-xs">@aws-sdk/client-s3</span> out of the asset module. Real seam.
+              </div>
+            </div>
+          </div>
+
+          <div class="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-900">
+            <span class="label text-red-500 block mb-1">Bonus: importing a <em>type</em> from <span class="mono">@repo/db</span> opens a Postgres connection</span>
+            <span class="mono text-xs">src/index.ts:6-9</span> runs <span class="mono text-xs">postgres(process.env.DATABASE_URL!)</span> at module evaluation and re-exports the schema and types from the same module; <span class="mono text-xs">src/types.ts:21</span> imports <span class="mono text-xs">db</span> purely to write <span class="mono text-xs">type Database = typeof db</span>. So <span class="mono text-xs">import type { TemplatesSelect }</span> drags the connecting module into the graph — which is why every api unit test mocks the Drizzle query builder instead of asserting behaviour. The <span class="mono text-xs">@repo/db/schema</span> and <span class="mono text-xs">@repo/db/types</span> subpaths already exist in <span class="mono text-xs">package.json</span>; only <span class="mono text-xs">createDb(url)</span> should connect.
+          </div>
+
+          <div class="grid md:grid-cols-2 gap-6 text-sm">
+            <div><span class="label text-slate-400 block mb-1">Solution</span>Add a <span class="mono text-xs">test</span> task to <span class="mono text-xs">turbo.json</span> and <span class="mono text-xs">check-types</span>/<span class="mono text-xs">lint</span> scripts to both domain packages; delete <span class="mono text-xs">@repo/queue</span> and <span class="mono text-xs">packages/db/client.ts</span>; split "describe the schema" from "connect".</div>
+            <div>
+              <span class="label text-slate-400 block mb-1">Wins</span>
+              <ul class="space-y-1.5 text-slate-700">
+                <li>&middot; every candidate above becomes enforceable instead of advisory</li>
+                <li>&middot; 1,795 lines of existing package tests start running</li>
+                <li>&middot; deletes a package and a duplicate connection</li>
+                <li>&middot; unblocks unit-testing the api without live Postgres</li>
+              </ul>
+            </div>
+          </div>
+        </article>
+
+      </section>
+
+      <!-- top recommendation -->
+      <section id="top-recommendation" class="space-y-4">
+        <h2 class="font-serif text-3xl">Top recommendation</h2>
+        <div class="rounded-xl border-2 border-slate-900 bg-slate-900 text-slate-100 p-7 space-y-4">
+          <div class="flex flex-wrap items-baseline gap-3">
+            <a href="#c4" class="font-serif text-2xl underline decoration-slate-600 hover:decoration-slate-300">C4 — Make the block definition table answer to its zod description</a>
+            <span class="mono text-xs text-slate-400">preceded by C12, which is a ten-minute change</span>
+          </div>
+          <p class="text-slate-200 text-sm leading-relaxed">
+            It is the smallest diff with the largest reach. <span class="mono text-xs">TEMPLATE_BLOCK_DEFINITIONS</span> is the data that the inspector, the palette, brand-kit resolution, <span class="mono text-xs">createBlock</span>, and every renderer read — and it is 476 untested lines typed as <span class="mono text-xs">Record&lt;string, unknown&gt;</span> sitting next to 329 untested lines of zod that describe the same thing. One table-driven test plus one type change closes three drift classes at once, deletes the digit-sniffing coercion downstream, and turns "add a <span class="mono text-xs">Block type</span>" from 13 files (8 of them silent) into something the compiler checks. C12 comes first only because without a <span class="mono text-xs">test</span> task, that test never runs.
+          </p>
+          <p class="text-slate-400 text-sm leading-relaxed">
+            Then, in order: <a href="#c1" class="underline decoration-slate-600">C1</a> (the bridge seam has a live contract mismatch and five dispatchers), <a href="#c2" class="underline decoration-slate-600">C2</a> (one content door — the store is plain zustand and testable today with zero infrastructure), <a href="#c7" class="underline decoration-slate-600">C7</a> (authorization currently keyed on a transaction argument), <a href="#c3" class="underline decoration-slate-600">C3</a> (one resolver, which is also the prerequisite for reconsidering <a href="#c11" class="underline decoration-slate-600">C11</a>).
+          </p>
+        </div>
+      </section>
+
+      <footer class="pt-6 border-t border-slate-200 text-xs text-slate-400 mono">
+        Vocabulary per <span class="text-slate-500">/codebase-design</span>: module · interface · implementation · depth · deep · shallow · seam · adapter · leverage · locality. Domain terms per <span class="text-slate-500">CONTEXT.md</span>. ADRs 0002, 0004, 0006, 0009, 0010, 0013, 0014, 0016 read before writing; conflicts flagged in-card.
+      </footer>
+
+    </main>
+  </body>
+</html>

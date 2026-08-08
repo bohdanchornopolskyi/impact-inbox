@@ -51,6 +51,8 @@ export {
   type BlockCategory,
   TEMPLATE_BLOCK_DEFINITIONS,
   type TemplateBlockDefinition,
+  type TemplateBlockDefinitionOf,
+  type TemplateBlockDefinitions,
   type BlockFieldKind,
   type BlockFieldOption,
   type BlockFieldDescriptor,

@@ -1,3 +1,8 @@
+import type { z } from "zod";
+import type {
+  contentBlockSchema,
+  ContentBlockType,
+} from "../schemas/template/blocks/content";
 import type { TemplateContentData } from "../schemas/template/content";
 import type { BlockStyles } from "../schemas/template/styles";
 
@@ -68,27 +73,40 @@ type BlockFieldOption = {
   label: string;
 };
 
+/**
+ * Bounds live on the zod prop, not here — `numberPropBounds` reads them off the
+ * schema so an input can never allow a value the API then rejects.
+ */
 type BlockFieldDescriptor = {
   prop: string;
   label: string;
   kind: BlockFieldKind;
   options?: readonly BlockFieldOption[];
-  min?: number;
-  max?: number;
 };
 
-type TemplateBlockDefinition = {
-  type: TemplateBlockType;
+/** The props a block's zod schema accepts — the sole description of its shape. */
+type BlockDefaultProps<T extends TemplateBlockType> = T extends ContentBlockType
+  ? Extract<z.input<typeof contentBlockSchema>, { type: T }>["props"]
+  : Record<string, never>;
+
+type TemplateBlockDefinitionOf<T extends TemplateBlockType> = {
+  type: T;
   category: BlockCategory;
   label: string;
   description: string;
   allowedParents: readonly TemplateBlockType[];
-  defaultProps: Record<string, unknown>;
+  defaultProps: BlockDefaultProps<T>;
   defaultStyles?: BlockStyles;
   mergeTagProps: readonly string[];
   fields: readonly BlockFieldDescriptor[];
   customEditor?: true;
 };
+
+type TemplateBlockDefinitions = {
+  [T in TemplateBlockType]: TemplateBlockDefinitionOf<T>;
+};
+
+type TemplateBlockDefinition = TemplateBlockDefinitions[TemplateBlockType];
 
 const LEVEL_OPTIONS: readonly BlockFieldOption[] = [1, 2, 3, 4, 5, 6].map(
   (level) => ({ value: String(level), label: `H${level}` }),
@@ -116,7 +134,7 @@ const CONTENT_BLOCK_GAP_STYLES: BlockStyles = {
   padding: { bottom: TEMPLATE_DEFAULT_SPACING.contentBlockGap },
 };
 
-const TEMPLATE_BLOCK_DEFINITIONS = {
+const TEMPLATE_BLOCK_DEFINITIONS: TemplateBlockDefinitions = {
   section: {
     type: "section",
     category: "layout",
@@ -206,7 +224,7 @@ const TEMPLATE_BLOCK_DEFINITIONS = {
     fields: [
       { prop: "html", label: "HTML", kind: "multiline" },
       { prop: "color", label: "Color", kind: "color" },
-      { prop: "fontSize", label: "Font size", kind: "number", min: 8, max: 72 },
+      { prop: "fontSize", label: "Font size", kind: "number" },
     ],
   },
   button: {
@@ -325,7 +343,7 @@ const TEMPLATE_BLOCK_DEFINITIONS = {
     defaultProps: { height: 24 },
     mergeTagProps: [],
     fields: [
-      { prop: "height", label: "Height", kind: "number", min: 1, max: 500 },
+      { prop: "height", label: "Height", kind: "number" },
     ],
   },
   social: {
@@ -432,12 +450,12 @@ const TEMPLATE_BLOCK_DEFINITIONS = {
     mergeTagProps: [],
     fields: [
       { prop: "data", label: "Data", kind: "text" },
-      { prop: "size", label: "Size", kind: "number", min: 64, max: 512 },
+      { prop: "size", label: "Size", kind: "number" },
       { prop: "foregroundColor", label: "Foreground", kind: "color" },
       { prop: "backgroundColor", label: "Background", kind: "color" },
     ],
   },
-} as const satisfies Record<TemplateBlockType, TemplateBlockDefinition>;
+};
 
 const DEFAULT_TEMPLATE_SETTINGS = {
   width: 600,
@@ -468,6 +486,8 @@ export {
   type BlockCategory,
   TEMPLATE_BLOCK_DEFINITIONS,
   type TemplateBlockDefinition,
+  type TemplateBlockDefinitionOf,
+  type TemplateBlockDefinitions,
   type BlockFieldKind,
   type BlockFieldOption,
   type BlockFieldDescriptor,

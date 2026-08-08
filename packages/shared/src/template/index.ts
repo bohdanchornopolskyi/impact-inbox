@@ -1,4 +1,5 @@
 export * from "./block-label";
+export * from "./block-prop-schema";
 export * from "./canvas-contract";
 export * from "./canvas-drop-target";
 export * from "./clone-block";

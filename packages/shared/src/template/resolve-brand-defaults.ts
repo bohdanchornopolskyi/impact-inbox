@@ -68,11 +68,10 @@ export function resolveBlockDefaults(
   type: ContentBlockType | "section" | "row" | "column",
   brandKit?: BrandKitData | null,
 ): ResolvedBlockDefaults {
-  const definition = TEMPLATE_BLOCK_DEFINITIONS[type] as {
-    defaultProps: Record<string, unknown>;
-    defaultStyles?: BlockStyles;
-  };
-  const props = structuredClone(definition.defaultProps);
+  const definition = TEMPLATE_BLOCK_DEFINITIONS[type];
+  const props: Record<string, unknown> = structuredClone(
+    definition.defaultProps,
+  );
   let styles = definition.defaultStyles
     ? structuredClone(definition.defaultStyles)
     : undefined;

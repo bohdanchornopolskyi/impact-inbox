@@ -5,7 +5,11 @@ import type {
   ContentBlock,
   TemplateBlockDefinition,
 } from "@repo/shared";
-import { TEMPLATE_BLOCK_DEFINITIONS } from "@repo/shared";
+import {
+  TEMPLATE_BLOCK_DEFINITIONS,
+  coercePropValue,
+  numberPropBounds,
+} from "@repo/shared";
 import { Button } from "@repo/ui/client";
 import { useBuilder, useSelectedBlock } from "../builder-provider";
 import {
@@ -206,6 +210,7 @@ function BlockFields({
   }
 
   const props = block.props as Record<string, unknown>;
+  const defaults = definition.defaultProps as Record<string, unknown>;
 
   return (
     <div className="space-y-4">
@@ -220,6 +225,7 @@ function BlockFields({
         return (
           <BlockField
             key={field.prop}
+            blockType={block.type}
             field={field}
             value={props[field.prop]}
             placeholder={
@@ -228,9 +234,8 @@ function BlockFields({
                 : undefined
             }
             fallback={
-              field.kind === "color" &&
-              typeof definition.defaultProps[field.prop] === "string"
-                ? (definition.defaultProps[field.prop] as string)
+              field.kind === "color" && typeof defaults[field.prop] === "string"
+                ? (defaults[field.prop] as string)
                 : undefined
             }
             updateProps={updateProps}
@@ -243,6 +248,7 @@ function BlockFields({
 }
 
 function BlockField({
+  blockType,
   field,
   value,
   fallback,
@@ -250,6 +256,7 @@ function BlockField({
   updateProps,
   disabled = false,
 }: {
+  blockType: ContentBlock["type"];
   field: BlockFieldDescriptor;
   value: unknown;
   fallback?: string;
@@ -311,18 +318,20 @@ function BlockField({
           onChange={(next) => updateProps({ [field.prop]: next })}
         />
       );
-    case "number":
+    case "number": {
+      const { min, max } = numberPropBounds(blockType, field.prop);
       return (
         <NumberField
           label={field.label}
           value={typeof value === "number" ? value : undefined}
-          min={field.min}
-          max={field.max}
+          min={min}
+          max={max}
           placeholder={placeholder}
           disabled={disabled}
           onChange={(next) => updateProps({ [field.prop]: next })}
         />
       );
+    }
     case "select":
       return (
         <SelectField
@@ -330,18 +339,12 @@ function BlockField({
           value={asString(value)}
           disabled={disabled}
           onChange={(next) =>
-            updateProps({ [field.prop]: coerceSelectValue(field, next) })
+            updateProps({
+              [field.prop]: coercePropValue(blockType, field.prop, next),
+            })
           }
           options={field.options ? [...field.options] : []}
         />
       );
   }
-}
-
-function coerceSelectValue(
-  field: BlockFieldDescriptor,
-  next: string,
-): string | number {
-  const numeric = field.options?.every((option) => /^\d+$/.test(option.value));
-  return numeric ? Number(next) : next;
 }
