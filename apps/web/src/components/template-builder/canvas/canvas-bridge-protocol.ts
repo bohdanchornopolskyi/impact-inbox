@@ -202,8 +202,15 @@ export type CanvasPaletteDragEndMessage = {
   type: "canvas-palette-drag-end";
 };
 
+/**
+ * The runtime resolves the drop target from these coordinates and commits
+ * `target: null` without them (`bridge-runtime-boot.ts`), so they are required,
+ * not optional — dropping them turns every palette drop into a silent no-op.
+ */
 export type CanvasPaletteDragFinishMessage = {
   type: "canvas-palette-drag-finish";
+  clientX: number;
+  clientY: number;
 };
 
 export type CanvasBridgeOutboundMessage =
@@ -346,10 +353,30 @@ export function isPreviewNeedsReloadMessage(
   return data.type === "preview-needs-reload";
 }
 
+function isNullishOr<T>(
+  value: unknown,
+  isValid: (value: unknown) => value is T,
+): value is T | null | undefined {
+  return value === null || value === undefined || isValid(value);
+}
+
+function isString(value: unknown): value is string {
+  return typeof value === "string";
+}
+
 export function isCanvasDropTargetMessage(
   data: unknown,
 ): data is CanvasDropTargetMessage {
   if (!isRecord(data) || data.type !== "canvas-drop-target") {
+    return false;
+  }
+
+  // `dragKind` reaches `canDropAtTarget`, so it has to be validated here — the
+  // runtime sends null between drags and a kind during one.
+  if (
+    !isNullishOr(data.dragKind, isCanvasDragKind) ||
+    !isNullishOr(data.dragBlockId, isString)
+  ) {
     return false;
   }
 

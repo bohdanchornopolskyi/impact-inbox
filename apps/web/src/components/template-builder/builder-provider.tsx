@@ -295,9 +295,7 @@ function createBuilderStore(
         })),
       duplicateBlock: (blockId) =>
         withRecordedContent("record", undefined, (state) =>
-          applyBuilderMutation(state, duplicateBlock(state.content, blockId), {
-            selectInsertedBlock: true,
-          }),
+          applyBuilderMutation(state, duplicateBlock(state.content, blockId)),
         ),
       moveBlock: (blockId, targetColumnId, targetIndex) => {
         let changed = false;

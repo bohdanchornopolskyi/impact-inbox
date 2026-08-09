@@ -9,6 +9,7 @@ import {
 } from "./canvas-bridge-protocol";
 import {
   applyPaletteInsert,
+  assertUnreachableDragKind,
   canDropAtTarget,
   canInsertBlockTypeAtTarget,
   inferCanvasDragKind,
@@ -97,10 +98,9 @@ export function applyCanvasDrop(
         changed = actions.moveColumn(blockId, target.rowId, target.index);
       }
       break;
-    default: {
-      const unreachable: never = dragKind;
-      return unreachable;
-    }
+    default:
+      assertUnreachableDragKind(dragKind);
+      return false;
   }
 
   if (changed) {

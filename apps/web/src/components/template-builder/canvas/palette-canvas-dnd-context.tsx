@@ -23,6 +23,7 @@ import { useBuilder } from "../builder-provider";
 import {
   isCanvasDragActiveMessage,
   isCanvasPaletteDragCommitMessage,
+  type CanvasBridgeOutboundMessage,
 } from "./canvas-bridge-protocol";
 import { blockTypeToDragKind } from "./canvas-dnd";
 import {
@@ -46,7 +47,7 @@ type PaletteDragGhostState = {
 };
 
 type DragBridge = {
-  postToIframe: (message: object) => void;
+  postToIframe: (message: CanvasBridgeOutboundMessage) => void;
   getCanvasIframe: () => HTMLIFrameElement | null;
   getContent: () => TemplateContentData;
   prepareDrag: () => void;

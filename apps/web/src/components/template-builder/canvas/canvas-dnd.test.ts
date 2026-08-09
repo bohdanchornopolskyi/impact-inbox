@@ -1,9 +1,10 @@
 import { describe, expect, it, vi } from "vitest";
-import type { TemplateContentData } from "@repo/shared";
+import type { TemplateBlockType, TemplateContentData } from "@repo/shared";
 import {
   isCanvasDragActiveMessage,
   isCanvasDragCommitMessage,
   isCanvasDragHandleDownMessage,
+  type CanvasDragKind,
 } from "./canvas-bridge-protocol";
 import {
   applyPaletteInsert,
@@ -406,5 +407,42 @@ describe("applyPaletteInsert", () => {
       { addSection, addRow, addColumn, addBlock },
     );
     expect(addBlock).toHaveBeenCalledWith("col-1", "heading", 0);
+  });
+});
+
+describe("unknown drag kind from the iframe", () => {
+  const target = { kind: "column", columnId: "col-1", index: 0 } as const;
+
+  it("canDropAtTarget refuses it instead of returning it", () => {
+    const rogue = "evil" as unknown as CanvasDragKind;
+
+    expect(canDropAtTarget(content, "text-1", rogue, target)).toBe(false);
+  });
+
+  it("canShowDropIndicator refuses it with and without a dragged block", () => {
+    const rogue = "evil" as unknown as CanvasDragKind;
+
+    expect(canShowDropIndicator(rogue, target, content, "text-1")).toBe(false);
+    expect(canShowDropIndicator(rogue, target, content, null)).toBe(false);
+  });
+
+  it("applyPaletteInsert inserts nothing", () => {
+    const actions = {
+      addSection: vi.fn(),
+      addRow: vi.fn(),
+      addColumn: vi.fn(),
+      addBlock: vi.fn(),
+    };
+
+    applyPaletteInsert(
+      "evil" as unknown as TemplateBlockType,
+      target,
+      actions,
+    );
+
+    expect(actions.addSection).not.toHaveBeenCalled();
+    expect(actions.addRow).not.toHaveBeenCalled();
+    expect(actions.addColumn).not.toHaveBeenCalled();
+    expect(actions.addBlock).not.toHaveBeenCalled();
   });
 });

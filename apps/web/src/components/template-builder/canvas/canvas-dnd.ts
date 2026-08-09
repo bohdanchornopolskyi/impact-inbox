@@ -104,6 +104,13 @@ export function canDropColumnAtTarget(
   return !isDescendantOf(content, columnId, target.rowId);
 }
 
+/**
+ * Keeps the switch exhaustive at compile time. It must not produce the runtime
+ * answer: these switches run on iframe messages, and a `return unreachable`
+ * hands back the unknown kind itself — a truthy "yes, you may drop that".
+ */
+export function assertUnreachableDragKind(_dragKind: never): void {}
+
 export function canDropAtTarget(
   content: TemplateContentData,
   blockId: string,
@@ -119,10 +126,9 @@ export function canDropAtTarget(
       return canDropRowAtTarget(content, blockId, target);
     case "column":
       return canDropColumnAtTarget(content, blockId, target);
-    default: {
-      const unreachable: never = dragKind;
-      return unreachable;
-    }
+    default:
+      assertUnreachableDragKind(dragKind);
+      return false;
   }
 }
 
@@ -211,9 +217,7 @@ export function applyPaletteInsert(
         actions.addBlock(target.columnId, blockType, target.index);
       }
       break;
-    default: {
-      const unreachable: never = dragKind;
-      return unreachable;
-    }
+    default:
+      assertUnreachableDragKind(dragKind);
   }
 }

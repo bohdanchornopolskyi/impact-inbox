@@ -15,7 +15,10 @@ import {
 import { useBuilder, useSaveRevision } from "../builder-provider";
 import { runBuilderShortcut } from "../run-builder-shortcut";
 import { buildCanvasBridgeDocument } from "./canvas-bridge";
-import { isBuilderShortcutMessage } from "./canvas-bridge-protocol";
+import {
+  isBuilderShortcutMessage,
+  type CanvasBridgeOutboundMessage,
+} from "./canvas-bridge-protocol";
 import {
   createCanvasPreviewController,
   resolveEffectiveHtml,
@@ -103,7 +106,7 @@ export function PreviewCanvas() {
     typeof createCanvasPreviewController
   > | null>(null);
 
-  const postToIframe = useCallback((message: object) => {
+  const postToIframe = useCallback((message: CanvasBridgeOutboundMessage) => {
     iframeRef.current?.contentWindow?.postMessage(message, "*");
   }, []);
 
@@ -255,11 +258,9 @@ export function PreviewCanvas() {
   ]);
 
   useEffect(() => {
-    registerCommandSink((command: RichtextCommand) => {
-      iframeRef.current?.contentWindow?.postMessage(command, "*");
-    });
+    registerCommandSink((command: RichtextCommand) => postToIframe(command));
     return () => registerCommandSink(null);
-  }, [registerCommandSink]);
+  }, [postToIframe, registerCommandSink]);
 
   useEffect(() => {
     function onMessage(event: MessageEvent) {

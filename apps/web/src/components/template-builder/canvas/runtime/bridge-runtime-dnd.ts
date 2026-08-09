@@ -480,19 +480,38 @@ export function getCanvasBridgeDndRuntime(): string {
     return { kind: "body", index: index };
   }
 
-  function resolveSectionRowTarget(clientX, clientY, excludeBlockId) {
+  function queryLayoutElements(role) {
+    var body = document.querySelector("[data-canvas-body]");
+    if (!body) {
+      return [];
+    }
+    return Array.prototype.slice.call(
+      body.querySelectorAll('[data-layout-role="' + role + '"]'),
+    );
+  }
+
+  /**
+   * The element under the pointer, or null when the pointer is over empty canvas
+   * (the gap below the last section, the page background beside the content).
+   */
+  function layoutElementAtPoint(clientX, clientY, selector) {
     var body = document.querySelector("[data-canvas-body]");
     if (!body) {
       return null;
     }
-
     var hit = document.elementFromPoint(clientX, clientY);
     if (!hit || !body.contains(hit)) {
       return null;
     }
+    var found = hit.closest(selector);
+    return found && body.contains(found) ? found : null;
+  }
 
-    var section = hit.closest('[data-layout-role="section"]');
-    if (!section || !body.contains(section)) {
+  function resolveSectionRowTarget(clientX, clientY, excludeBlockId) {
+    var section =
+      layoutElementAtPoint(clientX, clientY, '[data-layout-role="section"]') ||
+      nearestElement(queryLayoutElements("section"), clientX, clientY);
+    if (!section) {
       return null;
     }
 
@@ -507,18 +526,10 @@ export function getCanvasBridgeDndRuntime(): string {
   }
 
   function resolveRowColumnTarget(clientX, clientY, excludeBlockId) {
-    var body = document.querySelector("[data-canvas-body]");
-    if (!body) {
-      return null;
-    }
-
-    var hit = document.elementFromPoint(clientX, clientY);
-    if (!hit || !body.contains(hit)) {
-      return null;
-    }
-
-    var row = hit.closest('[data-layout-role="row"]');
-    if (!row || !body.contains(row)) {
+    var row =
+      layoutElementAtPoint(clientX, clientY, '[data-layout-role="row"]') ||
+      nearestElement(queryLayoutElements("row"), clientX, clientY);
+    if (!row) {
       return null;
     }
 
@@ -533,31 +544,24 @@ export function getCanvasBridgeDndRuntime(): string {
   }
 
   function resolveColumnContentTargetForDrag(clientX, clientY, excludeBlockId) {
-    var body = document.querySelector("[data-canvas-body]");
-    if (!body) {
-      return null;
+    var contentBlock = layoutElementAtPoint(
+      clientX,
+      clientY,
+      "[data-block-id]:not([data-layout-role])",
+    );
+    var column = contentBlock
+      ? contentBlock.closest('[data-layout-role="column"]')
+      : layoutElementAtPoint(clientX, clientY, '[data-layout-role="column"]');
+
+    // Over empty canvas: use the closest column so the drop appends where the
+    // pointer obviously means, rather than resolving to no target at all.
+    if (!column) {
+      column = nearestElement(queryLayoutElements("column"), clientX, clientY);
     }
 
-    var hit = document.elementFromPoint(clientX, clientY);
-    if (!hit || !body.contains(hit)) {
-      return null;
-    }
-
-    var contentBlock = hit.closest("[data-block-id]:not([data-layout-role])");
-    if (contentBlock && body.contains(contentBlock)) {
-      var contentColumn = contentBlock.closest('[data-layout-role="column"]');
-      if (!contentColumn) {
-        return null;
-      }
-      return resolveColumnContentTarget(contentColumn, clientY, excludeBlockId);
-    }
-
-    var column = hit.closest('[data-layout-role="column"]');
-    if (column && body.contains(column)) {
-      return resolveColumnContentTarget(column, clientY, excludeBlockId);
-    }
-
-    return null;
+    return column
+      ? resolveColumnContentTarget(column, clientY, excludeBlockId)
+      : null;
   }
 
   function hideDropIndicator() {

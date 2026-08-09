@@ -14,6 +14,18 @@ describe("buildCanvasBridgeDocument", () => {
   const sampleHtml =
     '<html><body><div data-block-id="heading-1">Hello</div></body></html>';
 
+  // The bridge is a hand-written template string; a syntax error in it ships as
+  // a silently dead canvas, so parse it here for both privilege levels.
+  it.each([true, false])("emits a parseable script (canEdit: %s)", (canEdit) => {
+    const result = buildCanvasBridgeDocument(sampleHtml, { canEdit });
+    const script = result.match(
+      /<script id="canvas-bridge-script">([\s\S]*?)<\/script>/,
+    )?.[1];
+
+    expect(script).toBeTruthy();
+    expect(() => new Function(script!)).not.toThrow();
+  });
+
   it("injects style and script before closing body", () => {
     const result = buildCanvasBridgeDocument(sampleHtml, { canEdit: true });
 
@@ -250,11 +262,47 @@ describe("isCanvasDropTargetMessage", () => {
     ).toBe(true);
   });
 
+  it("accepts the dragKind and dragBlockId the runtime sends", () => {
+    expect(
+      isCanvasDropTargetMessage({
+        type: "canvas-drop-target",
+        target: { kind: "body", index: 0 },
+        dragKind: "section",
+        dragBlockId: "section-1",
+      }),
+    ).toBe(true);
+    expect(
+      isCanvasDropTargetMessage({
+        type: "canvas-drop-target",
+        target: { kind: "body", index: 0 },
+        dragKind: null,
+        dragBlockId: null,
+      }),
+    ).toBe(true);
+  });
+
   it("rejects malformed drop-target messages", () => {
     expect(
       isCanvasDropTargetMessage({
         type: "canvas-drop-target",
         target: { kind: "column", index: 0 },
+      }),
+    ).toBe(false);
+  });
+
+  it("rejects an unknown dragKind before it reaches canDropAtTarget", () => {
+    expect(
+      isCanvasDropTargetMessage({
+        type: "canvas-drop-target",
+        target: { kind: "body", index: 0 },
+        dragKind: "evil",
+      }),
+    ).toBe(false);
+    expect(
+      isCanvasDropTargetMessage({
+        type: "canvas-drop-target",
+        target: { kind: "body", index: 0 },
+        dragBlockId: 42,
       }),
     ).toBe(false);
   });
