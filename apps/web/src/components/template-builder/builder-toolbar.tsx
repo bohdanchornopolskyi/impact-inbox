@@ -3,66 +3,63 @@
 import { useState } from "react";
 import Link from "next/link";
 import {
-  AlertCircle,
-  Check,
   ChevronLeft,
-  Cloud,
   Eye,
   History,
-  Loader2,
   Pencil,
   Redo2,
   Undo2,
   Upload,
 } from "lucide-react";
-import { Badge, Button } from "@repo/ui/client";
+import { Button, SaveStatus } from "@repo/ui/client";
+import { formatDistanceToNow } from "date-fns";
+import { parseApiDate } from "@/lib/format-date";
 import { useWorkspace } from "@/contexts/workspace-context";
 import {
   useApplyTemplateRename,
   useBuilder,
+  useBuilderFlush,
   useSaveRevision,
 } from "./builder-provider";
 import { RenameTemplateModal } from "./modals/rename-template-modal";
 import { useBuilderShortcuts } from "./use-builder-shortcuts";
 
-const WORKING_COPY_SYNC_HELP =
-  "Your working copy autosaves. Save creates a revision snapshot for history and campaigns.";
-
-function WorkingCopySyncBadge() {
+function WorkingCopySyncStatus() {
   const saveState = useBuilder((s) => s.saveState);
+  const updatedAt = useBuilder((s) => s.updatedAt);
+  const flush = useBuilderFlush();
 
   if (saveState === "saving") {
-    return (
-      <Badge tone="neutral" title={WORKING_COPY_SYNC_HELP}>
-        <Loader2 className="size-3.5 animate-spin" strokeWidth={1.5} />
-        Syncing…
-      </Badge>
-    );
+    return <SaveStatus tone="saving" label="Saving" />;
   }
 
   if (saveState === "error") {
     return (
-      <Badge tone="danger" title={WORKING_COPY_SYNC_HELP}>
-        <AlertCircle className="size-3.5" strokeWidth={1.5} />
-        Sync failed
-      </Badge>
+      <SaveStatus
+        tone="error"
+        label="Couldn't save"
+        onRetry={() => {
+          void flush();
+        }}
+      />
     );
   }
 
   if (saveState === "unsaved") {
-    return (
-      <Badge tone="warning" title={WORKING_COPY_SYNC_HELP}>
-        <Cloud className="size-3.5" strokeWidth={1.5} />
-        Unsaved changes
-      </Badge>
-    );
+    return <SaveStatus tone="unsaved" label="Unsaved changes" />;
   }
 
+  const savedAt = parseApiDate(updatedAt);
+
   return (
-    <Badge tone="success" title={WORKING_COPY_SYNC_HELP}>
-      <Check className="size-3.5" strokeWidth={1.5} />
-      Synced
-    </Badge>
+    <SaveStatus
+      tone="saved"
+      label={
+        savedAt
+          ? `Saved ${formatDistanceToNow(savedAt, { addSuffix: true })}`
+          : "Saved"
+      }
+    />
   );
 }
 
@@ -124,7 +121,7 @@ export function BuilderToolbar() {
           </p>
         )}
       </div>
-      <WorkingCopySyncBadge />
+      <WorkingCopySyncStatus />
       {canEdit ? (
         <div className="flex items-center gap-0.5">
           <Button

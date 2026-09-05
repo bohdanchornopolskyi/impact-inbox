@@ -21,16 +21,16 @@ export function Popover({
     <BasePopover.Root>
       <BasePopover.Trigger
         className={cn(
-          "inline-flex items-center gap-2 rounded-md border border-border-strong bg-surface-card px-3 py-1.5 text-ui-sm text-text-secondary hover:bg-surface-muted",
+          "inline-flex items-center gap-2 rounded-sm border border-border bg-surface px-3 py-1.5 text-sm text-text-2 transition-[background-color,border-color] duration-150 ease-out hover:border-border-strong hover:bg-surface-sunken",
         )}
       >
         {trigger}
       </BasePopover.Trigger>
       <BasePopover.Portal>
-        <BasePopover.Positioner align={align} sideOffset={8}>
+        <BasePopover.Positioner align={align} sideOffset={6}>
           <BasePopover.Popup
             className={cn(
-              "z-50 min-w-56 rounded-xl border border-border-default bg-surface-card p-2 shadow-pop outline-none",
+              "z-50 min-w-56 rounded-md border border-border bg-surface p-1.5 shadow-[0_8px_24px_#0f172a1f] outline-none",
               className,
             )}
           >

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Button, Input } from "@repo/ui/client";
+import { Button, Card, CardBody, CardDescription, CardHeader, CardTitle, Input } from "@repo/ui/client";
 import {
   ASSET_UPLOAD_ALLOWED_MIME_TYPES,
   brandKitFromData,
@@ -59,26 +59,27 @@ export function WorkspaceBrandSection() {
 
   if (!canManage) {
     return (
-      <section className="rounded-2xl border border-border-default bg-surface-card p-6 shadow-sm">
-        <h2 className="text-ui-lg font-medium text-text-primary">Brand</h2>
-        <p className="mt-2 text-ui-sm text-text-secondary">
-          Only workspace admins can edit the brand kit.
-        </p>
-      </section>
+      <Card>
+        <CardHeader>
+          <CardTitle>Brand</CardTitle>
+          <CardDescription>
+            Only workspace admins can edit the brand kit.
+          </CardDescription>
+        </CardHeader>
+      </Card>
     );
   }
 
   return (
-    <section className="rounded-2xl border border-border-default bg-surface-card p-6 shadow-sm">
-      <div className="space-y-1">
-        <h2 className="text-ui-lg font-medium text-text-primary">Brand</h2>
-        <p className="text-ui-sm text-text-secondary">
+    <Card>
+      <CardHeader>
+        <CardTitle>Brand</CardTitle>
+        <CardDescription>
           Colors and spacing baked into new templates and blocks. Existing
           content is unchanged.
-        </p>
-      </div>
-
-      <div className="mt-6 space-y-4">
+        </CardDescription>
+      </CardHeader>
+      <CardBody>
         <ColorPickerField
           label="Primary"
           value={fields.colors?.primary}
@@ -216,9 +217,7 @@ export function WorkspaceBrandSection() {
             }}
           />
         </label>
-      </div>
 
-      <div className="mt-6">
         <Button
           variant="primary"
           size="sm"
@@ -232,7 +231,7 @@ export function WorkspaceBrandSection() {
         >
           Save brand
         </Button>
-      </div>
-    </section>
+      </CardBody>
+    </Card>
   );
 }

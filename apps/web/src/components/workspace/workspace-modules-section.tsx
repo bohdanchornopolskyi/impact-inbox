@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { RotateCcw, Trash2 } from "lucide-react";
-import { Button, Input } from "@repo/ui/client";
+import { Button, Card, CardBody, CardDescription, CardHeader, CardTitle, Input } from "@repo/ui/client";
 import {
   buildModuleContentFromSource,
   getPlatformStarterByName,
@@ -142,71 +142,75 @@ export function WorkspaceModulesSection() {
 
   if (!canManage) {
     return (
-      <section className="rounded-2xl border border-border-default bg-surface-card p-6 shadow-sm">
-        <h2 className="text-ui-lg font-medium text-text-primary">Modules</h2>
-        <p className="mt-2 text-ui-sm text-text-secondary">
-          Only workspace admins can manage the module library. Members can still
-          insert modules from the template builder.
-        </p>
+      <Card>
+        <CardHeader>
+          <CardTitle>Modules</CardTitle>
+          <CardDescription>
+            Only workspace admins can manage the module library. Members can still
+            insert modules from the template builder.
+          </CardDescription>
+        </CardHeader>
         {modulesQuery.data && modulesQuery.data.length > 0 ? (
-          <ul className="mt-4 space-y-2">
-            {modulesQuery.data.map((module) => (
-              <li
-                key={module.id}
-                className="rounded-lg border border-border-default bg-surface-muted px-3 py-2"
-              >
-                <p className="text-ui-sm font-medium text-text-primary">
-                  {module.name}
-                </p>
-                <p className="text-ui-xs text-text-tertiary">
-                  {summarizeModuleContent(module.content)}
-                </p>
-              </li>
-            ))}
-          </ul>
+          <CardBody>
+            <ul className="space-y-2">
+              {modulesQuery.data.map((module) => (
+                <li
+                  key={module.id}
+                  className="rounded-lg border border-border-default bg-surface-muted px-3 py-2"
+                >
+                  <p className="text-ui-sm font-medium text-text-primary">
+                    {module.name}
+                  </p>
+                  <p className="text-ui-xs text-text-tertiary">
+                    {summarizeModuleContent(module.content)}
+                  </p>
+                </li>
+              ))}
+            </ul>
+          </CardBody>
         ) : null}
-      </section>
+      </Card>
     );
   }
 
   return (
-    <section className="rounded-2xl border border-border-default bg-surface-card p-6 shadow-sm">
-      <div className="space-y-1">
-        <h2 className="text-ui-lg font-medium text-text-primary">Modules</h2>
-        <p className="text-ui-sm text-text-secondary">
+    <Card>
+      <CardHeader>
+        <CardTitle>Modules</CardTitle>
+        <CardDescription>
           Create reusable sections for the builder. Edit content in a template,
           then use Update from selection — or restore a platform starter here.
-        </p>
-      </div>
-
-      <div className="mt-6 space-y-3 rounded-xl border border-border-default bg-surface-muted p-4">
-        <p className="text-ui-sm font-medium text-text-primary">Create module</p>
-        <label className="block space-y-1">
-          <span className="text-ui-xs font-medium text-text-secondary">Name</span>
-          <Input
-            value={name}
-            onChange={(event) => setName(event.target.value)}
-            placeholder="Promo banner"
+        </CardDescription>
+      </CardHeader>
+      <CardBody>
+        <div className="space-y-3 rounded-md border border-border bg-surface-sunken p-4">
+          <p className="text-ui-sm font-medium text-text-primary">Create module</p>
+          <label className="block space-y-1">
+            <span className="text-ui-xs font-medium text-text-secondary">Name</span>
+            <Input
+              value={name}
+              onChange={(event) => setName(event.target.value)}
+              placeholder="Promo banner"
+            />
+          </label>
+          <SelectField
+            label="Start from"
+            value={source}
+            onChange={(value) => setSource(value as ModuleCreateSource)}
+            options={MODULE_CREATE_SOURCES}
           />
-        </label>
-        <SelectField
-          label="Start from"
-          value={source}
-          onChange={(value) => setSource(value as ModuleCreateSource)}
-          options={MODULE_CREATE_SOURCES}
-        />
-        <Button
-          type="button"
-          variant="primary"
-          size="sm"
-          disabled={!name.trim() || create.isPending}
-          onClick={handleCreate}
-        >
-          Create module
-        </Button>
-      </div>
+          <Button
+            type="button"
+            variant="primary"
+            size="sm"
+            disabled={!name.trim() || create.isPending}
+            onClick={handleCreate}
+          >
+            Create module
+          </Button>
+        </div>
 
-      <div className="mt-6 space-y-3">
+        <div className="space-y-3">
         <p className="text-ui-sm font-medium text-text-primary">Library</p>
         {modulesQuery.isLoading ? (
           <p className="text-ui-xs text-text-tertiary">Loading modules…</p>
@@ -316,6 +320,7 @@ export function WorkspaceModulesSection() {
         isPending={update.isPending || remove.isPending}
         onConfirm={confirmPendingAction}
       />
-    </section>
+      </CardBody>
+    </Card>
   );
 }

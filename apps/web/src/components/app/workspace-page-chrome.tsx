@@ -38,12 +38,10 @@ export function WorkspacePageHeader({
         className,
       )}
     >
-      <div className="min-w-0">
-        <h1 className="text-ui-2xl font-semibold tracking-snug text-text-primary">
-          {title}
-        </h1>
+      <div className="flex min-w-0 flex-col gap-1">
+        <h1 className="text-3xl font-bold text-text">{title}</h1>
         {description ? (
-          <div className="mt-1 text-ui-sm text-text-secondary">{description}</div>
+          <div className="text-sm text-text-2">{description}</div>
         ) : null}
       </div>
       {actions ? <div className="shrink-0">{actions}</div> : null}

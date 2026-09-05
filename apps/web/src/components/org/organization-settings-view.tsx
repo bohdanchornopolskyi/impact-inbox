@@ -5,10 +5,9 @@ import { useMemo, useState } from "react";
 import type {
   OrganizationDetailData,
   WorkspaceListItemData,
-  WorkspaceRole,
 } from "@repo/shared";
 import { hasOrganizationRoleAtLeast } from "@repo/shared";
-import { Button } from "@repo/ui/client";
+import { Button, Card, CardBody } from "@repo/ui/client";
 import { CreateWorkspaceModal } from "@/components/org/create-workspace-modal";
 import { OrgMembersSection } from "@/components/org/org-members-section";
 import {
@@ -49,42 +48,44 @@ export function OrganizationSettingsView({
         description={`Your role: ${formatRoleLabel(organization.role)}`}
       />
 
-      <section className="rounded-2xl border border-border-default bg-surface-card p-6 shadow-sm">
-        <dl className="grid gap-4 sm:grid-cols-2">
-          <div>
-            <dt className="text-ui-xs font-medium tracking-wide text-text-tertiary uppercase">
-              Plan
-            </dt>
-            <dd className="mt-1 text-ui-sm text-text-primary">
-              {organization.planTier ?? "Trial / unpaid"}
-            </dd>
-          </div>
-          <div>
-            <dt className="text-ui-xs font-medium tracking-wide text-text-tertiary uppercase">
-              Trial ends
-            </dt>
-            <dd className="mt-1 text-ui-sm text-text-primary">
-              {formatDateTime(organization.trialEndsAt)}
-            </dd>
-          </div>
-          <div>
-            <dt className="text-ui-xs font-medium tracking-wide text-text-tertiary uppercase">
-              Workspaces
-            </dt>
-            <dd className="mt-1 text-ui-sm text-text-primary">
-              {organizationWorkspaces.length}
-            </dd>
-          </div>
-          <div>
-            <dt className="text-ui-xs font-medium tracking-wide text-text-tertiary uppercase">
-              Created
-            </dt>
-            <dd className="mt-1 text-ui-sm text-text-primary">
-              {formatDateTime(organization.createdAt)}
-            </dd>
-          </div>
-        </dl>
-      </section>
+      <Card>
+        <CardBody>
+          <dl className="grid gap-4 sm:grid-cols-2">
+            <div>
+              <dt className="text-ui-xs font-medium tracking-wide text-text-tertiary uppercase">
+                Plan
+              </dt>
+              <dd className="mt-1 text-ui-sm text-text-primary">
+                {organization.planTier ?? "Trial / unpaid"}
+              </dd>
+            </div>
+            <div>
+              <dt className="text-ui-xs font-medium tracking-wide text-text-tertiary uppercase">
+                Trial ends
+              </dt>
+              <dd className="mt-1 text-ui-sm text-text-primary">
+                {formatDateTime(organization.trialEndsAt)}
+              </dd>
+            </div>
+            <div>
+              <dt className="text-ui-xs font-medium tracking-wide text-text-tertiary uppercase">
+                Workspaces
+              </dt>
+              <dd className="mt-1 text-ui-sm text-text-primary">
+                {organizationWorkspaces.length}
+              </dd>
+            </div>
+            <div>
+              <dt className="text-ui-xs font-medium tracking-wide text-text-tertiary uppercase">
+                Created
+              </dt>
+              <dd className="mt-1 text-ui-sm text-text-primary">
+                {formatDateTime(organization.createdAt)}
+              </dd>
+            </div>
+          </dl>
+        </CardBody>
+      </Card>
 
       <section className="space-y-4">
         <div className="flex flex-wrap items-end justify-between gap-3">

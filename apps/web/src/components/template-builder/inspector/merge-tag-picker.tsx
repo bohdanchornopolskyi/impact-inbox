@@ -42,7 +42,7 @@ export function MergeTagPicker({
             key={entry.tag}
             type="button"
             onClick={() => void selectTag(entry.tag)}
-            className="flex w-full flex-col rounded-md px-2 py-1.5 text-left hover:bg-surface-muted"
+            className="flex w-full flex-col rounded-xs px-2 py-1.5 text-left hover:bg-surface-sunken"
           >
             <span className="font-mono text-ui-xs text-accent-text">
               {formatMergeTag(entry.tag)}

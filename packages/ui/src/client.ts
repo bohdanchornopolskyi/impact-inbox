@@ -8,7 +8,14 @@ export { Textarea, type TextareaProps } from "./components/textarea/textarea";
 export { Select, type SelectOption, type SelectProps } from "./components/select/select";
 export { Badge, type BadgeProps, type BadgeTone } from "./components/badge/badge";
 export { Switch, type SwitchProps } from "./components/switch/switch";
-export { Card, type CardProps } from "./components/card/card";
+export {
+  Card,
+  CardBody,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+  type CardProps,
+} from "./components/card/card";
 export { Logo, type LogoProps } from "./components/logo/logo";
 export { FormError, type FormErrorProps } from "./components/form-error/form-error";
 export { AuthShell, type AuthShellProps } from "./components/auth-shell/auth-shell";
@@ -19,6 +26,11 @@ export { MailCheckIcon } from "./components/icons/mail-check-icon";
 export { Modal, Dialog, type ModalProps } from "./components/dialog/dialog";
 export { Alert, type AlertProps, type AlertTone } from "./components/alert/alert";
 export { tooltipPopupClassName } from "./components/tooltip/tooltip";
+export {
+  SaveStatus,
+  type SaveStatusProps,
+  type SaveStatusTone,
+} from "./components/save-status/save-status";
 export { ClosePanelButton } from "./components/close-panel-button/close-panel-button";
 export { CollapsibleSection, Collapsible, type CollapsibleSectionProps } from "./components/collapsible/collapsible";
 export { Popover, BasePopover, type PopoverProps } from "./components/popover/popover";

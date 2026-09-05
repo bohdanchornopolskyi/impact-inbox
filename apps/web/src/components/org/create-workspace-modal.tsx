@@ -76,7 +76,7 @@ export function CreateWorkspaceModal({
         </>
       }
     >
-      <form id="create-workspace-form" onSubmit={handleSubmit} className="mt-4 space-y-4">
+      <form id="create-workspace-form" onSubmit={handleSubmit} className="space-y-4">
         <Input
           label="Name"
           value={name}

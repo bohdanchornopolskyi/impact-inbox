@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { Card, CardBody, CardDescription, CardHeader, CardTitle } from "@repo/ui/client";
 import { TrialBanner } from "@/components/app/trial-banner";
 import {
   WorkspacePageHeader,
@@ -52,52 +53,58 @@ export default function WorkspaceHomePage() {
         ))}
       </div>
 
-      <section className="rounded-2xl border border-dashed border-border-default bg-surface-card p-6 shadow-sm">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-          <div>
-            <h2 className="text-ui-lg font-medium text-text-primary">
-              Recent campaigns
-            </h2>
-            <p className="mt-2 text-ui-sm text-text-secondary">
-              Campaign activity will show here once sending ships. Nothing to
-              list yet.
-            </p>
-          </div>
+      <Card>
+        <CardHeader>
+          <CardTitle>Recent campaigns</CardTitle>
+          <CardDescription>
+            Campaign activity will show here once sending ships. Nothing to
+            list yet.
+          </CardDescription>
+        </CardHeader>
+        <CardBody>
           <Link
             href={`${basePath}/campaigns`}
-            className="inline-flex shrink-0 text-ui-sm font-medium text-text-primary underline-offset-4 hover:underline"
+            className="inline-flex w-fit text-sm font-medium text-text underline-offset-4 hover:underline"
           >
             Open campaigns
           </Link>
-        </div>
-      </section>
+        </CardBody>
+      </Card>
 
       <div className="grid gap-4 sm:grid-cols-2">
-        <section className="rounded-2xl border border-border-default bg-surface-card p-6 shadow-sm">
-          <h2 className="text-ui-lg font-medium text-text-primary">Templates</h2>
-          <p className="mt-2 text-ui-sm text-text-secondary">
-            Design email layouts, save revisions, and export HTML.
-          </p>
-          <Link
-            href={`${basePath}/templates`}
-            className="mt-4 inline-flex text-ui-sm font-medium text-text-primary underline-offset-4 hover:underline"
-          >
-            Open templates
-          </Link>
-        </section>
+        <Card>
+          <CardHeader>
+            <CardTitle>Templates</CardTitle>
+            <CardDescription>
+              Design email layouts, save revisions, and export HTML.
+            </CardDescription>
+          </CardHeader>
+          <CardBody>
+            <Link
+              href={`${basePath}/templates`}
+              className="inline-flex w-fit text-sm font-medium text-text underline-offset-4 hover:underline"
+            >
+              Open templates
+            </Link>
+          </CardBody>
+        </Card>
 
-        <section className="rounded-2xl border border-border-default bg-surface-card p-6 shadow-sm">
-          <h2 className="text-ui-lg font-medium text-text-primary">Organization</h2>
-          <p className="mt-2 text-ui-sm text-text-secondary">
-            Billing, trial, members, and workspaces live at the organization level.
-          </p>
-          <Link
-            href={`/org/${workspace.organizationId}/settings`}
-            className="mt-4 inline-flex text-ui-sm font-medium text-text-primary underline-offset-4 hover:underline"
-          >
-            Organization settings
-          </Link>
-        </section>
+        <Card>
+          <CardHeader>
+            <CardTitle>Organization</CardTitle>
+            <CardDescription>
+              Billing, trial, members, and workspaces live at the organization level.
+            </CardDescription>
+          </CardHeader>
+          <CardBody>
+            <Link
+              href={`/org/${workspace.organizationId}/settings`}
+              className="inline-flex w-fit text-sm font-medium text-text underline-offset-4 hover:underline"
+            >
+              Organization settings
+            </Link>
+          </CardBody>
+        </Card>
       </div>
     </WorkspacePageShell>
   );

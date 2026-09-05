@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Button, Input } from "@repo/ui/client";
+import { Button, Card, CardBody, CardHeader, CardTitle, Input } from "@repo/ui/client";
 import { hasWorkspaceRoleAtLeast } from "@repo/shared";
 import { useWorkspace } from "@/contexts/workspace-context";
 import { useUpdateContact } from "@/lib/contacts/contact-hooks";
@@ -66,73 +66,75 @@ export function ContactDetailView({ contactId }: ContactDetailViewProps) {
 
       <div className="space-y-6">
         {canEdit ? (
-          <section className="rounded-2xl border border-border-default bg-surface-card p-6">
-            <div className="grid gap-4 sm:grid-cols-2">
-              <label className="space-y-1">
-                <span className="text-ui-xs text-text-secondary">First name</span>
-                <Input value={firstName} onChange={(e) => setFirstName(e.target.value)} />
-              </label>
-              <label className="space-y-1">
-                <span className="text-ui-xs text-text-secondary">Last name</span>
-                <Input value={lastName} onChange={(e) => setLastName(e.target.value)} />
-              </label>
-            </div>
-            <div className="mt-4 flex flex-wrap gap-2">
-              <Button
-                variant="primary"
-                disabled={updateContact.isPending}
-                onClick={() =>
-                  updateContact.mutate({
-                    firstName: firstName || null,
-                    lastName: lastName || null,
-                  })
-                }
-              >
-                Save
-              </Button>
-              <Button
-                variant="secondary"
-                onClick={() =>
-                  updateContact.mutate({
-                    globalUnsubscribed: !contact.globalUnsubscribedAt,
-                  })
-                }
-              >
-                {contact.globalUnsubscribedAt
-                  ? "Clear global unsub"
-                  : "Global unsubscribe"}
-              </Button>
-            </div>
-          </section>
+          <Card>
+            <CardBody>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <label className="space-y-1">
+                  <span className="text-ui-xs text-text-secondary">First name</span>
+                  <Input value={firstName} onChange={(e) => setFirstName(e.target.value)} />
+                </label>
+                <label className="space-y-1">
+                  <span className="text-ui-xs text-text-secondary">Last name</span>
+                  <Input value={lastName} onChange={(e) => setLastName(e.target.value)} />
+                </label>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  variant="primary"
+                  disabled={updateContact.isPending}
+                  onClick={() =>
+                    updateContact.mutate({
+                      firstName: firstName || null,
+                      lastName: lastName || null,
+                    })
+                  }
+                >
+                  Save
+                </Button>
+                <Button
+                  variant="secondary"
+                  onClick={() =>
+                    updateContact.mutate({
+                      globalUnsubscribed: !contact.globalUnsubscribedAt,
+                    })
+                  }
+                >
+                  {contact.globalUnsubscribedAt
+                    ? "Clear global unsub"
+                    : "Global unsubscribe"}
+                </Button>
+              </div>
+            </CardBody>
+          </Card>
         ) : null}
 
-        <section className="rounded-2xl border border-border-default bg-surface-card p-6">
-          <h2 className="text-ui-lg font-medium text-text-primary">
-            List memberships
-          </h2>
-          {contact.listMemberships.length === 0 ? (
-            <p className="mt-2 text-ui-sm text-text-secondary">
-              Not on any lists.
-            </p>
-          ) : (
-            <ul className="mt-3 space-y-2">
-              {contact.listMemberships.map((membership) => (
-                <li
-                  key={membership.listId}
-                  className="flex items-center justify-between gap-3 text-ui-sm"
-                >
-                  <Link
-                    href={`/${workspace.slug}/contacts/lists/${membership.listId}`}
-                    className="font-medium text-text-primary hover:underline"
+        <Card>
+          <CardHeader>
+            <CardTitle>List memberships</CardTitle>
+          </CardHeader>
+          <CardBody>
+            {contact.listMemberships.length === 0 ? (
+              <p className="text-sm text-text-2">Not on any lists.</p>
+            ) : (
+              <ul className="space-y-2">
+                {contact.listMemberships.map((membership) => (
+                  <li
+                    key={membership.listId}
+                    className="flex items-center justify-between gap-3 text-ui-sm"
                   >
-                    {membership.listName}
-                  </Link>
-                  <ContactStatusBadge status={membership.status} />
-                </li>
-              ))}
-            </ul>
-          )}
-        </section>
+                    <Link
+                      href={`/${workspace.slug}/contacts/lists/${membership.listId}`}
+                      className="font-medium text-text-primary hover:underline"
+                    >
+                      {membership.listName}
+                    </Link>
+                    <ContactStatusBadge status={membership.status} />
+                  </li>
+                ))}
+              </ul>
+            )}
+          </CardBody>
+        </Card>
       </div>
     </WorkspacePageShell>
   );

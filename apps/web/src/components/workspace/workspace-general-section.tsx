@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Button, Input } from "@repo/ui/client";
+import { Button, Card, CardBody, CardDescription, CardHeader, CardTitle, Input } from "@repo/ui/client";
 import {
   formatPhysicalAddress,
   hasWorkspaceRoleAtLeast,
@@ -75,61 +75,66 @@ export function WorkspaceGeneralSection() {
 
   if (!canManage) {
     return (
-      <section className="rounded-2xl border border-border-default bg-surface-card p-6 shadow-sm">
-        <h2 className="text-ui-lg font-medium text-text-primary">General</h2>
-        <p className="mt-2 whitespace-pre-line text-ui-sm text-text-secondary">
-          {formattedAddress || "Physical address not set"}
-        </p>
-      </section>
+      <Card>
+        <CardHeader>
+          <CardTitle>General</CardTitle>
+          <CardDescription className="whitespace-pre-line">
+            {formattedAddress || "Physical address not set"}
+          </CardDescription>
+        </CardHeader>
+      </Card>
     );
   }
 
   return (
-    <section className="rounded-2xl border border-border-default bg-surface-card p-6 shadow-sm">
-      <h2 className="text-ui-lg font-medium text-text-primary">General</h2>
-      <p className="mt-1 text-ui-sm text-text-secondary">
-        CAN-SPAM postal address used in emails from this workspace.
-      </p>
-      <div className="mt-4 grid gap-3 sm:grid-cols-2">
-        {ADDRESS_FIELDS.map((field) => (
-          <label
-            key={field.key}
-            className={
-              field.key === "streetLine1" || field.key === "streetLine2"
-                ? "space-y-1 sm:col-span-2"
-                : "space-y-1"
-            }
-          >
-            <span className="text-ui-xs text-text-secondary">
-              {field.label}
-              {field.optional ? " (optional)" : ""}
-            </span>
-            <Input
-              value={address[field.key]}
-              placeholder={field.placeholder}
-              onChange={(event) =>
-                setAddress((current) => ({
-                  ...current,
-                  [field.key]: event.target.value,
-                }))
+    <Card>
+      <CardHeader>
+        <CardTitle>General</CardTitle>
+        <CardDescription>
+          CAN-SPAM postal address used in emails from this workspace.
+        </CardDescription>
+      </CardHeader>
+      <CardBody>
+        <div className="grid gap-3 sm:grid-cols-2">
+          {ADDRESS_FIELDS.map((field) => (
+            <label
+              key={field.key}
+              className={
+                field.key === "streetLine1" || field.key === "streetLine2"
+                  ? "space-y-1 sm:col-span-2"
+                  : "space-y-1"
               }
-            />
-          </label>
-        ))}
-      </div>
-      <Button
-        className="mt-4"
-        variant="primary"
-        disabled={update.isPending}
-        onClick={() =>
-          update.mutate({
-            workspaceId: workspace.id,
-            input: { physicalAddress: normalizePhysicalAddress(address) },
-          })
-        }
-      >
-        Save address
-      </Button>
-    </section>
+            >
+              <span className="text-ui-xs text-text-secondary">
+                {field.label}
+                {field.optional ? " (optional)" : ""}
+              </span>
+              <Input
+                value={address[field.key]}
+                placeholder={field.placeholder}
+                onChange={(event) =>
+                  setAddress((current) => ({
+                    ...current,
+                    [field.key]: event.target.value,
+                  }))
+                }
+              />
+            </label>
+          ))}
+        </div>
+        <Button
+          variant="primary"
+          disabled={update.isPending}
+          onClick={() =>
+            update.mutate({
+              workspaceId: workspace.id,
+              input: { physicalAddress: normalizePhysicalAddress(address) },
+            })
+          }
+        >
+          Save address
+        </Button>
+      </CardBody>
+    </Card>
   );
 }
