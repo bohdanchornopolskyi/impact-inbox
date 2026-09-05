@@ -71,7 +71,7 @@ export function CreateTemplateModal({
         </>
       }
     >
-      <form id="create-template-form" onSubmit={handleSubmit} className="mt-4">
+      <form id="create-template-form" onSubmit={handleSubmit}>
         <Input
           label="Template name"
           value={name}

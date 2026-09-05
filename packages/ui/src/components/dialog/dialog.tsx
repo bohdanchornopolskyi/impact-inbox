@@ -2,7 +2,6 @@
 
 import type { ReactNode } from "react";
 import { Dialog as BaseDialog } from "@base-ui/react/dialog";
-import { ClosePanelButton } from "../close-panel-button/close-panel-button";
 import { cn } from "../../lib/cn";
 
 export type ModalProps = {
@@ -10,10 +9,24 @@ export type ModalProps = {
   onOpenChange: (open: boolean) => void;
   title: string;
   description?: string;
-  children: ReactNode;
+  children?: ReactNode;
   footer?: ReactNode;
+  leading?: ReactNode;
   className?: string;
 };
+
+function DismissIcon() {
+  return (
+    <svg viewBox="0 0 13 13" fill="none" aria-hidden>
+      <path
+        d="M3 3l7 7M10 3l-7 7"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+      />
+    </svg>
+  );
+}
 
 export function Modal({
   open,
@@ -22,34 +35,51 @@ export function Modal({
   description,
   children,
   footer,
+  leading,
   className,
 }: ModalProps) {
   return (
     <BaseDialog.Root open={open} onOpenChange={onOpenChange}>
       <BaseDialog.Portal>
-        <BaseDialog.Backdrop className="fixed inset-0 bg-neutral-900/35 transition-opacity duration-180 data-[ending-style]:opacity-0 data-[starting-style]:opacity-0" />
+        <BaseDialog.Backdrop className="fixed inset-0 bg-overlay transition-[opacity] duration-150 ease-out data-[ending-style]:opacity-0 data-[starting-style]:opacity-0" />
         <BaseDialog.Viewport className="fixed inset-0 flex items-center justify-center p-4">
           <BaseDialog.Popup
             className={cn(
-              "relative w-full max-w-lg rounded-xl border border-border-default bg-surface-card p-6 shadow-pop outline-none data-[ending-style]:scale-95 data-[starting-style]:scale-95 data-[ending-style]:opacity-0 data-[starting-style]:opacity-0",
+              "relative w-full max-w-120 overflow-hidden rounded-xl bg-surface shadow-lg outline-none overscroll-contain transition-[opacity,translate] duration-150 ease-out data-[ending-style]:translate-y-1 data-[starting-style]:translate-y-1 data-[ending-style]:opacity-0 data-[starting-style]:opacity-0",
               className,
             )}
           >
-            <div className="flex items-start justify-between gap-4">
-              <div className="min-w-0">
-                <BaseDialog.Title className="text-ui-xl font-semibold text-text-primary">
+            <div className="flex items-start gap-3 px-6 pt-6">
+              {leading ? (
+                <div className="flex size-10 shrink-0 items-center justify-center rounded-md bg-danger-50 text-danger [&_svg]:size-5">
+                  {leading}
+                </div>
+              ) : null}
+              <div className="flex min-w-0 flex-1 flex-col gap-1">
+                <BaseDialog.Title className="text-xl font-semibold text-text">
                   {title}
                 </BaseDialog.Title>
                 {description ? (
-                  <BaseDialog.Description className="mt-2 text-ui-sm text-text-secondary">
+                  <BaseDialog.Description className="text-sm text-text-2">
                     {description}
                   </BaseDialog.Description>
                 ) : null}
               </div>
-              <ClosePanelButton />
+              <BaseDialog.Close
+                aria-label="Close"
+                className="relative inline-flex size-5 shrink-0 items-center justify-center rounded-xs text-text-3 transition-[background-color] duration-150 ease-out before:absolute before:-inset-0.5 hover:bg-surface-sunken"
+              >
+                <DismissIcon />
+              </BaseDialog.Close>
             </div>
-            <div className="mt-5">{children}</div>
-            {footer ? <div className="mt-6 flex justify-end gap-2">{footer}</div> : null}
+            {children ? (
+              <div className="px-6 py-5">{children}</div>
+            ) : null}
+            {footer ? (
+              <div className="flex justify-end gap-2.5 border-t border-border bg-neutral-50 px-6 py-4">
+                {footer}
+              </div>
+            ) : null}
           </BaseDialog.Popup>
         </BaseDialog.Viewport>
       </BaseDialog.Portal>

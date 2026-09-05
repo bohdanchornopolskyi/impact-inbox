@@ -14,6 +14,8 @@ export { AuthNotice, AuthNoticeEmail, type AuthNoticeProps } from "./components/
 export { MailCheckIcon } from "./components/icons/mail-check-icon";
 export { Switch, type SwitchProps } from "./components/switch/switch";
 export { Modal, Dialog, type ModalProps } from "./components/dialog/dialog";
+export { Alert, type AlertProps, type AlertTone } from "./components/alert/alert";
+export { tooltipPopupClassName } from "./components/tooltip/tooltip";
 export { ClosePanelButton } from "./components/close-panel-button/close-panel-button";
 export {
   SegmentedControl,

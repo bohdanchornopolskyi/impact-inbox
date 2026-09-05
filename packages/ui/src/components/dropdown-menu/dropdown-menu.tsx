@@ -9,6 +9,8 @@ export type DropdownMenuItem = {
   onSelect: () => void;
   destructive?: boolean;
   disabled?: boolean;
+  icon?: ReactNode;
+  separatorBefore?: boolean;
 };
 
 export type DropdownMenuProps = {
@@ -28,7 +30,7 @@ export function DropdownMenu({
     <BaseMenu.Root>
       <BaseMenu.Trigger
         className={cn(
-          "inline-flex items-center justify-center rounded-md border border-transparent p-1.5 text-text-secondary hover:bg-surface-muted",
+          "inline-flex items-center justify-center rounded-sm p-1.5 text-text-2 transition-[background-color,color] duration-150 ease-out hover:bg-surface-sunken",
           className,
         )}
       >
@@ -36,21 +38,41 @@ export function DropdownMenu({
       </BaseMenu.Trigger>
       <BaseMenu.Portal>
         <BaseMenu.Positioner align={align} sideOffset={6}>
-          <BaseMenu.Popup className="z-50 min-w-40 rounded-xl border border-border-default bg-surface-card p-1 shadow-pop outline-none">
+          <BaseMenu.Popup className="z-50 flex min-w-40 flex-col gap-0.5 rounded-md border border-border bg-surface p-1.5 shadow-md outline-none">
             {items.map((item) => (
-              <BaseMenu.Item
-                key={item.label}
-                disabled={item.disabled}
-                onClick={item.onSelect}
-                className={cn(
-                  "flex w-full cursor-pointer items-center rounded-md px-3 py-2 text-left text-ui-sm outline-none data-[disabled]:cursor-not-allowed data-[disabled]:opacity-50 data-[highlighted]:bg-surface-muted",
-                  item.destructive
-                    ? "text-status-danger-fg data-[highlighted]:bg-status-danger-bg"
-                    : "text-text-secondary",
-                )}
-              >
-                {item.label}
-              </BaseMenu.Item>
+              <div key={item.label} className="contents">
+                {item.separatorBefore ? (
+                  <hr className="h-px border-0 bg-border" />
+                ) : null}
+                <BaseMenu.Item
+                  disabled={item.disabled}
+                  onClick={item.onSelect}
+                  className={cn(
+                    "flex h-control-md w-full cursor-pointer items-center gap-2.25 rounded-xs px-2 text-left text-sm font-medium outline-none transition-[background-color,color] duration-150 ease-out",
+                    item.destructive
+                      ? "text-danger data-highlighted:bg-danger-50"
+                      : "text-text data-highlighted:bg-surface-sunken",
+                    "data-disabled:cursor-not-allowed data-disabled:text-text-3 data-disabled:data-highlighted:bg-transparent",
+                  )}
+                >
+                  {item.icon ? (
+                    <span
+                      className={cn(
+                        "inline-flex size-icon-sm shrink-0 [&_svg]:size-full",
+                        item.disabled
+                          ? "text-neutral-400"
+                          : item.destructive
+                            ? "text-danger"
+                            : "text-text-3",
+                      )}
+                      aria-hidden
+                    >
+                      {item.icon}
+                    </span>
+                  ) : null}
+                  {item.label}
+                </BaseMenu.Item>
+              </div>
             ))}
           </BaseMenu.Popup>
         </BaseMenu.Positioner>

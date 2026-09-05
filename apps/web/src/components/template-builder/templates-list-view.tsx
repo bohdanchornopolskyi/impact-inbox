@@ -183,6 +183,7 @@ export function TemplatesListView() {
                             {
                               label: "Archive",
                               destructive: true,
+                              separatorBefore: true,
                               onSelect: () =>
                                 setActionTarget({
                                   id: template.id,

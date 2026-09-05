@@ -354,6 +354,7 @@ export function AssetsPanel() {
                       {
                         label: "Delete",
                         destructive: true,
+                        separatorBefore: true,
                         onSelect: () => {
                           void requestDelete(asset);
                         },

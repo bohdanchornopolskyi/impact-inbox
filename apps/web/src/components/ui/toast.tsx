@@ -8,19 +8,17 @@ export function AppToaster() {
   return (
     <Toaster
       position="bottom-right"
-      closeButton
       duration={5000}
       toastOptions={{
         classNames: {
           toast:
-            "rounded-lg border shadow-lg !font-sans text-ui-sm !bg-surface-card",
-          title: "text-text-primary font-medium",
-          description: "text-text-secondary",
-          success: "!border-border-default !text-text-primary",
-          error:
-            "!border-status-danger-fg/20 !bg-status-danger-bg !text-status-danger-fg",
-          closeButton:
-            "!border-border-strong !bg-surface-card !text-text-secondary hover:!bg-surface-muted",
+            "!flex !items-center !gap-2.5 !rounded-md !border-0 !bg-neutral-900 !px-3.5 !py-3 !font-sans !text-sm !font-medium !text-text-inverse !shadow-lg",
+          title: "!text-sm !font-medium !text-text-inverse",
+          description: "!text-xs !text-neutral-400",
+          success: "!bg-neutral-900 !text-text-inverse",
+          error: "!bg-neutral-900 !text-text-inverse",
+          actionButton:
+            "!bg-transparent !px-0 !text-sm !font-semibold !text-brand-300",
         },
       }}
     />

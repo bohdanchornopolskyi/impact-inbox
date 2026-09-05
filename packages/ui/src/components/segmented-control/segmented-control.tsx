@@ -3,6 +3,7 @@
 import { useRef, type KeyboardEvent, type ReactNode } from "react";
 import { Tooltip } from "@base-ui/react/tooltip";
 import { cn } from "../../lib/cn";
+import { tooltipPopupClassName } from "../tooltip/tooltip";
 
 export type SegmentedControlOption = {
   value: string;
@@ -134,7 +135,7 @@ export function SegmentedControl({
             </Tooltip.Trigger>
             <Tooltip.Portal>
               <Tooltip.Positioner side="bottom" sideOffset={6}>
-                <Tooltip.Popup className="rounded-sm bg-neutral-900 px-2 py-1 text-xs text-neutral-0 shadow-sm">
+                <Tooltip.Popup className={tooltipPopupClassName}>
                   {accessibleName}
                 </Tooltip.Popup>
               </Tooltip.Positioner>

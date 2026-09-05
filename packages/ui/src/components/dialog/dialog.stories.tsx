@@ -23,21 +23,21 @@ export const Default: Story = {
         <Modal
           open={open}
           onOpenChange={setOpen}
-          title="Delete template?"
-          description="This archives the template. Campaign history is preserved."
+          title="Delete this workspace?"
+          description="All templates, contacts and campaign history will be removed. This cannot be undone."
           footer={
             <>
               <Button variant="secondary" onClick={() => setOpen(false)}>
                 Cancel
               </Button>
               <Button variant="danger" onClick={() => setOpen(false)}>
-                Archive
+                Delete workspace
               </Button>
             </>
           }
         >
-          <p className="text-ui-sm text-text-secondary">
-            You can restore working copy content from revision history later.
+          <p className="text-sm font-medium text-text-2">
+            Type the workspace name to confirm
           </p>
         </Modal>
       </>
