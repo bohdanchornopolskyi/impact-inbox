@@ -32,3 +32,13 @@ export {
   type DropdownMenuProps,
 } from "./components/dropdown-menu/dropdown-menu";
 export { Tabs, type TabItem, type TabsProps } from "./components/tabs/tabs";
+export {
+  TopNavItem,
+  topNavItemClassName,
+  type TopNavItemProps,
+} from "./components/top-nav-item/top-nav-item";
+export {
+  SidebarItem,
+  sidebarItemClassName,
+  type SidebarItemProps,
+} from "./components/sidebar-item/sidebar-item";

@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { Button } from "@repo/ui/client";
 import { OrgWorkspaceSwitcher } from "@/components/app/org-workspace-switcher";
+import { WorkspaceNav } from "@/components/app/workspace-nav";
 import { useSession } from "@/contexts/session-context";
 import { useOptionalWorkspace } from "@/contexts/workspace-context";
 import { resolveAuthenticatedDestination } from "@/lib/auth-session";
@@ -24,29 +25,30 @@ export function AppHeader({ title, subtitle }: AppHeaderProps) {
         : "/";
 
   return (
-    <header className="border-b border-border-default bg-surface-card">
+    <header className="border-b border-border bg-surface">
       <div className="flex h-topbar items-center justify-between gap-4 px-4 sm:px-6">
-        <div className="flex min-w-0 items-center gap-3">
+        <div className="flex min-w-0 items-center gap-7">
           <Link
             href={homeHref}
-            className="shrink-0 text-ui-sm font-semibold text-text-primary"
+            className="shrink-0 text-sm font-semibold text-text transition-colors duration-150 hover:text-accent active:text-brand-700"
           >
             Impact Inbox
           </Link>
-          <OrgWorkspaceSwitcher />
+          <WorkspaceNav />
         </div>
 
         <div className="flex items-center gap-4">
+          <OrgWorkspaceSwitcher />
           <div className="hidden text-right sm:block">
             {title ? (
-              <p className="truncate text-ui-sm font-medium text-text-primary">
+              <p className="truncate text-sm font-medium text-text">
                 {title}
               </p>
             ) : null}
             {subtitle ? (
-              <p className="truncate text-ui-xs text-text-muted">{subtitle}</p>
+              <p className="truncate text-xs text-text-3">{subtitle}</p>
             ) : (
-              <p className="truncate text-ui-xs text-text-muted">{user.email}</p>
+              <p className="truncate text-xs text-text-3">{user.email}</p>
             )}
           </div>
           <Button variant="secondary" size="sm" onClick={signOut}>

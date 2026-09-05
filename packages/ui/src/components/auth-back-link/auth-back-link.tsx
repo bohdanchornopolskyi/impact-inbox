@@ -17,7 +17,7 @@ function ArrowLeftIcon() {
 
 export function authBackLinkClass(className?: string) {
   return cn(
-    "inline-flex w-full items-center justify-center gap-1.5 text-ui-base font-medium text-text-tertiary no-underline transition-colors hover:text-text-secondary",
+    "inline-flex w-full items-center justify-center gap-1.5 text-sm font-semibold text-text-3 no-underline transition-colors duration-150 hover:text-text-2 active:text-text",
     className,
   );
 }
