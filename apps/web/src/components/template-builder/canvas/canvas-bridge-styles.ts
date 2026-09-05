@@ -21,9 +21,10 @@ ${canEdit ? "[data-editable] { cursor: text; }\n[data-editable][contenteditable=
   display: none;
   box-sizing: border-box;
   pointer-events: none;
+  border-radius: 5px;
 }
 .canvas-bridge-hover {
-  border: 1px dashed rgba(79, 70, 229, 0.55);
+  border: 1px solid #a5aaf7;
 }
 .canvas-bridge-selected {
   border: 2px solid #4f46e5;
@@ -31,41 +32,58 @@ ${canEdit ? "[data-editable] { cursor: text; }\n[data-editable][contenteditable=
 .canvas-bridge-dragging {
   opacity: 0.45;
 }
+.canvas-bridge-type-tag {
+  position: absolute;
+  left: 0;
+  bottom: 100%;
+  display: block;
+  padding: 3px 7px;
+  border-radius: 4px 4px 0 0;
+  color: #fff;
+  font-family: system-ui, -apple-system, sans-serif;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1;
+  pointer-events: none;
+  white-space: nowrap;
+}
+.canvas-bridge-type-tag-hover {
+  background: #8083f0;
+}
+.canvas-bridge-type-tag-selected {
+  background: #4f46e5;
+}
 .canvas-bridge-toolbar {
   position: absolute;
   display: none;
   align-items: center;
   gap: 2px;
   height: 32px;
-  padding: 0 4px 0 0;
-  background: rgba(55, 65, 81, 0.95);
+  padding: 0 5px;
+  background: #0f172a;
   color: #fff;
   font-family: system-ui, -apple-system, sans-serif;
-  border-radius: 16px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.18);
+  border-radius: 10px;
+  box-shadow: 0 4px 12px #0f172a33;
   white-space: nowrap;
   pointer-events: auto;
 }
 .canvas-bridge-label {
-  padding: 0 8px;
-  font-size: 11px;
-  font-weight: 500;
-  line-height: 1;
-  user-select: none;
+  display: none;
 }
 .canvas-bridge-toolbar-below {
-  border-radius: 16px;
+  border-radius: 10px;
 }
 .canvas-bridge-toolbar-btn {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 28px;
-  height: 28px;
+  width: 24px;
+  height: 24px;
   border: none;
   background: transparent;
-  color: inherit;
-  border-radius: 50%;
+  color: #ffffffcc;
+  border-radius: 5px;
   padding: 0;
   cursor: pointer;
 }
@@ -75,6 +93,9 @@ ${canEdit ? "[data-editable] { cursor: text; }\n[data-editable][contenteditable=
 .canvas-bridge-toolbar-btn:disabled {
   opacity: 0.35;
   cursor: default;
+}
+.canvas-bridge-toolbar-btn-danger {
+  color: #fca5a5;
 }
 .canvas-bridge-drag-handle {
   cursor: grab;
@@ -90,11 +111,33 @@ ${canEdit ? "[data-editable] { cursor: text; }\n[data-editable][contenteditable=
 .canvas-bridge-drop-indicator {
   position: absolute;
   display: none;
-  height: 2px;
-  background: #4f46e5;
-  border-radius: 1px;
+  align-items: center;
+  height: 14px;
   pointer-events: none;
   z-index: 2147483647;
+}
+.canvas-bridge-drop-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: #4f46e5;
+  flex-shrink: 0;
+}
+.canvas-bridge-drop-line {
+  flex: 1;
+  height: 2px;
+  background: #4f46e5;
+  border-radius: 999px;
+}
+.canvas-bridge-drop-indicator-vertical {
+  flex-direction: column;
+  width: 14px;
+  height: auto;
+}
+.canvas-bridge-drop-indicator-vertical .canvas-bridge-drop-line {
+  width: 2px;
+  height: auto;
+  flex: 1;
 }
 html.palette-drag-active,
 html.palette-drag-active body {

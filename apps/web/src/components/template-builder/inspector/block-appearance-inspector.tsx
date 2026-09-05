@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import type {
   BlockAlign,
   BlockStyles,
@@ -11,7 +12,6 @@ import type {
 import {
   resolveSpacingSides,
   spacingFromSides,
-  SPACING_SIDES,
   type SpacingSide,
 } from "@repo/shared";
 import {
@@ -22,12 +22,13 @@ import {
   CaseLower,
   CaseSensitive,
   CaseUpper,
+  Link2,
   RemoveFormatting,
 } from "lucide-react";
 import { CollapsibleSection, SegmentedControl } from "@repo/ui/client";
 import { useBuilder } from "../builder-provider";
 import { ColorPickerField } from "./color-picker-field";
-import { NumberField, SelectField } from "./fields";
+import { InspectorRow, NumberField, SelectField } from "./fields";
 import { inheritedLineHeight } from "./inherited-typography";
 
 type UpdateStyles = (styles: Partial<BlockStyles>) => void;
@@ -67,17 +68,34 @@ const BORDER_STYLE_OPTIONS = [
   { value: "dotted", label: "Dotted" },
 ];
 
-const SPACING_SIDE_LABELS: Record<SpacingSide, string> = {
-  top: "Top",
-  right: "Right",
-  bottom: "Bottom",
-  left: "Left",
-};
+function SpacingInput({
+  label,
+  value,
+  disabled,
+  onChange,
+}: {
+  label: string;
+  value: number;
+  disabled: boolean;
+  onChange: (value: number) => void;
+}) {
+  return (
+    <input
+      aria-label={label}
+      type="number"
+      min={0}
+      max={120}
+      disabled={disabled}
+      value={value}
+      onChange={(event) => {
+        const next = event.target.value;
+        onChange(next === "" ? 0 : Number(next));
+      }}
+      className="field-control h-8 w-full rounded-sm border border-border-strong bg-surface text-center text-xs font-medium text-text outline-none transition-[border-color,box-shadow] duration-150 ease-out hover:border-neutral-400 focus-visible:border-accent focus-visible:shadow-(--shadow-ring-accent) disabled:border-neutral-200 disabled:bg-neutral-100 disabled:text-text-3"
+    />
+  );
+}
 
-/**
- * Four-side editor. Values are resolved the way the renderer expands them, so a
- * block built from defaults (`{ bottom: 8 }`) shows that 8 instead of blank.
- */
 function SpacingField({
   label,
   spacing,
@@ -90,26 +108,72 @@ function SpacingField({
   onChange: (next: BlockStyles["padding"]) => void;
 }) {
   const sides = resolveSpacingSides(spacing);
+  const allEqual =
+    sides.top === sides.right &&
+    sides.right === sides.bottom &&
+    sides.bottom === sides.left;
+  const [linked, setLinked] = useState(allEqual);
+
+  function patch(side: SpacingSide, next: number) {
+    if (linked) {
+      onChange(spacingFromSides({ top: next, right: next, bottom: next, left: next }));
+      return;
+    }
+    onChange(spacingFromSides({ ...sides, [side]: next }));
+  }
 
   return (
-    <div className="space-y-1.5">
-      <span className="block text-ui-xs font-medium text-text-secondary">
-        {label}
-      </span>
-      <div className="grid grid-cols-2 gap-2">
-        {SPACING_SIDES.map((side) => (
-          <NumberField
-            key={side}
-            label={SPACING_SIDE_LABELS[side]}
-            value={sides[side]}
-            min={0}
-            max={120}
+    <div className="flex flex-col gap-1.5">
+      <span className="text-xs font-medium text-text-2">{label}</span>
+      <div className="flex flex-col gap-1.5">
+        <div className="grid grid-cols-3 gap-1.5">
+          <div />
+          <SpacingInput
+            label={`${label} top`}
+            value={sides.top}
             disabled={disabled}
-            onChange={(next) =>
-              onChange(spacingFromSides({ ...sides, [side]: next ?? 0 }))
-            }
+            onChange={(next) => patch("top", next)}
           />
-        ))}
+          <div />
+        </div>
+        <div className="grid grid-cols-3 gap-1.5">
+          <SpacingInput
+            label={`${label} left`}
+            value={sides.left}
+            disabled={disabled}
+            onChange={(next) => patch("left", next)}
+          />
+          <button
+            type="button"
+            disabled={disabled}
+            aria-pressed={linked}
+            aria-label={linked ? "Unlink sides" : "Link sides"}
+            onClick={() => setLinked((current) => !current)}
+            className={
+              linked
+                ? "inline-flex size-8 items-center justify-center rounded-sm bg-accent-soft text-accent outline-none transition-[box-shadow] duration-150 ease-out focus-visible:shadow-(--shadow-ring-accent)"
+                : "inline-flex size-8 items-center justify-center rounded-sm border border-border-strong bg-surface text-text-3 outline-none transition-[border-color,box-shadow] duration-150 ease-out hover:border-neutral-400 focus-visible:border-accent focus-visible:shadow-(--shadow-ring-accent)"
+            }
+          >
+            <Link2 className="size-icon-sm" strokeWidth={1.5} />
+          </button>
+          <SpacingInput
+            label={`${label} right`}
+            value={sides.right}
+            disabled={disabled}
+            onChange={(next) => patch("right", next)}
+          />
+        </div>
+        <div className="grid grid-cols-3 gap-1.5">
+          <div />
+          <SpacingInput
+            label={`${label} bottom`}
+            value={sides.bottom}
+            disabled={disabled}
+            onChange={(next) => patch("bottom", next)}
+          />
+          <div />
+        </div>
       </div>
     </div>
   );
@@ -204,12 +268,10 @@ export function BlockAppearanceInspector({
               />
             )}
             {(block.type === "heading" || block.type === "text") && (
-              <div className="space-y-1.5">
-                <span className="block text-ui-xs font-medium text-text-secondary">
-                  Text transform
-                </span>
+              <InspectorRow label="Transform">
                 <SegmentedControl
                   iconOnly
+                  size="sm"
                   disabled={disabled}
                   value={(props.textTransform as TextTransform | undefined) ?? "none"}
                   options={TEXT_TRANSFORM_OPTIONS}
@@ -219,14 +281,12 @@ export function BlockAppearanceInspector({
                     })
                   }
                 />
-              </div>
+              </InspectorRow>
             )}
-            <div className="space-y-1.5">
-              <span className="block text-ui-xs font-medium text-text-secondary">
-                Text alignment
-              </span>
+            <InspectorRow label="Alignment">
               <SegmentedControl
                 iconOnly
+                size="sm"
                 disabled={disabled}
                 value={styles.textAlign ?? "left"}
                 options={TEXT_ALIGN_OPTIONS}
@@ -236,7 +296,7 @@ export function BlockAppearanceInspector({
                   })
                 }
               />
-            </div>
+            </InspectorRow>
             {block.type === "button" && (
               <>
                 <NumberField
@@ -272,24 +332,24 @@ export function BlockAppearanceInspector({
       <CollapsibleSection title="Spacing" defaultOpen>
         <div className="space-y-3">
           <SpacingField
+            key={`${block.id}-padding`}
             label="Padding"
             spacing={styles.padding}
             disabled={disabled}
             onChange={(next) => patchStyles({ padding: next })}
           />
           <SpacingField
+            key={`${block.id}-margin`}
             label="Margin"
             spacing={styles.margin}
             disabled={disabled}
             onChange={(next) => patchStyles({ margin: next })}
           />
           {hasBlockAlign(block) && (
-            <div className="space-y-1.5">
-              <span className="block text-ui-xs font-medium text-text-secondary">
-                Block alignment
-              </span>
+            <InspectorRow label="Align">
               <SegmentedControl
                 iconOnly
+                size="sm"
                 disabled={disabled}
                 value={(props.align as BlockAlign | undefined) ?? "left"}
                 options={BLOCK_ALIGN_OPTIONS}
@@ -299,7 +359,7 @@ export function BlockAppearanceInspector({
                   })
                 }
               />
-            </div>
+            </InspectorRow>
           )}
         </div>
       </CollapsibleSection>

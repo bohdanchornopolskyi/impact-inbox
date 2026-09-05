@@ -19,6 +19,8 @@ export type SegmentedControlProps = {
   className?: string;
   iconOnly?: boolean;
   disabled?: boolean;
+  variant?: "default" | "device";
+  size?: "md" | "sm";
 };
 
 function nextIndex(current: number, key: string, length: number) {
@@ -44,6 +46,8 @@ export function SegmentedControl({
   className,
   iconOnly = false,
   disabled = false,
+  variant = "default",
+  size = "md",
 }: SegmentedControlProps) {
   const buttonRefs = useRef<Array<HTMLButtonElement | null>>([]);
 
@@ -65,11 +69,20 @@ export function SegmentedControl({
     activate(mapped);
   }
 
+  const isDevice = variant === "device";
+  const isSm = size === "sm";
+
   return (
     <div
       className={cn(
-        "inline-flex w-fit rounded-sm bg-surface-sunken p-0.75",
-        iconOnly ? "gap-1.5" : "gap-0.5",
+        "inline-flex w-fit",
+        isDevice
+          ? "gap-0.5 rounded-md bg-bg p-0.75"
+          : isSm
+            ? "gap-0.5 rounded-sm bg-bg p-0.5"
+            : iconOnly
+              ? "gap-1.5 rounded-sm bg-surface-sunken p-0.75"
+              : "gap-0.5 rounded-sm bg-surface-sunken p-0.75",
         className,
       )}
       role="radiogroup"
@@ -79,11 +92,26 @@ export function SegmentedControl({
         const showIconOnly = iconOnly || Boolean(option.icon && !option.label);
         const accessibleName = option.ariaLabel ?? option.label ?? option.value;
         const buttonClassName = cn(
-          "inline-flex items-center justify-center rounded-sm text-sm font-semibold transition-[background-color,color,box-shadow] duration-150 ease-out disabled:cursor-not-allowed disabled:text-text-3",
-          showIconOnly ? "size-8" : "gap-1.5 px-3 py-1.5",
+          "inline-flex items-center justify-center transition-[background-color,color,box-shadow] duration-150 ease-out disabled:cursor-not-allowed disabled:text-text-3",
+          isDevice
+            ? "gap-1.5 rounded-sm px-3 py-1.5 text-sm [&_svg]:size-[15px]"
+            : showIconOnly
+              ? isSm
+                ? "size-7 rounded-xs"
+                : "size-8 rounded-sm"
+              : isSm
+                ? "h-7 rounded-xs px-2 text-xs"
+                : "gap-1.5 rounded-sm px-3 py-1.5 text-sm",
           active
-            ? "bg-surface text-text shadow-xs disabled:bg-neutral-100 disabled:shadow-none"
-            : "bg-transparent text-text-3 hover:bg-neutral-200 hover:text-text-2 active:bg-neutral-200 active:text-text disabled:hover:bg-transparent",
+            ? "bg-surface font-semibold text-text shadow-xs disabled:bg-neutral-100 disabled:shadow-none"
+            : cn(
+                "bg-transparent font-medium disabled:hover:bg-transparent",
+                isDevice
+                  ? "text-text-3 hover:text-text-2"
+                  : isSm
+                    ? "text-text-2 hover:bg-neutral-200 active:bg-neutral-200 active:text-text"
+                    : "font-semibold text-text-3 hover:bg-neutral-200 hover:text-text-2 active:bg-neutral-200 active:text-text",
+              ),
         );
 
         if (!showIconOnly) {

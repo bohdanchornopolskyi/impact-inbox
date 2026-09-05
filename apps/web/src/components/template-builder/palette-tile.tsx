@@ -25,13 +25,30 @@ export function PaletteTile({
       onClick={onClick}
       onPointerDown={onPointerDown}
       className={cn(
-        "flex flex-col items-center justify-center gap-1.5 rounded-lg border border-border-default bg-surface-muted px-2 py-2.5 text-center transition-colors hover:border-accent-border hover:bg-accent-soft disabled:cursor-not-allowed disabled:opacity-50",
+        "flex h-[38px] w-full items-center gap-2 rounded-sm border border-border bg-surface px-2.5 text-left transition-[background-color,border-color,box-shadow,opacity,transform] duration-150 ease-out",
+        disabled
+          ? "cursor-not-allowed border-transparent bg-neutral-50 text-text-3"
+          : "hover:border-border-strong hover:bg-neutral-50",
         !disabled && onPointerDown ? "touch-none cursor-grab active:cursor-grabbing" : null,
         className,
       )}
     >
-      <span className="text-text-secondary">{icon}</span>
-      <span className="text-ui-xs font-medium text-text-primary">{label}</span>
+      <span
+        className={cn(
+          "inline-flex size-[15px] shrink-0 [&_svg]:size-full",
+          disabled ? "text-neutral-400" : "text-text-2",
+        )}
+      >
+        {icon}
+      </span>
+      <span
+        className={cn(
+          "truncate text-xs font-medium",
+          disabled ? "text-text-3" : "text-text",
+        )}
+      >
+        {label}
+      </span>
     </button>
   );
 }

@@ -5,6 +5,21 @@ import { useId } from "react";
 import { Input, Select, Textarea } from "@repo/ui/client";
 import { ColorPickerField } from "./color-picker-field";
 
+export function InspectorRow({
+  label,
+  children,
+}: {
+  label: string;
+  children: ReactNode;
+}) {
+  return (
+    <div className="flex items-center gap-2.5">
+      <span className="w-19.5 shrink-0 text-xs text-text-2">{label}</span>
+      <div className="min-w-0 flex-1">{children}</div>
+    </div>
+  );
+}
+
 export function FieldRow({
   label,
   htmlFor,

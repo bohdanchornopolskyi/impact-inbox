@@ -34,6 +34,9 @@ describe("buildCanvasBridgeDocument", () => {
     expect(result).toContain("#canvas-bridge-layer");
     expect(result).toContain("canvas-bridge-hover");
     expect(result).toContain("canvas-bridge-toolbar");
+    expect(result).toContain("canvas-bridge-type-tag");
+    expect(result).toContain("canvas-bridge-drop-dot");
+    expect(result).toContain("canvas-bridge-toolbar-btn-danger");
     expect(result).toContain("canvas-bridge-drag-handle");
     expect(result).toContain("canvas-bridge-drop-indicator");
     expect(result).toContain("canvas-drag-handle-down");

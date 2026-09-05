@@ -46,7 +46,7 @@ export function BlockPalette() {
         <p className="mb-2 px-0.5 text-ui-xs font-semibold uppercase tracking-wide text-text-tertiary">
           Layout
         </p>
-        <div className="grid grid-cols-3 gap-2">
+        <div className="grid grid-cols-2 gap-1">
           {LAYOUT_BLOCK_TYPES.map((type) => {
             const definition = TEMPLATE_BLOCK_DEFINITIONS[type];
             const tileHandlers = bindPaletteTile(type, () =>
@@ -69,7 +69,7 @@ export function BlockPalette() {
         <p className="mb-2 mt-4 px-0.5 text-ui-xs font-semibold uppercase tracking-wide text-text-tertiary">
           Content
         </p>
-        <div className="grid grid-cols-2 gap-2">
+        <div className="grid grid-cols-2 gap-1">
           {CONTENT_BLOCK_TYPES.map((type) => {
             const definition = TEMPLATE_BLOCK_DEFINITIONS[type];
             const tileHandlers = bindPaletteTile(type, () =>

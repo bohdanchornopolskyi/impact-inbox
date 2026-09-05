@@ -65,7 +65,9 @@ function buildBridgeScript(canEdit: boolean): string {
   var richtextHeadingStyles = ${richtextHeadingStyles};
   var layer = null;
   var hoverFrame = null;
+  var hoverTag = null;
   var selectionFrame = null;
+  var selectionTag = null;
   var toolbar = null;
   var toolbarLabel = null;
   var toolbarActions = null;
@@ -86,11 +88,11 @@ function buildBridgeScript(canEdit: boolean): string {
   var dragPointer = null;
   var suppressBlockClick = false;
   var dragHandleSvg =
-    '<svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true" focusable="false"><circle cx="4" cy="3" r="1.2" fill="currentColor"/><circle cx="10" cy="3" r="1.2" fill="currentColor"/><circle cx="4" cy="7" r="1.2" fill="currentColor"/><circle cx="10" cy="7" r="1.2" fill="currentColor"/><circle cx="4" cy="11" r="1.2" fill="currentColor"/><circle cx="10" cy="11" r="1.2" fill="currentColor"/></svg>';
+    '<svg width="13" height="13" viewBox="0 0 14 14" aria-hidden="true" focusable="false"><circle cx="4" cy="3" r="1.2" fill="currentColor"/><circle cx="10" cy="3" r="1.2" fill="currentColor"/><circle cx="4" cy="7" r="1.2" fill="currentColor"/><circle cx="10" cy="7" r="1.2" fill="currentColor"/><circle cx="4" cy="11" r="1.2" fill="currentColor"/><circle cx="10" cy="11" r="1.2" fill="currentColor"/></svg>';
   var duplicateSvg =
-    '<svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true" focusable="false"><rect x="1.4" y="1.4" width="8" height="8" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.3"/><rect x="4.6" y="4.6" width="8" height="8" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.3"/></svg>';
+    '<svg width="13" height="13" viewBox="0 0 14 14" aria-hidden="true" focusable="false"><rect x="1.4" y="1.4" width="8" height="8" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.3"/><rect x="4.6" y="4.6" width="8" height="8" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.3"/></svg>';
   var deleteSvg =
-    '<svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true" focusable="false"><path d="M2.5 4h9M5.5 4V2.6h3V4M3.9 4l.6 8.1a1 1 0 0 0 1 .9h3a1 1 0 0 0 1-.9L10.1 4" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>';
+    '<svg width="13" height="13" viewBox="0 0 14 14" aria-hidden="true" focusable="false"><path d="M2.5 4h9M5.5 4V2.6h3V4M3.9 4l.6 8.1a1 1 0 0 0 1 .9h3a1 1 0 0 0 1-.9L10.1 4" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>';
 
   ${getCanvasBridgeEditingRuntime()}
   ${getCanvasBridgeDndRuntime()}

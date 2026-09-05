@@ -29,6 +29,15 @@ export function getCanvasBridgeChromeRuntime(): string {
     return element.getAttribute("data-block-label") || resolveBlockLabel(element);
   }
 
+  function setTypeTag(tag, element, label) {
+    if (!tag) {
+      return;
+    }
+    var text = resolveLabel(element, label);
+    tag.textContent = text;
+    tag.style.display = text ? "block" : "none";
+  }
+
   function positionToolbar(element, label) {
     if (!toolbar || !toolbarLabel) {
       return;
@@ -90,7 +99,9 @@ export function getCanvasBridgeChromeRuntime(): string {
 
   function updatePositions() {
     if (hoveredBlock && hoveredBlock.getAttribute("data-block-id") !== selectedBlockId) {
-      positionFrame(hoverFrame, resolveChromeElement(hoveredBlock));
+      var hoverChrome = resolveChromeElement(hoveredBlock);
+      positionFrame(hoverFrame, hoverChrome);
+      setTypeTag(hoverTag, hoverChrome);
     } else {
       hideFrame(hoverFrame);
     }
@@ -108,9 +119,15 @@ export function getCanvasBridgeChromeRuntime(): string {
       return;
     }
 
-    positionFrame(selectionFrame, resolveChromeElement(selected));
+    var selectedChrome = resolveChromeElement(selected);
+    positionFrame(selectionFrame, selectedChrome);
+    setTypeTag(
+      selectionTag,
+      selectedChrome,
+      toolbarLabel ? toolbarLabel.textContent || null : null,
+    );
     positionToolbar(
-      resolveChromeElement(selected),
+      selectedChrome,
       toolbarLabel ? toolbarLabel.textContent || null : null,
     );
   }
@@ -145,7 +162,9 @@ export function getCanvasBridgeChromeRuntime(): string {
     }
     hoveredBlock = element;
     ensureLayer();
-    positionFrame(hoverFrame, resolveChromeElement(element));
+    var hoverChrome = resolveChromeElement(element);
+    positionFrame(hoverFrame, hoverChrome);
+    setTypeTag(hoverTag, hoverChrome);
   }
 
   function applySelection(blockId, label) {
@@ -185,6 +204,7 @@ export function getCanvasBridgeChromeRuntime(): string {
 
     var chrome = resolveChromeElement(target);
     positionFrame(selectionFrame, chrome);
+    setTypeTag(selectionTag, chrome, label || null);
     positionToolbar(chrome, label || null);
     observeSelectedBlock(chrome);
     reportRichtextFormatStateForBlock(blockId);

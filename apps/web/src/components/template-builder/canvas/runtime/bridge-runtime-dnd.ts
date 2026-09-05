@@ -206,10 +206,22 @@ export function getCanvasBridgeDndRuntime(): string {
     layer.id = "canvas-bridge-layer";
     hoverFrame = document.createElement("div");
     hoverFrame.className = "canvas-bridge-frame canvas-bridge-hover";
+    hoverTag = document.createElement("div");
+    hoverTag.className = "canvas-bridge-type-tag canvas-bridge-type-tag-hover";
+    hoverFrame.appendChild(hoverTag);
     selectionFrame = document.createElement("div");
     selectionFrame.className = "canvas-bridge-frame canvas-bridge-selected";
+    selectionTag = document.createElement("div");
+    selectionTag.className = "canvas-bridge-type-tag canvas-bridge-type-tag-selected";
+    selectionFrame.appendChild(selectionTag);
     dropIndicator = document.createElement("div");
     dropIndicator.className = "canvas-bridge-drop-indicator";
+    var dropDot = document.createElement("div");
+    dropDot.className = "canvas-bridge-drop-dot";
+    var dropLine = document.createElement("div");
+    dropLine.className = "canvas-bridge-drop-line";
+    dropIndicator.appendChild(dropDot);
+    dropIndicator.appendChild(dropLine);
     toolbar = document.createElement("div");
     toolbar.className = "canvas-bridge-toolbar";
     toolbarLabel = document.createElement("span");
@@ -416,7 +428,10 @@ export function getCanvasBridgeDndRuntime(): string {
   function createToolbarActionButton(label, svg, action) {
     var button = document.createElement("button");
     button.type = "button";
-    button.className = "canvas-bridge-toolbar-btn";
+    button.className =
+      action === "delete"
+        ? "canvas-bridge-toolbar-btn canvas-bridge-toolbar-btn-danger"
+        : "canvas-bridge-toolbar-btn";
     button.setAttribute("aria-label", label);
     button.title = label;
     button.innerHTML = svg;
@@ -575,10 +590,11 @@ export function getCanvasBridgeDndRuntime(): string {
     if (!dropIndicator) {
       return;
     }
-    dropIndicator.style.display = "block";
+    dropIndicator.classList.remove("canvas-bridge-drop-indicator-vertical");
+    dropIndicator.style.display = "flex";
     dropIndicator.style.width = width + "px";
-    dropIndicator.style.height = "2px";
-    dropIndicator.style.top = top + "px";
+    dropIndicator.style.height = "14px";
+    dropIndicator.style.top = top - 6 + "px";
     dropIndicator.style.left = left + "px";
   }
 
@@ -586,11 +602,12 @@ export function getCanvasBridgeDndRuntime(): string {
     if (!dropIndicator) {
       return;
     }
-    dropIndicator.style.display = "block";
-    dropIndicator.style.width = "2px";
+    dropIndicator.classList.add("canvas-bridge-drop-indicator-vertical");
+    dropIndicator.style.display = "flex";
+    dropIndicator.style.width = "14px";
     dropIndicator.style.height = height + "px";
     dropIndicator.style.top = top + "px";
-    dropIndicator.style.left = left + "px";
+    dropIndicator.style.left = left - 6 + "px";
   }
 
   function positionDropIndicator(left, top, width) {

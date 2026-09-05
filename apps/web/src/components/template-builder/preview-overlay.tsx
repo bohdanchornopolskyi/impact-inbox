@@ -47,6 +47,7 @@ export function PreviewOverlay() {
         </p>
         <div className="flex items-center gap-3">
           <SegmentedControl
+            variant="device"
             value={previewDevice}
             onChange={(value) =>
               setPreviewDevice(value as "desktop" | "mobile")
@@ -55,12 +56,12 @@ export function PreviewOverlay() {
               {
                 value: "desktop",
                 label: "Desktop",
-                icon: <Monitor className="size-4" strokeWidth={1.5} />,
+                icon: <Monitor strokeWidth={1.5} />,
               },
               {
                 value: "mobile",
                 label: "Mobile",
-                icon: <Smartphone className="size-4" strokeWidth={1.5} />,
+                icon: <Smartphone strokeWidth={1.5} />,
               },
             ]}
           />

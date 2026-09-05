@@ -75,18 +75,17 @@ function PaletteDragGhost({ ghost }: { ghost: PaletteDragGhostState }) {
 
   return (
     <div
-      className="pointer-events-none fixed z-[10000] flex w-[88px] flex-col items-center justify-center gap-1.5 rounded-lg border border-accent-border bg-surface-card px-2 py-2.5 text-center shadow-card"
+      className="pointer-events-none fixed z-[10000] flex h-[38px] items-center gap-2 rounded-sm border border-accent bg-surface px-2.5 text-xs font-medium text-text opacity-90 shadow-[0_8px_16px_#0f172a29]"
       style={{
         left: ghost.x,
         top: ghost.y,
-        transform: "translate(-50%, -50%)",
-      }}>
-      <span className="text-text-secondary">
+        transform: "translate(-50%, -50%) rotate(-2deg)",
+      }}
+    >
+      <span className="inline-flex size-[15px] shrink-0 text-text-2 [&_svg]:size-full">
         <TemplateBlockIcon type={ghost.blockType} />
       </span>
-      <span className="text-ui-xs font-medium text-text-primary">
-        {definition.label}
-      </span>
+      <span>{definition.label}</span>
     </div>
   );
 }

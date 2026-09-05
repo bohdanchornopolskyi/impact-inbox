@@ -371,6 +371,7 @@ export function PreviewCanvas() {
       <div className="flex shrink-0 items-center justify-between border-b border-border-default bg-surface-card px-4 py-2">
         <p className="text-ui-sm text-text-secondary">Canvas preview</p>
         <SegmentedControl
+          variant="device"
           value={previewDevice}
           onChange={(value) =>
             setPreviewDevice(value as "desktop" | "mobile")
@@ -379,12 +380,12 @@ export function PreviewCanvas() {
             {
               value: "desktop",
               label: "Desktop",
-              icon: <Monitor className="size-4" strokeWidth={1.5} />,
+              icon: <Monitor strokeWidth={1.5} />,
             },
             {
               value: "mobile",
               label: "Mobile",
-              icon: <Smartphone className="size-4" strokeWidth={1.5} />,
+              icon: <Smartphone strokeWidth={1.5} />,
             },
           ]}
         />
