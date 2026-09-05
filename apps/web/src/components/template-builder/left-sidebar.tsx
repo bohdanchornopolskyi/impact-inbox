@@ -8,39 +8,39 @@ import { BlockPalette } from "./block-palette";
 import { ModulesPanel } from "./modules-panel";
 import { StructurePanel } from "./structure-panel";
 
-type SidebarTab = "blocks" | "modules" | "assets" | "structure";
+type SidebarTab = "blocks" | "structure" | "assets" | "modules";
 
 export function LeftSidebar() {
   const [tab, setTab] = useState<SidebarTab>("blocks");
 
   return (
-    <div className="flex h-full min-h-0 flex-col overflow-hidden border-r border-border-default bg-surface-card">
-      <div className="shrink-0 border-b border-border-subtle px-4 py-3">
+    <div className="flex h-full min-h-0 flex-col overflow-hidden border-r border-border bg-surface">
+      <div className="flex h-11.5 shrink-0 items-center border-b border-border px-2.5">
         <SegmentedControl
-          iconOnly
-          className="w-full"
+          size="sm"
+          className="w-full [&_button]:min-w-0 [&_button]:flex-1 [&_button]:gap-1"
           value={tab}
           onChange={(value) => setTab(value as SidebarTab)}
           options={[
             {
               value: "blocks",
-              ariaLabel: "Blocks",
-              icon: <LayoutGrid className="size-4" strokeWidth={1.5} />,
-            },
-            {
-              value: "modules",
-              ariaLabel: "Modules",
-              icon: <Bookmark className="size-4" strokeWidth={1.5} />,
-            },
-            {
-              value: "assets",
-              ariaLabel: "Assets",
-              icon: <ImageIcon className="size-4" strokeWidth={1.5} />,
+              label: "Blocks",
+              icon: <LayoutGrid className="size-3.5" strokeWidth={1.5} />,
             },
             {
               value: "structure",
-              ariaLabel: "Structure",
-              icon: <ListTree className="size-4" strokeWidth={1.5} />,
+              label: "Layers",
+              icon: <ListTree className="size-3.5" strokeWidth={1.5} />,
+            },
+            {
+              value: "assets",
+              label: "Assets",
+              icon: <ImageIcon className="size-3.5" strokeWidth={1.5} />,
+            },
+            {
+              value: "modules",
+              label: "Saved",
+              icon: <Bookmark className="size-3.5" strokeWidth={1.5} />,
             },
           ]}
         />

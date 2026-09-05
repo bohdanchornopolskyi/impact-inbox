@@ -1,8 +1,6 @@
 "use client";
 
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
-import { Monitor, Smartphone } from "lucide-react";
-import { SegmentedControl } from "@repo/ui/client";
 import {
   findBlock,
   getBlockLabel,
@@ -23,6 +21,8 @@ import {
   createCanvasPreviewController,
   resolveEffectiveHtml,
 } from "./canvas-preview-controller";
+import { CanvasSelectionBar } from "./canvas-selection-bar";
+import { CanvasSubjectCard } from "./canvas-subject-card";
 import { usePaletteCanvasDnd } from "./palette-canvas-dnd-context";
 import { useCanvasViewportAutoScroll } from "./use-canvas-viewport-auto-scroll";
 import {
@@ -46,7 +46,7 @@ export function PreviewCanvas() {
   const previewOpen = useBuilder((s) => s.previewOpen);
   const setPreviewOpen = useBuilder((s) => s.setPreviewOpen);
   const previewDevice = useBuilder((s) => s.previewDevice);
-  const setPreviewDevice = useBuilder((s) => s.setPreviewDevice);
+  const previewZoom = useBuilder((s) => s.previewZoom);
   const { saveRevision, isPending: isSaving } = useSaveRevision();
   const {
     session: richtextSession,
@@ -367,47 +367,33 @@ export function PreviewCanvas() {
   const srcDoc = iframeSrcDoc;
 
   return (
-    <div className="flex h-full min-h-0 flex-col overflow-hidden bg-surface-sunken">
-      <div className="flex shrink-0 items-center justify-between border-b border-border-default bg-surface-card px-4 py-2">
-        <p className="text-ui-sm text-text-secondary">Canvas preview</p>
-        <SegmentedControl
-          variant="device"
-          value={previewDevice}
-          onChange={(value) =>
-            setPreviewDevice(value as "desktop" | "mobile")
-          }
-          options={[
-            {
-              value: "desktop",
-              label: "Desktop",
-              icon: <Monitor strokeWidth={1.5} />,
-            },
-            {
-              value: "mobile",
-              label: "Mobile",
-              icon: <Smartphone strokeWidth={1.5} />,
-            },
-          ]}
-        />
-      </div>
+    <div className="flex h-full min-h-0 flex-col overflow-hidden bg-canvas-bg">
+      <CanvasSelectionBar />
       <div
         ref={scrollContainerRef}
-        className="flex min-h-0 flex-1 items-start justify-center overflow-x-hidden overflow-y-auto p-8">
+        className="flex min-h-0 flex-1 justify-center overflow-auto px-8 pt-4.5 pb-8">
         <div
-          className="relative bg-white shadow-card"
-          style={{ width: canvasWidth }}>
-          <iframe
-            ref={iframeRef}
-            title="Template preview"
-            className="block w-full border-0"
-            style={{ minHeight: 640 }}
-            srcDoc={srcDoc}
-            onLoad={handleIframeLoad}
-          />
+          className="flex flex-col items-center gap-3"
+          style={{ zoom: previewZoom / 100 }}
+        >
+          <CanvasSubjectCard width={canvasWidth} />
+          <div
+            className="relative overflow-hidden rounded-md bg-white shadow-card"
+            style={{ width: canvasWidth }}
+          >
+            <iframe
+              ref={iframeRef}
+              title="Template preview"
+              className="block w-full border-0"
+              style={{ minHeight: 640 }}
+              srcDoc={srcDoc}
+              onLoad={handleIframeLoad}
+            />
+          </div>
         </div>
       </div>
       {!canEdit ? (
-        <p className="shrink-0 border-t border-border-subtle px-4 py-2 text-ui-xs text-text-tertiary">
+        <p className="shrink-0 border-t border-border px-4 py-2 text-ui-xs text-text-3">
           View-only access
         </p>
       ) : null}

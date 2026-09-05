@@ -31,6 +31,7 @@ import {
   updateBlockStyles,
   updateSettings,
 } from "@repo/shared";
+import { clampZoom, ZOOM_DEFAULT } from "@repo/ui/client";
 import { useToast } from "@/components/ui/toast";
 import {
   useRestoreTemplateRevision,
@@ -84,6 +85,7 @@ type BuilderState = {
   exportOpen: boolean;
   restoreRevisionId: string | null;
   previewDevice: PreviewDevice;
+  previewZoom: number;
   saveState: SaveState;
   canEdit: boolean;
   conflictOpen: boolean;
@@ -137,6 +139,7 @@ type BuilderState = {
   setExportOpen: (open: boolean) => void;
   setRestoreRevisionId: (revisionId: string | null) => void;
   setPreviewDevice: (device: PreviewDevice) => void;
+  setPreviewZoom: (zoom: number) => void;
   setSaveState: (saveState: SaveState) => void;
   setConflictOpen: (open: boolean) => void;
   setBrandKit: (brandKit: BrandKitData | null) => void;
@@ -219,6 +222,7 @@ function createBuilderStore(
       exportOpen: false,
       restoreRevisionId: null,
       previewDevice: "desktop",
+      previewZoom: ZOOM_DEFAULT,
       saveState: "synced",
       canEdit,
       conflictOpen: false,
@@ -427,6 +431,7 @@ function createBuilderStore(
       setRestoreRevisionId: (revisionId) =>
         set({ restoreRevisionId: revisionId }),
       setPreviewDevice: (device) => set({ previewDevice: device }),
+      setPreviewZoom: (zoom) => set({ previewZoom: clampZoom(zoom) }),
       setSaveState: (saveState) => set({ saveState }),
       setConflictOpen: (open) => set({ conflictOpen: open }),
       setBrandKit: (brandKit) => set({ brandKit }),

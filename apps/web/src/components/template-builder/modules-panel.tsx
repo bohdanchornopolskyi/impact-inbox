@@ -228,7 +228,7 @@ export function ModulesPanel() {
   return (
     <div className="flex h-full min-h-0 flex-col overflow-hidden">
       <div className="shrink-0 border-b border-border-subtle px-4 py-3">
-        <h2 className="text-ui-sm font-semibold text-text-primary">Modules</h2>
+        <h2 className="text-ui-sm font-semibold text-text-primary">Saved</h2>
         <p className="mt-0.5 text-ui-xs text-text-tertiary">
           Insert a copy into this template.{" "}
           <Link

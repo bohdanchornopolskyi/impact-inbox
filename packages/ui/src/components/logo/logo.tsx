@@ -16,23 +16,40 @@ function Mark({ size = 17 }: { size?: number }) {
 
 export type LogoProps = {
   centered?: boolean;
+  compact?: boolean;
   href?: string;
   className?: string;
 };
 
-export function Logo({ centered = false, href, className }: LogoProps) {
+export function Logo({
+  centered = false,
+  compact = false,
+  href,
+  className,
+}: LogoProps) {
   const content = (
     <div
       className={cn(
-        "flex items-center justify-center gap-2.5",
+        "flex items-center",
+        compact ? "gap-2" : "justify-center gap-2.5",
         centered && "mb-logo-gap",
         className,
       )}
     >
-      <span className="inline-flex size-8 shrink-0 items-center justify-center rounded-[9px] bg-accent shadow-accent">
-        <Mark />
+      <span
+        className={cn(
+          "inline-flex shrink-0 items-center justify-center bg-accent shadow-accent",
+          compact ? "size-[26px] rounded-[7px]" : "size-8 rounded-[9px]",
+        )}
+      >
+        <Mark size={compact ? 14 : 17} />
       </span>
-      <span className="text-ui-xl font-semibold tracking-tight text-text-primary">
+      <span
+        className={cn(
+          "font-semibold tracking-tight text-text-primary",
+          compact ? "text-[15px] leading-none" : "text-ui-xl",
+        )}
+      >
         Impact Inbox
       </span>
     </div>

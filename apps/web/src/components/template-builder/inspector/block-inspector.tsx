@@ -10,7 +10,6 @@ import {
   coercePropValue,
   numberPropBounds,
 } from "@repo/shared";
-import { Button } from "@repo/ui/client";
 import { useBuilder, useSelectedBlock } from "../builder-provider";
 import {
   asString,
@@ -39,7 +38,7 @@ export function BlockInspector() {
   if (!selectedBlock) {
     return (
       <p className="text-ui-sm text-text-secondary">
-        Select a block in the structure tree to edit its properties.
+        Select a block on the canvas to edit its properties.
       </p>
     );
   }
@@ -69,17 +68,6 @@ export function BlockInspector() {
 
     return (
       <div className="space-y-4">
-        <div className="flex items-start justify-between gap-3">
-          <div>
-            <h2 className="text-ui-sm font-semibold capitalize text-text-primary">
-              {layoutBlock.type}
-            </h2>
-            <p className="mt-0.5 text-ui-xs text-text-tertiary">
-              Layout spacing and background for this {layoutBlock.type}.
-            </p>
-          </div>
-          <BlockActions blockId={layoutBlock.id} canEdit={canEdit} />
-        </div>
         <LayoutBlockPropsInspector
           block={layoutBlock}
           updateProps={updateProps}
@@ -117,17 +105,6 @@ export function BlockInspector() {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <h2 className="text-ui-sm font-semibold capitalize text-text-primary">
-            {block.type} block
-          </h2>
-          <p className="mt-0.5 font-mono text-ui-xs text-text-tertiary">
-            {block.id}
-          </p>
-        </div>
-        <BlockActions blockId={block.id} canEdit={canEdit} />
-      </div>
       <BlockFields
         block={block}
         definition={definition}
@@ -140,40 +117,6 @@ export function BlockInspector() {
         updateStyles={updateStyles}
         updateProps={updateProps}
       />
-    </div>
-  );
-}
-
-function BlockActions({
-  blockId,
-  canEdit,
-}: {
-  blockId: string;
-  canEdit: boolean;
-}) {
-  const removeBlock = useBuilder((s) => s.removeBlock);
-  const duplicateBlock = useBuilder((s) => s.duplicateBlock);
-
-  if (!canEdit) {
-    return null;
-  }
-
-  return (
-    <div className="flex shrink-0 items-center gap-2">
-      <Button
-        variant="secondary"
-        size="sm"
-        title="Duplicate (Ctrl/Cmd+D)"
-        onClick={() => duplicateBlock(blockId)}>
-        Duplicate
-      </Button>
-      <Button
-        variant="danger"
-        size="sm"
-        title="Remove (Delete)"
-        onClick={() => removeBlock(blockId)}>
-        Remove
-      </Button>
     </div>
   );
 }

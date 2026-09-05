@@ -423,7 +423,7 @@ export function StructurePanel() {
   return (
     <div className="flex h-full min-h-0 flex-col overflow-hidden">
       <div className="shrink-0 border-b border-border-subtle px-4 py-3">
-        <h2 className="text-ui-sm font-semibold text-text-primary">Structure</h2>
+        <h2 className="text-ui-sm font-semibold text-text-primary">Layers</h2>
         <p className="mt-0.5 text-ui-xs text-text-tertiary">
           Manage layout and reorder content blocks.
         </p>

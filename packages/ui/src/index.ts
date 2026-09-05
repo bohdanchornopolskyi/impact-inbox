@@ -44,6 +44,15 @@ export {
   type SaveStatusProps,
   type SaveStatusTone,
 } from "./components/save-status/save-status";
+export {
+  ZoomControl,
+  clampZoom,
+  ZOOM_DEFAULT,
+  ZOOM_MAX,
+  ZOOM_MIN,
+  ZOOM_STEP,
+  type ZoomControlProps,
+} from "./components/zoom-control/zoom-control";
 export { ClosePanelButton } from "./components/close-panel-button/close-panel-button";
 export {
   SegmentedControl,

@@ -6,12 +6,14 @@ import {
   ChevronLeft,
   Eye,
   History,
+  Monitor,
   Pencil,
   Redo2,
+  Smartphone,
   Undo2,
   Upload,
 } from "lucide-react";
-import { Button, SaveStatus } from "@repo/ui/client";
+import { Button, SaveStatus, SegmentedControl, ZoomControl } from "@repo/ui/client";
 import { formatDistanceToNow } from "date-fns";
 import { parseApiDate } from "@/lib/format-date";
 import { useWorkspace } from "@/contexts/workspace-context";
@@ -78,6 +80,10 @@ export function BuilderToolbar() {
   const setPreviewOpen = useBuilder((s) => s.setPreviewOpen);
   const setRevisionsOpen = useBuilder((s) => s.setRevisionsOpen);
   const setExportOpen = useBuilder((s) => s.setExportOpen);
+  const previewDevice = useBuilder((s) => s.previewDevice);
+  const setPreviewDevice = useBuilder((s) => s.setPreviewDevice);
+  const previewZoom = useBuilder((s) => s.previewZoom);
+  const setPreviewZoom = useBuilder((s) => s.setPreviewZoom);
   const applyRename = useApplyTemplateRename();
   const { saveRevision, isPending: isSaving } = useSaveRevision();
   const [renameOpen, setRenameOpen] = useState(false);
@@ -87,107 +93,157 @@ export function BuilderToolbar() {
   }
 
   return (
-    <div className="flex h-12 shrink-0 items-center gap-3 border-b border-border-default bg-surface-card px-4">
-      <Link
-        href={`/${workspace.slug}/templates`}
-        className="inline-flex items-center gap-1 text-ui-sm text-text-secondary hover:text-text-primary"
-        title={
-          saveState === "unsaved"
-            ? "Changes autosave — leaving keeps your template"
-            : undefined
-        }>
-        <ChevronLeft className="size-4" strokeWidth={1.5} />
-        Templates
-      </Link>
-      <div className="h-5 w-px bg-border-default" />
-      <div className="min-w-0 flex-1">
+    <>
+    <div className="grid h-14 shrink-0 grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-3 border-b border-border bg-surface px-4">
+      <div className="flex min-w-0 items-center gap-2.5">
+        <Link
+          href={`/${workspace.slug}/templates`}
+          className="inline-flex h-7 items-center gap-1 rounded-sm px-2 text-sm font-medium text-text-2 hover:bg-surface-sunken hover:text-text"
+          title={
+            saveState === "unsaved"
+              ? "Changes autosave — leaving keeps your template"
+              : undefined
+          }
+        >
+          <ChevronLeft className="size-3.75" strokeWidth={1.5} />
+          Templates
+        </Link>
+        <div className="h-5 w-px bg-border" />
         {canEdit ? (
           <button
             type="button"
-            className="group inline-flex max-w-full min-w-0 items-center gap-1.5 rounded-md px-1 -mx-1 text-left hover:bg-surface-muted"
+            className="group inline-flex max-w-full min-w-0 items-center gap-1.5 rounded-sm px-2 py-1.5 text-left hover:bg-surface-sunken"
             title="Rename template"
-            onClick={() => setRenameOpen(true)}>
-            <span className="truncate text-ui-md font-semibold text-text-primary">
+            onClick={() => setRenameOpen(true)}
+          >
+            <span className="truncate text-md font-semibold text-text">
               {name}
             </span>
             <Pencil
-              className="size-3.5 shrink-0 text-text-tertiary opacity-0 transition-opacity group-hover:opacity-100"
+              className="size-3.25 shrink-0 text-text-3"
               strokeWidth={1.5}
             />
           </button>
         ) : (
-          <p className="truncate text-ui-md font-semibold text-text-primary">
-            {name}
-          </p>
+          <p className="truncate px-2 text-md font-semibold text-text">{name}</p>
         )}
+        <WorkingCopySyncStatus />
       </div>
-      <WorkingCopySyncStatus />
-      {canEdit ? (
-        <div className="flex items-center gap-0.5">
-          <Button
-            icon
-            variant="ghost"
-            disabled={!canUndo}
-            title="Undo (Ctrl/Cmd+Z)"
-            aria-label="Undo"
-            onClick={() => undo()}>
-            <Undo2 />
-          </Button>
-          <Button
-            icon
-            variant="ghost"
-            disabled={!canRedo}
-            title="Redo (Ctrl/Cmd+Shift+Z)"
-            aria-label="Redo"
-            onClick={() => redo()}>
-            <Redo2 />
-          </Button>
-        </div>
-      ) : null}
-      <Button
-        variant="ghost"
-        size="sm"
-        leftIcon={<Eye className="size-4" strokeWidth={1.5} />}
-        title="Preview (Ctrl/Cmd+P)"
-        onClick={() => setPreviewOpen(true)}>
-        Preview
-      </Button>
-      <Button
-        variant="ghost"
-        size="sm"
-        leftIcon={<History className="size-4" strokeWidth={1.5} />}
-        onClick={() => setRevisionsOpen(true)}>
-        History
-      </Button>
-      {canEdit ? (
-        <>
-          <Button
-            variant="secondary"
-            size="sm"
-            leftIcon={<Upload className="size-4" strokeWidth={1.5} />}
-            onClick={() => setExportOpen(true)}>
-            Export
-          </Button>
-          <Button
-            variant="primary"
-            size="sm"
-            disabled={isSaving}
-            title="Create a revision snapshot (Ctrl/Cmd+S)"
-            onClick={() => void handleSaveRevision()}>
-            Save
-          </Button>
-        </>
-      ) : null}
-      {canEdit ? (
-        <RenameTemplateModal
-          open={renameOpen}
-          onOpenChange={setRenameOpen}
-          templateId={templateId}
-          currentName={name}
-          expectedUpdatedAt={updatedAt}
-          onRenamed={applyRename}
+
+      <div className="flex items-center gap-2">
+        <SegmentedControl
+          variant="device"
+          value={previewDevice}
+          onChange={(value) =>
+            setPreviewDevice(value as "desktop" | "mobile")
+          }
+          options={[
+            {
+              value: "desktop",
+              label: "Desktop",
+              icon: <Monitor strokeWidth={1.5} />,
+            },
+            {
+              value: "mobile",
+              label: "Mobile",
+              icon: <Smartphone strokeWidth={1.5} />,
+            },
+          ]}
         />
-      ) : null}
+        <ZoomControl value={previewZoom} onChange={setPreviewZoom} />
+      </div>
+
+      <div className="flex items-center justify-end gap-2">
+        {canEdit ? (
+          <div className="flex items-center gap-0.5">
+            <Button
+              icon
+              variant="ghost"
+              className="size-[30px]"
+              disabled={!canUndo}
+              title="Undo (Ctrl/Cmd+Z)"
+              aria-label="Undo"
+              onClick={() => undo()}
+            >
+              <Undo2 />
+            </Button>
+            <Button
+              icon
+              variant="ghost"
+              className="size-[30px]"
+              disabled={!canRedo}
+              title="Redo (Ctrl/Cmd+Shift+Z)"
+              aria-label="Redo"
+              onClick={() => redo()}
+            >
+              <Redo2 />
+            </Button>
+            <Button
+              icon
+              variant="ghost"
+              className="size-[30px]"
+              title="Version history"
+              aria-label="Version history"
+              onClick={() => setRevisionsOpen(true)}
+            >
+              <History />
+            </Button>
+          </div>
+        ) : (
+          <Button
+            icon
+            variant="ghost"
+            className="size-[30px]"
+            title="Version history"
+            aria-label="Version history"
+            onClick={() => setRevisionsOpen(true)}
+          >
+            <History />
+          </Button>
+        )}
+        <div className="h-5 w-px bg-border" />
+        <Button
+          variant="secondary"
+          size="sm"
+          leftIcon={<Eye className="size-3.75" strokeWidth={1.5} />}
+          title="Preview (Ctrl/Cmd+P)"
+          onClick={() => setPreviewOpen(true)}
+        >
+          Preview
+        </Button>
+        {canEdit ? (
+          <>
+            <Button
+              variant="secondary"
+              size="sm"
+              leftIcon={<Upload className="size-3.75" strokeWidth={1.5} />}
+              onClick={() => setExportOpen(true)}
+            >
+              Export
+            </Button>
+            <Button
+              variant="primary"
+              size="sm"
+              disabled={isSaving}
+              title="Create a revision snapshot (Ctrl/Cmd+S)"
+              onClick={() => void handleSaveRevision()}
+            >
+              Save
+            </Button>
+          </>
+        ) : null}
+      </div>
     </div>
+    {canEdit ? (
+      <RenameTemplateModal
+        open={renameOpen}
+        onOpenChange={setRenameOpen}
+        templateId={templateId}
+        currentName={name}
+        expectedUpdatedAt={updatedAt}
+        onRenamed={applyRename}
+      />
+    ) : null}
+    </>
   );
 }

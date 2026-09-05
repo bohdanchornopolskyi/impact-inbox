@@ -10,7 +10,9 @@ export type LayoutBlockType = (typeof LAYOUT_BLOCK_TYPES)[number];
 
 const layoutBlockTypeSet = new Set<string>(LAYOUT_BLOCK_TYPES);
 
-export function isLayoutBlockType(type: TemplateBlockType): boolean {
+export function isLayoutBlockType(
+  type: TemplateBlockType,
+): type is LayoutBlockType {
   return layoutBlockTypeSet.has(type);
 }
 

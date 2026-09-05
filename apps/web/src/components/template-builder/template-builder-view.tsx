@@ -45,7 +45,7 @@ export function TemplateBuilderView({ templateId }: TemplateBuilderViewProps) {
               <BuilderToolbar />
               <MergeTagWarnings />
             </div>
-            <div className="grid min-h-0 flex-1 grid-cols-[266px_minmax(0,1fr)_302px] overflow-hidden [&>*]:min-h-0">
+            <div className="grid min-h-0 flex-1 grid-cols-[var(--spacing-panel-left)_minmax(0,1fr)_var(--spacing-panel-right)] overflow-hidden [&>*]:min-h-0">
               <LeftSidebar />
               <PreviewCanvas />
               <BuilderInspectorPanel />

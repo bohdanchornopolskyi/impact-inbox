@@ -91,7 +91,7 @@ function SpacingInput({
         const next = event.target.value;
         onChange(next === "" ? 0 : Number(next));
       }}
-      className="field-control h-8 w-full rounded-sm border border-border-strong bg-surface text-center text-xs font-medium text-text outline-none transition-[border-color,box-shadow] duration-150 ease-out hover:border-neutral-400 focus-visible:border-accent focus-visible:shadow-(--shadow-ring-accent) disabled:border-neutral-200 disabled:bg-neutral-100 disabled:text-text-3"
+      className="field-control h-8 w-full rounded-sm border border-border-strong bg-surface p-0 text-center text-xs font-medium leading-8 tabular-nums text-text outline-none transition-[border-color,box-shadow] duration-150 ease-out [appearance:textfield] hover:border-neutral-400 focus-visible:border-accent focus-visible:shadow-(--shadow-ring-accent) disabled:border-neutral-200 disabled:bg-neutral-100 disabled:text-text-3 [&::-webkit-inner-spin-button]:m-0 [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:m-0 [&::-webkit-outer-spin-button]:appearance-none"
     />
   );
 }
@@ -136,7 +136,7 @@ function SpacingField({
           />
           <div />
         </div>
-        <div className="grid grid-cols-3 gap-1.5">
+        <div className="grid grid-cols-3 items-center gap-1.5">
           <SpacingInput
             label={`${label} left`}
             value={sides.left}
@@ -151,11 +151,11 @@ function SpacingField({
             onClick={() => setLinked((current) => !current)}
             className={
               linked
-                ? "inline-flex size-8 items-center justify-center rounded-sm bg-accent-soft text-accent outline-none transition-[box-shadow] duration-150 ease-out focus-visible:shadow-(--shadow-ring-accent)"
-                : "inline-flex size-8 items-center justify-center rounded-sm border border-border-strong bg-surface text-text-3 outline-none transition-[border-color,box-shadow] duration-150 ease-out hover:border-neutral-400 focus-visible:border-accent focus-visible:shadow-(--shadow-ring-accent)"
+                ? "inline-flex size-8 items-center justify-center justify-self-center rounded-sm bg-accent-soft text-accent outline-none transition-shadow duration-150 ease-out focus-visible:shadow-(--shadow-ring-accent)"
+                : "inline-flex size-8 items-center justify-center justify-self-center rounded-sm border border-border-strong bg-surface text-text-3 outline-none transition-[border-color,box-shadow] duration-150 ease-out hover:border-neutral-400 focus-visible:border-accent focus-visible:shadow-(--shadow-ring-accent)"
             }
           >
-            <Link2 className="size-icon-sm" strokeWidth={1.5} />
+            <Link2 className="size-3.5" strokeWidth={1.5} />
           </button>
           <SpacingInput
             label={`${label} right`}
@@ -234,7 +234,7 @@ export function BlockAppearanceInspector({
   }
 
   return (
-    <div className="space-y-3">
+    <div className="-mx-4 border-t border-border">
       {hasTypographyControls(block) ? (
         <CollapsibleSection title="Typography" defaultOpen>
           <div className="space-y-3">
