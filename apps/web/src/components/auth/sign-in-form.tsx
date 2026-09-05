@@ -80,9 +80,9 @@ export function SignInForm() {
           size="lg"
           fullWidth
           className="mt-1"
-          disabled={isSubmitting || signInMutation.isPending}
+          loading={isSubmitting || signInMutation.isPending}
         >
-          {signInMutation.isPending ? "Signing in..." : "Sign in"}
+          Sign in
         </Button>
       </form>
     </AuthShell>

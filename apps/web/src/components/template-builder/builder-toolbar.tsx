@@ -128,22 +128,22 @@ export function BuilderToolbar() {
       {canEdit ? (
         <div className="flex items-center gap-0.5">
           <Button
+            icon
             variant="ghost"
-            size="sm"
             disabled={!canUndo}
             title="Undo (Ctrl/Cmd+Z)"
             aria-label="Undo"
             onClick={() => undo()}>
-            <Undo2 className="size-4" strokeWidth={1.5} />
+            <Undo2 />
           </Button>
           <Button
+            icon
             variant="ghost"
-            size="sm"
             disabled={!canRedo}
             title="Redo (Ctrl/Cmd+Shift+Z)"
             aria-label="Redo"
             onClick={() => redo()}>
-            <Redo2 className="size-4" strokeWidth={1.5} />
+            <Redo2 />
           </Button>
         </div>
       ) : null}
