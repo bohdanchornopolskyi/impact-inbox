@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { Button, Card } from "@repo/ui/client";
+import { Button, Card, EmptyState, Skeleton } from "@repo/ui/client";
 import { hasWorkspaceRoleAtLeast } from "@repo/shared";
 import { useSession } from "@/contexts/session-context";
 import { useWorkspace } from "@/contexts/workspace-context";
@@ -46,18 +46,30 @@ export function ContactListsView() {
 
       <FeatureLock locked={locked} orgId={workspace.organizationId}>
         {listsQuery.isLoading ? (
-          <p className="text-ui-sm text-text-secondary">Loading lists…</p>
+          <Skeleton />
+        ) : (listsQuery.data ?? []).length === 0 ? (
+          <EmptyState
+            title="No lists yet"
+            description="Group contacts for campaigns and imports."
+            action={
+              canEdit && !locked ? (
+                <Button variant="primary" onClick={() => setCreateOpen(true)}>
+                  New list
+                </Button>
+              ) : null
+            }
+          />
         ) : (
           <div className="grid gap-4 sm:grid-cols-2">
             {(listsQuery.data ?? []).map((list) => (
               <Card key={list.id} className="p-5">
                 <Link
                   href={`/${workspace.slug}/contacts/lists/${list.id}`}
-                  className="text-ui-lg font-medium text-text-primary hover:underline"
+                  className="text-lg font-medium text-text"
                 >
                   {list.name}
                 </Link>
-                <p className="mt-2 text-ui-sm text-text-secondary">
+                <p className="mt-2 text-sm text-text-2">
                   {list.memberCount} members
                   {list.doubleOptInEnabled ? " · double opt-in" : ""}
                 </p>

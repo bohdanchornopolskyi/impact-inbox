@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { Button } from "@repo/ui/client";
+import { Button, EmptyState, Skeleton, Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@repo/ui/client";
 import { hasWorkspaceRoleAtLeast } from "@repo/shared";
 import { useWorkspace } from "@/contexts/workspace-context";
 import {
@@ -30,7 +30,11 @@ export function ContactListDetailView({ listId }: ContactListDetailViewProps) {
   const [importOpen, setImportOpen] = useState(false);
 
   if (listQuery.isPending || membersQuery.isPending) {
-    return <p className="p-8 text-ui-sm text-text-secondary">Loading…</p>;
+    return (
+      <WorkspacePageShell>
+        <Skeleton />
+      </WorkspacePageShell>
+    );
   }
 
   if (!listQuery.data) {
@@ -74,41 +78,49 @@ export function ContactListDetailView({ listId }: ContactListDetailViewProps) {
         }
       />
 
-      <div className="overflow-hidden rounded-2xl border border-border-default">
-        <table className="min-w-full divide-y divide-border-default text-ui-sm">
-          <thead className="bg-surface-inset">
-            <tr>
-              <th className="px-4 py-3 text-left font-medium text-text-secondary">
-                Email
-              </th>
-              <th className="px-4 py-3 text-left font-medium text-text-secondary">
-                Status
-              </th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-border-default bg-surface-card">
+      {members.length === 0 ? (
+        <EmptyState
+          title="No members yet"
+          description="Import a CSV or add contacts to this list."
+          action={
+            canEdit ? (
+              <Button variant="primary" onClick={() => setImportOpen(true)}>
+                Import CSV
+              </Button>
+            ) : null
+          }
+        />
+      ) : (
+        <Table>
+          <TableHeader>
+            <TableRow interactive={false} className="h-10">
+              <TableHead>Email</TableHead>
+              <TableHead>Status</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
             {members.map((member) => (
-              <tr key={member.id}>
-                <td className="px-4 py-3">
+              <TableRow key={member.id}>
+                <TableCell>
                   <Link
                     href={`/${workspace.slug}/contacts/${member.contactId}`}
-                    className="font-medium text-text-primary hover:underline"
+                    className="font-medium text-text"
                   >
                     {member.email}
                   </Link>
-                </td>
-                <td className="px-4 py-3">
+                </TableCell>
+                <TableCell>
                   <ContactStatusBadge
                     status={member.status}
                     suppressed={Boolean(member.suppressedAt)}
                     globallyUnsubscribed={Boolean(member.globalUnsubscribedAt)}
                   />
-                </td>
-              </tr>
+                </TableCell>
+              </TableRow>
             ))}
-          </tbody>
-        </table>
-      </div>
+          </TableBody>
+        </Table>
+      )}
 
       <ImportWizardModal
         listId={listId}

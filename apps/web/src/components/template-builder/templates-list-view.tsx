@@ -7,8 +7,10 @@ import {
   Button,
   Card,
   DropdownMenu,
+  EmptyState,
   Input,
   SegmentedControl,
+  Skeleton,
 } from "@repo/ui/client";
 import { hasWorkspaceRoleAtLeast } from "@repo/shared";
 import { useWorkspace } from "@/contexts/workspace-context";
@@ -107,28 +109,23 @@ export function TemplatesListView() {
       </div>
 
       {templatesQuery.isLoading ? (
-        <p className="text-ui-sm text-text-secondary">Loading templates...</p>
+        <Skeleton />
       ) : filteredTemplates.length === 0 ? (
-        <Card className="flex flex-col items-center gap-4 border-dashed px-8 py-14 text-center">
-          <div className="flex size-14 items-center justify-center rounded-xl bg-surface-inset">
-            <span className="text-ui-xl text-text-muted">▢</span>
-          </div>
-          <div>
-            <h2 className="text-ui-lg font-semibold text-text-primary">
-              {filter === "archived" ? "No archived templates" : "No templates yet"}
-            </h2>
-            <p className="mt-1 max-w-sm text-ui-sm text-text-secondary">
-              {filter === "archived"
-                ? "Archived templates appear here."
-                : "Create your first email template to start building campaigns."}
-            </p>
-          </div>
-          {canEdit && filter === "active" ? (
-            <Button variant="primary" onClick={() => setCreateOpen(true)}>
-              New template
-            </Button>
-          ) : null}
-        </Card>
+        <EmptyState
+          title={filter === "archived" ? "No archived templates" : "No templates yet"}
+          description={
+            filter === "archived"
+              ? "Archived templates appear here."
+              : "Create your first email template to start building campaigns."
+          }
+          action={
+            canEdit && filter === "active" ? (
+              <Button variant="primary" onClick={() => setCreateOpen(true)}>
+                New template
+              </Button>
+            ) : null
+          }
+        />
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {filteredTemplates.map((template) => (

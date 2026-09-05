@@ -7,6 +7,22 @@ export { PasswordInput, type PasswordInputProps } from "./components/password-in
 export { Textarea, type TextareaProps } from "./components/textarea/textarea";
 export { Select, type SelectOption, type SelectProps } from "./components/select/select";
 export { Badge, type BadgeProps, type BadgeTone } from "./components/badge/badge";
+export { Avatar, type AvatarProps } from "./components/avatar/avatar";
+export { MetricTile, type MetricTileProps } from "./components/metric-tile/metric-tile";
+export { Progress, type ProgressProps } from "./components/progress/progress";
+export { Skeleton, SkeletonLine, type SkeletonProps, type SkeletonLineProps } from "./components/skeleton/skeleton";
+export { EmptyState, type EmptyStateProps } from "./components/empty-state/empty-state";
+export {
+  Table,
+  TableHeader,
+  TableBody,
+  TableFooter,
+  TableRow,
+  TableHead,
+  TableCell,
+  tableActionClassName,
+  type TableRowProps,
+} from "./components/table/table";
 export { Switch, type SwitchProps } from "./components/switch/switch";
 export {
   Card,

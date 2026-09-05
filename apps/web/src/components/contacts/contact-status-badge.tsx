@@ -1,15 +1,9 @@
+import { Badge } from "@repo/ui/client";
+
 type ContactStatusBadgeProps = {
   status?: "subscribed" | "pending" | "unsubscribed";
   suppressed?: boolean;
   globallyUnsubscribed?: boolean;
-};
-
-const styles: Record<string, string> = {
-  subscribed: "bg-status-success-bg text-status-success-fg",
-  pending: "bg-status-warning-bg text-status-warning-fg",
-  unsubscribed: "bg-surface-inset text-text-secondary",
-  suppressed: "bg-status-error-bg text-status-error-fg",
-  global: "bg-surface-inset text-text-secondary",
 };
 
 export function ContactStatusBadge({
@@ -18,28 +12,24 @@ export function ContactStatusBadge({
   globallyUnsubscribed,
 }: ContactStatusBadgeProps) {
   if (suppressed) {
-    return (
-      <span className={`rounded-full px-2 py-0.5 text-ui-xs font-medium ${styles.suppressed}`}>
-        Suppressed
-      </span>
-    );
+    return <Badge tone="danger">Suppressed</Badge>;
   }
 
   if (globallyUnsubscribed) {
-    return (
-      <span className={`rounded-full px-2 py-0.5 text-ui-xs font-medium ${styles.global}`}>
-        Global unsub
-      </span>
-    );
+    return <Badge>Global unsub</Badge>;
   }
 
-  if (!status) {
-    return null;
+  if (status === "subscribed") {
+    return <Badge tone="success">Subscribed</Badge>;
   }
 
-  return (
-    <span className={`rounded-full px-2 py-0.5 text-ui-xs font-medium ${styles[status]}`}>
-      {status}
-    </span>
-  );
+  if (status === "pending") {
+    return <Badge tone="warning">Pending</Badge>;
+  }
+
+  if (status === "unsubscribed") {
+    return <Badge>Unsubscribed</Badge>;
+  }
+
+  return null;
 }

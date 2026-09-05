@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Card, CardBody, CardDescription, CardHeader, CardTitle } from "@repo/ui/client";
+import { Card, CardBody, CardDescription, CardHeader, CardTitle, MetricTile } from "@repo/ui/client";
 import { TrialBanner } from "@/components/app/trial-banner";
 import {
   WorkspacePageHeader,
@@ -37,18 +37,8 @@ export default function WorkspaceHomePage() {
 
       <div className="grid gap-4 sm:grid-cols-3">
         {PLACEHOLDER_STATS.map((stat) => (
-          <Link
-            key={stat.label}
-            href={`${basePath}${stat.hrefSuffix}`}
-            className="rounded-2xl border border-border-default bg-surface-card p-5 shadow-sm transition-colors hover:border-border-strong"
-          >
-            <p className="text-ui-xs font-medium tracking-[0.15em] text-text-tertiary uppercase">
-              {stat.label}
-            </p>
-            <p className="mt-3 text-ui-2xl font-semibold tracking-tight text-text-muted">
-              —
-            </p>
-            <p className="mt-1 text-ui-xs text-text-tertiary">Coming soon</p>
+          <Link key={stat.label} href={`${basePath}${stat.hrefSuffix}`} className="block">
+            <MetricTile label={stat.label} value="—" period="Coming soon" />
           </Link>
         ))}
       </div>

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { Button, Input } from "@repo/ui/client";
+import { Button, EmptyState, Input, Skeleton, Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@repo/ui/client";
 import { hasWorkspaceRoleAtLeast } from "@repo/shared";
 import { useSession } from "@/contexts/session-context";
 import { useWorkspace } from "@/contexts/workspace-context";
@@ -61,37 +61,45 @@ export function ContactsListView() {
         </div>
 
         {contactsQuery.isPending ? (
-          <p className="text-ui-sm text-text-secondary">Loading contacts…</p>
+          <Skeleton />
         ) : contacts.length === 0 ? (
-          <p className="text-ui-sm text-text-secondary">No contacts yet.</p>
+          <EmptyState
+            title="No contacts yet"
+            description="Add people to this workspace to send campaigns."
+            action={
+              canEdit && !locked ? (
+                <Button variant="primary" onClick={() => setCreateOpen(true)}>
+                  Add contact
+                </Button>
+              ) : null
+            }
+          />
         ) : (
-          <div className="overflow-hidden rounded-2xl border border-border-default">
-            <table className="min-w-full divide-y divide-border-default text-ui-sm">
-              <thead className="bg-surface-inset">
-                <tr>
-                  <th className="px-4 py-3 text-left font-medium text-text-secondary">Email</th>
-                  <th className="px-4 py-3 text-left font-medium text-text-secondary">Name</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border-default bg-surface-card">
-                {contacts.map((contact) => (
-                  <tr key={contact.id}>
-                    <td className="px-4 py-3">
-                      <Link
-                        href={`/${workspace.slug}/contacts/${contact.id}`}
-                        className="font-medium text-text-primary hover:underline"
-                      >
-                        {contact.email}
-                      </Link>
-                    </td>
-                    <td className="px-4 py-3 text-text-secondary">
-                      {[contact.firstName, contact.lastName].filter(Boolean).join(" ") || "—"}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <Table>
+            <TableHeader>
+              <TableRow interactive={false} className="h-10">
+                <TableHead>Email</TableHead>
+                <TableHead>Name</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {contacts.map((contact) => (
+                <TableRow key={contact.id}>
+                  <TableCell>
+                    <Link
+                      href={`/${workspace.slug}/contacts/${contact.id}`}
+                      className="font-medium text-text"
+                    >
+                      {contact.email}
+                    </Link>
+                  </TableCell>
+                  <TableCell>
+                    {[contact.firstName, contact.lastName].filter(Boolean).join(" ") || "—"}
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
         )}
       </FeatureLock>
 

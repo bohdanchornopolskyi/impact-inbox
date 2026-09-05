@@ -1,6 +1,6 @@
 "use client";
 
-import { Button } from "@repo/ui/client";
+import { Avatar, Button } from "@repo/ui/client";
 import { MemberRoleSelect, type RoleOption } from "@/components/members/member-role-select";
 import { formatRoleLabel } from "@/lib/members/format-role-label";
 
@@ -37,7 +37,7 @@ export function MemberList({
   }
 
   return (
-    <ul className="divide-y divide-border-subtle rounded-xl border border-border-default">
+    <ul className="overflow-hidden rounded-lg border border-border">
       {members.map((member) => {
         const isProtected = member.role === protectedRole;
         const isPending = pendingUserId === member.userId;
@@ -45,13 +45,16 @@ export function MemberList({
         return (
           <li
             key={member.userId}
-            className="flex flex-wrap items-center justify-between gap-3 px-4 py-3"
+            className="flex flex-wrap items-center justify-between gap-3 border-b border-border px-4 py-3 transition-[background-color] duration-150 ease-out last:border-b-0 hover:bg-neutral-50"
           >
-            <div className="min-w-0 flex-1">
-              <p className="truncate text-ui-sm font-medium text-text-primary">
-                {member.name}
-              </p>
-              <p className="truncate text-ui-xs text-text-secondary">{member.email}</p>
+            <div className="flex min-w-0 flex-1 items-center gap-2.5">
+              <Avatar name={member.name} />
+              <div className="min-w-0">
+                <p className="truncate text-sm font-medium text-text">
+                  {member.name}
+                </p>
+                <p className="truncate text-xs text-text-2">{member.email}</p>
+              </div>
             </div>
 
             <div className="flex items-center gap-2">

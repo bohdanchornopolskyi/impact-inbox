@@ -1,3 +1,4 @@
+import { EmptyState } from "@repo/ui/client";
 import {
   WorkspacePageHeader,
   WorkspacePageShell,
@@ -9,6 +10,10 @@ export default function CampaignsPage() {
       <WorkspacePageHeader
         title="Campaigns"
         description="Campaign sending arrives in a later phase."
+      />
+      <EmptyState
+        title="No campaigns yet"
+        description="Pick a template and send your first campaign in a few minutes."
       />
     </WorkspacePageShell>
   );
