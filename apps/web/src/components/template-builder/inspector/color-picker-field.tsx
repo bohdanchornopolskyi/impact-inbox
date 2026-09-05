@@ -1,59 +1,77 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { HexColorPicker } from "react-colorful";
-import { BasePopover, Input, cn } from "@repo/ui/client";
+import { useId, useRef, useState, useSyncExternalStore } from "react";
+import { BasePopover, cn } from "@repo/ui/client";
+import { useOptionalWorkspace } from "@/contexts/workspace-context";
 import { FieldRow } from "./fields";
+import { ColorPickerPanel } from "./color-picker";
+import {
+  type Hsva,
+  brandSwatches,
+  hexToHsva,
+  hsvaToHex,
+  isValidHex,
+  normalizeHex,
+  readRecentColors,
+  rememberRecentColor,
+  resolveColorDraft,
+  toHexDigits,
+} from "./color";
 
-const PRESET_COLORS = [
-  "#ffffff",
-  "#f4f4f5",
-  "#e4e4e7",
-  "#71717a",
-  "#27272a",
-  "#000000",
-  "#ef4444",
-  "#f97316",
-  "#eab308",
-  "#22c55e",
-  "#14b8a6",
-  "#3b82f6",
-  "#6366f1",
-  "#8b5cf6",
-  "#ec4899",
-  "#2563eb",
-];
+export {
+  normalizeHex,
+  resolveColorDraft,
+  shouldPersistColorDraft,
+} from "./color";
 
-export function normalizeHex(value: string): string {
-  const trimmed = value.trim();
-  if (/^#[0-9a-fA-F]{6}$/.test(trimmed)) {
-    return trimmed.toLowerCase();
-  }
+type EyeDropperResult = { sRGBHex: string };
+type EyeDropperApi = { open: () => Promise<EyeDropperResult> };
 
-  if (/^[0-9a-fA-F]{6}$/.test(trimmed)) {
-    return `#${trimmed.toLowerCase()}`;
-  }
-
-  return "#000000";
+function subscribeNever() {
+  return () => undefined;
 }
 
-export function resolveColorDraft(
-  value: string | undefined,
-  fallback?: string,
-): string {
-  return normalizeHex(value ?? fallback ?? "#000000");
+function hasEyeDropperApi() {
+  return typeof window !== "undefined" && "EyeDropper" in window;
 }
 
-export function shouldPersistColorDraft(
-  draft: string,
-  value: string | undefined,
-  fallback?: string,
-): boolean {
-  const normalized = normalizeHex(draft);
-  if (value === undefined) {
-    return normalized !== normalizeHex(fallback ?? "#000000");
-  }
-  return normalized !== normalizeHex(value);
+function createEyeDropper(): EyeDropperApi | null {
+  const ctor = (
+    window as unknown as { EyeDropper?: new () => EyeDropperApi }
+  ).EyeDropper;
+  return ctor ? new ctor() : null;
+}
+
+function ColorTriggerSwatch({
+  hex,
+  alpha,
+}: {
+  hex: string;
+  alpha: number;
+}) {
+  return (
+    <span
+      className={cn(
+        "relative size-5 shrink-0 overflow-hidden rounded-xs shadow-[inset_0_0_0_1px_rgb(15_23_42/0.12)]",
+        hex === "#ffffff" && "border border-border-strong",
+      )}
+    >
+      <span
+        aria-hidden
+        className="absolute inset-0"
+        style={{
+          backgroundImage:
+            "conic-gradient(#d2d6dc 25%, #ffffff 0 50%, #d2d6dc 0 75%, #ffffff 0)",
+          backgroundSize: "8px 8px",
+        }}
+      />
+      <span
+        aria-hidden
+        className="absolute inset-0"
+        style={{ backgroundColor: hex, opacity: alpha }}
+      />
+    </span>
+  );
 }
 
 export function ColorPickerField({
@@ -69,105 +87,189 @@ export function ColorPickerField({
   onChange: (value: string) => void;
   disabled?: boolean;
 }) {
-  const [draft, setDraft] = useState(resolveColorDraft(value, fallback));
+  const id = useId();
+  const workspace = useOptionalWorkspace();
+  const committedHex = resolveColorDraft(value, fallback);
+  const [open, setOpen] = useState(false);
+  const [hsva, setHsva] = useState<Hsva>(() => hexToHsva(committedHex));
+  const [hexDraft, setHexDraft] = useState(() => toHexDigits(committedHex));
+  const [opacityDraft, setOpacityDraft] = useState("100");
+  const [recentColors, setRecentColors] = useState<string[]>([]);
+  const hsvaRef = useRef(hsva);
+  const hexAtOpenRef = useRef(committedHex);
+  const eyedropperLockRef = useRef(false);
+  const hasEyeDropper = useSyncExternalStore(
+    subscribeNever,
+    hasEyeDropperApi,
+    () => false,
+  );
 
-  useEffect(() => {
-    setDraft(resolveColorDraft(value, fallback));
-  }, [value, fallback]);
+  const displayHex = open ? hsvaToHex(hsva) : committedHex;
+  const brandColors = brandSwatches(
+    workspace?.workspace.brandKit?.colors?.primary,
+  );
 
-  function commit(next: string) {
+  function emitHex(hex: string, remember: boolean) {
     if (disabled) {
       return;
     }
-
-    const normalized = normalizeHex(next);
-    setDraft(normalized);
+    const normalized = normalizeHex(hex);
     onChange(normalized);
+    if (remember) {
+      setRecentColors(rememberRecentColor(normalized));
+    }
   }
 
-  function commitIfChanged() {
+  function applyHsva(next: Hsva) {
+    hsvaRef.current = next;
+    setHsva(next);
+    setHexDraft(toHexDigits(hsvaToHex(next)));
+    setOpacityDraft(String(Math.round(next.a * 100)));
+  }
+
+  function patchHsva(partial: Partial<Hsva>, remember = false) {
+    const next = { ...hsvaRef.current, ...partial };
+    const hexChanged =
+      partial.h !== undefined ||
+      partial.s !== undefined ||
+      partial.v !== undefined;
+    applyHsva(next);
+    if (hexChanged) {
+      emitHex(hsvaToHex(next), remember);
+    }
+  }
+
+  function selectHex(hex: string, remember: boolean) {
+    const next = hexToHsva(hex, hsvaRef.current.h, hsvaRef.current.a);
+    applyHsva(next);
+    emitHex(hex, remember);
+  }
+
+  function handleOpenChange(
+    nextOpen: boolean,
+    details: { cancel: () => void },
+  ) {
     if (disabled) {
       return;
     }
-
-    const normalized = normalizeHex(draft);
-    setDraft(normalized);
-    if (!shouldPersistColorDraft(normalized, value, fallback)) {
+    if (!nextOpen && eyedropperLockRef.current) {
+      details.cancel();
       return;
     }
-    onChange(normalized);
+
+    if (nextOpen) {
+      const next = hexToHsva(committedHex, hsvaRef.current.h, hsvaRef.current.a);
+      hexAtOpenRef.current = committedHex;
+      applyHsva(next);
+      setRecentColors(readRecentColors());
+    } else {
+      const hex = hsvaToHex(hsvaRef.current);
+      if (hex !== hexAtOpenRef.current) {
+        setRecentColors(rememberRecentColor(hex));
+      }
+      setHexDraft(toHexDigits(hex));
+      setOpacityDraft(String(Math.round(hsvaRef.current.a * 100)));
+    }
+
+    setOpen(nextOpen);
+  }
+
+  function handleHexChange(raw: string) {
+    const digits = raw.replace(/[^0-9a-fA-F]/g, "").slice(0, 6);
+    setHexDraft(digits);
+    if (digits.length === 6 && isValidHex(digits)) {
+      selectHex(normalizeHex(digits), true);
+    }
+  }
+
+  function handleHexBlur() {
+    setHexDraft(toHexDigits(hsvaToHex(hsvaRef.current)));
+  }
+
+  function handleOpacityChange(raw: string) {
+    const digits = raw.replace(/\D/g, "").slice(0, 3);
+    setOpacityDraft(digits);
+    if (digits === "") {
+      return;
+    }
+    const next = Math.min(100, Number(digits));
+    if (!Number.isFinite(next)) {
+      return;
+    }
+    patchHsva({ a: next / 100 });
+  }
+
+  function handleOpacityBlur() {
+    setOpacityDraft(String(Math.round(hsvaRef.current.a * 100)));
+  }
+
+  function handleEyeDropper() {
+    const eyeDropper = createEyeDropper();
+    if (!eyeDropper) {
+      return;
+    }
+    eyedropperLockRef.current = true;
+    void eyeDropper
+      .open()
+      .then((result) => {
+        if (isValidHex(result.sRGBHex)) {
+          selectHex(normalizeHex(result.sRGBHex), true);
+        }
+      })
+      .catch(() => undefined)
+      .finally(() => {
+        eyedropperLockRef.current = false;
+      });
   }
 
   return (
-    <FieldRow label={label}>
-      <div className="flex items-center gap-2">
-        <BasePopover.Root>
-          <BasePopover.Trigger
-            aria-label={`Pick ${label.toLowerCase()}`}
-            disabled={disabled}
-            className={cn(
-              "size-9 shrink-0 rounded-md border border-border-strong shadow-xs",
-              "transition-shadow hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-border",
-              disabled && "cursor-not-allowed opacity-50",
-            )}
-            style={{ backgroundColor: draft }}
-          />
-          <BasePopover.Portal>
-            <BasePopover.Positioner align="start" sideOffset={8}>
-              <BasePopover.Popup className="z-50 w-64 rounded-xl border border-border-default bg-surface-card p-3 shadow-pop outline-none">
-                <div className="space-y-3">
-                  <div className="overflow-hidden rounded-lg [&_.react-colorful]:h-36 [&_.react-colorful]:w-full [&_.react-colorful__saturation]:rounded-t-lg [&_.react-colorful__hue]:h-3 [&_.react-colorful__hue]:rounded-full">
-                    <HexColorPicker color={draft} onChange={commit} />
-                  </div>
-                  <div className="grid grid-cols-8 gap-1.5">
-                    {PRESET_COLORS.map((color) => (
-                      <button
-                        key={color}
-                        type="button"
-                        aria-label={color}
-                        onClick={() => commit(color)}
-                        className={cn(
-                          "size-6 rounded-md border border-border-subtle transition-transform hover:scale-110",
-                          draft === color && "ring-2 ring-accent-border ring-offset-1",
-                        )}
-                        style={{ backgroundColor: color }}
-                      />
-                    ))}
-                  </div>
-                  <Input
-                    value={draft}
-                    placeholder={resolveColorDraft(undefined, fallback)}
-                    mono
-                    disabled={disabled}
-                    onChange={(event) => {
-                      const next = event.target.value;
-                      setDraft(next.startsWith("#") ? next : `#${next}`);
-                      if (/^#?[0-9a-fA-F]{6}$/.test(next.trim())) {
-                        commit(next);
-                      }
-                    }}
-                    onBlur={commitIfChanged}
-                  />
-                </div>
-              </BasePopover.Popup>
-            </BasePopover.Positioner>
-          </BasePopover.Portal>
-        </BasePopover.Root>
-        <Input
-          value={draft}
-          placeholder={resolveColorDraft(undefined, fallback)}
-          mono
+    <FieldRow label={label} htmlFor={id}>
+      <BasePopover.Root open={open} onOpenChange={handleOpenChange}>
+        <BasePopover.Trigger
+          id={id}
+          type="button"
           disabled={disabled}
-          onChange={(event) => {
-            const next = event.target.value;
-            setDraft(next);
-            if (/^#?[0-9a-fA-F]{6}$/.test(next.trim())) {
-              commit(next);
-            }
-          }}
-          onBlur={commitIfChanged}
-        />
-      </div>
+          aria-label={`Pick ${label.toLowerCase()}`}
+          className={cn(
+            "flex h-control-md w-full items-center gap-2 rounded-sm border bg-surface px-2.5 text-left transition-[border-color,box-shadow] duration-150 ease-out",
+            open
+              ? "border-accent"
+              : "border-border-strong hover:border-neutral-400",
+            disabled &&
+              "cursor-not-allowed border-neutral-200 bg-neutral-100 text-text-3 hover:border-neutral-200",
+          )}
+        >
+          <ColorTriggerSwatch hex={displayHex} alpha={hsva.a} />
+          <span className="min-w-0 flex-1 font-mono text-sm font-semibold tabular-nums">
+            {toHexDigits(displayHex)}
+          </span>
+          <span className="font-mono text-sm tabular-nums text-text-3">
+            {Math.round(hsva.a * 100)}%
+          </span>
+        </BasePopover.Trigger>
+        <BasePopover.Portal>
+          <BasePopover.Positioner align="start" sideOffset={8}>
+            <BasePopover.Popup className="z-50 w-70 rounded-xl border border-border-subtle bg-surface p-4 shadow-pop outline-none">
+              <ColorPickerPanel
+                label={label}
+                hsva={hsva}
+                hexDraft={hexDraft}
+                opacityDraft={opacityDraft}
+                brandColors={brandColors}
+                recentColors={recentColors}
+                hasEyeDropper={hasEyeDropper}
+                onPatch={patchHsva}
+                onHexChange={handleHexChange}
+                onHexBlur={handleHexBlur}
+                onOpacityChange={handleOpacityChange}
+                onOpacityBlur={handleOpacityBlur}
+                onSwatch={(hex) => selectHex(hex, true)}
+                onEyeDropper={handleEyeDropper}
+              />
+            </BasePopover.Popup>
+          </BasePopover.Positioner>
+        </BasePopover.Portal>
+      </BasePopover.Root>
     </FieldRow>
   );
 }
