@@ -18,9 +18,23 @@ describe("create-block defaults", () => {
       textColor: TEMPLATE_DEFAULT_COLORS.buttonText,
       borderRadius: 6,
       paddingX: 24,
-      paddingY: 12,
+      paddingY: 13,
     });
     expect(button.styles).toEqual({
+      padding: { bottom: TEMPLATE_DEFAULT_SPACING.contentBlockGap },
+    });
+  });
+
+  it("creates headings with the email type scale", () => {
+    const heading = createContentBlock("heading");
+
+    expect(heading.props).toMatchObject({
+      fontSize: 30,
+      fontWeight: 700,
+      lineHeight: 1.2,
+    });
+    expect(heading.styles).toMatchObject({
+      letterSpacing: -0.6,
       padding: { bottom: TEMPLATE_DEFAULT_SPACING.contentBlockGap },
     });
   });

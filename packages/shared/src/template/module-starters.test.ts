@@ -54,6 +54,9 @@ describe("module-starters", () => {
     const header = starters.find((starter) => starter.name === "Header");
     expect(header).toBeDefined();
     expect(summarizeModuleContent(header!.content)).toBe("Logo, Heading");
+    const footer = starters.find((starter) => starter.name === "Footer");
+    expect(footer).toBeDefined();
+    expect(summarizeModuleContent(footer!.content)).toBe("Social Links, Footer");
   });
 
   it("detects empty module sections and resolves starters by name", () => {

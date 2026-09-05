@@ -15,9 +15,9 @@ export function renderTextBlock(block: TextBlock, context: RenderContext) {
         ...blockStylesToCss(block.styles),
         color:
           color ?? context.settings.textColor ?? TEMPLATE_DEFAULT_COLORS.text,
-        fontSize: fontSize ?? context.settings.fontSize ?? 16,
+        fontSize: fontSize ?? context.settings.fontSize ?? 14,
         fontWeight: fontWeight ?? undefined,
-        lineHeight: lineHeight ?? context.settings.lineHeight ?? 1.5,
+        lineHeight: lineHeight ?? context.settings.lineHeight ?? 1.6,
         textTransform: textTransform ?? undefined,
         fontFamily: context.settings.fontFamily,
       }}

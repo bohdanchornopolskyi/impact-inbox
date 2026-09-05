@@ -47,7 +47,7 @@ export function TemplateEmail({ content, qrImages }: TemplateEmailProps) {
           padding: 0,
           backgroundColor:
             settings.backgroundColor ?? TEMPLATE_DEFAULT_COLORS.pageBackground,
-          fontFamily: settings.fontFamily ?? "Arial, sans-serif",
+          fontFamily: settings.fontFamily ?? "Inter, Helvetica, Arial, sans-serif",
         }}
       >
         <Container

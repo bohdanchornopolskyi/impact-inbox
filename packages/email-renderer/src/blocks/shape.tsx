@@ -1,12 +1,12 @@
 import { Section } from "@react-email/components";
 import type { CSSProperties } from "react";
-import type { ShapeBlock } from "@repo/shared";
+import { TEMPLATE_DEFAULT_COLORS, type ShapeBlock } from "@repo/shared";
 import { blockStylesToCss } from "../styles";
 import { registerBlock } from "./content-block-registry";
 
 export function renderShapeBlock(block: ShapeBlock) {
   const { shape, color, width, height, borderRadius } = block.props;
-  const fill = color ?? "#2563eb";
+  const fill = color ?? TEMPLATE_DEFAULT_COLORS.link;
 
   if (shape === "triangle") {
     const triangleWidth = width ?? 80;

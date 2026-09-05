@@ -64,30 +64,41 @@ export function createHeaderStarterModule(
     ...heading.props,
     text: ctx.workspaceName || "Company name",
     level: 2,
+    color: "#ffffff",
+    fontSize: 16,
+    fontWeight: 700,
+    textTransform: "uppercase",
+  };
+  heading.styles = {
+    ...heading.styles,
+    letterSpacing: 2,
+    padding: { bottom: 0 },
   };
 
-  return sectionWith(ctx.brandKit, [logo, heading]);
+  const section = sectionWith(ctx.brandKit, [logo, heading]);
+  section.styles = {
+    padding: { top: 18, right: 28, bottom: 18, left: 28 },
+    backgroundColor: "#0f172a",
+  };
+  return section;
 }
 
 export function createFooterStarterModule(
   ctx: ModulePrefillContext,
 ): SectionBlock {
   const address = formatPhysicalAddress(ctx.physicalAddress) || "123 Main St";
-  const company = createContentBlock("text", ctx.brandKit);
-  company.props = {
-    ...company.props,
-    text: ctx.workspaceName || "Company name",
+  const social = createContentBlock("social", ctx.brandKit);
+  social.props = {
+    ...social.props,
+    links: [
+      { platform: "instagram", url: "https://instagram.com" },
+      { platform: "facebook", url: "https://facebook.com" },
+      { platform: "twitter", url: "https://twitter.com" },
+      { platform: "youtube", url: "https://youtube.com" },
+    ],
   };
-  const addressBlock = createContentBlock("text", ctx.brandKit);
-  addressBlock.props = {
-    ...addressBlock.props,
-    text: address,
-  };
-  const contact = createContentBlock("text", ctx.brandKit);
-  contact.props = {
-    ...contact.props,
-    text: "hello@example.com · +1 (555) 000-0000",
-  };
+  social.styles = { padding: { bottom: 0 } };
+
   const footer = createContentBlock("footer", ctx.brandKit);
   footer.props = {
     ...footer.props,
@@ -97,7 +108,12 @@ export function createFooterStarterModule(
     unsubscribeLabel: "Unsubscribe",
   };
 
-  return sectionWith(ctx.brandKit, [company, addressBlock, contact, footer]);
+  const section = sectionWith(ctx.brandKit, [social, footer]);
+  section.styles = {
+    padding: { top: 22, right: 40, bottom: 26, left: 40 },
+    backgroundColor: "#f8fafc",
+  };
+  return section;
 }
 
 export function createCtaStarterModule(

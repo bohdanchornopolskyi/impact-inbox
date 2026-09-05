@@ -18,15 +18,20 @@ export function renderFooterBlock(block: FooterBlock, context: RenderContext) {
     align,
   } = block.props;
 
-  const color = textColor ?? context.settings.textColor ?? "#6b7280";
-  const size = fontSize ?? 12;
+  const color = textColor ?? "#8a93a0";
+  const size = fontSize ?? 11;
   const textStyle: CSSProperties = {
     color,
     fontSize: size,
     fontFamily: context.settings.fontFamily,
-    lineHeight: 1.6,
-    margin: "4px 0",
+    lineHeight: 1.5,
+    margin: "0 0 10px",
     textAlign: align ?? "center",
+  };
+  const linkStyle: CSSProperties = {
+    color: "#6b7280",
+    fontWeight: 500,
+    textDecoration: "none",
   };
 
   return (
@@ -43,7 +48,7 @@ export function renderFooterBlock(block: FooterBlock, context: RenderContext) {
         <Text key={`${block.id}-${link.href}`} style={textStyle}>
           <Link
             href={link.href}
-            style={{ color: context.settings.linkColor ?? color, textDecoration: "underline" }}
+            style={linkStyle}
           >
             {link.text}
           </Link>
@@ -53,7 +58,7 @@ export function renderFooterBlock(block: FooterBlock, context: RenderContext) {
         <Text style={textStyle}>
           <Link
             href={unsubscribeUrl}
-            style={{ color: context.settings.linkColor ?? color, textDecoration: "underline" }}
+            style={linkStyle}
           >
             {unsubscribeLabel ?? "Unsubscribe"}
           </Link>

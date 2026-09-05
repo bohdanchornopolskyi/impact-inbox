@@ -14,8 +14,8 @@ export function renderRichtextBlock(block: RichtextBlock, context: RenderContext
         ...blockStylesToCss(block.styles),
         color:
           color ?? context.settings.textColor ?? TEMPLATE_DEFAULT_COLORS.text,
-        fontSize: fontSize ?? context.settings.fontSize ?? 16,
-        lineHeight: lineHeight ?? context.settings.lineHeight ?? 1.5,
+        fontSize: fontSize ?? context.settings.fontSize ?? 14,
+        lineHeight: lineHeight ?? context.settings.lineHeight ?? 1.6,
         fontFamily: context.settings.fontFamily,
         fontWeight: 400,
       }}

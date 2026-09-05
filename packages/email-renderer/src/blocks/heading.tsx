@@ -22,14 +22,12 @@ export function renderHeadingBlock(block: HeadingBlock, context: RenderContext) 
       as={headingAs[level]}
       style={{
         margin: 0,
+        letterSpacing: "-0.6px",
         ...blockStylesToCss(block.styles),
-        color:
-          color ??
-          context.settings.textColor ??
-          TEMPLATE_DEFAULT_COLORS.heading,
-        fontSize: fontSize ?? undefined,
-        fontWeight: fontWeight ?? undefined,
-        lineHeight: lineHeight ?? context.settings.lineHeight,
+        color: color ?? TEMPLATE_DEFAULT_COLORS.heading,
+        fontSize: fontSize ?? 30,
+        fontWeight: fontWeight ?? 700,
+        lineHeight: lineHeight ?? 1.2,
         textTransform: textTransform ?? undefined,
         fontFamily: context.settings.fontFamily,
       }}

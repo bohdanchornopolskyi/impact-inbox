@@ -40,11 +40,10 @@ export function resolveTemplateSettingsFromBrand(
       colors?.link ?? colors?.primary,
       TEMPLATE_DEFAULT_COLORS.link,
     ),
+    fontFamily:
+      brandKit?.fontFamily?.trim() || DEFAULT_TEMPLATE_SETTINGS.fontFamily,
     fontSize: brandKit?.fontSize ?? DEFAULT_TEMPLATE_SETTINGS.fontSize,
     lineHeight: brandKit?.lineHeight ?? DEFAULT_TEMPLATE_SETTINGS.lineHeight,
-    ...(brandKit?.fontFamily?.trim()
-      ? { fontFamily: brandKit.fontFamily.trim() }
-      : {}),
   };
 }
 
@@ -79,6 +78,7 @@ export function resolveBlockDefaults(
   const colors = brandKit?.colors;
   const spacing = brandKit?.spacing;
   const gap = resolveContentBlockGap(brandKit);
+  const keepOwnVerticalPadding = type === "divider" || type === "footer";
 
   if (type === "section") {
     styles = { padding: resolveSectionPadding(brandKit) };
@@ -89,13 +89,15 @@ export function resolveBlockDefaults(
     return { props, ...(styles ? { styles } : {}) };
   }
 
-  if (styles?.padding && typeof styles.padding === "object") {
-    styles = {
-      ...styles,
-      padding: { ...styles.padding, bottom: gap },
-    };
-  } else if (type !== "spacer") {
-    styles = { ...(styles ?? {}), padding: { bottom: gap } };
+  if (!keepOwnVerticalPadding) {
+    if (styles?.padding && typeof styles.padding === "object") {
+      styles = {
+        ...styles,
+        padding: { ...styles.padding, bottom: gap },
+      };
+    } else if (type !== "spacer") {
+      styles = { ...(styles ?? {}), padding: { bottom: gap } };
+    }
   }
 
   switch (type) {

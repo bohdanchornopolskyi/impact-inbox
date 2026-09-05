@@ -34,6 +34,8 @@ const SOCIAL_ICON_SRC: Record<SocialPlatform, string> = {
   ),
 };
 
-export function getSocialIconSrc(platform: SocialPlatform): string {
-  return SOCIAL_ICON_SRC[platform];
+export function getSocialIconSrc(platform: SocialPlatform, color = "#4b5563"): string {
+  const encoded = SOCIAL_ICON_SRC[platform].slice("data:image/svg+xml,".length);
+  const svg = decodeURIComponent(encoded).replace(/fill="[^"]+"/g, `fill="${color}"`);
+  return svgDataUri(svg);
 }

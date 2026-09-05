@@ -1,5 +1,5 @@
 import { Section } from "@react-email/components";
-import type { TableBlock, TableColumn } from "@repo/shared";
+import { TEMPLATE_DEFAULT_COLORS, type TableBlock, type TableColumn } from "@repo/shared";
 import { blockStylesToCss } from "../styles";
 import { registerBlock, type RenderContext } from "./content-block-registry";
 
@@ -34,8 +34,8 @@ export function renderTableBlock(block: TableBlock, context: RenderContext) {
                 key={`${block.id}-header-${column.header}`}
                 style={{
                   textAlign: column.align ?? "left",
-                  backgroundColor: headerBackgroundColor ?? "#f3f4f6",
-                  color: headerTextColor ?? "#111111",
+                  backgroundColor: headerBackgroundColor ?? TEMPLATE_DEFAULT_COLORS.pageBackground,
+                  color: headerTextColor ?? TEMPLATE_DEFAULT_COLORS.heading,
                   padding: "12px",
                   border,
                   width:
@@ -67,7 +67,7 @@ export function renderTableBlock(block: TableBlock, context: RenderContext) {
                   key={`${block.id}-cell-${rowIndex}-${cellIndex}`}
                   style={{
                     textAlign: columns[cellIndex]?.align ?? "left",
-                    color: cellTextColor ?? context.settings.textColor ?? "#333333",
+                    color: cellTextColor ?? context.settings.textColor ?? TEMPLATE_DEFAULT_COLORS.text,
                     padding: "12px",
                     border,
                   }}

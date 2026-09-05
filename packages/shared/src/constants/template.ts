@@ -9,12 +9,12 @@ import type { BlockStyles } from "../schemas/template/styles";
 const TEMPLATE_CONTENT_VERSION = 1 as const;
 
 const TEMPLATE_DEFAULT_COLORS = {
-  pageBackground: "#f3f4f6",
+  pageBackground: "#ebedf1",
   contentBackground: "#ffffff",
-  text: "#333333",
-  heading: "#111111",
-  link: "#2563eb",
-  buttonBackground: "#2563eb",
+  text: "#4b5563",
+  heading: "#0f172a",
+  link: "#4f46e5",
+  buttonBackground: "#0f172a",
   buttonText: "#ffffff",
   divider: "#e5e7eb",
   qrForeground: "#000000",
@@ -22,8 +22,8 @@ const TEMPLATE_DEFAULT_COLORS = {
 } as const;
 
 const TEMPLATE_DEFAULT_SPACING = {
-  sectionPadding: 24,
-  contentBlockGap: 8,
+  sectionPadding: 40,
+  contentBlockGap: 12,
 } as const;
 
 const LAYOUT_BLOCK_TYPES = ["section", "row", "column"] as const;
@@ -58,7 +58,7 @@ type BlockCategory = (typeof BLOCK_CATEGORIES)[number];
 type TemplateBlockType = (typeof TEMPLATE_BLOCK_TYPES)[number];
 
 const PLACEHOLDER_IMAGE_URL =
-  "https://placehold.co/600x240/e4e4e7/71717a?text=Image";
+  "https://placehold.co/600x180/E5E7EB/AEB5C0?text=Image";
 
 type BlockFieldKind =
   | "text"
@@ -176,12 +176,16 @@ const TEMPLATE_BLOCK_DEFINITIONS: TemplateBlockDefinitions = {
     allowedParents: ["column"],
     defaultProps: {
       text: "Heading",
-      level: 2,
+      level: 1,
       color: TEMPLATE_DEFAULT_COLORS.heading,
-      fontSize: 24,
-      lineHeight: 1.25,
+      fontSize: 30,
+      fontWeight: 700,
+      lineHeight: 1.2,
     },
-    defaultStyles: CONTENT_BLOCK_GAP_STYLES,
+    defaultStyles: {
+      ...CONTENT_BLOCK_GAP_STYLES,
+      letterSpacing: -0.6,
+    },
     mergeTagProps: ["text"],
     fields: [
       { prop: "text", label: "Text", kind: "text" },
@@ -199,7 +203,8 @@ const TEMPLATE_BLOCK_DEFINITIONS: TemplateBlockDefinitions = {
     defaultProps: {
       text: "Add your text here.",
       color: TEMPLATE_DEFAULT_COLORS.text,
-      fontSize: 16,
+      fontSize: 14,
+      lineHeight: 1.6,
     },
     defaultStyles: CONTENT_BLOCK_GAP_STYLES,
     mergeTagProps: ["text"],
@@ -239,9 +244,9 @@ const TEMPLATE_BLOCK_DEFINITIONS: TemplateBlockDefinitions = {
       backgroundColor: TEMPLATE_DEFAULT_COLORS.buttonBackground,
       textColor: TEMPLATE_DEFAULT_COLORS.buttonText,
       borderRadius: 6,
-      fontSize: 16,
+      fontSize: 14,
       paddingX: 24,
-      paddingY: 12,
+      paddingY: 13,
     },
     defaultStyles: CONTENT_BLOCK_GAP_STYLES,
     mergeTagProps: ["text"],
@@ -259,7 +264,12 @@ const TEMPLATE_BLOCK_DEFINITIONS: TemplateBlockDefinitions = {
     label: "Image",
     description: "Image with optional link",
     allowedParents: ["column"],
-    defaultProps: { src: PLACEHOLDER_IMAGE_URL, alt: "Image" },
+    defaultProps: {
+      src: PLACEHOLDER_IMAGE_URL,
+      alt: "Image",
+      width: "100%",
+      height: 180,
+    },
     defaultStyles: CONTENT_BLOCK_GAP_STYLES,
     mergeTagProps: [],
     fields: [
@@ -316,10 +326,9 @@ const TEMPLATE_BLOCK_DEFINITIONS: TemplateBlockDefinitions = {
       style: "solid",
     },
     defaultStyles: {
-      // A rule reads as a separator only with equal space on both sides.
       padding: {
-        top: TEMPLATE_DEFAULT_SPACING.contentBlockGap,
-        bottom: TEMPLATE_DEFAULT_SPACING.contentBlockGap,
+        top: 16,
+        bottom: 16,
       },
     },
     mergeTagProps: [],
@@ -340,7 +349,7 @@ const TEMPLATE_BLOCK_DEFINITIONS: TemplateBlockDefinitions = {
     label: "Spacer",
     description: "Vertical empty space",
     allowedParents: ["column"],
-    defaultProps: { height: 24 },
+    defaultProps: { height: 32 },
     mergeTagProps: [],
     fields: [
       { prop: "height", label: "Height", kind: "number" },
@@ -354,6 +363,10 @@ const TEMPLATE_BLOCK_DEFINITIONS: TemplateBlockDefinitions = {
     allowedParents: ["column"],
     defaultProps: {
       links: [{ platform: "website", url: "https://example.com" }],
+      iconSize: 28,
+      gap: 14,
+      backgroundColor: "rgba(15, 23, 42, 0.05)",
+      iconColor: "#4b5563",
     },
     defaultStyles: CONTENT_BLOCK_GAP_STYLES,
     mergeTagProps: [],
@@ -418,8 +431,15 @@ const TEMPLATE_BLOCK_DEFINITIONS: TemplateBlockDefinitions = {
       address: "123 Main St, City, ST 12345",
       unsubscribeUrl: "",
       unsubscribeLabel: "Unsubscribe",
+      fontSize: 11,
+      textColor: "#8a93a0",
+      align: "center",
     },
-    defaultStyles: CONTENT_BLOCK_GAP_STYLES,
+    defaultStyles: {
+      backgroundColor: "#f8fafc",
+      padding: { top: 22, bottom: 26 },
+      textAlign: "center",
+    },
     mergeTagProps: [
       "companyName",
       "address",
@@ -463,8 +483,9 @@ const DEFAULT_TEMPLATE_SETTINGS = {
   contentBackgroundColor: TEMPLATE_DEFAULT_COLORS.contentBackground,
   textColor: TEMPLATE_DEFAULT_COLORS.text,
   linkColor: TEMPLATE_DEFAULT_COLORS.link,
-  fontSize: 16,
-  lineHeight: 1.5,
+  fontFamily: "Inter, Helvetica, Arial, sans-serif",
+  fontSize: 14,
+  lineHeight: 1.6,
 } as const;
 
 const DEFAULT_TEMPLATE_CONTENT: TemplateContentData = {
