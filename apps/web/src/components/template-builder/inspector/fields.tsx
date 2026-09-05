@@ -1,21 +1,28 @@
 "use client";
 
 import type { ReactNode, Ref } from "react";
-import { Input } from "@repo/ui/client";
+import { useId } from "react";
+import { Input, Select, Textarea } from "@repo/ui/client";
 import { ColorPickerField } from "./color-picker-field";
 
 export function FieldRow({
   label,
+  htmlFor,
   children,
 }: {
   label: string;
+  htmlFor?: string;
   children: ReactNode;
 }) {
   return (
     <div className="space-y-1.5">
-      <label className="block text-ui-xs font-medium text-text-secondary">
-        {label}
-      </label>
+      {htmlFor ? (
+        <label htmlFor={htmlFor} className="block text-xs font-medium text-text-2">
+          {label}
+        </label>
+      ) : (
+        <div className="block text-xs font-medium text-text-2">{label}</div>
+      )}
       {children}
     </div>
   );
@@ -35,25 +42,27 @@ export function TextField({
   value: string;
   onChange: (value: string) => void;
   onFocus?: () => void;
-  /** Single-line only — lets callers read the caret position (merge-tag insert). */
   inputRef?: Ref<HTMLInputElement>;
   placeholder?: string;
   multiline?: boolean;
   disabled?: boolean;
 }) {
+  const id = useId();
+
   return (
-    <FieldRow label={label}>
+    <FieldRow label={label} htmlFor={id}>
       {multiline ? (
-        <textarea
+        <Textarea
+          id={id}
           value={value}
           placeholder={placeholder}
           disabled={disabled}
           onFocus={onFocus}
           onChange={(event) => onChange(event.target.value)}
-          className="min-h-24 w-full rounded-md border border-border-strong bg-surface-card px-3 py-2 text-ui-sm text-text-primary outline-none disabled:cursor-not-allowed disabled:opacity-50"
         />
       ) : (
         <Input
+          id={id}
           ref={inputRef}
           value={value}
           placeholder={placeholder}
@@ -80,13 +89,15 @@ export function NumberField({
   onChange: (value: number | undefined) => void;
   min?: number;
   max?: number;
-  /** Shown when the field is empty — use it for an inherited value. */
   placeholder?: string;
   disabled?: boolean;
 }) {
+  const id = useId();
+
   return (
-    <FieldRow label={label}>
+    <FieldRow label={label} htmlFor={id}>
       <Input
+        id={id}
         type="number"
         value={value ?? ""}
         min={min}
@@ -137,9 +148,12 @@ export function UrlField({
   onChange: (value: string) => void;
   disabled?: boolean;
 }) {
+  const id = useId();
+
   return (
-    <FieldRow label={label}>
+    <FieldRow label={label} htmlFor={id}>
       <Input
+        id={id}
         value={value}
         placeholder="https://"
         mono
@@ -163,20 +177,17 @@ export function SelectField({
   options: { value: string; label: string }[];
   disabled?: boolean;
 }) {
+  const id = useId();
+
   return (
-    <FieldRow label={label}>
-      <select
+    <FieldRow label={label} htmlFor={id}>
+      <Select
+        id={id}
         value={String(value)}
         disabled={disabled}
+        options={options}
         onChange={(event) => onChange(event.target.value)}
-        className="w-full rounded-md border border-border-strong bg-surface-card px-3 py-2 text-ui-sm text-text-primary outline-none disabled:cursor-not-allowed disabled:opacity-50"
-      >
-        {options.map((option) => (
-          <option key={option.value} value={option.value}>
-            {option.label}
-          </option>
-        ))}
-      </select>
+      />
     </FieldRow>
   );
 }

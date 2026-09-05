@@ -90,6 +90,8 @@ export function TemplatesListView() {
         <div className="w-full max-w-xs flex-1">
           <Input
             placeholder="Search templates"
+            type="search"
+            aria-label="Search templates"
             value={search}
             onChange={(event) => setSearch(event.target.value)}
           />

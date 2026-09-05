@@ -2,6 +2,7 @@
 
 import { ASSET_UPLOAD_ALLOWED_MIME_TYPES } from "@repo/shared";
 import { Button, Input } from "@repo/ui/client";
+import { useId } from "react";
 import { useWorkspaceImageUpload } from "@/lib/workspaces/use-workspace-image-upload";
 import { FieldRow } from "./fields";
 
@@ -20,11 +21,13 @@ export function ImageSourceField({
 }) {
   const { token, inputRef, isUploading, uploadSelectedFile, openFilePicker } =
     useWorkspaceImageUpload();
+  const id = useId();
 
   return (
-    <FieldRow label={label}>
+    <FieldRow label={label} htmlFor={id}>
       <div className="space-y-2">
         <Input
+          id={id}
           value={value}
           placeholder="https://"
           mono

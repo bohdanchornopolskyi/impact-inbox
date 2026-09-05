@@ -53,6 +53,8 @@ export function ContactsListView() {
         <div className="mb-4 max-w-xs">
           <Input
             placeholder="Search contacts"
+            type="search"
+            aria-label="Search contacts"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />

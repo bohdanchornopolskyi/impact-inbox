@@ -212,6 +212,7 @@
 
   .field-control input:focus-visible,
   .field-control textarea:focus-visible,
+  .field-control select:focus-visible,
   .field-control button:focus-visible {
     box-shadow: none;
   }

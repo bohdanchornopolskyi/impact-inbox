@@ -68,6 +68,7 @@ export function ImportWizardModal({
         {!preview ? (
           <div className="mt-4">
             <Input
+              label="CSV file"
               type="file"
               accept=".csv,text/csv"
               onChange={(e) => {

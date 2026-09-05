@@ -17,9 +17,7 @@ export const Default: Story = {};
 
 export const WithHint: Story = {
   args: {
-    label: "Password",
-    type: "password",
-    hint: "8-24 characters with upper, lower, number, and special character.",
+    hint: "We’ll send receipts to this address.",
   },
 };
 
@@ -36,5 +34,12 @@ export const WithSuffix: Story = {
     defaultValue: "600",
     suffix: "px",
     mono: true,
+  },
+};
+
+export const Disabled: Story = {
+  args: {
+    disabled: true,
+    defaultValue: "you@company.com",
   },
 };

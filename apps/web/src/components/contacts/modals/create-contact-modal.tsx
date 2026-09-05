@@ -42,9 +42,15 @@ export function CreateContactModal({ open, onOpenChange }: CreateContactModalPro
       >
         <h2 className="text-ui-lg font-semibold text-text-primary">Add contact</h2>
         <div className="mt-4 space-y-3">
-          <Input name="email" type="email" placeholder="Email" required />
-          <Input name="firstName" placeholder="First name" />
-          <Input name="lastName" placeholder="Last name" />
+          <Input
+            name="email"
+            type="email"
+            label="Email"
+            autoComplete="email"
+            required
+          />
+          <Input name="firstName" label="First name" autoComplete="given-name" />
+          <Input name="lastName" label="Last name" autoComplete="family-name" />
         </div>
         <div className="mt-6 flex justify-end gap-2">
           <Button type="button" variant="secondary" onClick={() => onOpenChange(false)}>

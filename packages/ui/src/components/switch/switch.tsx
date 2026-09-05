@@ -1,5 +1,6 @@
 "use client";
 
+import { useId } from "react";
 import { cn } from "../../lib/cn";
 
 export type SwitchProps = {
@@ -17,23 +18,26 @@ export function Switch({
   label,
   id,
 }: SwitchProps) {
+  const generatedId = useId();
+  const switchId = id ?? generatedId;
+
   const control = (
     <button
-      id={id}
+      id={switchId}
       type="button"
       role="switch"
       aria-checked={checked}
       disabled={disabled}
       className={cn(
-        "relative h-[21px] w-9 shrink-0 rounded-full border-none p-0 transition-colors duration-180 disabled:cursor-not-allowed disabled:opacity-50",
-        checked ? "bg-accent" : "bg-border-strong",
+        "relative h-5 w-9 shrink-0 rounded-full border-none p-0.5 transition-colors duration-150 ease-out disabled:cursor-not-allowed",
+        checked ? "bg-accent disabled:bg-brand-200" : "bg-neutral-300 disabled:bg-neutral-200",
       )}
       onClick={() => onCheckedChange?.(!checked)}
     >
       <span
         className={cn(
-          "pointer-events-none absolute top-0.5 left-0.5 size-[17px] rounded-full bg-white shadow-[0_1px_2px_rgba(0,0,0,0.2)] transition-[left] duration-180",
-          checked && "left-[17px]",
+          "pointer-events-none block size-4 rounded-full bg-white shadow-xs transition-transform duration-150 ease-out motion-reduce:transition-none",
+          checked && "translate-x-4",
         )}
         aria-hidden
       />
@@ -45,15 +49,22 @@ export function Switch({
   }
 
   return (
-    <label
+    <div
       className={cn(
         "flex items-center justify-between gap-3",
         disabled ? "cursor-not-allowed" : "cursor-pointer",
       )}
-      htmlFor={id}
     >
-      <span className="text-ui-sm text-text-secondary">{label}</span>
+      <label
+        htmlFor={switchId}
+        className={cn(
+          "text-sm text-text-2",
+          disabled && "pointer-events-none text-text-3",
+        )}
+      >
+        {label}
+      </label>
       {control}
-    </label>
+    </div>
   );
 }

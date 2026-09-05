@@ -29,10 +29,12 @@ export function CreateTemplateModal({
     },
   });
   const [name, setName] = useState("");
+  const [error, setError] = useState("");
 
   useEffect(() => {
     if (!open) {
       setName("");
+      setError("");
     }
   }, [open]);
 
@@ -40,6 +42,7 @@ export function CreateTemplateModal({
     event.preventDefault();
 
     if (!name.trim()) {
+      setError("Enter a template name.");
       return;
     }
 
@@ -61,7 +64,7 @@ export function CreateTemplateModal({
             type="submit"
             form="create-template-form"
             variant="primary"
-            disabled={!name.trim() || create.isPending}
+            loading={create.isPending}
           >
             Create template
           </Button>
@@ -72,7 +75,13 @@ export function CreateTemplateModal({
         <Input
           label="Template name"
           value={name}
-          onChange={(event) => setName(event.target.value)}
+          error={error}
+          onChange={(event) => {
+            setName(event.target.value);
+            if (error) {
+              setError("");
+            }
+          }}
           placeholder="Welcome email"
           autoFocus
         />

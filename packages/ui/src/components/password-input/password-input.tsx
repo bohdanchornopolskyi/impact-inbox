@@ -2,19 +2,15 @@
 
 import { useState, type InputHTMLAttributes, type ReactNode } from "react";
 import { cn } from "../../lib/cn";
+import { Field } from "../../lib/field";
 import {
   fieldControlClass,
-  fieldErrorClass,
-  fieldHintClass,
   fieldInputClass,
-  fieldLabelClass,
-  fieldLabelRowClass,
-  fieldRootClass,
 } from "../../lib/field-control";
 
 function EyeIcon({ hidden }: { hidden: boolean }) {
   return (
-    <svg width="16" height="16" viewBox="0 0 20 20" fill="none" aria-hidden>
+    <svg viewBox="0 0 20 20" fill="none" aria-hidden className="size-full">
       <path
         d="M2.5 10 C4.5 5.5 8 4 10 4 C12 4 15.5 5.5 17.5 10 C15.5 14.5 12 16 10 16 C8 16 4.5 14.5 2.5 10 Z"
         stroke="currentColor"
@@ -51,52 +47,43 @@ export function PasswordInput({
   labelAction,
   className,
   id,
+  disabled,
   ...props
 }: PasswordInputProps) {
   const [isVisible, setIsVisible] = useState(false);
 
-  const field = (
-    <div
-      className={fieldControlClass({
-        error: Boolean(error),
-      })}
-    >
-      <input
-        id={id}
-        type={isVisible ? "text" : "password"}
-        className={cn(fieldInputClass, className)}
-        {...props}
-      />
-      <button
-        type="button"
-        onClick={() => setIsVisible((visible) => !visible)}
-        aria-label={isVisible ? "Hide password" : "Show password"}
-        className="inline-flex items-center justify-center self-stretch px-toggle-x text-text-muted transition-colors hover:text-text-secondary"
-      >
-        <EyeIcon hidden={isVisible} />
-      </button>
-    </div>
-  );
-
-  if (!label) {
-    return (
-      <div className="block">
-        {field}
-        {hint ? <p className={fieldHintClass}>{hint}</p> : null}
-        {error ? <p className={fieldErrorClass}>{error}</p> : null}
-      </div>
-    );
-  }
-
   return (
-    <label className={fieldRootClass} htmlFor={id}>
-      <div className={fieldLabelRowClass}>
-        <span className={fieldLabelClass}>{label}</span>
-        {labelAction}
-      </div>
-      {field}
-      {hint ? <p className={fieldHintClass}>{hint}</p> : null}
-      {error ? <p className={fieldErrorClass}>{error}</p> : null}
-    </label>
+    <Field id={id} label={label} labelAction={labelAction} hint={hint} error={error}>
+      {({ id: fieldId, describedBy, invalid }) => (
+        <div
+          className={fieldControlClass({
+            error: invalid,
+            disabled,
+          })}
+        >
+          <input
+            id={fieldId}
+            type={isVisible ? "text" : "password"}
+            disabled={disabled}
+            aria-invalid={invalid || undefined}
+            aria-describedby={describedBy}
+            spellCheck={false}
+            className={cn(fieldInputClass, className)}
+            {...props}
+          />
+          <button
+            type="button"
+            disabled={disabled}
+            onClick={() => setIsVisible((visible) => !visible)}
+            aria-label={isVisible ? "Hide password" : "Show password"}
+            className="inline-flex size-control-sm shrink-0 items-center justify-center text-text-3 transition-colors duration-150 hover:text-text-2 disabled:text-text-3"
+          >
+            <span className="size-icon-md">
+              <EyeIcon hidden={isVisible} />
+            </span>
+          </button>
+        </div>
+      )}
+    </Field>
   );
 }

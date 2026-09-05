@@ -42,7 +42,7 @@ export function CreateListModal({ open, onOpenChange }: CreateListModalProps) {
       >
         <h2 className="text-ui-lg font-semibold text-text-primary">New list</h2>
         <div className="mt-4">
-          <Input name="name" placeholder="List name" required />
+          <Input name="name" label="List name" required />
         </div>
         <div className="mt-6 flex justify-end gap-2">
           <Button type="button" variant="secondary" onClick={() => onOpenChange(false)}>

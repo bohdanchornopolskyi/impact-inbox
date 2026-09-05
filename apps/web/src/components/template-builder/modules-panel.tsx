@@ -251,6 +251,7 @@ export function ModulesPanel() {
               value={saveName}
               onChange={(event) => setSaveName(event.target.value)}
               placeholder="Module name"
+              aria-label="Module name"
               disabled={!selectedSection}
             />
             <Button
