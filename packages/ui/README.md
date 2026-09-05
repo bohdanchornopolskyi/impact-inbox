@@ -1,6 +1,6 @@
 # @repo/ui
 
-Production design system for Impact Inbox. Source prototypes live in `design/project/`; tokens and components here are what apps import.
+Production design system for Impact Inbox. Source of truth is `design/impact.pen`; tokens and components here are what apps import.
 
 ## Tokens
 
