@@ -9,7 +9,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { useBuilder } from "../builder-provider";
+import { useBuilderStore } from "../builder-provider";
 import type {
   RichtextCancelMessage,
   RichtextCommitMessage,
@@ -61,8 +61,7 @@ const RichtextCanvasEditContext =
   createContext<RichtextCanvasEditContextValue | null>(null);
 
 export function RichtextCanvasEditProvider({ children }: { children: ReactNode }) {
-  const selectBlock = useBuilder((s) => s.selectBlock);
-  const setInspectorMode = useBuilder((s) => s.setInspectorMode);
+  const store = useBuilderStore();
   const [session, setSession] = useState<RichtextEditSession | null>(null);
   const [formatState, setFormatState] =
     useState<RichtextFormatState>(EMPTY_FORMAT_STATE);
@@ -79,14 +78,11 @@ export function RichtextCanvasEditProvider({ children }: { children: ReactNode }
     sinkRef.current?.(command);
   }, []);
 
-  const startEdit = useCallback(
-    (next: RichtextEditSession) => {
-      setSession(next);
-      selectBlock(next.blockId);
-      setInspectorMode("block");
-    },
-    [selectBlock, setInspectorMode],
-  );
+  const startEdit = useCallback((next: RichtextEditSession) => {
+    setSession(next);
+    store.getState().selectBlock(next.blockId);
+    store.getState().setInspectorMode("block");
+  }, [store]);
 
   const endEdit = useCallback(() => {
     setSession(null);

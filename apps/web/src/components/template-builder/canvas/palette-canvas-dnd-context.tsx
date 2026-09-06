@@ -19,7 +19,7 @@ import {
   type TemplateContentData,
 } from "@repo/shared";
 import { TemplateBlockIcon } from "../block-icons";
-import { useBuilder } from "../builder-provider";
+import { useBuilderStore } from "../builder-provider";
 import {
   isCanvasDragActiveMessage,
   isCanvasPaletteDragCommitMessage,
@@ -91,22 +91,21 @@ function PaletteDragGhost({ ghost }: { ghost: PaletteDragGhostState }) {
   );
 }
 
-const PaletteCanvasDndContext = createContext<PaletteCanvasDndContextValue | null>(
+type PaletteCanvasDndApi = Omit<
+  PaletteCanvasDndContextValue,
+  "isPaletteDragging" | "isCanvasDragging"
+>;
+
+const PaletteCanvasDndApiContext = createContext<PaletteCanvasDndApi | null>(
   null,
 );
+const PaletteCanvasDndDragContext = createContext<{
+  isPaletteDragging: boolean;
+  isCanvasDragging: boolean;
+}>({ isPaletteDragging: false, isCanvasDragging: false });
 
 function usePaletteCanvasDndController() {
-  const canEdit = useBuilder((s) => s.canEdit);
-  const addBlock = useBuilder((s) => s.addBlock);
-  const addSection = useBuilder((s) => s.addSection);
-  const addRow = useBuilder((s) => s.addRow);
-  const addColumn = useBuilder((s) => s.addColumn);
-  const moveBlock = useBuilder((s) => s.moveBlock);
-  const moveSection = useBuilder((s) => s.moveSection);
-  const moveRow = useBuilder((s) => s.moveRow);
-  const moveColumn = useBuilder((s) => s.moveColumn);
-  const selectBlock = useBuilder((s) => s.selectBlock);
-
+  const store = useBuilderStore();
   const [isPaletteDragging, setIsPaletteDragging] = useState(false);
   const [isCanvasDragging, setIsCanvasDragging] = useState(false);
   const [dragGhost, setDragGhost] = useState<PaletteDragGhostState | null>(null);
@@ -234,7 +233,9 @@ function usePaletteCanvasDndController() {
         return false;
       }
 
-      if (isCanvasDragActiveMessage(data) && canEdit) {
+      const state = store.getState();
+
+      if (isCanvasDragActiveMessage(data) && state.canEdit) {
         bridge.prepareDrag();
       }
 
@@ -245,21 +246,21 @@ function usePaletteCanvasDndController() {
       const result = handleCanvasDragMessage({
         state: sessionRef.current,
         data,
-        canEdit,
+        canEdit: state.canEdit,
         content: bridge.getContent(),
         moveActions: {
-          moveBlock,
-          moveSection,
-          moveRow,
-          moveColumn,
-          selectBlock,
+          moveBlock: state.moveBlock,
+          moveSection: state.moveSection,
+          moveRow: state.moveRow,
+          moveColumn: state.moveColumn,
+          selectBlock: state.selectBlock,
         },
         paletteActions: {
-          addSection,
-          addRow,
-          addColumn,
+          addSection: state.addSection,
+          addRow: state.addRow,
+          addColumn: state.addColumn,
           addBlock: (columnId, blockType, index) =>
-            addBlock(columnId, blockType as ContentBlockType, index),
+            state.addBlock(columnId, blockType as ContentBlockType, index),
         },
       });
 
@@ -275,25 +276,13 @@ function usePaletteCanvasDndController() {
 
       return result.handled;
     },
-    [
-      addBlock,
-      addColumn,
-      addRow,
-      addSection,
-      canEdit,
-      finishPaletteDragUi,
-      moveBlock,
-      moveColumn,
-      moveRow,
-      moveSection,
-      selectBlock,
-    ],
+    [finishPaletteDragUi, store],
   );
 
   const bindPaletteTile = useCallback(
     (blockType: TemplateBlockType, onClick: () => void) => {
       function onPointerDown(event: ReactPointerEvent<HTMLButtonElement>) {
-        if (!canEdit || event.button !== 0) {
+        if (!store.getState().canEdit || event.button !== 0) {
           return;
         }
 
@@ -407,49 +396,88 @@ function usePaletteCanvasDndController() {
     },
     [
       activatePaletteDrag,
-      canEdit,
       detachDocPointerListeners,
       endPaletteDrag,
       postPaletteDragPointer,
       abortPaletteDragAwaitingCommit,
+      store,
       updateDragGhost,
     ],
   );
 
-  const value: PaletteCanvasDndContextValue = {
-    bindPaletteTile,
-    registerDragBridge,
-    handleIframeMessage,
-    handleDropTargetChange,
-    cancelAllDrags,
+  const bindPaletteTileRef = useRef(bindPaletteTile);
+  bindPaletteTileRef.current = bindPaletteTile;
+  const registerDragBridgeRef = useRef(registerDragBridge);
+  registerDragBridgeRef.current = registerDragBridge;
+  const handleIframeMessageRef = useRef(handleIframeMessage);
+  handleIframeMessageRef.current = handleIframeMessage;
+  const handleDropTargetChangeRef = useRef(handleDropTargetChange);
+  handleDropTargetChangeRef.current = handleDropTargetChange;
+  const cancelAllDragsRef = useRef(cancelAllDrags);
+  cancelAllDragsRef.current = cancelAllDrags;
+
+  const apiRef = useRef<PaletteCanvasDndApi | null>(null);
+  if (!apiRef.current) {
+    apiRef.current = {
+      bindPaletteTile: (blockType, onClick) =>
+        bindPaletteTileRef.current(blockType, onClick),
+      registerDragBridge: (bridge) => registerDragBridgeRef.current(bridge),
+      handleIframeMessage: (data) => handleIframeMessageRef.current(data),
+      handleDropTargetChange: (target) =>
+        handleDropTargetChangeRef.current(target),
+      cancelAllDrags: () => cancelAllDragsRef.current(),
+    };
+  }
+
+  return {
+    api: apiRef.current,
+    dragGhost,
     isPaletteDragging,
     isCanvasDragging,
   };
-
-  return { value, dragGhost, isPaletteDragging };
 }
 
 export function PaletteCanvasDndProvider({ children }: { children: ReactNode }) {
-  const { value, dragGhost, isPaletteDragging } = usePaletteCanvasDndController();
+  const { api, dragGhost, isPaletteDragging, isCanvasDragging } =
+    usePaletteCanvasDndController();
+  const dragRef = useRef({ isPaletteDragging, isCanvasDragging });
+  if (
+    dragRef.current.isPaletteDragging !== isPaletteDragging ||
+    dragRef.current.isCanvasDragging !== isCanvasDragging
+  ) {
+    dragRef.current = { isPaletteDragging, isCanvasDragging };
+  }
 
   return (
-    <PaletteCanvasDndContext.Provider value={value}>
-      {children}
-      {isPaletteDragging ? (
-        <div
-          className="fixed inset-0 z-[9999] cursor-grabbing"
-          aria-hidden
-        />
-      ) : null}
-      {dragGhost ? <PaletteDragGhost ghost={dragGhost} /> : null}
-    </PaletteCanvasDndContext.Provider>
+    <PaletteCanvasDndApiContext.Provider value={api}>
+      <PaletteCanvasDndDragContext.Provider value={dragRef.current}>
+        {children}
+        {isPaletteDragging ? (
+          <div
+            className="fixed inset-0 z-[9999] cursor-grabbing"
+            aria-hidden
+          />
+        ) : null}
+        {dragGhost ? <PaletteDragGhost ghost={dragGhost} /> : null}
+      </PaletteCanvasDndDragContext.Provider>
+    </PaletteCanvasDndApiContext.Provider>
   );
 }
 
-export function usePaletteCanvasDnd(): PaletteCanvasDndContextValue {
-  const context = useContext(PaletteCanvasDndContext);
-  if (!context) {
-    throw new Error("usePaletteCanvasDnd must be used within PaletteCanvasDndProvider");
+export function usePaletteCanvasDndApi(): PaletteCanvasDndApi {
+  const api = useContext(PaletteCanvasDndApiContext);
+  if (!api) {
+    throw new Error("usePaletteCanvasDndApi must be used within PaletteCanvasDndProvider");
   }
-  return context;
+  return api;
+}
+
+export function usePaletteCanvasDnd(): PaletteCanvasDndContextValue {
+  const api = usePaletteCanvasDndApi();
+  const drag = useContext(PaletteCanvasDndDragContext);
+  return {
+    ...api,
+    isPaletteDragging: drag.isPaletteDragging,
+    isCanvasDragging: drag.isCanvasDragging,
+  };
 }

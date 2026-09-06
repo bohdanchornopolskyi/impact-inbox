@@ -9,9 +9,9 @@ import {
   type TemplateBlockType,
 } from "@repo/shared";
 import { Input } from "@repo/ui/client";
-import { useBuilder } from "./builder-provider";
+import { useBuilder, useBuilderStore } from "./builder-provider";
 import { TemplateBlockIcon } from "./block-icons";
-import { usePaletteCanvasDnd } from "./canvas/palette-canvas-dnd-context";
+import { usePaletteCanvasDndApi } from "./canvas/palette-canvas-dnd-context";
 import { isLayoutBlockType } from "./layout-add-targets";
 import { PaletteTile } from "./palette-tile";
 import { useLayoutAddTargets } from "./use-layout-add-targets";
@@ -40,24 +40,23 @@ const PALETTE_GROUPS = [
 
 export function BlockPalette() {
   const canEdit = useBuilder((s) => s.canEdit);
-  const content = useBuilder((s) => s.content);
-  const selectedBlockId = useBuilder((s) => s.selectedBlockId);
-  const addBlock = useBuilder((s) => s.addBlock);
+  const store = useBuilderStore();
   const { handleAddLayoutBlock } = useLayoutAddTargets();
-  const { bindPaletteTile } = usePaletteCanvasDnd();
+  const { bindPaletteTile } = usePaletteCanvasDndApi();
   const [query, setQuery] = useState("");
 
   function handleAddContentBlock(blockType: ContentBlockType) {
-    if (!canEdit) {
+    const state = store.getState();
+    if (!state.canEdit) {
       return;
     }
 
-    const columnId = resolveTargetColumnId(content, selectedBlockId);
+    const columnId = resolveTargetColumnId(state.content, state.selectedBlockId);
     if (!columnId) {
       return;
     }
 
-    addBlock(columnId, blockType);
+    state.addBlock(columnId, blockType);
   }
 
   function handleAdd(type: TemplateBlockType) {

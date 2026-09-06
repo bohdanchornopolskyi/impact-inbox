@@ -1,26 +1,24 @@
 "use client";
 
-import { useBuilder } from "./builder-provider";
+import { useBuilderStore } from "./builder-provider";
 import {
   addLayoutBlock,
   type LayoutBlockType,
 } from "./layout-add-targets";
 
 export function useLayoutAddTargets() {
-  const canEdit = useBuilder((s) => s.canEdit);
-  const content = useBuilder((s) => s.content);
-  const selectedBlockId = useBuilder((s) => s.selectedBlockId);
-  const addSection = useBuilder((s) => s.addSection);
-  const addRow = useBuilder((s) => s.addRow);
-  const addColumn = useBuilder((s) => s.addColumn);
-
-  const actions = { addSection, addRow, addColumn };
+  const store = useBuilderStore();
 
   function handleAddLayoutBlock(blockType: LayoutBlockType) {
-    if (!canEdit) {
+    const state = store.getState();
+    if (!state.canEdit) {
       return;
     }
-    addLayoutBlock(blockType, content, selectedBlockId, actions);
+    addLayoutBlock(blockType, state.content, state.selectedBlockId, {
+      addSection: state.addSection,
+      addRow: state.addRow,
+      addColumn: state.addColumn,
+    });
   }
 
   function handleAddSection() {

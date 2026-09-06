@@ -100,11 +100,7 @@ export function useUpdateTemplate(templateId: string) {
   return useMutation({
     mutationFn: (input: UpdateTemplateInput) =>
       updateTemplate(token, workspace.id, templateId, input),
-    onSuccess: (data) => {
-      queryClient.setQueryData(
-        templateQueryKey(workspace.id, templateId, token),
-        data,
-      );
+    onSuccess: () => {
       queryClient.invalidateQueries({
         queryKey: ["templates", workspace.id],
       });

@@ -2,39 +2,16 @@
 
 import { useEffect, useRef } from "react";
 import { matchBuilderShortcut } from "./builder-shortcut";
-import { useBuilder, useSaveRevision } from "./builder-provider";
+import { useBuilderStore, useSaveRevision } from "./builder-provider";
 import { runBuilderShortcut } from "./run-builder-shortcut";
 
 export function useBuilderShortcuts() {
-  const canEdit = useBuilder((s) => s.canEdit);
-  const undo = useBuilder((s) => s.undo);
-  const redo = useBuilder((s) => s.redo);
-  const selectBlock = useBuilder((s) => s.selectBlock);
-  const removeBlock = useBuilder((s) => s.removeBlock);
-  const duplicateBlock = useBuilder((s) => s.duplicateBlock);
-  const selectedBlockId = useBuilder((s) => s.selectedBlockId);
-  const setPreviewOpen = useBuilder((s) => s.setPreviewOpen);
-  const previewOpen = useBuilder((s) => s.previewOpen);
+  const store = useBuilderStore();
   const { saveRevision, isPending } = useSaveRevision();
-
-  const handlers = {
-    canEdit,
-    isSaving: isPending,
-    previewOpen,
-    selectedBlockId,
-    undo,
-    redo,
-    save: () => {
-      void saveRevision();
-    },
-    openPreview: () => setPreviewOpen(true),
-    removeBlock,
-    duplicateBlock,
-    selectBlock,
-  };
-
-  const handlersRef = useRef(handlers);
-  handlersRef.current = handlers;
+  const saveRevisionRef = useRef(saveRevision);
+  saveRevisionRef.current = saveRevision;
+  const isPendingRef = useRef(isPending);
+  isPendingRef.current = isPending;
 
   useEffect(() => {
     function onKeyDown(event: KeyboardEvent) {
@@ -43,10 +20,25 @@ export function useBuilderShortcuts() {
         return;
       }
       event.preventDefault();
-      runBuilderShortcut(action, handlersRef.current);
+      const state = store.getState();
+      runBuilderShortcut(action, {
+        canEdit: state.canEdit,
+        isSaving: isPendingRef.current,
+        previewOpen: state.previewOpen,
+        selectedBlockId: state.selectedBlockId,
+        undo: state.undo,
+        redo: state.redo,
+        save: () => {
+          void saveRevisionRef.current();
+        },
+        openPreview: () => state.setPreviewOpen(true),
+        removeBlock: state.removeBlock,
+        duplicateBlock: state.duplicateBlock,
+        selectBlock: state.selectBlock,
+      });
     }
 
     window.addEventListener("keydown", onKeyDown, true);
     return () => window.removeEventListener("keydown", onKeyDown, true);
-  }, []);
+  }, [store]);
 }

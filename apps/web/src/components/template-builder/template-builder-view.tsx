@@ -38,24 +38,24 @@ export function TemplateBuilderView({ templateId }: TemplateBuilderViewProps) {
 
   return (
     <BuilderProvider template={templateQuery.data} canEdit={canEdit}>
-      <RichtextCanvasEditProvider>
-        <PaletteCanvasDndProvider>
-          <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
-            <div className="shrink-0">
-              <BuilderToolbar />
-              <MergeTagWarnings />
-            </div>
+      <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+        <div className="shrink-0">
+          <BuilderToolbar />
+          <MergeTagWarnings />
+        </div>
+        <RichtextCanvasEditProvider>
+          <PaletteCanvasDndProvider>
             <div className="grid min-h-0 flex-1 grid-cols-[var(--spacing-panel-left)_minmax(0,1fr)_var(--spacing-panel-right)] overflow-hidden [&>*]:min-h-0">
               <LeftSidebar />
               <PreviewCanvas />
               <BuilderInspectorPanel />
             </div>
-          </div>
-          <PreviewOverlay />
-          <RevisionHistoryDrawer />
-          <ExportTemplateModal />
-        </PaletteCanvasDndProvider>
-      </RichtextCanvasEditProvider>
+          </PaletteCanvasDndProvider>
+        </RichtextCanvasEditProvider>
+      </div>
+      <PreviewOverlay />
+      <RevisionHistoryDrawer />
+      <ExportTemplateModal />
     </BuilderProvider>
   );
 }

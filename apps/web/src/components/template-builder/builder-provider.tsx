@@ -530,22 +530,47 @@ export function BuilderProvider({
     storeRef.current = createBuilderStore(canEdit, brandKit);
   }
   const store = storeRef.current;
-
-  const { mutateAsync: updateTemplateAsync } = useUpdateTemplate(template.id);
-  const { showError } = useToast();
-  const autosaveRef = useRef<ReturnType<typeof subscribeAutosave> | null>(null);
+  const flush = useRef<() => Promise<boolean>>(() => Promise.resolve(true));
 
   useEffect(() => {
     store.getState().setBrandKit(brandKit);
   }, [brandKit, store]);
+
+  const valueRef = useRef<BuilderContextValue | null>(null);
+  if (!valueRef.current) {
+    valueRef.current = {
+      store,
+      flush: () => flush.current(),
+    };
+  }
+
+  return (
+    <BuilderContext.Provider value={valueRef.current}>
+      <BuilderPersistence store={store} template={template} flushRef={flush} />
+      {children}
+      <TemplateConflictHandler store={store} />
+    </BuilderContext.Provider>
+  );
+}
+
+function BuilderPersistence({
+  store,
+  template,
+  flushRef,
+}: {
+  store: BuilderStore;
+  template: TemplateData;
+  flushRef: { current: () => Promise<boolean> };
+}) {
+  const { mutateAsync: updateTemplateAsync } = useUpdateTemplate(template.id);
+  const { showError } = useToast();
+  const autosaveRef = useRef<ReturnType<typeof subscribeAutosave> | null>(null);
 
   useEffect(() => {
     store.getState().init(template);
     autosaveRef.current?.markInitialized();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [store, template.id]);
-
-  const flush = useRef<() => Promise<boolean>>(() => Promise.resolve(true));
 
   useEffect(() => {
     const autosave = subscribeAutosave(
@@ -558,28 +583,15 @@ export function BuilderProvider({
     );
     autosaveRef.current = autosave;
     autosave.markInitialized();
-    flush.current = autosave.flush;
+    flushRef.current = autosave.flush;
 
     return () => {
       autosave.dispose();
       autosaveRef.current = null;
     };
-  }, [store, updateTemplateAsync, showError]);
+  }, [store, updateTemplateAsync, showError, flushRef]);
 
-  const valueRef = useRef<BuilderContextValue | null>(null);
-  if (!valueRef.current) {
-    valueRef.current = {
-      store,
-      flush: () => flush.current(),
-    };
-  }
-
-  return (
-    <BuilderContext.Provider value={valueRef.current}>
-      {children}
-      <TemplateConflictHandler store={store} />
-    </BuilderContext.Provider>
-  );
+  return null;
 }
 
 function TemplateConflictHandler({ store }: { store: BuilderStore }) {
@@ -631,6 +643,10 @@ function useBuilderContext(): BuilderContextValue {
 export function useBuilder<T>(selector: (state: BuilderState) => T): T {
   const { store } = useBuilderContext();
   return useStore(store, selector);
+}
+
+export function useBuilderStore(): BuilderStore {
+  return useBuilderContext().store;
 }
 
 /** Derived: the currently selected block, recomputed when content/selection changes. */
