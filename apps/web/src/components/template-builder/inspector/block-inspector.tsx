@@ -45,11 +45,11 @@ export function BlockInspector() {
   }
 
   if (
-    selectedBlock.block.type === "section" ||
-    selectedBlock.block.type === "row" ||
-    selectedBlock.block.type === "column"
+    selectedBlock.type === "section" ||
+    selectedBlock.type === "row" ||
+    selectedBlock.type === "column"
   ) {
-    const layoutBlock = selectedBlock.block;
+    const layoutBlock = selectedBlock;
 
     function updateStyles(styles: Parameters<typeof updateBlockStyles>[1]) {
       if (!canEdit) {
@@ -84,7 +84,7 @@ export function BlockInspector() {
     );
   }
 
-  const block = selectedBlock.block as ContentBlock;
+  const block = selectedBlock as ContentBlock;
 
   function updateProps(props: Record<string, unknown>) {
     if (!canEdit) {

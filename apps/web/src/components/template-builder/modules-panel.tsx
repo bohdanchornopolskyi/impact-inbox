@@ -5,11 +5,9 @@ import Link from "next/link";
 import { Bookmark, RotateCcw, Trash2 } from "lucide-react";
 import { Button, Input, cn } from "@repo/ui/client";
 import {
-  findBlock,
   getPlatformStarterByName,
   hasWorkspaceRoleAtLeast,
   isEmptyModuleSection,
-  resolveSectionId,
   summarizeModuleContent,
   type SectionBlock,
   type WorkspaceModuleData,
@@ -23,8 +21,12 @@ import {
 } from "@/lib/workspaces/workspace-hooks";
 import { useToastMutation } from "@/lib/use-toast-mutation";
 import { showError } from "@/stores/toast-store";
-import { useBuilder } from "./builder-provider";
+import { useBuilder, useBuilderStore } from "./builder-provider";
 import { ConfirmModal } from "./modals/confirm-modal";
+import {
+  moduleSaveTargetState,
+  resolveSelectedSection,
+} from "./module-save-target";
 
 type PendingLibraryAction =
   | { kind: "update"; module: WorkspaceModuleData; content: SectionBlock }
@@ -33,20 +35,21 @@ type PendingLibraryAction =
   | null;
 
 function SaveToLibraryCard({
-  saveName,
-  selectedSection,
-  canSaveSection,
+  canManage,
   isPending,
-  onSaveNameChange,
   onSave,
 }: {
-  saveName: string;
-  selectedSection: SectionBlock | undefined;
-  canSaveSection: boolean;
+  canManage: boolean;
   isPending: boolean;
-  onSaveNameChange: (value: string) => void;
-  onSave: () => void;
+  onSave: (name: string, onSaved: () => void) => void;
 }) {
+  const saveTarget = useBuilder((s) =>
+    moduleSaveTargetState(s.content, s.selectedBlockId),
+  );
+  const [saveName, setSaveName] = useState("");
+  const canSaveSection =
+    canManage && saveTarget === "ready" && Boolean(saveName.trim());
+
   return (
     <div className="mb-4 space-y-2 rounded-lg border border-border-default bg-surface-muted p-3">
       <p className="text-ui-xs font-medium text-text-secondary">
@@ -54,25 +57,25 @@ function SaveToLibraryCard({
       </p>
       <Input
         value={saveName}
-        onChange={(event) => onSaveNameChange(event.target.value)}
+        onChange={(event) => setSaveName(event.target.value)}
         placeholder="Module name"
         aria-label="Module name"
-        disabled={!selectedSection}
+        disabled={saveTarget === "none"}
       />
       <Button
         type="button"
         size="sm"
         className="w-full"
         disabled={!canSaveSection || isPending}
-        onClick={onSave}
+        onClick={() => onSave(saveName.trim(), () => setSaveName(""))}
       >
         Save to library
       </Button>
-      {!selectedSection ? (
+      {saveTarget === "none" ? (
         <p className="text-ui-xs text-text-tertiary">
           Select a section (or a block inside one) first.
         </p>
-      ) : isEmptyModuleSection(selectedSection) ? (
+      ) : saveTarget === "empty" ? (
         <p className="text-ui-xs text-text-tertiary">
           Selected section is empty — add blocks before saving.
         </p>
@@ -129,7 +132,6 @@ function SelectedModuleCard({
   module,
   canManage,
   canEdit,
-  selectedSection,
   renameValue,
   starterAvailable,
   isUpdatePending,
@@ -144,7 +146,6 @@ function SelectedModuleCard({
   module: WorkspaceModuleData;
   canManage: boolean;
   canEdit: boolean;
-  selectedSection: SectionBlock | undefined;
   renameValue: string;
   starterAvailable: boolean;
   isUpdatePending: boolean;
@@ -156,6 +157,9 @@ function SelectedModuleCard({
   onRestoreStarter: (module: WorkspaceModuleData) => void;
   onDelete: (moduleId: string) => void;
 }) {
+  const saveTarget = useBuilder((s) =>
+    moduleSaveTargetState(s.content, s.selectedBlockId),
+  );
   return (
     <div className="mt-4 space-y-3 rounded-lg border border-border-default bg-surface-card p-3">
       <div>
@@ -206,20 +210,16 @@ function SelectedModuleCard({
             variant="secondary"
             size="sm"
             className="w-full"
-            disabled={
-              !selectedSection ||
-              isEmptyModuleSection(selectedSection) ||
-              isUpdatePending
-            }
+            disabled={saveTarget !== "ready" || isUpdatePending}
             onClick={() => onUpdateFromSelection(module)}
           >
             Update from selection
           </Button>
-          {!selectedSection ? (
+          {saveTarget === "none" ? (
             <p className="text-ui-xs text-text-tertiary">
               Select a canvas section to replace this module’s content.
             </p>
-          ) : isEmptyModuleSection(selectedSection) ? (
+          ) : saveTarget === "empty" ? (
             <p className="text-ui-xs text-text-tertiary">
               Selected section is empty — library updates need content.
             </p>
@@ -260,11 +260,9 @@ function SelectedModuleCard({
 
 export function ModulesPanel() {
   const { workspace } = useWorkspace();
+  const store = useBuilderStore();
   const canEdit = useBuilder((s) => s.canEdit);
   const canManage = hasWorkspaceRoleAtLeast(workspace.role, ["admin", "owner"]);
-  const content = useBuilder((s) => s.content);
-  const selectedBlockId = useBuilder((s) => s.selectedBlockId);
-  const insertSavedModule = useBuilder((s) => s.insertSavedModule);
   const modulesQuery = useWorkspaceModules(workspace.id);
   const createModule = useCreateWorkspaceModule(workspace.id);
   const updateModule = useUpdateWorkspaceModule(workspace.id);
@@ -286,21 +284,9 @@ export function ModulesPanel() {
     successMessage: "Module deleted",
     errorMessage: "Could not delete module",
   });
-  const [saveName, setSaveName] = useState("");
   const [selectedModuleId, setSelectedModuleId] = useState<string | null>(null);
   const [renameValue, setRenameValue] = useState("");
   const [pendingAction, setPendingAction] = useState<PendingLibraryAction>(null);
-
-  const sectionId = resolveSectionId(content, selectedBlockId);
-  const foundSection =
-    sectionId !== undefined ? findBlock(content, sectionId) : undefined;
-  const selectedSection =
-    foundSection?.block.type === "section" ? foundSection.block : undefined;
-  const canSaveSection =
-    canManage &&
-    selectedSection !== undefined &&
-    !isEmptyModuleSection(selectedSection) &&
-    Boolean(saveName.trim());
 
   const selectedModule =
     modulesQuery.data?.find((module) => module.id === selectedModuleId) ?? null;
@@ -331,14 +317,17 @@ export function ModulesPanel() {
   }, [modulesQuery.data, selectedModuleId]);
 
   function handleInsert(moduleContent: SectionBlock) {
-    if (!canEdit) {
+    const state = store.getState();
+    if (!state.canEdit) {
       return;
     }
-    insertSavedModule(moduleContent);
+    state.insertSavedModule(moduleContent);
   }
 
-  function handleSave() {
-    if (!canSaveSection || !selectedSection) {
+  function handleSave(name: string, onSaved: () => void) {
+    const { content, selectedBlockId } = store.getState();
+    const selectedSection = resolveSelectedSection(content, selectedBlockId);
+    if (!canManage || !name || !selectedSection) {
       return;
     }
     if (isEmptyModuleSection(selectedSection)) {
@@ -346,10 +335,10 @@ export function ModulesPanel() {
       return;
     }
     create.mutate(
-      { name: saveName.trim(), content: selectedSection },
+      { name, content: selectedSection },
       {
         onSuccess: (created) => {
-          setSaveName("");
+          onSaved();
           setSelectedModuleId(created.id);
         },
       },
@@ -368,7 +357,12 @@ export function ModulesPanel() {
   }
 
   function requestUpdateFromSelection(module: WorkspaceModuleData) {
-    if (!canManage || !selectedSection) {
+    if (!canManage) {
+      return;
+    }
+    const { content, selectedBlockId } = store.getState();
+    const selectedSection = resolveSelectedSection(content, selectedBlockId);
+    if (!selectedSection) {
       return;
     }
     if (isEmptyModuleSection(selectedSection)) {
@@ -470,11 +464,8 @@ export function ModulesPanel() {
       <div className="min-h-0 flex-1 overflow-y-auto p-3">
         {canManage ? (
           <SaveToLibraryCard
-            saveName={saveName}
-            selectedSection={selectedSection}
-            canSaveSection={canSaveSection}
+            canManage={canManage}
             isPending={create.isPending}
-            onSaveNameChange={setSaveName}
             onSave={handleSave}
           />
         ) : null}
@@ -504,7 +495,6 @@ export function ModulesPanel() {
             module={selectedModule}
             canManage={canManage}
             canEdit={canEdit}
-            selectedSection={selectedSection}
             renameValue={renameValue}
             starterAvailable={Boolean(starterForSelected)}
             isUpdatePending={update.isPending}

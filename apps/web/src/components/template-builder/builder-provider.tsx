@@ -7,6 +7,7 @@ import type {
   BlockStyles,
   ContentBlockType,
   SectionBlock,
+  TemplateBlock,
   TemplateContentData,
   TemplateData,
 } from "@repo/shared";
@@ -649,11 +650,14 @@ export function useBuilderStore(): BuilderStore {
   return useBuilderContext().store;
 }
 
-/** Derived: the currently selected block, recomputed when content/selection changes. */
-export function useSelectedBlock(): ReturnType<typeof findBlock> | undefined {
-  const content = useBuilder((s) => s.content);
-  const selectedBlockId = useBuilder((s) => s.selectedBlockId);
-  return selectedBlockId ? findBlock(content, selectedBlockId) : undefined;
+export function useSelectedBlock(): TemplateBlock | undefined {
+  return useBuilder((s) => {
+    if (!s.selectedBlockId) {
+      return undefined;
+    }
+
+    return findBlock(s.content, s.selectedBlockId)?.block;
+  });
 }
 
 /** Explicit-Save flush of the working copy. Returns false on failure (incl. 409). */

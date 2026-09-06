@@ -1,12 +1,10 @@
 "use client";
 
-import { createContext, useContext, useMemo, useState } from "react";
+import { createContext, useContext, useState } from "react";
 import {
   findBlock,
-  getBlockTypeLabel,
   isContentBlock,
   resolveStructurePanelContentTarget,
-  type TemplateBlockType,
   type TemplateContentData,
 } from "@repo/shared";
 import {
@@ -29,17 +27,14 @@ import {
 import { CSS } from "@dnd-kit/utilities";
 import { GripVertical, Plus } from "lucide-react";
 import { Button } from "@repo/ui/client";
-import { useBuilder } from "./builder-provider";
+import { useBuilder, useBuilderStore } from "./builder-provider";
 import { TemplateBlockIcon } from "./block-icons";
+import {
+  buildLayersTree,
+  getLayersTreeKey,
+  type LayersTreeNode,
+} from "./layers-tree";
 import { useLayoutAddTargets } from "./use-layout-add-targets";
-
-type TreeNode = {
-  id: string;
-  label: string;
-  type: TemplateBlockType;
-  children?: TreeNode[];
-  columnId?: string;
-};
 
 const COLUMN_APPEND_PREFIX = "column-append:";
 
@@ -112,31 +107,6 @@ function resolveDropPreviewForColumn(
   return null;
 }
 
-function buildTree(content: TemplateContentData): TreeNode[] {
-  return content.body.map((section) => ({
-    id: section.id,
-    label: getBlockTypeLabel("section"),
-    type: section.type,
-    children: section.children.map((row) => ({
-      id: row.id,
-      label: getBlockTypeLabel("row"),
-      type: row.type,
-      children: row.children.map((column) => ({
-        id: column.id,
-        label: getBlockTypeLabel("column"),
-        type: column.type,
-        columnId: column.id,
-        children: column.children.map((child) => ({
-          id: child.id,
-          label: getBlockTypeLabel(child.type),
-          type: child.type,
-          columnId: column.id,
-        })),
-      })),
-    })),
-  }));
-}
-
 function DropPlaceholderGap({ depth }: { depth: number }) {
   return (
     <div
@@ -152,7 +122,7 @@ function ContentNodePreview({
   depth,
   selected,
 }: {
-  node: TreeNode;
+  node: LayersTreeNode;
   depth: number;
   selected: boolean;
 }) {
@@ -176,7 +146,7 @@ function SortableContentNode({
   node,
   depth,
 }: {
-  node: TreeNode;
+  node: LayersTreeNode;
   depth: number;
 }) {
   const canEdit = useBuilder((s) => s.canEdit);
@@ -215,7 +185,7 @@ function SortableContentNode({
 
 function EmptyColumnDropZone({ columnId, depth }: { columnId: string; depth: number }) {
   const canEdit = useBuilder((s) => s.canEdit);
-  const content = useBuilder((s) => s.content);
+  const store = useBuilderStore();
   const { activeId, overId } = useContext(StructureDragContext);
   const { setNodeRef, isOver } = useDroppable({
     id: columnId,
@@ -223,7 +193,12 @@ function EmptyColumnDropZone({ columnId, depth }: { columnId: string; depth: num
   });
   const showGap =
     isOver ||
-    resolveDropPreviewForColumn(content, activeId, overId, columnId) !== null;
+    resolveDropPreviewForColumn(
+      store.getState().content,
+      activeId,
+      overId,
+      columnId,
+    ) !== null;
 
   if (showGap) {
     return (
@@ -254,7 +229,7 @@ function ColumnAppendDropZone({ columnId }: { columnId: string }) {
   return <div ref={setNodeRef} className="h-3 shrink-0" aria-hidden />;
 }
 
-function LayoutNodeButton({ node, depth }: { node: TreeNode; depth: number }) {
+function LayoutNodeButton({ node, depth }: { node: LayersTreeNode; depth: number }) {
   const selectBlock = useBuilder((s) => s.selectBlock);
   const selected = useBuilder((s) => s.selectedBlockId === node.id);
 
@@ -275,14 +250,16 @@ function LayoutNodeButton({ node, depth }: { node: TreeNode; depth: number }) {
   );
 }
 
-function ColumnNodeView({ node, depth }: { node: TreeNode; depth: number }) {
-  const content = useBuilder((s) => s.content);
+function ColumnNodeView({ node, depth }: { node: LayersTreeNode; depth: number }) {
+  const store = useBuilderStore();
   const { activeId, overId } = useContext(StructureDragContext);
   const contentIds = (node.children ?? []).map((child) => child.id);
   const isEmpty = contentIds.length === 0;
-  const dropPreview = useMemo(
-    () => resolveDropPreviewForColumn(content, activeId, overId, node.id),
-    [activeId, content, node.id, overId],
+  const dropPreview = resolveDropPreviewForColumn(
+    store.getState().content,
+    activeId,
+    overId,
+    node.id,
   );
 
   return (
@@ -312,7 +289,7 @@ function ColumnNodeView({ node, depth }: { node: TreeNode; depth: number }) {
   );
 }
 
-function TreeNodeView({ node, depth }: { node: TreeNode; depth: number }) {
+function TreeNodeView({ node, depth }: { node: LayersTreeNode; depth: number }) {
   if (node.type === "column") {
     return <ColumnNodeView node={node} depth={depth} />;
   }
@@ -327,7 +304,10 @@ function TreeNodeView({ node, depth }: { node: TreeNode; depth: number }) {
   );
 }
 
-function findTreeNode(nodes: TreeNode[], id: string): TreeNode | undefined {
+function findTreeNode(
+  nodes: LayersTreeNode[],
+  id: string,
+): LayersTreeNode | undefined {
   for (const node of nodes) {
     if (node.id === id) {
       return node;
@@ -344,21 +324,27 @@ function findTreeNode(nodes: TreeNode[], id: string): TreeNode | undefined {
   return undefined;
 }
 
+function DragOverlayPreview({ node }: { node: LayersTreeNode }) {
+  const selected = useBuilder((s) => s.selectedBlockId === node.id);
+
+  return <ContentNodePreview node={node} depth={2} selected={selected} />;
+}
+
 export function StructurePanel() {
-  const content = useBuilder((s) => s.content);
+  const store = useBuilderStore();
+  const layersTreeKey = useBuilder((s) => getLayersTreeKey(s.content));
   const canEdit = useBuilder((s) => s.canEdit);
-  const moveBlock = useBuilder((s) => s.moveBlock);
   const { handleAddSection, handleAddRow, handleAddColumn } =
     useLayoutAddTargets();
-  const tree = buildTree(content);
+  const tree = layersTreeKey
+    ? buildLayersTree(store.getState().content)
+    : [];
   const [activeDragId, setActiveDragId] = useState<string | null>(null);
   const [overDragId, setOverDragId] = useState<string | null>(null);
-  const activeDragNode = activeDragId ? findTreeNode(tree, activeDragId) : undefined;
-  const dragContext = useMemo(
-    () => ({ activeId: activeDragId, overId: overDragId }),
-    [activeDragId, overDragId],
-  );
-  const selectedBlockId = useBuilder((s) => s.selectedBlockId);
+  const activeDragNode = activeDragId
+    ? findTreeNode(tree, activeDragId)
+    : undefined;
+  const dragContext = { activeId: activeDragId, overId: overDragId };
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: { distance: 8 },
@@ -378,16 +364,21 @@ export function StructurePanel() {
     setActiveDragId(null);
     setOverDragId(null);
     const { active, over } = event;
-    if (!over || active.id === over.id || !canEdit) {
+    const { canEdit: editable, content, moveBlock } = store.getState();
+    if (!over || active.id === over.id || !editable) {
       return;
     }
 
     const appendColumnId = parseColumnAppendDropId(String(over.id));
     if (appendColumnId) {
-      const target = resolveStructurePanelContentTarget(content, String(active.id), {
-        kind: "append",
-        columnId: appendColumnId,
-      });
+      const target = resolveStructurePanelContentTarget(
+        content,
+        String(active.id),
+        {
+          kind: "append",
+          columnId: appendColumnId,
+        },
+      );
       if (target) {
         moveBlock(String(active.id), target.columnId, target.index);
       }
@@ -396,20 +387,28 @@ export function StructurePanel() {
 
     const overFound = findBlock(content, String(over.id));
     if (overFound?.block.type === "column") {
-      const target = resolveStructurePanelContentTarget(content, String(active.id), {
-        kind: "column",
-        columnId: overFound.block.id,
-      });
+      const target = resolveStructurePanelContentTarget(
+        content,
+        String(active.id),
+        {
+          kind: "column",
+          columnId: overFound.block.id,
+        },
+      );
       if (target) {
         moveBlock(String(active.id), target.columnId, target.index);
       }
       return;
     }
 
-    const target = resolveStructurePanelContentTarget(content, String(active.id), {
-      kind: "content",
-      blockId: String(over.id),
-    });
+    const target = resolveStructurePanelContentTarget(
+      content,
+      String(active.id),
+      {
+        kind: "content",
+        blockId: String(over.id),
+      },
+    );
     if (target) {
       moveBlock(String(active.id), target.columnId, target.index);
     }
@@ -457,11 +456,7 @@ export function StructurePanel() {
             </div>
             <DragOverlay dropAnimation={null}>
               {activeDragNode ? (
-                <ContentNodePreview
-                  node={activeDragNode}
-                  depth={2}
-                  selected={selectedBlockId === activeDragNode.id}
-                />
+                <DragOverlayPreview node={activeDragNode} />
               ) : null}
             </DragOverlay>
           </div>

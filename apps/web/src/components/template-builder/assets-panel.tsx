@@ -4,6 +4,7 @@ import { useRef, useState, type RefObject } from "react";
 import { MoreHorizontal, Upload } from "lucide-react";
 import {
   ASSET_UPLOAD_ALLOWED_MIME_TYPES,
+  findBlock,
   hasWorkspaceRoleAtLeast,
   templateContentUsesAssetUrl,
   type OrganizationAssetData,
@@ -21,7 +22,8 @@ import {
 } from "@/lib/workspaces/workspace-hooks";
 import { useToastMutation } from "@/lib/use-toast-mutation";
 import { showError, showToast } from "@/stores/toast-store";
-import { useBuilder, useSelectedBlock } from "./builder-provider";
+import { useBuilder, useBuilderStore } from "./builder-provider";
+import { canApplyAssetToSelection } from "./asset-apply-target";
 import { widthForPickedImage } from "./inspector/image-display-width";
 import { ConfirmModal } from "./modals/confirm-modal";
 
@@ -359,11 +361,10 @@ export function AssetsPanel() {
   const { token } = useSession();
   const { workspace } = useWorkspace();
   const canManage = hasWorkspaceRoleAtLeast(workspace.role, ["admin", "owner"]);
-  const canEdit = useBuilder((s) => s.canEdit);
-  const content = useBuilder((s) => s.content);
-  const updateBlockProps = useBuilder((s) => s.updateBlockProps);
-  const stripAssetUrl = useBuilder((s) => s.stripAssetUrl);
-  const selectedBlock = useSelectedBlock();
+  const store = useBuilderStore();
+  const canApplyToBlock = useBuilder((s) =>
+    canApplyAssetToSelection(s.content, s.selectedBlockId, s.canEdit),
+  );
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [pendingRename, setPendingRename] =
     useState<OrganizationAssetData | null>(null);
@@ -410,11 +411,6 @@ export function AssetsPanel() {
   });
 
   const assets = assetsQuery.data ?? [];
-  const canApplyToBlock =
-    canEdit &&
-    selectedBlock &&
-    (selectedBlock.block.type === "image" ||
-      selectedBlock.block.type === "logo");
 
   function handleUpload(file: File | undefined) {
     if (!file || !canManage) {
@@ -430,22 +426,30 @@ export function AssetsPanel() {
   }
 
   function applyToSelectedBlock(asset: OrganizationAssetData) {
-    if (!canApplyToBlock || !selectedBlock) {
+    const { content, selectedBlockId, canEdit, updateBlockProps } =
+      store.getState();
+    if (!canApplyAssetToSelection(content, selectedBlockId, canEdit)) {
       showError("Select an image or logo block first");
       return;
     }
 
-    const blockType = selectedBlock.block.type;
-    if (blockType !== "image" && blockType !== "logo") {
+    const found = selectedBlockId
+      ? findBlock(content, selectedBlockId)
+      : undefined;
+    if (
+      !found ||
+      (found.block.type !== "image" && found.block.type !== "logo")
+    ) {
       return;
     }
 
+    const blockType = found.block.type;
     void widthForPickedImage(
       asset.url,
       blockType,
       content.settings.width,
     ).then((width) => {
-      updateBlockProps(selectedBlock.block.id, { src: asset.url, width });
+      updateBlockProps(found.block.id, { src: asset.url, width });
       showToast("Applied to selected block");
     });
   }
@@ -499,7 +503,7 @@ export function AssetsPanel() {
         asset.id,
       );
       const usedInOpenTemplate = templateContentUsesAssetUrl(
-        content,
+        store.getState().content,
         asset.url,
       );
       setDeleteUsage({
@@ -528,7 +532,7 @@ export function AssetsPanel() {
     const url = pendingDelete.url;
     try {
       await remove.mutateAsync(pendingDelete.id);
-      stripAssetUrl(url);
+      store.getState().stripAssetUrl(url);
       setPendingDelete(null);
       setDeleteUsage(null);
     } catch {
