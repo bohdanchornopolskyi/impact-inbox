@@ -26,7 +26,7 @@ export function BuilderInspectorPanel() {
     <div className="flex h-full min-h-0 flex-col overflow-hidden border-l border-border bg-surface">
       <div className="flex h-11.5 shrink-0 items-center border-b border-border px-3">
         <SegmentedControl
-          size="sm"
+          variant="device"
           className="w-full [&_button]:min-w-0 [&_button]:flex-1"
           value={inspectorMode}
           onChange={(value) => {
