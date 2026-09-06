@@ -95,7 +95,7 @@ const PaletteCanvasDndContext = createContext<PaletteCanvasDndContextValue | nul
   null,
 );
 
-export function PaletteCanvasDndProvider({ children }: { children: ReactNode }) {
+function usePaletteCanvasDndController() {
   const canEdit = useBuilder((s) => s.canEdit);
   const addBlock = useBuilder((s) => s.addBlock);
   const addSection = useBuilder((s) => s.addSection);
@@ -425,6 +425,12 @@ export function PaletteCanvasDndProvider({ children }: { children: ReactNode }) 
     isPaletteDragging,
     isCanvasDragging,
   };
+
+  return { value, dragGhost, isPaletteDragging };
+}
+
+export function PaletteCanvasDndProvider({ children }: { children: ReactNode }) {
+  const { value, dragGhost, isPaletteDragging } = usePaletteCanvasDndController();
 
   return (
     <PaletteCanvasDndContext.Provider value={value}>

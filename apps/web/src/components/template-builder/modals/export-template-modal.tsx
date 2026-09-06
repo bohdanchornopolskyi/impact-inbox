@@ -19,7 +19,7 @@ export function ExportTemplateModal() {
   const [tab, setTab] = useState<"html" | "text">("html");
   const [html, setHtml] = useState("");
   const [text, setText] = useState("");
-  const [fileName, setFileName] = useState("template.html");
+  const fileNameRef = useRef("template.html");
   const fetchedForOpenRef = useRef(false);
 
   useEffect(() => {
@@ -49,7 +49,7 @@ export function ExportTemplateModal() {
 
         setHtml(result.html);
         setText(result.text);
-        setFileName(result.fileName);
+        fileNameRef.current = result.fileName;
       })
       .catch((error) => {
         showError(
@@ -74,7 +74,7 @@ export function ExportTemplateModal() {
       return;
     }
 
-    downloadTemplateExportBundle(html, text, fileName);
+    downloadTemplateExportBundle(html, text, fileNameRef.current);
   }
 
   return (

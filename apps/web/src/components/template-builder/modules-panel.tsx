@@ -32,6 +32,232 @@ type PendingLibraryAction =
   | { kind: "delete"; moduleId: string }
   | null;
 
+function SaveToLibraryCard({
+  saveName,
+  selectedSection,
+  canSaveSection,
+  isPending,
+  onSaveNameChange,
+  onSave,
+}: {
+  saveName: string;
+  selectedSection: SectionBlock | undefined;
+  canSaveSection: boolean;
+  isPending: boolean;
+  onSaveNameChange: (value: string) => void;
+  onSave: () => void;
+}) {
+  return (
+    <div className="mb-4 space-y-2 rounded-lg border border-border-default bg-surface-muted p-3">
+      <p className="text-ui-xs font-medium text-text-secondary">
+        Save canvas section to library
+      </p>
+      <Input
+        value={saveName}
+        onChange={(event) => onSaveNameChange(event.target.value)}
+        placeholder="Module name"
+        aria-label="Module name"
+        disabled={!selectedSection}
+      />
+      <Button
+        type="button"
+        size="sm"
+        className="w-full"
+        disabled={!canSaveSection || isPending}
+        onClick={onSave}
+      >
+        Save to library
+      </Button>
+      {!selectedSection ? (
+        <p className="text-ui-xs text-text-tertiary">
+          Select a section (or a block inside one) first.
+        </p>
+      ) : isEmptyModuleSection(selectedSection) ? (
+        <p className="text-ui-xs text-text-tertiary">
+          Selected section is empty — add blocks before saving.
+        </p>
+      ) : null}
+    </div>
+  );
+}
+
+function ModuleList({
+  modules,
+  selectedModuleId,
+  onSelect,
+}: {
+  modules: WorkspaceModuleData[];
+  selectedModuleId: string | null;
+  onSelect: (moduleId: string) => void;
+}) {
+  return (
+    <div className="space-y-2">
+      {modules.map((module) => {
+        const isSelected = module.id === selectedModuleId;
+        return (
+          <button
+            key={module.id}
+            type="button"
+            onClick={() => onSelect(module.id)}
+            className={cn(
+              "flex w-full items-start gap-2 rounded-lg border p-2.5 text-left transition-colors",
+              isSelected
+                ? "border-accent-border bg-accent-soft"
+                : "border-border-default bg-surface-muted hover:border-accent-border",
+            )}
+          >
+            <Bookmark
+              className="mt-0.5 size-4 shrink-0 text-text-secondary"
+              strokeWidth={1.5}
+            />
+            <span className="min-w-0">
+              <span className="block truncate text-ui-sm font-medium text-text-primary">
+                {module.name}
+              </span>
+              <span className="block truncate text-ui-xs text-text-tertiary">
+                {summarizeModuleContent(module.content)}
+              </span>
+            </span>
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+function SelectedModuleCard({
+  module,
+  canManage,
+  canEdit,
+  selectedSection,
+  renameValue,
+  starterAvailable,
+  isUpdatePending,
+  isRemovePending,
+  onRenameValueChange,
+  onRename,
+  onInsert,
+  onUpdateFromSelection,
+  onRestoreStarter,
+  onDelete,
+}: {
+  module: WorkspaceModuleData;
+  canManage: boolean;
+  canEdit: boolean;
+  selectedSection: SectionBlock | undefined;
+  renameValue: string;
+  starterAvailable: boolean;
+  isUpdatePending: boolean;
+  isRemovePending: boolean;
+  onRenameValueChange: (value: string) => void;
+  onRename: (module: WorkspaceModuleData) => void;
+  onInsert: (content: SectionBlock) => void;
+  onUpdateFromSelection: (module: WorkspaceModuleData) => void;
+  onRestoreStarter: (module: WorkspaceModuleData) => void;
+  onDelete: (moduleId: string) => void;
+}) {
+  return (
+    <div className="mt-4 space-y-3 rounded-lg border border-border-default bg-surface-card p-3">
+      <div>
+        <p className="text-ui-xs font-medium text-text-secondary">Selected</p>
+        <p className="mt-1 text-ui-sm font-semibold text-text-primary">
+          {module.name}
+        </p>
+        <p className="mt-1 text-ui-xs text-text-tertiary">
+          {summarizeModuleContent(module.content)}
+        </p>
+      </div>
+
+      {canManage ? (
+        <div className="space-y-2">
+          <label className="block space-y-1">
+            <span className="text-ui-xs font-medium text-text-secondary">
+              Name
+            </span>
+            <Input
+              value={renameValue}
+              onChange={(event) => onRenameValueChange(event.target.value)}
+              onBlur={() => onRename(module)}
+              onKeyDown={(event) => {
+                if (event.key === "Enter") {
+                  event.currentTarget.blur();
+                }
+              }}
+            />
+          </label>
+        </div>
+      ) : null}
+
+      <Button
+        type="button"
+        variant="primary"
+        size="sm"
+        className="w-full"
+        disabled={!canEdit || isEmptyModuleSection(module.content)}
+        onClick={() => onInsert(module.content)}
+      >
+        Insert into template
+      </Button>
+
+      {canManage ? (
+        <>
+          <Button
+            type="button"
+            variant="secondary"
+            size="sm"
+            className="w-full"
+            disabled={
+              !selectedSection ||
+              isEmptyModuleSection(selectedSection) ||
+              isUpdatePending
+            }
+            onClick={() => onUpdateFromSelection(module)}
+          >
+            Update from selection
+          </Button>
+          {!selectedSection ? (
+            <p className="text-ui-xs text-text-tertiary">
+              Select a canvas section to replace this module’s content.
+            </p>
+          ) : isEmptyModuleSection(selectedSection) ? (
+            <p className="text-ui-xs text-text-tertiary">
+              Selected section is empty — library updates need content.
+            </p>
+          ) : (
+            <p className="text-ui-xs text-text-tertiary">
+              Library changes are separate from canvas undo (⌘Z).
+            </p>
+          )}
+          {starterAvailable ? (
+            <Button
+              type="button"
+              variant="secondary"
+              size="sm"
+              className="w-full"
+              disabled={isUpdatePending}
+              onClick={() => onRestoreStarter(module)}
+            >
+              <RotateCcw className="mr-1.5 size-3.5" strokeWidth={1.5} />
+              Restore starter
+            </Button>
+          ) : null}
+          <Button
+            type="button"
+            variant="secondary"
+            size="sm"
+            className="w-full text-danger"
+            disabled={isRemovePending}
+            onClick={() => onDelete(module.id)}
+          >
+            <Trash2 className="mr-1.5 size-3.5" strokeWidth={1.5} />
+            Delete module
+          </Button>
+        </>
+      ) : null}
+    </div>
+  );
+}
+
 export function ModulesPanel() {
   const { workspace } = useWorkspace();
   const canEdit = useBuilder((s) => s.canEdit);
@@ -243,36 +469,14 @@ export function ModulesPanel() {
 
       <div className="min-h-0 flex-1 overflow-y-auto p-3">
         {canManage ? (
-          <div className="mb-4 space-y-2 rounded-lg border border-border-default bg-surface-muted p-3">
-            <p className="text-ui-xs font-medium text-text-secondary">
-              Save canvas section to library
-            </p>
-            <Input
-              value={saveName}
-              onChange={(event) => setSaveName(event.target.value)}
-              placeholder="Module name"
-              aria-label="Module name"
-              disabled={!selectedSection}
-            />
-            <Button
-              type="button"
-              size="sm"
-              className="w-full"
-              disabled={!canSaveSection || create.isPending}
-              onClick={handleSave}
-            >
-              Save to library
-            </Button>
-            {!selectedSection ? (
-              <p className="text-ui-xs text-text-tertiary">
-                Select a section (or a block inside one) first.
-              </p>
-            ) : isEmptyModuleSection(selectedSection) ? (
-              <p className="text-ui-xs text-text-tertiary">
-                Selected section is empty — add blocks before saving.
-              </p>
-            ) : null}
-          </div>
+          <SaveToLibraryCard
+            saveName={saveName}
+            selectedSection={selectedSection}
+            canSaveSection={canSaveSection}
+            isPending={create.isPending}
+            onSaveNameChange={setSaveName}
+            onSave={handleSave}
+          />
         ) : null}
 
         {modulesQuery.isLoading ? (
@@ -289,137 +493,29 @@ export function ModulesPanel() {
           </p>
         ) : null}
 
-        <div className="space-y-2">
-          {modulesQuery.data?.map((module) => {
-            const isSelected = module.id === selectedModuleId;
-            return (
-              <button
-                key={module.id}
-                type="button"
-                onClick={() => setSelectedModuleId(module.id)}
-                className={cn(
-                  "flex w-full items-start gap-2 rounded-lg border p-2.5 text-left transition-colors",
-                  isSelected
-                    ? "border-accent-border bg-accent-soft"
-                    : "border-border-default bg-surface-muted hover:border-accent-border",
-                )}
-              >
-                <Bookmark
-                  className="mt-0.5 size-4 shrink-0 text-text-secondary"
-                  strokeWidth={1.5}
-                />
-                <span className="min-w-0">
-                  <span className="block truncate text-ui-sm font-medium text-text-primary">
-                    {module.name}
-                  </span>
-                  <span className="block truncate text-ui-xs text-text-tertiary">
-                    {summarizeModuleContent(module.content)}
-                  </span>
-                </span>
-              </button>
-            );
-          })}
-        </div>
+        <ModuleList
+          modules={modulesQuery.data ?? []}
+          selectedModuleId={selectedModuleId}
+          onSelect={setSelectedModuleId}
+        />
 
         {selectedModule ? (
-          <div className="mt-4 space-y-3 rounded-lg border border-border-default bg-surface-card p-3">
-            <div>
-              <p className="text-ui-xs font-medium text-text-secondary">Selected</p>
-              <p className="mt-1 text-ui-sm font-semibold text-text-primary">
-                {selectedModule.name}
-              </p>
-              <p className="mt-1 text-ui-xs text-text-tertiary">
-                {summarizeModuleContent(selectedModule.content)}
-              </p>
-            </div>
-
-            {canManage ? (
-              <div className="space-y-2">
-                <label className="block space-y-1">
-                  <span className="text-ui-xs font-medium text-text-secondary">
-                    Name
-                  </span>
-                  <Input
-                    value={renameValue}
-                    onChange={(event) => setRenameValue(event.target.value)}
-                    onBlur={() => handleRename(selectedModule)}
-                    onKeyDown={(event) => {
-                      if (event.key === "Enter") {
-                        event.currentTarget.blur();
-                      }
-                    }}
-                  />
-                </label>
-              </div>
-            ) : null}
-
-            <Button
-              type="button"
-              variant="primary"
-              size="sm"
-              className="w-full"
-              disabled={!canEdit || isEmptyModuleSection(selectedModule.content)}
-              onClick={() => handleInsert(selectedModule.content)}
-            >
-              Insert into template
-            </Button>
-
-            {canManage ? (
-              <>
-                <Button
-                  type="button"
-                  variant="secondary"
-                  size="sm"
-                  className="w-full"
-                  disabled={
-                    !selectedSection ||
-                    isEmptyModuleSection(selectedSection) ||
-                    update.isPending
-                  }
-                  onClick={() => requestUpdateFromSelection(selectedModule)}
-                >
-                  Update from selection
-                </Button>
-                {!selectedSection ? (
-                  <p className="text-ui-xs text-text-tertiary">
-                    Select a canvas section to replace this module’s content.
-                  </p>
-                ) : isEmptyModuleSection(selectedSection) ? (
-                  <p className="text-ui-xs text-text-tertiary">
-                    Selected section is empty — library updates need content.
-                  </p>
-                ) : (
-                  <p className="text-ui-xs text-text-tertiary">
-                    Library changes are separate from canvas undo (⌘Z).
-                  </p>
-                )}
-                {starterForSelected ? (
-                  <Button
-                    type="button"
-                    variant="secondary"
-                    size="sm"
-                    className="w-full"
-                    disabled={update.isPending}
-                    onClick={() => requestRestoreStarter(selectedModule)}
-                  >
-                    <RotateCcw className="mr-1.5 size-3.5" strokeWidth={1.5} />
-                    Restore starter
-                  </Button>
-                ) : null}
-                <Button
-                  type="button"
-                  variant="secondary"
-                  size="sm"
-                  className="w-full text-danger"
-                  disabled={remove.isPending}
-                  onClick={() => requestDelete(selectedModule.id)}
-                >
-                  <Trash2 className="mr-1.5 size-3.5" strokeWidth={1.5} />
-                  Delete module
-                </Button>
-              </>
-            ) : null}
-          </div>
+          <SelectedModuleCard
+            module={selectedModule}
+            canManage={canManage}
+            canEdit={canEdit}
+            selectedSection={selectedSection}
+            renameValue={renameValue}
+            starterAvailable={Boolean(starterForSelected)}
+            isUpdatePending={update.isPending}
+            isRemovePending={remove.isPending}
+            onRenameValueChange={setRenameValue}
+            onRename={handleRename}
+            onInsert={handleInsert}
+            onUpdateFromSelection={requestUpdateFromSelection}
+            onRestoreStarter={requestRestoreStarter}
+            onDelete={requestDelete}
+          />
         ) : modulesQuery.data && modulesQuery.data.length > 0 ? (
           <p className="mt-4 px-0.5 text-ui-xs text-text-tertiary">
             Select a module to preview and insert.

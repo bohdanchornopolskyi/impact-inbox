@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
   AuthBackLink,
@@ -36,7 +36,7 @@ export function VerifyEmailView({ initialEmail }: VerifyEmailViewProps) {
   const confirmEmailMutation = useConfirmEmail();
   const resendMutation = useResendVerification();
   const [resolvedEmail, setResolvedEmail] = useState(emailParam);
-  const [confirmAttempted, setConfirmAttempted] = useState(false);
+  const confirmAttemptedRef = useRef(false);
 
   useEffect(() => {
     if (emailParam) {
@@ -56,13 +56,13 @@ export function VerifyEmailView({ initialEmail }: VerifyEmailViewProps) {
   }, [emailParam]);
 
   useEffect(() => {
-    if (!tokenParam || confirmAttempted) {
+    if (!tokenParam || confirmAttemptedRef.current) {
       return;
     }
 
-    setConfirmAttempted(true);
+    confirmAttemptedRef.current = true;
     confirmEmailMutation.mutate({ token: tokenParam });
-  }, [tokenParam, confirmAttempted, confirmEmailMutation.mutate]);
+  }, [tokenParam, confirmEmailMutation.mutate]);
 
   const displayEmail = resolvedEmail || "you@company.com";
   const mailtoHref = useMemo(

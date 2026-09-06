@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useEffect, useState } from "react";
+import { Suspense, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -28,117 +28,8 @@ import {
   setAuthToken,
 } from "@/lib/auth-session";
 
-function AcceptInviteContent() {
-  const router = useRouter();
-  const searchParams = useSearchParams();
-  const token = searchParams.get("token");
-  const [preview, setPreview] = useState<InvitePreviewData | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [sessionEmail, setSessionEmail] = useState<string | null>(null);
-  const [sessionToken, setSessionToken] = useState<string | null>(null);
-  const [mode, setMode] = useState<"signup" | "signin">("signup");
-  const [accepting, setAccepting] = useState(false);
-  const [acceptError, setAcceptError] = useState<Error | null>(null);
-
-  const signUpForm = useForm<InviteAcceptSignUpFormInput>({
-    resolver: zodResolver(inviteAcceptSignUpFormSchema),
-    defaultValues: {
-      name: "",
-      password: "",
-      confirmPassword: "",
-    },
-  });
-
-  const signInForm = useForm<InviteAcceptSignInFormInput>({
-    resolver: zodResolver(inviteAcceptSignInFormSchema),
-    defaultValues: {
-      password: "",
-    },
-  });
-
-  useEffect(() => {
-    if (!token) {
-      setError("Missing invite token");
-      return;
-    }
-
-    previewInvite(token)
-      .then(setPreview)
-      .catch(() => setError("Invalid or expired invite link"));
-
-    const existingToken = getAuthToken();
-    if (!existingToken) {
-      setSessionToken(null);
-      setSessionEmail(null);
-      return;
-    }
-
-    getMe(existingToken)
-      .then((user) => {
-        setSessionToken(existingToken);
-        setSessionEmail(user.email);
-      })
-      .catch(() => {
-        setSessionToken(null);
-        setSessionEmail(null);
-      });
-  }, [token]);
-
-  async function handleAcceptAsCurrentUser() {
-    if (!token || !sessionToken) {
-      return;
-    }
-
-    setAccepting(true);
-    setAcceptError(null);
-
-    try {
-      await acceptInvite({ token }, sessionToken);
-      await navigateAfterAuth(router, sessionToken);
-    } catch (acceptFailure) {
-      setAcceptError(
-        acceptFailure instanceof Error
-          ? acceptFailure
-          : new Error("Could not accept invite"),
-      );
-    } finally {
-      setAccepting(false);
-    }
-  }
-
-  if (error) {
-    return <p className="text-ui-sm text-status-error-fg">{error}</p>;
-  }
-
-  if (!preview) {
-    return <p className="text-ui-sm text-text-secondary">Loading…</p>;
-  }
-
-  if (preview.accepted) {
-    return (
-      <p className="text-ui-sm text-text-secondary">
-        This invite has already been accepted.
-      </p>
-    );
-  }
-
-  if (preview.revoked) {
-    return (
-      <p className="text-ui-sm text-text-secondary">
-        This invite has been revoked.
-      </p>
-    );
-  }
-
-  if (preview.expired) {
-    return (
-      <p className="text-ui-sm text-text-secondary">
-        This invite has expired. Ask an admin to resend it.
-      </p>
-    );
-  }
-
-  const inviteSummary = (
+function InviteSummary({ preview }: { preview: InvitePreviewData }) {
+  return (
     <p className="text-ui-sm text-text-secondary">
       You&apos;re invited to join <strong>{preview.organizationName}</strong>
       {preview.workspaceName ? (
@@ -150,43 +41,228 @@ function AcceptInviteContent() {
       as {preview.workspaceRole ?? preview.organizationRole}.
     </p>
   );
+}
 
-  if (sessionEmail) {
-    if (sessionEmail.toLowerCase() !== preview.email.toLowerCase()) {
-      return (
-        <div className="space-y-4">
-          {inviteSummary}
-          <p className="text-ui-sm text-status-error-fg">
-            This invite was sent to {preview.email}, but you are signed in as{" "}
-            {sessionEmail}. Sign out and try again with the invited account.
-          </p>
-        </div>
-      );
-    }
+function InviteStatusMessage({ children }: { children: string }) {
+  return <p className="text-ui-sm text-text-secondary">{children}</p>;
+}
 
+function InviteSignedInAccept({
+  preview,
+  sessionEmail,
+  acceptError,
+  accepting,
+  onAccept,
+}: {
+  preview: InvitePreviewData;
+  sessionEmail: string;
+  acceptError: Error | null;
+  accepting: boolean;
+  onAccept: () => void;
+}) {
+  if (sessionEmail.toLowerCase() !== preview.email.toLowerCase()) {
     return (
       <div className="space-y-4">
-        {inviteSummary}
-        <p className="text-ui-sm text-text-secondary">
-          Signed in as {sessionEmail}. Accept to join.
+        <InviteSummary preview={preview} />
+        <p className="text-ui-sm text-status-error-fg">
+          This invite was sent to {preview.email}, but you are signed in as{" "}
+          {sessionEmail}. Sign out and try again with the invited account.
         </p>
-        <ApiFormError error={acceptError} />
-        <Button
-          variant="primary"
-          disabled={accepting}
-          onClick={() => {
-            void handleAcceptAsCurrentUser();
-          }}
-        >
-          Accept invite
-        </Button>
       </div>
     );
   }
 
   return (
+    <div className="space-y-4">
+      <InviteSummary preview={preview} />
+      <p className="text-ui-sm text-text-secondary">
+        Signed in as {sessionEmail}. Accept to join.
+      </p>
+      <ApiFormError error={acceptError} />
+      <Button variant="primary" disabled={accepting} onClick={onAccept}>
+        Accept invite
+      </Button>
+    </div>
+  );
+}
+
+function InviteSignUpForm({
+  token,
+  preview,
+  acceptError,
+  onAcceptError,
+}: {
+  token: string;
+  preview: InvitePreviewData;
+  acceptError: Error | null;
+  onAcceptError: (error: Error | null) => void;
+}) {
+  const router = useRouter();
+  const signUpForm = useForm<InviteAcceptSignUpFormInput>({
+    resolver: zodResolver(inviteAcceptSignUpFormSchema),
+    defaultValues: {
+      name: "",
+      password: "",
+      confirmPassword: "",
+    },
+  });
+
+  return (
+    <form
+      className="space-y-4"
+      onSubmit={signUpForm.handleSubmit(async (values) => {
+        onAcceptError(null);
+
+        try {
+          const result = await acceptInvite({
+            token,
+            name: values.name,
+            password: values.password,
+            confirmPassword: values.confirmPassword,
+          });
+
+          if (!result.token) {
+            throw new Error("Invite accept did not return a session");
+          }
+
+          setAuthToken(result.token);
+          await navigateAfterAuth(router, result.token);
+        } catch (acceptFailure) {
+          onAcceptError(
+            acceptFailure instanceof Error
+              ? acceptFailure
+              : new Error("Could not accept invite"),
+          );
+        }
+      })}
+      noValidate
+    >
+      <Input
+        id="invite-email"
+        label="Email"
+        type="email"
+        value={preview.email}
+        disabled
+      />
+      <Input
+        id="invite-name"
+        label="Full name"
+        type="text"
+        autoComplete="name"
+        error={signUpForm.formState.errors.name?.message}
+        {...signUpForm.register("name")}
+      />
+      <PasswordInput
+        id="invite-password"
+        label="Password"
+        autoComplete="new-password"
+        error={signUpForm.formState.errors.password?.message}
+        {...signUpForm.register("password")}
+      />
+      <PasswordInput
+        id="invite-confirm-password"
+        label="Confirm password"
+        autoComplete="new-password"
+        error={signUpForm.formState.errors.confirmPassword?.message}
+        {...signUpForm.register("confirmPassword")}
+      />
+      <ApiFormError error={acceptError} />
+      <Button
+        type="submit"
+        variant="primary"
+        disabled={signUpForm.formState.isSubmitting}
+      >
+        Create account and accept
+      </Button>
+    </form>
+  );
+}
+
+function InviteSignInForm({
+  token,
+  preview,
+  acceptError,
+  onAcceptError,
+}: {
+  token: string;
+  preview: InvitePreviewData;
+  acceptError: Error | null;
+  onAcceptError: (error: Error | null) => void;
+}) {
+  const router = useRouter();
+  const signInForm = useForm<InviteAcceptSignInFormInput>({
+    resolver: zodResolver(inviteAcceptSignInFormSchema),
+    defaultValues: {
+      password: "",
+    },
+  });
+
+  return (
+    <form
+      className="space-y-4"
+      onSubmit={signInForm.handleSubmit(async (values) => {
+        onAcceptError(null);
+
+        try {
+          const { token: authToken } = await signIn({
+            email: preview.email,
+            password: values.password,
+          });
+          setAuthToken(authToken);
+          await acceptInvite({ token }, authToken);
+          await navigateAfterAuth(router, authToken);
+        } catch (acceptFailure) {
+          onAcceptError(
+            acceptFailure instanceof Error
+              ? acceptFailure
+              : new Error("Could not accept invite"),
+          );
+        }
+      })}
+      noValidate
+    >
+      <Input
+        id="invite-signin-email"
+        label="Email"
+        type="email"
+        value={preview.email}
+        disabled
+      />
+      <PasswordInput
+        id="invite-signin-password"
+        label="Password"
+        autoComplete="current-password"
+        error={signInForm.formState.errors.password?.message}
+        {...signInForm.register("password")}
+      />
+      <ApiFormError error={acceptError} />
+      <Button
+        type="submit"
+        variant="primary"
+        disabled={signInForm.formState.isSubmitting}
+      >
+        Sign in and accept
+      </Button>
+    </form>
+  );
+}
+
+function InviteGuestFlow({
+  token,
+  preview,
+  acceptError,
+  onAcceptError,
+}: {
+  token: string;
+  preview: InvitePreviewData;
+  acceptError: Error | null;
+  onAcceptError: (error: Error | null) => void;
+}) {
+  const [mode, setMode] = useState<"signup" | "signin">("signup");
+
+  return (
     <div className="space-y-6">
-      {inviteSummary}
+      <InviteSummary preview={preview} />
       <p className="text-ui-sm text-text-secondary">
         Invited email: <strong>{preview.email}</strong>
       </p>
@@ -218,141 +294,32 @@ function AcceptInviteContent() {
       </div>
 
       {mode === "signup" ? (
-        <form
-          className="space-y-4"
-          onSubmit={signUpForm.handleSubmit(async (values) => {
-            if (!token) {
-              return;
-            }
-
-            setAcceptError(null);
-
-            try {
-              const result = await acceptInvite({
-                token,
-                name: values.name,
-                password: values.password,
-                confirmPassword: values.confirmPassword,
-              });
-
-              if (!result.token) {
-                throw new Error("Invite accept did not return a session");
-              }
-
-              setAuthToken(result.token);
-              await navigateAfterAuth(router, result.token);
-            } catch (acceptFailure) {
-              setAcceptError(
-                acceptFailure instanceof Error
-                  ? acceptFailure
-                  : new Error("Could not accept invite"),
-              );
-            }
-          })}
-          noValidate
-        >
-          <Input
-            id="invite-email"
-            label="Email"
-            type="email"
-            value={preview.email}
-            disabled
-          />
-          <Input
-            id="invite-name"
-            label="Full name"
-            type="text"
-            autoComplete="name"
-            error={signUpForm.formState.errors.name?.message}
-            {...signUpForm.register("name")}
-          />
-          <PasswordInput
-            id="invite-password"
-            label="Password"
-            autoComplete="new-password"
-            error={signUpForm.formState.errors.password?.message}
-            {...signUpForm.register("password")}
-          />
-          <PasswordInput
-            id="invite-confirm-password"
-            label="Confirm password"
-            autoComplete="new-password"
-            error={signUpForm.formState.errors.confirmPassword?.message}
-            {...signUpForm.register("confirmPassword")}
-          />
-          <ApiFormError error={acceptError} />
-          <Button
-            type="submit"
-            variant="primary"
-            disabled={signUpForm.formState.isSubmitting}
-          >
-            Create account and accept
-          </Button>
-        </form>
+        <InviteSignUpForm
+          token={token}
+          preview={preview}
+          acceptError={acceptError}
+          onAcceptError={onAcceptError}
+        />
       ) : (
-        <form
-          className="space-y-4"
-          onSubmit={signInForm.handleSubmit(async (values) => {
-            if (!token) {
-              return;
-            }
-
-            setAcceptError(null);
-
-            try {
-              const { token: authToken } = await signIn({
-                email: preview.email,
-                password: values.password,
-              });
-              setAuthToken(authToken);
-              await acceptInvite({ token }, authToken);
-              await navigateAfterAuth(router, authToken);
-            } catch (acceptFailure) {
-              setAcceptError(
-                acceptFailure instanceof Error
-                  ? acceptFailure
-                  : new Error("Could not accept invite"),
-              );
-            }
-          })}
-          noValidate
-        >
-          <Input
-            id="invite-signin-email"
-            label="Email"
-            type="email"
-            value={preview.email}
-            disabled
-          />
-          <PasswordInput
-            id="invite-signin-password"
-            label="Password"
-            autoComplete="current-password"
-            error={signInForm.formState.errors.password?.message}
-            {...signInForm.register("password")}
-          />
-          <ApiFormError error={acceptError} />
-          <Button
-            type="submit"
-            variant="primary"
-            disabled={signInForm.formState.isSubmitting}
-          >
-            Sign in and accept
-          </Button>
-        </form>
+        <InviteSignInForm
+          token={token}
+          preview={preview}
+          acceptError={acceptError}
+          onAcceptError={onAcceptError}
+        />
       )}
 
       <p className="text-ui-xs text-text-tertiary">
         Prefer the full auth pages?{" "}
         <Link
-          href={`/sign-in?next=${encodeURIComponent(`/accept-invite?token=${token ?? ""}`)}`}
+          href={`/sign-in?next=${encodeURIComponent(`/accept-invite?token=${token}`)}`}
           className={authShellLinkClass()}
         >
           Sign in
         </Link>{" "}
         or{" "}
         <Link
-          href={`/sign-up?next=${encodeURIComponent(`/accept-invite?token=${token ?? ""}`)}`}
+          href={`/sign-up?next=${encodeURIComponent(`/accept-invite?token=${token}`)}`}
           className={authShellLinkClass()}
         >
           sign up
@@ -360,6 +327,128 @@ function AcceptInviteContent() {
         .
       </p>
     </div>
+  );
+}
+
+function AcceptInviteContent() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const token = searchParams.get("token");
+  const [preview, setPreview] = useState<InvitePreviewData | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [sessionEmail, setSessionEmail] = useState<string | null>(null);
+  const sessionTokenRef = useRef<string | null>(null);
+  const [accepting, setAccepting] = useState(false);
+  const [acceptError, setAcceptError] = useState<Error | null>(null);
+
+  useEffect(() => {
+    if (!token) {
+      setError("Missing invite token");
+      return;
+    }
+
+    previewInvite(token)
+      .then(setPreview)
+      .catch(() => setError("Invalid or expired invite link"));
+
+    const existingToken = getAuthToken();
+    if (!existingToken) {
+      sessionTokenRef.current = null;
+      setSessionEmail(null);
+      return;
+    }
+
+    getMe(existingToken)
+      .then((user) => {
+        sessionTokenRef.current = existingToken;
+        setSessionEmail(user.email);
+      })
+      .catch(() => {
+        sessionTokenRef.current = null;
+        setSessionEmail(null);
+      });
+  }, [token]);
+
+  async function handleAcceptAsCurrentUser() {
+    const sessionToken = sessionTokenRef.current;
+    if (!token || !sessionToken) {
+      return;
+    }
+
+    setAccepting(true);
+    setAcceptError(null);
+
+    try {
+      await acceptInvite({ token }, sessionToken);
+      await navigateAfterAuth(router, sessionToken);
+    } catch (acceptFailure) {
+      setAcceptError(
+        acceptFailure instanceof Error
+          ? acceptFailure
+          : new Error("Could not accept invite"),
+      );
+    } finally {
+      setAccepting(false);
+    }
+  }
+
+  if (error) {
+    return <p className="text-ui-sm text-status-error-fg">{error}</p>;
+  }
+
+  if (!preview) {
+    return <InviteStatusMessage>Loading…</InviteStatusMessage>;
+  }
+
+  if (preview.accepted) {
+    return (
+      <InviteStatusMessage>
+        This invite has already been accepted.
+      </InviteStatusMessage>
+    );
+  }
+
+  if (preview.revoked) {
+    return (
+      <InviteStatusMessage>
+        This invite has been revoked.
+      </InviteStatusMessage>
+    );
+  }
+
+  if (preview.expired) {
+    return (
+      <InviteStatusMessage>
+        This invite has expired. Ask an admin to resend it.
+      </InviteStatusMessage>
+    );
+  }
+
+  if (sessionEmail) {
+    return (
+      <InviteSignedInAccept
+        preview={preview}
+        sessionEmail={sessionEmail}
+        acceptError={acceptError}
+        accepting={accepting}
+        onAccept={() => {
+          void handleAcceptAsCurrentUser();
+        }}
+      />
+    );
+  }
+
+  if (!token) {
+    return <p className="text-ui-sm text-status-error-fg">Missing invite token</p>;
+  }
+
+  return (
+    <InviteGuestFlow
+      token={token}
+      preview={preview}
+      acceptError={acceptError}
+      onAcceptError={setAcceptError}
+    />
   );
 }
 

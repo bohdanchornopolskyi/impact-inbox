@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useRef, useState, type RefObject } from "react";
 import { MoreHorizontal, Upload } from "lucide-react";
 import {
   ASSET_UPLOAD_ALLOWED_MIME_TYPES,
@@ -55,6 +55,304 @@ function formatAssetUsageMessage(usage: OrganizationAssetUsageData): string {
     return "This image is still in use.";
   }
   return `Used in ${parts.join(", ")}.`;
+}
+
+function AssetsPanelHeader({
+  canManage,
+  canApplyToBlock,
+  isUploading,
+  fileInputRef,
+  onUpload,
+}: {
+  canManage: boolean;
+  canApplyToBlock: boolean;
+  isUploading: boolean;
+  fileInputRef: RefObject<HTMLInputElement | null>;
+  onUpload: (file: File | undefined) => void;
+}) {
+  return (
+    <div className="flex shrink-0 items-start justify-between gap-2 border-b border-border-subtle px-4 py-3">
+      <div className="min-w-0">
+        <h2 className="text-ui-sm font-semibold text-text-primary">Assets</h2>
+        <p className="mt-0.5 text-ui-xs text-text-tertiary">
+          {canApplyToBlock
+            ? "Click an image to place it on the selected block"
+            : "Click to copy URL · select an image block to place"}
+        </p>
+      </div>
+      {canManage ? (
+        <>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept={ACCEPT}
+            className="sr-only"
+            disabled={isUploading}
+            onChange={(event) => onUpload(event.target.files?.[0])}
+          />
+          <Button
+            type="button"
+            variant="secondary"
+            size="sm"
+            className="shrink-0"
+            disabled={isUploading}
+            onClick={() => fileInputRef.current?.click()}
+          >
+            <Upload className="size-3.5" strokeWidth={1.5} />
+            {isUploading ? "…" : "Upload"}
+          </Button>
+        </>
+      ) : null}
+    </div>
+  );
+}
+
+function AssetsEmptyState({
+  canManage,
+  isUploading,
+  onUploadClick,
+}: {
+  canManage: boolean;
+  isUploading: boolean;
+  onUploadClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      disabled={!canManage || isUploading}
+      onClick={onUploadClick}
+      className={cn(
+        "flex w-full flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-border-strong px-4 py-10 text-center",
+        canManage
+          ? "hover:border-accent-border hover:bg-surface-muted"
+          : "cursor-default opacity-70",
+      )}
+    >
+      <Upload className="size-5 text-text-tertiary" strokeWidth={1.5} />
+      <span className="text-ui-sm font-medium text-text-primary">
+        {canManage ? "Drop an image here" : "No assets yet"}
+      </span>
+      <span className="text-ui-xs text-text-tertiary">
+        JPEG, PNG, GIF, WebP · max 2MB
+      </span>
+    </button>
+  );
+}
+
+function AssetCard({
+  asset,
+  isRenaming,
+  renameDraft,
+  canManage,
+  canApplyToBlock,
+  isUpdatePending,
+  onPrimaryClick,
+  onApply,
+  onCopyUrl,
+  onStartRename,
+  onRenameDraftChange,
+  onConfirmRename,
+  onCancelRename,
+  onRequestDelete,
+}: {
+  asset: OrganizationAssetData;
+  isRenaming: boolean;
+  renameDraft: string;
+  canManage: boolean;
+  canApplyToBlock: boolean;
+  isUpdatePending: boolean;
+  onPrimaryClick: (asset: OrganizationAssetData) => void;
+  onApply: (asset: OrganizationAssetData) => void;
+  onCopyUrl: (asset: OrganizationAssetData) => void;
+  onStartRename: (asset: OrganizationAssetData) => void;
+  onRenameDraftChange: (value: string) => void;
+  onConfirmRename: () => void;
+  onCancelRename: () => void;
+  onRequestDelete: (asset: OrganizationAssetData) => void;
+}) {
+  const menuItems = [
+    {
+      label: "Use on selected block",
+      disabled: !canApplyToBlock,
+      onSelect: () => onApply(asset),
+    },
+    {
+      label: "Copy URL",
+      onSelect: () => onCopyUrl(asset),
+    },
+    ...(canManage
+      ? [
+          {
+            label: "Rename",
+            onSelect: () => onStartRename(asset),
+          },
+          {
+            label: "Delete",
+            destructive: true,
+            separatorBefore: true,
+            onSelect: () => {
+              void onRequestDelete(asset);
+            },
+          },
+        ]
+      : []),
+  ];
+
+  return (
+    <li className="group relative min-w-0">
+      <BasePopover.Root
+        open={isRenaming}
+        onOpenChange={(open, details) => {
+          if (open) {
+            details.cancel();
+            return;
+          }
+          onCancelRename();
+        }}
+      >
+        <div
+          className={cn(
+            "overflow-hidden rounded-lg border border-border-default bg-surface-muted transition-colors",
+            "hover:border-accent-border focus-within:border-accent-border",
+            isRenaming && "border-accent-border",
+          )}
+        >
+          <button
+            type="button"
+            className="relative block aspect-square w-full overflow-hidden bg-surface-inset outline-none"
+            onClick={() => onPrimaryClick(asset)}
+            aria-label={
+              canApplyToBlock
+                ? `Use ${asset.name}`
+                : `Copy URL for ${asset.name}`
+            }
+          >
+            <img
+              src={asset.url}
+              alt=""
+              className="size-full object-cover"
+            />
+          </button>
+
+          <div className="flex items-center gap-0.5 border-t border-border-subtle px-1.5 py-1">
+            <BasePopover.Trigger
+              render={
+                <button
+                  type="button"
+                  className="min-w-0 flex-1 truncate px-1 text-left text-ui-xs font-medium text-text-primary"
+                  title={asset.name}
+                  onClick={() => onPrimaryClick(asset)}
+                  onDoubleClick={(event) => {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    onStartRename(asset);
+                  }}
+                >
+                  {asset.name}
+                </button>
+              }
+            />
+
+            <DropdownMenu
+              align="end"
+              className="size-7 shrink-0 opacity-70 group-hover:opacity-100 group-focus-within:opacity-100"
+              trigger={
+                <MoreHorizontal
+                  className="size-3.5"
+                  strokeWidth={1.5}
+                />
+              }
+              items={menuItems}
+            />
+          </div>
+        </div>
+
+        <BasePopover.Portal>
+          <BasePopover.Positioner
+            align="start"
+            side="bottom"
+            sideOffset={6}
+          >
+            <BasePopover.Popup className="z-50 w-64 rounded-xl border border-border-default bg-surface-card p-3 shadow-pop outline-none">
+              <Input
+                label="Name"
+                autoFocus
+                value={renameDraft}
+                onFocus={(event) => event.currentTarget.select()}
+                onChange={(event) =>
+                  onRenameDraftChange(event.target.value)
+                }
+                onKeyDown={(event) => {
+                  if (event.key === "Enter") {
+                    event.preventDefault();
+                    void onConfirmRename();
+                  }
+                }}
+              />
+              <div className="mt-3 flex justify-end gap-1.5">
+                <Button
+                  type="button"
+                  variant="secondary"
+                  className="h-8 px-2.5 text-ui-xs"
+                  onClick={onCancelRename}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="button"
+                  variant="primary"
+                  className="h-8 px-2.5 text-ui-xs text-text-on-accent"
+                  disabled={!renameDraft.trim() || isUpdatePending}
+                  onClick={() => void onConfirmRename()}
+                >
+                  Save
+                </Button>
+              </div>
+            </BasePopover.Popup>
+          </BasePopover.Positioner>
+        </BasePopover.Portal>
+      </BasePopover.Root>
+    </li>
+  );
+}
+
+function AssetDeleteConfirm({
+  pendingDelete,
+  deleteUsage,
+  isCheckingUsage,
+  isPending,
+  onOpenChange,
+  onConfirm,
+}: {
+  pendingDelete: OrganizationAssetData | null;
+  deleteUsage: OrganizationAssetUsageData | null;
+  isCheckingUsage: boolean;
+  isPending: boolean;
+  onOpenChange: (open: boolean) => void;
+  onConfirm: () => void;
+}) {
+  return (
+    <ConfirmModal
+      open={pendingDelete !== null}
+      onOpenChange={onOpenChange}
+      title="Delete asset?"
+      description={
+        isCheckingUsage
+          ? "Checking where this image is used…"
+          : deleteUsage?.inUse
+            ? `${formatAssetUsageMessage(deleteUsage)} Deleting replaces it with a placeholder in those places, then removes it from the library.`
+            : pendingDelete
+              ? `Remove “${pendingDelete.name}” from the organization library and storage.`
+              : undefined
+      }
+      confirmLabel="Delete"
+      variant="danger"
+      isPending={isPending || isCheckingUsage}
+      confirmDisabled={isCheckingUsage}
+      cancelLabel="Cancel"
+      onConfirm={onConfirm}
+    />
+  );
 }
 
 export function AssetsPanel() {
@@ -248,39 +546,13 @@ export function AssetsPanel() {
 
   return (
     <div className="flex h-full min-h-0 flex-col overflow-hidden">
-      <div className="flex shrink-0 items-start justify-between gap-2 border-b border-border-subtle px-4 py-3">
-        <div className="min-w-0">
-          <h2 className="text-ui-sm font-semibold text-text-primary">Assets</h2>
-          <p className="mt-0.5 text-ui-xs text-text-tertiary">
-            {canApplyToBlock
-              ? "Click an image to place it on the selected block"
-              : "Click to copy URL · select an image block to place"}
-          </p>
-        </div>
-        {canManage ? (
-          <>
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept={ACCEPT}
-              className="sr-only"
-              disabled={upload.isPending}
-              onChange={(event) => handleUpload(event.target.files?.[0])}
-            />
-            <Button
-              type="button"
-              variant="secondary"
-              size="sm"
-              className="shrink-0"
-              disabled={upload.isPending}
-              onClick={() => fileInputRef.current?.click()}
-            >
-              <Upload className="size-3.5" strokeWidth={1.5} />
-              {upload.isPending ? "…" : "Upload"}
-            </Button>
-          </>
-        ) : null}
-      </div>
+      <AssetsPanelHeader
+        canManage={canManage}
+        canApplyToBlock={Boolean(canApplyToBlock)}
+        isUploading={upload.isPending}
+        fileInputRef={fileInputRef}
+        onUpload={handleUpload}
+      />
 
       <div
         className={cn(
@@ -323,178 +595,34 @@ export function AssetsPanel() {
         ) : null}
 
         {!assetsQuery.isLoading && assets.length === 0 ? (
-          <button
-            type="button"
-            disabled={!canManage || upload.isPending}
-            onClick={() => fileInputRef.current?.click()}
-            className={cn(
-              "flex w-full flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-border-strong px-4 py-10 text-center",
-              canManage
-                ? "hover:border-accent-border hover:bg-surface-muted"
-                : "cursor-default opacity-70",
-            )}
-          >
-            <Upload className="size-5 text-text-tertiary" strokeWidth={1.5} />
-            <span className="text-ui-sm font-medium text-text-primary">
-              {canManage ? "Drop an image here" : "No assets yet"}
-            </span>
-            <span className="text-ui-xs text-text-tertiary">
-              JPEG, PNG, GIF, WebP · max 2MB
-            </span>
-          </button>
+          <AssetsEmptyState
+            canManage={canManage}
+            isUploading={upload.isPending}
+            onUploadClick={() => fileInputRef.current?.click()}
+          />
         ) : null}
 
         {assets.length > 0 ? (
           <ul className="grid grid-cols-2 gap-2">
-            {assets.map((asset) => {
-              const isRenaming = pendingRename?.id === asset.id;
-              const menuItems = [
-                {
-                  label: "Use on selected block",
-                  disabled: !canApplyToBlock,
-                  onSelect: () => applyToSelectedBlock(asset),
-                },
-                {
-                  label: "Copy URL",
-                  onSelect: () => copyUrl(asset),
-                },
-                ...(canManage
-                  ? [
-                      {
-                        label: "Rename",
-                        onSelect: () => startRename(asset),
-                      },
-                      {
-                        label: "Delete",
-                        destructive: true,
-                        separatorBefore: true,
-                        onSelect: () => {
-                          void requestDelete(asset);
-                        },
-                      },
-                    ]
-                  : []),
-              ];
-
-              return (
-                <li key={asset.id} className="group relative min-w-0">
-                  <BasePopover.Root
-                    open={isRenaming}
-                    onOpenChange={(open, details) => {
-                      if (open) {
-                        details.cancel();
-                        return;
-                      }
-                      setPendingRename(null);
-                    }}
-                  >
-                    <div
-                      className={cn(
-                        "overflow-hidden rounded-lg border border-border-default bg-surface-muted transition-colors",
-                        "hover:border-accent-border focus-within:border-accent-border",
-                        isRenaming && "border-accent-border",
-                      )}
-                    >
-                      <button
-                        type="button"
-                        className="relative block aspect-square w-full overflow-hidden bg-surface-inset outline-none"
-                        onClick={() => onPrimaryClick(asset)}
-                        aria-label={
-                          canApplyToBlock
-                            ? `Use ${asset.name}`
-                            : `Copy URL for ${asset.name}`
-                        }
-                      >
-                        <img
-                          src={asset.url}
-                          alt=""
-                          className="size-full object-cover"
-                        />
-                      </button>
-
-                      <div className="flex items-center gap-0.5 border-t border-border-subtle px-1.5 py-1">
-                        <BasePopover.Trigger
-                          render={
-                            <button
-                              type="button"
-                              className="min-w-0 flex-1 truncate px-1 text-left text-ui-xs font-medium text-text-primary"
-                              title={asset.name}
-                              onClick={() => onPrimaryClick(asset)}
-                              onDoubleClick={(event) => {
-                                event.preventDefault();
-                                event.stopPropagation();
-                                startRename(asset);
-                              }}
-                            >
-                              {asset.name}
-                            </button>
-                          }
-                        />
-
-                        <DropdownMenu
-                          align="end"
-                          className="size-7 shrink-0 opacity-70 group-hover:opacity-100 group-focus-within:opacity-100"
-                          trigger={
-                            <MoreHorizontal
-                              className="size-3.5"
-                              strokeWidth={1.5}
-                            />
-                          }
-                          items={menuItems}
-                        />
-                      </div>
-                    </div>
-
-                    <BasePopover.Portal>
-                      <BasePopover.Positioner
-                        align="start"
-                        side="bottom"
-                        sideOffset={6}
-                      >
-                        <BasePopover.Popup className="z-50 w-64 rounded-xl border border-border-default bg-surface-card p-3 shadow-pop outline-none">
-                          <Input
-                            label="Name"
-                            autoFocus
-                            value={renameDraft}
-                            onFocus={(event) => event.currentTarget.select()}
-                            onChange={(event) =>
-                              setRenameDraft(event.target.value)
-                            }
-                            onKeyDown={(event) => {
-                              if (event.key === "Enter") {
-                                event.preventDefault();
-                                void confirmRename();
-                              }
-                            }}
-                          />
-                          <div className="mt-3 flex justify-end gap-1.5">
-                            <Button
-                              type="button"
-                              variant="secondary"
-                              className="h-8 px-2.5 text-ui-xs"
-                              onClick={() => setPendingRename(null)}
-                            >
-                              Cancel
-                            </Button>
-                            <Button
-                              type="button"
-                              variant="primary"
-                              className="h-8 px-2.5 text-ui-xs text-text-on-accent"
-                              disabled={
-                                !renameDraft.trim() || update.isPending
-                              }
-                              onClick={() => void confirmRename()}
-                            >
-                              Save
-                            </Button>
-                          </div>
-                        </BasePopover.Popup>
-                      </BasePopover.Positioner>
-                    </BasePopover.Portal>
-                  </BasePopover.Root>
-                </li>
-              );
-            })}
+            {assets.map((asset) => (
+              <AssetCard
+                key={asset.id}
+                asset={asset}
+                isRenaming={pendingRename?.id === asset.id}
+                renameDraft={renameDraft}
+                canManage={canManage}
+                canApplyToBlock={Boolean(canApplyToBlock)}
+                isUpdatePending={update.isPending}
+                onPrimaryClick={onPrimaryClick}
+                onApply={applyToSelectedBlock}
+                onCopyUrl={copyUrl}
+                onStartRename={startRename}
+                onRenameDraftChange={setRenameDraft}
+                onConfirmRename={confirmRename}
+                onCancelRename={() => setPendingRename(null)}
+                onRequestDelete={requestDelete}
+              />
+            ))}
           </ul>
         ) : null}
 
@@ -505,29 +633,17 @@ export function AssetsPanel() {
         ) : null}
       </div>
 
-      <ConfirmModal
-        open={pendingDelete !== null}
+      <AssetDeleteConfirm
+        pendingDelete={pendingDelete}
+        deleteUsage={deleteUsage}
+        isCheckingUsage={isCheckingUsage}
+        isPending={remove.isPending}
         onOpenChange={(open) => {
           if (!open) {
             setPendingDelete(null);
             setDeleteUsage(null);
           }
         }}
-        title="Delete asset?"
-        description={
-          isCheckingUsage
-            ? "Checking where this image is used…"
-            : deleteUsage?.inUse
-              ? `${formatAssetUsageMessage(deleteUsage)} Deleting replaces it with a placeholder in those places, then removes it from the library.`
-              : pendingDelete
-                ? `Remove “${pendingDelete.name}” from the organization library and storage.`
-                : undefined
-        }
-        confirmLabel="Delete"
-        variant="danger"
-        isPending={remove.isPending || isCheckingUsage}
-        confirmDisabled={isCheckingUsage}
-        cancelLabel="Cancel"
         onConfirm={confirmDelete}
       />
     </div>
