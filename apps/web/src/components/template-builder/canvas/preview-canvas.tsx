@@ -58,7 +58,7 @@ function CanvasIframeHost({
 
   return (
     <div
-      className="relative overflow-hidden rounded-md bg-white shadow-card"
+      className="relative overflow-hidden bg-white shadow-card"
       style={{ width: canvasWidth }}
     >
       <iframe
