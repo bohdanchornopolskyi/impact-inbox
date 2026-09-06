@@ -3,7 +3,7 @@ import { buildAlignedImage, renderLinkedImageSection } from "./block-utils";
 import { registerBlock, type RenderContext } from "./content-block-registry";
 
 export function renderImageBlock(block: ImageBlock, context: RenderContext) {
-  const { src, alt, href, width, height, borderRadius, align } = block.props;
+  const { src, alt, href, width, borderRadius, align } = block.props;
 
   return renderLinkedImageSection({
     block,
@@ -15,7 +15,6 @@ export function renderImageBlock(block: ImageBlock, context: RenderContext) {
       alt: alt ?? "",
       align,
       width,
-      height,
       borderRadius,
     }),
   });

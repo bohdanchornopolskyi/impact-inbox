@@ -106,7 +106,6 @@ export function BuilderToolbar() {
 
       <div className="flex items-center gap-2">
         <SegmentedControl
-          variant="device"
           value={previewDevice}
           onChange={(value) =>
             setPreviewDevice(value as "desktop" | "mobile")

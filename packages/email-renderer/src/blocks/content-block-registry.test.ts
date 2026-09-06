@@ -187,6 +187,27 @@ describe("content block registry", () => {
     expect(serialized).toContain('"data-block-label":"Heading"');
   });
 
+  it("keeps image aspect ratio instead of a fixed height", () => {
+    const html = renderContentBlock(
+      {
+        id: "image-stretch",
+        type: "image",
+        props: {
+          src: "https://example.com/photo.png",
+          alt: "Photo",
+          width: "100%",
+          height: 180,
+        },
+      },
+      context,
+    );
+    const serialized = JSON.stringify(html);
+
+    expect(serialized).toContain('"height":"auto"');
+    expect(serialized).not.toContain('"height":"180px"');
+    expect(serialized).not.toContain('"height":180');
+  });
+
   it("does not mark html as canvas-editable", () => {
     const html = renderContentBlock(fixtures.html, context);
     const serialized = JSON.stringify(html);

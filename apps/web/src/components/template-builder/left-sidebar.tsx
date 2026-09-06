@@ -17,8 +17,7 @@ export function LeftSidebar() {
     <div className="flex h-full min-h-0 flex-col overflow-hidden border-r border-border bg-surface">
       <div className="flex h-11.5 shrink-0 items-center border-b border-border px-2.5">
         <SegmentedControl
-          size="sm"
-          className="w-full [&_button]:min-w-0 [&_button]:flex-1 [&_button]:gap-1"
+          className="w-full [&_button]:min-w-0 [&_button]:flex-1"
           value={tab}
           onChange={(value) => setTab(value as SidebarTab)}
           options={[

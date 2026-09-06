@@ -268,7 +268,6 @@ const TEMPLATE_BLOCK_DEFINITIONS: TemplateBlockDefinitions = {
       src: PLACEHOLDER_IMAGE_URL,
       alt: "Image",
       width: "100%",
-      height: 180,
     },
     defaultStyles: CONTENT_BLOCK_GAP_STYLES,
     mergeTagProps: [],

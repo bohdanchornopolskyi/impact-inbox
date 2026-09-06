@@ -21,6 +21,7 @@ import {
   resolveImageUrl,
 } from "./fields";
 import { ImageSourceField } from "./image-source-field";
+import { ImageBlockInspector } from "./image-block-inspector";
 import { inheritedFontSize } from "./inherited-typography";
 import { SocialLinksEditor, TableEditor } from "./custom-editors";
 import { RichtextFormatFields } from "./richtext-inspector-toolbar";
@@ -103,6 +104,27 @@ export function BlockInspector() {
 
   const definition = TEMPLATE_BLOCK_DEFINITIONS[block.type];
 
+  if (block.type === "image" || block.type === "logo") {
+    return (
+      <>
+        <div className="-mx-4 -mt-4">
+          <BlockFields
+            block={block}
+            definition={definition}
+            updateProps={updateProps}
+            canEdit={canEdit}
+          />
+        </div>
+        <BlockAppearanceInspector
+          block={block}
+          canEdit={canEdit}
+          updateStyles={updateStyles}
+          updateProps={updateProps}
+        />
+      </>
+    );
+  }
+
   return (
     <div className="space-y-4">
       <BlockFields
@@ -154,6 +176,17 @@ function BlockFields({
 
   const props = block.props as Record<string, unknown>;
   const defaults = definition.defaultProps as Record<string, unknown>;
+
+  if (block.type === "image" || block.type === "logo") {
+    return (
+      <ImageBlockInspector
+        block={block}
+        templateWidth={settings.width}
+        canEdit={canEdit}
+        updateProps={updateProps}
+      />
+    );
+  }
 
   return (
     <div className="space-y-4">

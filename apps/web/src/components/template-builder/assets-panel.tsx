@@ -22,6 +22,7 @@ import {
 import { useToastMutation } from "@/lib/use-toast-mutation";
 import { showError, showToast } from "@/stores/toast-store";
 import { useBuilder, useSelectedBlock } from "./builder-provider";
+import { widthForPickedImage } from "./inspector/image-display-width";
 import { ConfirmModal } from "./modals/confirm-modal";
 
 const ACCEPT = ASSET_UPLOAD_ALLOWED_MIME_TYPES.join(",");
@@ -135,8 +136,20 @@ export function AssetsPanel() {
       showError("Select an image or logo block first");
       return;
     }
-    updateBlockProps(selectedBlock.block.id, { src: asset.url });
-    showToast("Applied to selected block");
+
+    const blockType = selectedBlock.block.type;
+    if (blockType !== "image" && blockType !== "logo") {
+      return;
+    }
+
+    void widthForPickedImage(
+      asset.url,
+      blockType,
+      content.settings.width,
+    ).then((width) => {
+      updateBlockProps(selectedBlock.block.id, { src: asset.url, width });
+      showToast("Applied to selected block");
+    });
   }
 
   function copyUrl(asset: OrganizationAssetData) {

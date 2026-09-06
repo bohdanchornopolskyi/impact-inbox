@@ -118,7 +118,7 @@ export const logoBlockSchema = blockBaseSchema.extend({
       src: z.string().url(),
       alt: z.string().optional(),
       href: z.string().url().optional(),
-      width: z.number().min(1).max(600).optional(),
+      width: z.union([z.number().min(1).max(600), z.literal("100%")]).optional(),
       maxHeight: z.number().min(1).max(300).optional(),
       borderRadius: z.number().min(0).optional(),
       align: blockAlignSchema.optional(),

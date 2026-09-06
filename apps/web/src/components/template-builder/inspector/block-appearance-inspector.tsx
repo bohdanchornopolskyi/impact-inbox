@@ -191,8 +191,6 @@ function hasTypographyControls(block: TemplateBlock): block is ContentBlock {
 
 function hasBlockAlign(block: TemplateBlock): block is ContentBlock {
   return (
-    block.type === "image" ||
-    block.type === "logo" ||
     block.type === "video" ||
     block.type === "qr" ||
     block.type === "footer"
@@ -201,7 +199,6 @@ function hasBlockAlign(block: TemplateBlock): block is ContentBlock {
 
 function hasSizingControls(block: TemplateBlock): block is ContentBlock {
   return (
-    block.type === "image" ||
     block.type === "logo" ||
     block.type === "video" ||
     block.type === "shape" ||
@@ -271,7 +268,6 @@ export function BlockAppearanceInspector({
               <InspectorRow label="Transform">
                 <SegmentedControl
                   iconOnly
-                  size="sm"
                   disabled={disabled}
                   value={(props.textTransform as TextTransform | undefined) ?? "none"}
                   options={TEXT_TRANSFORM_OPTIONS}
@@ -286,7 +282,6 @@ export function BlockAppearanceInspector({
             <InspectorRow label="Alignment">
               <SegmentedControl
                 iconOnly
-                size="sm"
                 disabled={disabled}
                 value={styles.textAlign ?? "left"}
                 options={TEXT_ALIGN_OPTIONS}
@@ -349,7 +344,6 @@ export function BlockAppearanceInspector({
             <InspectorRow label="Align">
               <SegmentedControl
                 iconOnly
-                size="sm"
                 disabled={disabled}
                 value={(props.align as BlockAlign | undefined) ?? "left"}
                 options={BLOCK_ALIGN_OPTIONS}
@@ -367,39 +361,25 @@ export function BlockAppearanceInspector({
       {hasSizingControls(block) && (
         <CollapsibleSection title="Size">
           <div className="space-y-3">
-            {(block.type === "image" ||
-              block.type === "logo" ||
-              block.type === "video") && (
-              <>
-                <NumberField
-                  label="Width"
-                  value={typeof props.width === "number" ? props.width : undefined}
-                  min={1}
-                  max={700}
-                  disabled={disabled}
-                  onChange={(next) => updateProps({ width: next })}
-                />
-                {block.type === "image" && (
-                  <NumberField
-                    label="Height"
-                    value={typeof props.height === "number" ? props.height : undefined}
-                    min={1}
-                    max={700}
-                    disabled={disabled}
-                    onChange={(next) => updateProps({ height: next })}
-                  />
-                )}
-                {block.type === "logo" && (
-                  <NumberField
-                    label="Max height"
-                    value={typeof props.maxHeight === "number" ? props.maxHeight : undefined}
-                    min={1}
-                    max={300}
-                    disabled={disabled}
-                    onChange={(next) => updateProps({ maxHeight: next })}
-                  />
-                )}
-              </>
+            {(block.type === "video") && (
+              <NumberField
+                label="Width"
+                value={typeof props.width === "number" ? props.width : undefined}
+                min={1}
+                max={700}
+                disabled={disabled}
+                onChange={(next) => updateProps({ width: next })}
+              />
+            )}
+            {block.type === "logo" && (
+              <NumberField
+                label="Max height"
+                value={typeof props.maxHeight === "number" ? props.maxHeight : undefined}
+                min={1}
+                max={300}
+                disabled={disabled}
+                onChange={(next) => updateProps({ maxHeight: next })}
+              />
             )}
             {block.type === "shape" && (
               <>

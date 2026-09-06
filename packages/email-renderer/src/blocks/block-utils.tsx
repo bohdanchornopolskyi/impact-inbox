@@ -75,26 +75,23 @@ export function buildAlignedImage(options: {
   alt: string;
   align?: Parameters<typeof alignedImageStyle>[0];
   width?: number | "100%";
-  height?: number;
   maxHeight?: number;
   borderRadius?: number;
   style?: CSSProperties;
 }) {
-  const { src, alt, align, width, height, maxHeight, borderRadius, style } =
-    options;
+  const { src, alt, align, width, maxHeight, borderRadius, style } = options;
 
   return (
     <Img
       src={src}
       alt={alt}
       width={width === "100%" ? undefined : width}
-      height={height}
       style={{
         ...alignedImageStyle(align),
         ...style,
-        width: width === "100%" ? "100%" : width ? `${width}px` : "100%",
+        width: width === "100%" ? "100%" : width ? `${width}px` : "auto",
+        height: "auto",
         maxHeight: maxHeight ? `${maxHeight}px` : undefined,
-        height: maxHeight ? "auto" : height ? `${height}px` : undefined,
         borderRadius: borderRadius ? `${borderRadius}px` : undefined,
       }}
     />
