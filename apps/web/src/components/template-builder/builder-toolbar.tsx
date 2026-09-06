@@ -1,13 +1,11 @@
 "use client";
 
-import { useState } from "react";
 import Link from "next/link";
 import {
   ChevronLeft,
   Eye,
   History,
   Monitor,
-  Pencil,
   Redo2,
   Smartphone,
   Undo2,
@@ -18,12 +16,11 @@ import { formatDistanceToNow } from "date-fns";
 import { parseApiDate } from "@/lib/format-date";
 import { useWorkspace } from "@/contexts/workspace-context";
 import {
-  useApplyTemplateRename,
   useBuilder,
   useBuilderFlush,
   useSaveRevision,
 } from "./builder-provider";
-import { RenameTemplateModal } from "./modals/rename-template-modal";
+import { InlineTemplateName } from "./inline-template-name";
 import { useBuilderShortcuts } from "./use-builder-shortcuts";
 
 function WorkingCopySyncStatus() {
@@ -68,9 +65,6 @@ function WorkingCopySyncStatus() {
 export function BuilderToolbar() {
   useBuilderShortcuts();
   const { workspace } = useWorkspace();
-  const templateId = useBuilder((s) => s.templateId);
-  const name = useBuilder((s) => s.name);
-  const updatedAt = useBuilder((s) => s.updatedAt);
   const canEdit = useBuilder((s) => s.canEdit);
   const saveState = useBuilder((s) => s.saveState);
   const canUndo = useBuilder((s) => s.history.past.length > 0);
@@ -84,16 +78,13 @@ export function BuilderToolbar() {
   const setPreviewDevice = useBuilder((s) => s.setPreviewDevice);
   const previewZoom = useBuilder((s) => s.previewZoom);
   const setPreviewZoom = useBuilder((s) => s.setPreviewZoom);
-  const applyRename = useApplyTemplateRename();
   const { saveRevision, isPending: isSaving } = useSaveRevision();
-  const [renameOpen, setRenameOpen] = useState(false);
 
   async function handleSaveRevision() {
     await saveRevision();
   }
 
   return (
-    <>
     <div className="grid h-14 shrink-0 grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-3 border-b border-border bg-surface px-4">
       <div className="flex min-w-0 items-center gap-2.5">
         <Link
@@ -109,24 +100,7 @@ export function BuilderToolbar() {
           Templates
         </Link>
         <div className="h-5 w-px bg-border" />
-        {canEdit ? (
-          <button
-            type="button"
-            className="group inline-flex max-w-full min-w-0 items-center gap-1.5 rounded-sm px-2 py-1.5 text-left hover:bg-surface-sunken"
-            title="Rename template"
-            onClick={() => setRenameOpen(true)}
-          >
-            <span className="truncate text-md font-semibold text-text">
-              {name}
-            </span>
-            <Pencil
-              className="size-3.25 shrink-0 text-text-3"
-              strokeWidth={1.5}
-            />
-          </button>
-        ) : (
-          <p className="truncate px-2 text-md font-semibold text-text">{name}</p>
-        )}
+        <InlineTemplateName />
         <WorkingCopySyncStatus />
       </div>
 
@@ -234,16 +208,5 @@ export function BuilderToolbar() {
         ) : null}
       </div>
     </div>
-    {canEdit ? (
-      <RenameTemplateModal
-        open={renameOpen}
-        onOpenChange={setRenameOpen}
-        templateId={templateId}
-        currentName={name}
-        expectedUpdatedAt={updatedAt}
-        onRenamed={applyRename}
-      />
-    ) : null}
-    </>
   );
 }

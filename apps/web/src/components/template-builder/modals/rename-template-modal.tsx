@@ -5,6 +5,7 @@ import type { TemplateData } from "@repo/shared";
 import { Button, Input, Modal } from "@repo/ui/client";
 import { useUpdateTemplate } from "@/lib/templates/template-hooks";
 import { useToastMutation } from "@/lib/use-toast-mutation";
+import { nextTemplateName, TEMPLATE_NAME_MAX_LENGTH } from "../template-name";
 
 type RenameTemplateModalProps = {
   open: boolean;
@@ -48,12 +49,13 @@ export function RenameTemplateModal({
   function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
 
-    if (!name.trim() || name.trim() === currentName) {
+    const next = nextTemplateName(name, currentName);
+    if (!next) {
       onOpenChange(false);
       return;
     }
 
-    rename.mutate(name.trim());
+    rename.mutate(next);
   }
 
   return (
@@ -82,6 +84,7 @@ export function RenameTemplateModal({
           label="Template name"
           value={name}
           onChange={(event) => setName(event.target.value)}
+          maxLength={TEMPLATE_NAME_MAX_LENGTH}
           autoFocus
         />
       </form>
