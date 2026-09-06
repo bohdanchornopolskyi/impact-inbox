@@ -1,5 +1,6 @@
 import {
   findBlock,
+  getBlockLabel,
   getBlockTypeLabel,
   type TemplateBlockType,
   type TemplateContentData,
@@ -86,6 +87,27 @@ export function selectionCrumbs(
   });
 
   return crumbs;
+}
+
+export function selectionPathKey(
+  content: TemplateContentData,
+  selectedBlockId: string | null,
+): string {
+  return selectionCrumbs(content, selectedBlockId)
+    .map((crumb) => `${crumb.id ?? "body"}:${crumb.type}`)
+    .join("/");
+}
+
+export function selectedBlockLabel(
+  content: TemplateContentData,
+  selectedBlockId: string | null,
+): string | null {
+  if (!selectedBlockId) {
+    return null;
+  }
+
+  const found = findBlock(content, selectedBlockId);
+  return found ? getBlockLabel(found.block) : null;
 }
 
 export function selectionSiblingContext(

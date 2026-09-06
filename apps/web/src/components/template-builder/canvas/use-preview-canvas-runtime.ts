@@ -1,16 +1,20 @@
 "use client";
 
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import {
-  findBlock,
-  getBlockLabel,
-  getPreviewLayoutKey,
-} from "@repo/shared";
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type RefObject,
+} from "react";
+import { getPreviewLayoutKey } from "@repo/shared";
+import { useRenderedPreview } from "@/lib/templates/use-rendered-preview";
 import {
-  previewWidth,
-  useRenderedPreview,
-} from "@/lib/templates/use-rendered-preview";
-import { useBuilder, useSaveRevision } from "../builder-provider";
+  useBuilder,
+  useBuilderStore,
+  useSaveRevision,
+} from "../builder-provider";
 import { runBuilderShortcut } from "../run-builder-shortcut";
 import { buildCanvasBridgeDocument } from "./canvas-bridge";
 import {
@@ -19,7 +23,7 @@ import {
 } from "./canvas-bridge-protocol";
 import {
   createCanvasPreviewController,
-  resolveEffectiveHtml,
+  type CanvasPreviewController,
 } from "./canvas-preview-controller";
 import { usePaletteCanvasDnd } from "./palette-canvas-dnd-context";
 import { useCanvasViewportAutoScroll } from "./use-canvas-viewport-auto-scroll";
@@ -27,25 +31,15 @@ import {
   useRichtextCanvasEdit,
   type RichtextCommand,
 } from "./richtext-canvas-edit-context";
+import { selectedBlockLabel } from "./selection-path";
 
-export function usePreviewCanvasRuntime() {
+export function usePreviewCanvasRuntime(
+  scrollContainerRef: RefObject<HTMLDivElement | null>,
+) {
+  const store = useBuilderStore();
   const content = useBuilder((s) => s.content);
   const canEdit = useBuilder((s) => s.canEdit);
-  const selectedBlockId = useBuilder((s) => s.selectedBlockId);
-  const selectBlock = useBuilder((s) => s.selectBlock);
-  const removeBlock = useBuilder((s) => s.removeBlock);
-  const duplicateBlock = useBuilder((s) => s.duplicateBlock);
-  const updateBlockProps = useBuilder((s) => s.updateBlockProps);
-  const beginInlineEditSession = useBuilder((s) => s.beginInlineEditSession);
-  const commitInlineEditSession = useBuilder((s) => s.commitInlineEditSession);
-  const revertInlineEditSession = useBuilder((s) => s.revertInlineEditSession);
-  const undo = useBuilder((s) => s.undo);
-  const redo = useBuilder((s) => s.redo);
-  const previewOpen = useBuilder((s) => s.previewOpen);
-  const setPreviewOpen = useBuilder((s) => s.setPreviewOpen);
   const previewDevice = useBuilder((s) => s.previewDevice);
-  const previewZoom = useBuilder((s) => s.previewZoom);
-  const { saveRevision, isPending: isSaving } = useSaveRevision();
   const {
     session: richtextSession,
     startEdit: startRichtextEdit,
@@ -62,51 +56,89 @@ export function usePreviewCanvasRuntime() {
     isPaletteDragging,
     isCanvasDragging,
   } = usePaletteCanvasDnd();
-  const richtextSessionRef = useRef(richtextSession);
-  richtextSessionRef.current = richtextSession;
-  const selectedBlockIdRef = useRef(selectedBlockId);
-  selectedBlockIdRef.current = selectedBlockId;
-  const contentRef = useRef(content);
-  contentRef.current = content;
+  const { saveRevision, isPending: isSaving } = useSaveRevision();
   const iframeRef = useRef<HTMLIFrameElement>(null);
-  const scrollContainerRef = useRef<HTMLDivElement>(null);
-  const htmlRef = useRef("");
   const srcDocRef = useRef("");
+  const controllerRef = useRef<CanvasPreviewController | null>(null);
   const [iframeSrcDoc, setIframeSrcDoc] = useState("");
   const [plainTextEditPaused, setPlainTextEditPaused] = useState(false);
   const previewPaused = plainTextEditPaused || richtextSession !== null;
   const { html, debouncedHash, previewMatchesContent, syncDebouncedHash } =
     useRenderedPreview(content, true, previewPaused);
-
-  htmlRef.current = html;
-
-  const canvasWidth = previewWidth(previewDevice, content.settings);
-
-  const selectedLabel = useMemo(() => {
-    if (!selectedBlockId) {
-      return null;
-    }
-
-    const found = findBlock(content, selectedBlockId);
-    return found ? getBlockLabel(found.block) : null;
-  }, [content, selectedBlockId]);
-
-  const selectedLabelRef = useRef(selectedLabel);
-  selectedLabelRef.current = selectedLabel;
-  const debouncedHashRef = useRef(debouncedHash);
-  debouncedHashRef.current = debouncedHash;
-  const previewMatchesContentRef = useRef(previewMatchesContent);
-  previewMatchesContentRef.current = previewMatchesContent;
-  const canEditRef = useRef(canEdit);
-  canEditRef.current = canEdit;
-
-  const controllerRef = useRef<ReturnType<
-    typeof createCanvasPreviewController
-  > | null>(null);
+  const previewSyncRef = useRef({
+    html: "",
+    debouncedHash: "",
+    previewMatchesContent: false,
+  });
 
   const postToIframe = useCallback((message: CanvasBridgeOutboundMessage) => {
     iframeRef.current?.contentWindow?.postMessage(message, "*");
   }, []);
+
+  useLayoutEffect(() => {
+    previewSyncRef.current = {
+      html,
+      debouncedHash,
+      previewMatchesContent,
+    };
+  }, [debouncedHash, html, previewMatchesContent]);
+
+  useLayoutEffect(() => {
+    if (controllerRef.current) {
+      return;
+    }
+
+    const created = createCanvasPreviewController({
+      getContent: () => store.getState().content,
+      getHtml: () => previewSyncRef.current.html,
+      getDebouncedHash: () => previewSyncRef.current.debouncedHash,
+      getPreviewMatchesContent: () =>
+        previewSyncRef.current.previewMatchesContent,
+      getSelectedBlockId: () => store.getState().selectedBlockId,
+      getSelectedLabel: () => {
+        const state = store.getState();
+        return selectedBlockLabel(state.content, state.selectedBlockId);
+      },
+      getCanEdit: () => store.getState().canEdit,
+      selectBlock: (blockId) => store.getState().selectBlock(blockId),
+      updateBlockProps: (blockId, props, options) =>
+        store.getState().updateBlockProps(blockId, props, options),
+      beginInlineEditSession: () => store.getState().beginInlineEditSession(),
+      commitInlineEditSession: () => store.getState().commitInlineEditSession(),
+      revertInlineEditSession: () => store.getState().revertInlineEditSession(),
+      onPlainTextEditPausedChange: setPlainTextEditPaused,
+      startRichtextEdit,
+      endRichtextEdit,
+      setFormatState,
+      onReload: (htmlToRender, layoutKey) => {
+        const built = buildCanvasBridgeDocument(htmlToRender, {
+          canEdit: store.getState().canEdit,
+        });
+        created.applyReloadState(
+          layoutKey,
+          previewSyncRef.current.debouncedHash,
+        );
+        srcDocRef.current = built;
+        setIframeSrcDoc(built);
+      },
+      onPatch: (htmlToRender, nextHash) => {
+        postToIframe({ type: "update-preview", html: htmlToRender });
+        created.appliedHtmlHashRef.current = nextHash;
+      },
+      onSelectBlockPosted: (blockId, label) => {
+        postToIframe({ type: "select-block", blockId, label });
+      },
+      onDropTargetChange: handleDropTargetChange,
+    });
+    controllerRef.current = created;
+  }, [
+    handleDropTargetChange,
+    postToIframe,
+    setFormatState,
+    startRichtextEdit,
+    endRichtextEdit,
+    store,
+  ]);
 
   useCanvasViewportAutoScroll({
     scrollContainerRef,
@@ -118,115 +150,48 @@ export function usePreviewCanvasRuntime() {
     cancelAllDrags();
   }, [cancelAllDrags, previewDevice]);
 
-  const prepareCanvasDrag = useCallback(() => {
-    postToIframe({ type: "canvas-prepare-drag" });
-    commitRichtextEdit();
-    setPlainTextEditPaused(false);
-  }, [commitRichtextEdit, postToIframe]);
-
-  const syncPreviewAfterDrop = useCallback(() => {
-    syncDebouncedHash();
-    controllerRef.current?.requestStructuralSync();
-  }, [syncDebouncedHash]);
-
   useLayoutEffect(() => {
     registerDragBridge({
       postToIframe,
       getCanvasIframe: () => iframeRef.current,
       getDropArea: () => scrollContainerRef.current,
-      getContent: () => contentRef.current,
-      prepareDrag: prepareCanvasDrag,
-      onDropCommitted: syncPreviewAfterDrop,
+      getContent: () => store.getState().content,
+      prepareDrag: () => {
+        postToIframe({ type: "canvas-prepare-drag" });
+        commitRichtextEdit();
+        setPlainTextEditPaused(false);
+      },
+      onDropCommitted: () => {
+        syncDebouncedHash();
+        controllerRef.current?.requestStructuralSync();
+      },
     });
 
     return () => registerDragBridge(null);
-  }, [postToIframe, prepareCanvasDrag, registerDragBridge, syncPreviewAfterDrop]);
-
-  const postSelectBlock = useCallback(
-    (blockId: string | null, label: string | null) => {
-      postToIframe({ type: "select-block", blockId, label });
-    },
-    [postToIframe],
-  );
-
-  const reloadIframeSrcDocRef = useRef(
-    (_htmlToRender: string, _nextLayoutKey: string, _nextHash: string) => {},
-  );
-  const patchPreviewHtmlRef = useRef(
-    (_htmlToRender: string, _nextHash: string) => {},
-  );
-
-  patchPreviewHtmlRef.current = (htmlToRender, nextHash) => {
-    postToIframe({ type: "update-preview", html: htmlToRender });
-    controllerRef.current!.appliedHtmlHashRef.current = nextHash;
-  };
-
-  reloadIframeSrcDocRef.current = (htmlToRender, nextLayoutKey, nextHash) => {
-    const built = buildCanvasBridgeDocument(htmlToRender, {
-      canEdit: canEditRef.current,
-    });
-    controllerRef.current!.applyReloadState(nextLayoutKey, nextHash);
-    srcDocRef.current = built;
-    setIframeSrcDoc(built);
-  };
-
-  if (!controllerRef.current) {
-    controllerRef.current = createCanvasPreviewController({
-      getContent: () => contentRef.current,
-      getHtml: () => htmlRef.current,
-      getDebouncedHash: () => debouncedHashRef.current,
-      getPreviewMatchesContent: () => previewMatchesContentRef.current,
-      getSelectedBlockId: () => selectedBlockIdRef.current,
-      getSelectedLabel: () => selectedLabelRef.current,
-      getCanEdit: () => canEditRef.current,
-      selectBlock,
-      updateBlockProps,
-      beginInlineEditSession,
-      commitInlineEditSession,
-      revertInlineEditSession,
-      onPlainTextEditPausedChange: setPlainTextEditPaused,
-      startRichtextEdit,
-      endRichtextEdit,
-      setFormatState,
-      onReload: (htmlToRender, layoutKey) => {
-        reloadIframeSrcDocRef.current(
-          htmlToRender,
-          layoutKey,
-          debouncedHashRef.current,
-        );
-      },
-      onPatch: (htmlToRender, nextHash) => {
-        patchPreviewHtmlRef.current(htmlToRender, nextHash);
-      },
-      onSelectBlockPosted: postSelectBlock,
-      onDropTargetChange: handleDropTargetChange,
-    });
-  }
-
-  const controller = controllerRef.current;
-
-  const patchPreviewHtml = useCallback((htmlToRender: string, nextHash: string) => {
-    patchPreviewHtmlRef.current(htmlToRender, nextHash);
-  }, []);
-
-  const reloadIframeSrcDoc = useCallback(
-    (htmlToRender: string, nextLayoutKey: string, nextHash: string) => {
-      reloadIframeSrcDocRef.current(htmlToRender, nextLayoutKey, nextHash);
-    },
-    [],
-  );
-
-  const effectiveHtml = resolveEffectiveHtml(
-    previewPaused,
-    html,
-    controller.pausedHtmlRef.current,
-  );
-
-  const layoutKey = useMemo(() => getPreviewLayoutKey(content), [content]);
+  }, [
+    commitRichtextEdit,
+    postToIframe,
+    registerDragBridge,
+    scrollContainerRef,
+    store,
+    syncDebouncedHash,
+  ]);
 
   useEffect(() => {
+    registerCommandSink((command: RichtextCommand) => postToIframe(command));
+    return () => registerCommandSink(null);
+  }, [postToIframe, registerCommandSink]);
+
+  const layoutKey = getPreviewLayoutKey(content);
+
+  useEffect(() => {
+    const controller = controllerRef.current;
+    if (!controller) {
+      return;
+    }
+
     const action = controller.resolvePreviewUpdate({
-      effectiveHtml,
+      effectiveHtml: html,
       layoutKey,
       debouncedHash,
       canEdit,
@@ -237,29 +202,26 @@ export function usePreviewCanvasRuntime() {
     });
 
     if (action === "reload") {
-      reloadIframeSrcDoc(effectiveHtml, layoutKey, debouncedHash);
+      const built = buildCanvasBridgeDocument(html, { canEdit });
+      controller.applyReloadState(layoutKey, debouncedHash);
+      srcDocRef.current = built;
+      setIframeSrcDoc(built);
       return;
     }
 
     if (action === "patch") {
-      patchPreviewHtml(effectiveHtml, debouncedHash);
+      postToIframe({ type: "update-preview", html });
+      controller.appliedHtmlHashRef.current = debouncedHash;
     }
   }, [
-    controller,
-    effectiveHtml,
-    layoutKey,
     canEdit,
-    previewPaused,
-    previewMatchesContent,
     debouncedHash,
-    reloadIframeSrcDoc,
-    patchPreviewHtml,
+    html,
+    layoutKey,
+    postToIframe,
+    previewMatchesContent,
+    previewPaused,
   ]);
-
-  useEffect(() => {
-    registerCommandSink((command: RichtextCommand) => postToIframe(command));
-    return () => registerCommandSink(null);
-  }, [postToIframe, registerCommandSink]);
 
   useEffect(() => {
     function onMessage(event: MessageEvent) {
@@ -269,20 +231,21 @@ export function usePreviewCanvasRuntime() {
 
       const data = event.data;
       if (isBuilderShortcutMessage(data)) {
+        const state = store.getState();
         runBuilderShortcut(data.action, {
-          canEdit,
+          canEdit: state.canEdit,
           isSaving,
-          previewOpen,
-          selectedBlockId,
-          undo,
-          redo,
+          previewOpen: state.previewOpen,
+          selectedBlockId: state.selectedBlockId,
+          undo: state.undo,
+          redo: state.redo,
           save: () => {
             void saveRevision();
           },
-          openPreview: () => setPreviewOpen(true),
-          removeBlock,
-          duplicateBlock,
-          selectBlock,
+          openPreview: () => state.setPreviewOpen(true),
+          removeBlock: state.removeBlock,
+          duplicateBlock: state.duplicateBlock,
+          selectBlock: state.selectBlock,
         });
         return;
       }
@@ -291,85 +254,88 @@ export function usePreviewCanvasRuntime() {
         return;
       }
 
-      controller.handleMessage(data, event.source);
+      controllerRef.current?.handleMessage(data, event.source);
     }
 
     window.addEventListener("message", onMessage);
     return () => window.removeEventListener("message", onMessage);
-  }, [
-    canEdit,
-    controller,
-    duplicateBlock,
-    handleIframeMessage,
-    isSaving,
-    previewOpen,
-    redo,
-    removeBlock,
-    saveRevision,
-    selectBlock,
-    selectedBlockId,
-    setPreviewOpen,
-    undo,
-  ]);
+  }, [handleIframeMessage, isSaving, saveRevision, store]);
 
   useEffect(() => {
     if (!richtextSession) {
+      controllerRef.current?.clearRichtextPause();
+    }
+  }, [richtextSession]);
+
+  function handleIframeLoad() {
+    const controller = controllerRef.current;
+    if (!controller) {
       return;
     }
 
-    if (selectedBlockId !== richtextSession.blockId) {
-      commitRichtextEdit();
-    }
-  }, [commitRichtextEdit, richtextSession, selectedBlockId]);
-
-  useEffect(() => {
-    if (!richtextSession) {
-      controller.clearRichtextPause();
-    }
-  }, [controller, richtextSession]);
-
-  useEffect(() => {
-    postSelectBlock(selectedBlockId, selectedLabel);
-  }, [selectedBlockId, selectedLabel, postSelectBlock]);
-
-  const handleIframeLoad = useCallback(() => {
+    const sync = previewSyncRef.current;
+    const state = store.getState();
+    const nextLayoutKey = getPreviewLayoutKey(state.content);
     const action = controller.resolvePreviewUpdate({
-      effectiveHtml: htmlRef.current,
-      layoutKey,
-      debouncedHash,
-      canEdit,
+      effectiveHtml: sync.html,
+      layoutKey: nextLayoutKey,
+      debouncedHash: sync.debouncedHash,
+      canEdit: state.canEdit,
       previewPaused,
-      previewMatchesContent,
+      previewMatchesContent: sync.previewMatchesContent,
       hasSrcDoc: Boolean(srcDocRef.current),
       iframeReady: true,
     });
 
     controller.markIframeReady();
-    postSelectBlock(selectedBlockId, selectedLabel);
+    postToIframe({
+      type: "select-block",
+      blockId: state.selectedBlockId,
+      label: selectedBlockLabel(state.content, state.selectedBlockId),
+    });
 
     if (action === "patch") {
-      patchPreviewHtml(htmlRef.current, debouncedHash);
+      postToIframe({ type: "update-preview", html: sync.html });
+      controller.appliedHtmlHashRef.current = sync.debouncedHash;
     }
-  }, [
-    canEdit,
-    controller,
-    debouncedHash,
-    layoutKey,
-    patchPreviewHtml,
-    postSelectBlock,
-    previewMatchesContent,
-    previewPaused,
-    selectedBlockId,
-    selectedLabel,
-  ]);
+  }
 
   return {
     iframeRef,
-    scrollContainerRef,
     iframeSrcDoc,
     handleIframeLoad,
-    canvasWidth,
-    canEdit,
-    previewZoom,
+    postToIframe,
   };
+}
+
+export function CanvasIframeSelectionBridge({
+  postToIframe,
+}: {
+  postToIframe: (message: CanvasBridgeOutboundMessage) => void;
+}) {
+  const selectedBlockId = useBuilder((s) => s.selectedBlockId);
+  const selectedLabel = useBuilder((s) =>
+    selectedBlockLabel(s.content, s.selectedBlockId),
+  );
+  const { session, commitEdit } = useRichtextCanvasEdit();
+
+  useEffect(() => {
+    postToIframe({
+      type: "select-block",
+      blockId: selectedBlockId,
+      label: selectedLabel,
+    });
+  }, [postToIframe, selectedBlockId, selectedLabel]);
+
+  useEffect(() => {
+    if (!session) {
+      return;
+    }
+
+    if (selectedBlockId !== session.blockId) {
+      commitEdit();
+    }
+  }, [commitEdit, selectedBlockId, session]);
+
+  return null;
 }

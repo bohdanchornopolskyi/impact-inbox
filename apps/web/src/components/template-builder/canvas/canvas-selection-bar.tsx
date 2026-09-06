@@ -2,17 +2,22 @@
 
 import { ChevronRight, File } from "lucide-react";
 import { cn } from "@repo/ui/client";
-import { useBuilder } from "../builder-provider";
+import { useBuilder, useBuilderStore } from "../builder-provider";
 import { TemplateBlockIcon } from "../block-icons";
-import { selectionCrumbs } from "./selection-path";
+import { selectionCrumbs, selectionPathKey } from "./selection-path";
 
 export function CanvasSelectionBar() {
-  const content = useBuilder((s) => s.content);
-  const selectedBlockId = useBuilder((s) => s.selectedBlockId);
-  const selectBlock = useBuilder((s) => s.selectBlock);
-  const setInspectorMode = useBuilder((s) => s.setInspectorMode);
-  const crumbs = selectionCrumbs(content, selectedBlockId);
-  const width = content.settings.width;
+  const store = useBuilderStore();
+  const pathKey = useBuilder((s) =>
+    selectionPathKey(s.content, s.selectedBlockId),
+  );
+  const width = useBuilder((s) => s.content.settings.width);
+  const crumbs = pathKey
+    ? selectionCrumbs(
+        store.getState().content,
+        store.getState().selectedBlockId,
+      )
+    : [];
 
   return (
     <div className="flex h-[42px] shrink-0 items-center justify-between gap-3 border-b border-border bg-surface px-4">
@@ -37,9 +42,10 @@ export function CanvasSelectionBar() {
                     : "font-medium text-text-2 hover:bg-surface-sunken",
                 )}
                 onClick={() => {
-                  selectBlock(crumb.id);
+                  const state = store.getState();
+                  state.selectBlock(crumb.id);
                   if (crumb.id === null) {
-                    setInspectorMode("templateSettings");
+                    state.setInspectorMode("templateSettings");
                   }
                 }}
               >

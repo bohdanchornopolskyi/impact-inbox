@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
-import type { TemplateContentData } from "@repo/shared";
+import { updateBlockProps, type TemplateContentData } from "@repo/shared";
 import {
+  selectedBlockLabel,
   selectionCrumbs,
+  selectionPathKey,
   selectionSiblingContext,
 } from "./selection-path";
 
@@ -76,5 +78,31 @@ describe("selectionSiblingContext", () => {
     expect(selectionSiblingContext(content, "heading-1")).toBe(
       "in Column · 1 of 1",
     );
+  });
+});
+
+describe("selectionPathKey", () => {
+  it("stays stable when heading text changes", () => {
+    const next = updateBlockProps(content, "heading-1", { text: "Updated" });
+
+    expect(selectionPathKey(next, "heading-1")).toBe(
+      selectionPathKey(content, "heading-1"),
+    );
+  });
+
+  it("changes when a different block is selected", () => {
+    expect(selectionPathKey(content, "heading-1")).not.toBe(
+      selectionPathKey(content, "col-2"),
+    );
+  });
+});
+
+describe("selectedBlockLabel", () => {
+  it("uses the block type label, not heading text", () => {
+    const next = updateBlockProps(content, "heading-1", { text: "Updated" });
+
+    expect(selectedBlockLabel(content, "heading-1")).toBe("Heading");
+    expect(selectedBlockLabel(next, "heading-1")).toBe("Heading");
+    expect(selectedBlockLabel(content, null)).toBeNull();
   });
 });
