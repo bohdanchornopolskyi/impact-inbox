@@ -150,6 +150,7 @@ describe("buildCanvasBridgeDocument", () => {
     expect(result).toContain("canvas-palette-drag-finish");
     expect(result).toContain("canvas-palette-drag-commit");
     expect(result).toContain("canvas-palette-drag-finish");
+    expect(result).toContain("clientX < 0 || clientY < 0");
     expect(result).toContain("sanitizeTargetForDrag");
     expect(result).toContain("setPaletteDragSessionActive");
   });

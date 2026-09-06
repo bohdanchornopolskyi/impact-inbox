@@ -1,18 +1,30 @@
 import { describe, expect, it } from "vitest";
-import { viewportToIframeCoords } from "./palette-drag-coords";
+import {
+  dropAreaToIframeCoords,
+  viewportToIframeCoords,
+} from "./palette-drag-coords";
 
-describe("viewportToIframeCoords", () => {
-  const iframeRect = {
-    left: 320,
-    top: 180,
-    width: 600,
-    height: 640,
-    right: 920,
-    bottom: 820,
-    x: 320,
-    y: 180,
+function rect(
+  left: number,
+  top: number,
+  width: number,
+  height: number,
+): DOMRectReadOnly {
+  return {
+    left,
+    top,
+    width,
+    height,
+    right: left + width,
+    bottom: top + height,
+    x: left,
+    y: top,
     toJSON: () => ({}),
   };
+}
+
+describe("viewportToIframeCoords", () => {
+  const iframeRect = rect(320, 180, 600, 640);
 
   it("converts viewport coordinates to iframe-local coordinates", () => {
     const result = viewportToIframeCoords(iframeRect, 450, 260);
@@ -28,5 +40,54 @@ describe("viewportToIframeCoords", () => {
     expect(result.isOverIframe).toBe(false);
     expect(result.clientX).toBe(-1);
     expect(result.clientY).toBe(-1);
+  });
+});
+
+describe("dropAreaToIframeCoords", () => {
+  const dropArea = rect(300, 120, 700, 800);
+  const iframeRect = rect(350, 200, 600, 640);
+
+  it("maps a pointer over the iframe to iframe-local coordinates", () => {
+    expect(dropAreaToIframeCoords(dropArea, iframeRect, 450, 260)).toEqual({
+      clientX: 100,
+      clientY: 60,
+      isOverDropArea: true,
+    });
+  });
+
+  it("clamps to the iframe when the pointer is over the canvas stage padding", () => {
+    expect(dropAreaToIframeCoords(dropArea, iframeRect, 310, 500)).toEqual({
+      clientX: 0,
+      clientY: 300,
+      isOverDropArea: true,
+    });
+    expect(dropAreaToIframeCoords(dropArea, iframeRect, 450, 150)).toEqual({
+      clientX: 100,
+      clientY: 0,
+      isOverDropArea: true,
+    });
+    expect(dropAreaToIframeCoords(dropArea, iframeRect, 450, 900)).toEqual({
+      clientX: 100,
+      clientY: 640,
+      isOverDropArea: true,
+    });
+  });
+
+  it("does not map a pointer outside the canvas stage into a drop", () => {
+    expect(dropAreaToIframeCoords(dropArea, iframeRect, 80, 400)).toEqual({
+      clientX: -1,
+      clientY: -1,
+      isOverDropArea: false,
+    });
+    expect(dropAreaToIframeCoords(dropArea, iframeRect, 1100, 400)).toEqual({
+      clientX: -1,
+      clientY: -1,
+      isOverDropArea: false,
+    });
+    expect(dropAreaToIframeCoords(null, iframeRect, 450, 260)).toEqual({
+      clientX: -1,
+      clientY: -1,
+      isOverDropArea: false,
+    });
   });
 });

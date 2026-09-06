@@ -834,7 +834,7 @@ export function getCanvasBridgeDndRuntime(): string {
   }
 
   function resolveDropTargetForDrag(clientX, clientY) {
-    if (!dragKind) {
+    if (!dragKind || clientX < 0 || clientY < 0) {
       return null;
     }
 

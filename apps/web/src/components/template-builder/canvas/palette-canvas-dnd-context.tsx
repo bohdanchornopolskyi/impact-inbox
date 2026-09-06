@@ -49,6 +49,7 @@ type PaletteDragGhostState = {
 type DragBridge = {
   postToIframe: (message: CanvasBridgeOutboundMessage) => void;
   getCanvasIframe: () => HTMLIFrameElement | null;
+  getDropArea: () => HTMLElement | null;
   getContent: () => TemplateContentData;
   prepareDrag: () => void;
   onDropCommitted: () => void;
@@ -169,7 +170,12 @@ export function PaletteCanvasDndProvider({ children }: { children: ReactNode }) 
       return;
     }
 
-    const coords = toIframePointerCoords(bridge.getCanvasIframe(), clientX, clientY);
+    const coords = toIframePointerCoords(
+      bridge.getDropArea(),
+      bridge.getCanvasIframe(),
+      clientX,
+      clientY,
+    );
     bridge.postToIframe({
       type: "canvas-palette-drag-move",
       clientX: coords.clientX,
@@ -187,7 +193,12 @@ export function PaletteCanvasDndProvider({ children }: { children: ReactNode }) 
       bridge.prepareDrag();
       document.body.setPointerCapture(session.pointerId);
 
-      const coords = toIframePointerCoords(bridge.getCanvasIframe(), clientX, clientY);
+      const coords = toIframePointerCoords(
+        bridge.getDropArea(),
+        bridge.getCanvasIframe(),
+        clientX,
+        clientY,
+      );
       bridge.postToIframe({
         type: "canvas-palette-drag-start",
         dragKind: session.dragKind,
@@ -349,6 +360,7 @@ export function PaletteCanvasDndProvider({ children }: { children: ReactNode }) 
           }
 
           const coords = toIframePointerCoords(
+            bridge.getDropArea(),
             bridge.getCanvasIframe(),
             finishEvent.clientX,
             finishEvent.clientY,

@@ -135,6 +135,7 @@ export function PreviewCanvas() {
     registerDragBridge({
       postToIframe,
       getCanvasIframe: () => iframeRef.current,
+      getDropArea: () => scrollContainerRef.current,
       getContent: () => contentRef.current,
       prepareDrag: prepareCanvasDrag,
       onDropCommitted: syncPreviewAfterDrop,
