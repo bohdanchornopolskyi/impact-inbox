@@ -1,4 +1,4 @@
-import { Link, Section, Text } from "@react-email/components";
+import { Link, Section, Text } from "react-email";
 import type { CSSProperties } from "react";
 import type { FooterBlock } from "@repo/shared";
 import { alignedBlockStyle } from "../align";

@@ -1,4 +1,4 @@
-import { Hr } from "@react-email/components";
+import { Hr } from "react-email";
 import { TEMPLATE_DEFAULT_COLORS, type DividerBlock } from "@repo/shared";
 import { blockStylesToCss } from "../styles";
 import { registerBlock } from "./content-block-registry";

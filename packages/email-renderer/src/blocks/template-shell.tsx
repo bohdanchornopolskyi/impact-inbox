@@ -3,7 +3,7 @@ import {
   Head,
   Html,
   Preview,
-} from "@react-email/components";
+} from "react-email";
 import {
   walkContentBlocks,
   CANVAS_BODY_ATTR,

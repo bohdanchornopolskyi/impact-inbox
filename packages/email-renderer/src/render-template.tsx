@@ -1,4 +1,4 @@
-import { render } from "@react-email/render";
+import { render } from "react-email";
 import { type TemplateContentData } from "@repo/shared";
 import { buildQrImageMap } from "./qr-code";
 import "./blocks/register-all";

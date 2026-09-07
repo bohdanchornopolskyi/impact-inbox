@@ -1,4 +1,4 @@
-import { Section } from "@react-email/components";
+import { Section } from "react-email";
 import { TEMPLATE_DEFAULT_COLORS, type TableBlock, type TableColumn } from "@repo/shared";
 import { blockStylesToCss } from "../styles";
 import { registerBlock, type RenderContext } from "./content-block-registry";

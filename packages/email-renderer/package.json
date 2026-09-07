@@ -14,16 +14,16 @@
   },
   "dependencies": {
     "@repo/shared": "workspace:*",
-    "@react-email/components": "^0.0.34",
-    "@react-email/render": "^1.0.5",
-    "react-email": "^3.0.0",
+    "qrcode": "^1.5.4",
     "react": "^19.0.0",
-    "qrcode": "^1.5.4"
+    "react-dom": "^19.0.0",
+    "react-email": "^6.9.3"
   },
   "devDependencies": {
     "@repo/typescript-config": "workspace:*",
     "@types/qrcode": "^1.5.5",
     "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
     "typescript": "^5.7.0",
     "vitest": "^3.0.0"
   }

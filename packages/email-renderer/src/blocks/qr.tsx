@@ -1,4 +1,4 @@
-import { Img, Section } from "@react-email/components";
+import { Img, Section } from "react-email";
 import type { QrBlock } from "@repo/shared";
 import { alignedBlockStyle, alignedImageStyle } from "../align";
 import { blockStylesToCss } from "../styles";

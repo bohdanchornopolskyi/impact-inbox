@@ -1,4 +1,4 @@
-import { Column, Row, Section } from "@react-email/components";
+import { Column, Row, Section } from "react-email";
 import {
   CANVAS_BLOCK_ID_ATTR,
   CANVAS_BLOCK_LABEL_ATTR,

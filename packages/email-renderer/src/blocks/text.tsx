@@ -1,4 +1,4 @@
-import { Text } from "@react-email/components";
+import { Text } from "react-email";
 import { TEMPLATE_DEFAULT_COLORS, type TextBlock } from "@repo/shared";
 import { blockStylesToCss } from "../styles";
 import { editableText } from "./block-utils";

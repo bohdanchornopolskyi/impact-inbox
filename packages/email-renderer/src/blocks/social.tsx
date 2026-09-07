@@ -1,4 +1,4 @@
-import { Img, Link, Section } from "@react-email/components";
+import { Img, Link, Section } from "react-email";
 import type { SocialBlock } from "@repo/shared";
 import { getSocialIconSrc } from "../social-icons";
 import { blockStylesToCss } from "../styles";
@@ -36,7 +36,6 @@ export function renderSocialBlock(block: SocialBlock) {
                     cellSpacing={0}
                     role="presentation"
                     width={circle}
-                    height={circle}
                     style={{
                       width: circle,
                       height: circle,
@@ -49,7 +48,6 @@ export function renderSocialBlock(block: SocialBlock) {
                         <td
                           align="center"
                           valign="middle"
-                          height={circle}
                           style={{ height: circle, textAlign: "center" }}
                         >
                           <Img

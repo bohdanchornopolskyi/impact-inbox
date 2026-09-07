@@ -1,4 +1,4 @@
-import { Img, Link, Section, Text } from "@react-email/components";
+import { Img, Link, Section, Text } from "react-email";
 import type { VideoBlock } from "@repo/shared";
 import { alignedBlockStyle, alignedImageStyle } from "../align";
 import { blockStylesToCss } from "../styles";

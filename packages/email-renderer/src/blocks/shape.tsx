@@ -1,4 +1,4 @@
-import { Section } from "@react-email/components";
+import { Section } from "react-email";
 import type { CSSProperties } from "react";
 import { TEMPLATE_DEFAULT_COLORS, type ShapeBlock } from "@repo/shared";
 import { blockStylesToCss } from "../styles";

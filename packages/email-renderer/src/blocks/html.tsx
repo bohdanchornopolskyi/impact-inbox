@@ -1,4 +1,4 @@
-import { Section } from "@react-email/components";
+import { Section } from "react-email";
 import type { HtmlBlock } from "@repo/shared";
 import { blockStylesToCss } from "../styles";
 import { registerBlock } from "./content-block-registry";

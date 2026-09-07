@@ -4,7 +4,7 @@ import {
   CANVAS_EDITABLE_PROP_ATTR,
 } from "@repo/shared";
 import type { CSSProperties, ReactNode } from "react";
-import { Img, Link, Section } from "@react-email/components";
+import { Img, Link, Section } from "react-email";
 import { alignedBlockStyle, alignedImageStyle } from "../align";
 import { blockStylesToCss } from "../styles";
 import type { RenderContext } from "./content-block-registry";

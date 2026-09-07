@@ -1,4 +1,4 @@
-import { Heading } from "@react-email/components";
+import { Heading } from "react-email";
 import { TEMPLATE_DEFAULT_COLORS, type HeadingBlock } from "@repo/shared";
 import { blockStylesToCss } from "../styles";
 import { editableText } from "./block-utils";
