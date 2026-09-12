@@ -3,6 +3,9 @@
 export { cn } from "./lib/cn";
 export { Button, authInlineLinkClass, authShellLinkClass, type ButtonProps, type ButtonSize, type ButtonVariant } from "./components/button/button";
 export { Input, type InputProps } from "./components/input/input";
+export { Search, type SearchProps } from "./components/search/search";
+export { Checkbox, type CheckboxProps } from "./components/checkbox/checkbox";
+export { Radio, type RadioProps } from "./components/radio/radio";
 export { PasswordInput, type PasswordInputProps } from "./components/password-input/password-input";
 export { Textarea, type TextareaProps } from "./components/textarea/textarea";
 export { Select, type SelectOption, type SelectProps } from "./components/select/select";

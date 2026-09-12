@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { Button, EmptyState, Input, Skeleton, Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@repo/ui/client";
+import { Button, EmptyState, Search, Skeleton, Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@repo/ui/client";
 import { hasWorkspaceRoleAtLeast } from "@repo/shared";
 import { useSession } from "@/contexts/session-context";
 import { useWorkspace } from "@/contexts/workspace-context";
@@ -51,9 +51,8 @@ export function ContactsListView() {
 
       <FeatureLock locked={locked} orgId={workspace.organizationId}>
         <div className="mb-4 max-w-xs">
-          <Input
+          <Search
             placeholder="Search contacts"
-            type="search"
             aria-label="Search contacts"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
