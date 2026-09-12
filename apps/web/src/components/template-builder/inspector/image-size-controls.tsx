@@ -2,9 +2,8 @@
 
 import { useState } from "react";
 import { AlignCenter, AlignLeft, AlignRight } from "lucide-react";
-import { SegmentedControl } from "@repo/ui/client";
+import { InspectorRow, SegmentedControl } from "@repo/ui/client";
 import type { BlockAlign } from "@repo/shared";
-import { InspectorRow } from "./fields";
 import {
   cappedDisplayWidth,
   imageSizingMode,

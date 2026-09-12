@@ -20,6 +20,60 @@ export {
   type DeviceToggleProps,
   type DeviceToggleValue,
 } from "./components/device-toggle/device-toggle";
+export { BlockTile, type BlockTileProps } from "./components/block-tile/block-tile";
+export { LibraryTile, type LibraryTileProps } from "./components/library-tile/library-tile";
+export { SavedTile, type SavedTileProps } from "./components/saved-tile/saved-tile";
+export { InspectorRow, type InspectorRowProps } from "./components/inspector-row/inspector-row";
+export {
+  PaddingControl,
+  type PaddingControlProps,
+  type PaddingSides,
+} from "./components/padding-control/padding-control";
+export {
+  TypographyControl,
+  type TypographyAlign,
+  type TypographyControlProps,
+  type TypographyStyle,
+} from "./components/typography-control/typography-control";
+export {
+  FloatingBlockToolbar,
+  type FloatingBlockToolbarProps,
+} from "./components/floating-block-toolbar/floating-block-toolbar";
+export {
+  VersionDayHeader,
+  type VersionDayHeaderProps,
+} from "./components/version-day-header/version-day-header";
+export {
+  VersionEntry,
+  type VersionChange,
+  type VersionEntryProps,
+} from "./components/version-entry/version-entry";
+export {
+  VersionReviewBar,
+  type VersionReviewBarProps,
+} from "./components/version-review-bar/version-review-bar";
+export {
+  ChangeMarker,
+  type ChangeMarkerProps,
+  type ChangeMarkerTone,
+} from "./components/change-marker/change-marker";
+export {
+  RemovedBlockGhost,
+  type RemovedBlockGhostProps,
+} from "./components/removed-block-ghost/removed-block-ghost";
+export { AspectTile, type AspectTileProps } from "./components/aspect-tile/aspect-tile";
+export {
+  CropToolButton,
+  type CropToolButtonProps,
+} from "./components/crop-tool-button/crop-tool-button";
+export {
+  CropPreviewTile,
+  type CropPreviewTileProps,
+} from "./components/crop-preview-tile/crop-preview-tile";
+export {
+  CropNumberField,
+  type CropNumberFieldProps,
+} from "./components/crop-number-field/crop-number-field";
 export { Input, type InputProps } from "./components/input/input";
 export { Search, type SearchProps } from "./components/search/search";
 export { Checkbox, type CheckboxProps } from "./components/checkbox/checkbox";

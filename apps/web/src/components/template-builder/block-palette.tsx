@@ -8,12 +8,11 @@ import {
   type ContentBlockType,
   type TemplateBlockType,
 } from "@repo/shared";
-import { Input } from "@repo/ui/client";
+import { BlockTile, Input } from "@repo/ui/client";
 import { useBuilder, useBuilderStore } from "./builder-provider";
 import { TemplateBlockIcon } from "./block-icons";
 import { usePaletteCanvasDndApi } from "./canvas/palette-canvas-dnd-context";
 import { isLayoutBlockType } from "./layout-add-targets";
-import { PaletteTile } from "./palette-tile";
 import { useLayoutAddTargets } from "./use-layout-add-targets";
 
 const PALETTE_GROUPS = [
@@ -118,7 +117,7 @@ export function BlockPalette() {
                     );
 
                     return (
-                      <PaletteTile
+                      <BlockTile
                         key={type}
                         label={definition.label}
                         disabled={!canEdit}

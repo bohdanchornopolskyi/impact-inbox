@@ -2,9 +2,8 @@
 
 import { useState } from "react";
 import type { ContentBlock } from "@repo/shared";
-import { CollapsibleSection, Input } from "@repo/ui/client";
+import { CollapsibleSection, Input, InspectorRow } from "@repo/ui/client";
 import { Link } from "lucide-react";
-import { InspectorRow } from "./fields";
 import {
   type ImageNaturalSize,
   widthForPickedImage,

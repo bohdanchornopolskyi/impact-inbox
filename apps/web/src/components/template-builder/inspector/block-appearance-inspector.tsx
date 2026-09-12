@@ -25,10 +25,10 @@ import {
   Link2,
   RemoveFormatting,
 } from "lucide-react";
-import { CollapsibleSection, SegmentedControl } from "@repo/ui/client";
+import { CollapsibleSection, InspectorRow, SegmentedControl } from "@repo/ui/client";
 import { useBuilder } from "../builder-provider";
 import { ColorPickerField } from "./color-picker-field";
-import { InspectorRow, NumberField, SelectField } from "./fields";
+import { NumberField, SelectField } from "./fields";
 import { inheritedLineHeight } from "./inherited-typography";
 
 type UpdateStyles = (styles: Partial<BlockStyles>) => void;
