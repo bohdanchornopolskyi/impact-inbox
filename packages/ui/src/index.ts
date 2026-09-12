@@ -12,6 +12,10 @@ export { MetricTile, type MetricTileProps } from "./components/metric-tile/metri
 export { Progress, type ProgressProps } from "./components/progress/progress";
 export { Skeleton, SkeletonLine, type SkeletonProps, type SkeletonLineProps } from "./components/skeleton/skeleton";
 export { EmptyState, type EmptyStateProps } from "./components/empty-state/empty-state";
+export { Dropzone, type DropzoneProps, type DropzoneStatus } from "./components/dropzone/dropzone";
+export { UploadRow, type UploadRowProps, type UploadRowStatus } from "./components/upload-row/upload-row";
+export { ImportSummary, type ImportSummaryProps } from "./components/import-summary/import-summary";
+export { ImageUpload, type ImageUploadProps } from "./components/image-upload/image-upload";
 export { FilterChip, type FilterChipProps } from "./components/filter-chip/filter-chip";
 export {
   FilterBar,
