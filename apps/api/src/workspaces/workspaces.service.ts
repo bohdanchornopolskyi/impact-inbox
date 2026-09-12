@@ -21,6 +21,7 @@ import {
 import {
   buildPlatformStarterModules,
   isEmptyModuleSection,
+  missingPlatformStarterModules,
   type AuthenticatedWorkspaceContext,
   type CreateWorkspaceModuleInput,
   type UpdateWorkspaceModuleInput,
@@ -460,22 +461,22 @@ export class WorkspacesService {
       .from(workspaceModules)
       .where(eq(workspaceModules.workspaceId, workspaceId));
 
-    if (rows.length > 0) {
-      return rows;
-    }
-
-    const starters = buildPlatformStarterModules({
+    const ctx = {
       workspaceName: workspace.name,
       physicalAddress: workspace.physicalAddress,
       brandKit: workspace.brandKit ?? null,
-    });
+    };
+    const missing = missingPlatformStarterModules(
+      rows.map((row) => row.name),
+      ctx,
+    );
 
-    if (starters.length === 0) {
+    if (missing.length === 0) {
       return rows;
     }
 
     await this.db.insert(workspaceModules).values(
-      starters.map((starter) => ({
+      missing.map((starter) => ({
         workspaceId,
         name: starter.name,
         content: starter.content,

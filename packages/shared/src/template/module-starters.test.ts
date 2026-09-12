@@ -1,15 +1,56 @@
 import { describe, expect, it } from "vitest";
+import { sectionBlockSchema } from "../schemas/template/blocks/layout";
 import {
   buildModuleContentFromSource,
   buildPlatformStarterModules,
   cloneSectionBlock,
   getPlatformStarterByName,
   isEmptyModuleSection,
+  missingPlatformStarterModules,
+  PLATFORM_STARTER_NAMES,
   summarizeModuleContent,
 } from "./module-starters";
 
+const STARTER_SNIPPETS: Record<(typeof PLATFORM_STARTER_NAMES)[number], string> = {
+  Header: "Acme",
+  Hero: "Designed for everyday moments",
+  "Hero Split": "Crafted for calm mornings",
+  "Feature Row": "Hand-finished stoneware, made to last",
+  Team: "The people behind the craft",
+  "Team Grid": "Meet the studio",
+  "CTA band": "Ready to get started?",
+  "CTA Banner": "20% off ends Sunday",
+  "CTA Background": "Summer sale ends tonight",
+  "CTA Image Strip": "Free shipping on orders over $75",
+  FAQ: "Common questions",
+  "FAQ Two Column": "Quick answers",
+  Testimonial: "The quality is unmatched",
+  "Testimonial Card": "Every order feels personal",
+  "Posts Grid": "From the journal",
+  "Posts Stack": "Latest from the journal",
+  Footer: "214 Mill Street",
+  "Footer Nav": "Shop  ·  Journal  ·  About  ·  Support",
+};
+
+function collectCopy(section: ReturnType<typeof buildPlatformStarterModules>[number]["content"]): string {
+  const parts: string[] = [];
+  for (const row of section.children) {
+    for (const column of row.children) {
+      for (const block of column.children) {
+        const props = block.props as Record<string, unknown>;
+        for (const value of Object.values(props)) {
+          if (typeof value === "string") {
+            parts.push(value);
+          }
+        }
+      }
+    }
+  }
+  return parts.join("\n");
+}
+
 describe("module-starters", () => {
-  it("builds header, footer, and CTA starters with fresh ids", () => {
+  it("builds every design-system email section with valid schema", () => {
     const starters = buildPlatformStarterModules({
       workspaceName: "Acme",
       brandKit: {
@@ -18,17 +59,14 @@ describe("module-starters", () => {
       },
     });
 
-    expect(starters.map((starter) => starter.name)).toEqual([
-      "Header",
-      "Footer",
-      "CTA band",
-    ]);
+    expect(starters.map((starter) => starter.name)).toEqual([...PLATFORM_STARTER_NAMES]);
 
     for (const starter of starters) {
-      expect(starter.content.type).toBe("section");
+      expect(sectionBlockSchema.safeParse(starter.content).success).toBe(true);
       expect(starter.content.id).toMatch(
         /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i,
       );
+      expect(collectCopy(starter.content)).toContain(STARTER_SNIPPETS[starter.name]);
     }
   });
 
@@ -56,7 +94,7 @@ describe("module-starters", () => {
     expect(summarizeModuleContent(header!.content)).toBe("Logo, Heading");
     const footer = starters.find((starter) => starter.name === "Footer");
     expect(footer).toBeDefined();
-    expect(summarizeModuleContent(footer!.content)).toBe("Social Links, Footer");
+    expect(summarizeModuleContent(footer!.content)).toBe("Footer");
   });
 
   it("detects empty module sections and resolves starters by name", () => {
@@ -86,6 +124,20 @@ describe("module-starters", () => {
       workspaceName: "Acme",
     });
     expect(summarizeModuleContent(header)).toBe("Logo, Heading");
+
+    const hero = buildModuleContentFromSource("Hero", {
+      workspaceName: "Acme",
+    });
+    expect(collectCopy(hero)).toContain("Designed for everyday moments");
+  });
+
+  it("returns only platform starters that are not already in the library", () => {
+    const missing = missingPlatformStarterModules(["Header", "Footer", "CTA band"], {
+      workspaceName: "Acme",
+    });
+    expect(missing.map((starter) => starter.name)).not.toContain("Header");
+    expect(missing.map((starter) => starter.name)).toContain("Hero");
+    expect(missing).toHaveLength(PLATFORM_STARTER_NAMES.length - 3);
   });
 });
 
