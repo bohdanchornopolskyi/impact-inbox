@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { DEFAULT_TEMPLATE_SETTINGS } from "@repo/shared";
 import {
   inheritedFontSize,
   inheritedLineHeight,
@@ -10,7 +11,9 @@ describe("inheritedFontSize", () => {
   });
 
   it("falls back to the platform default", () => {
-    expect(inheritedFontSize("richtext", { width: 600 })).toBe(16);
+    expect(inheritedFontSize("richtext", { width: 600 })).toBe(
+      DEFAULT_TEMPLATE_SETTINGS.fontSize,
+    );
   });
 
   it("is undefined for blocks that do not inherit it", () => {
@@ -21,7 +24,9 @@ describe("inheritedFontSize", () => {
 
 describe("inheritedLineHeight", () => {
   it("falls back to the platform default for text blocks", () => {
-    expect(inheritedLineHeight("text", { width: 600 })).toBe(1.5);
+    expect(inheritedLineHeight("text", { width: 600 })).toBe(
+      DEFAULT_TEMPLATE_SETTINGS.lineHeight,
+    );
     expect(inheritedLineHeight("richtext", { width: 600, lineHeight: 1.8 })).toBe(1.8);
   });
 

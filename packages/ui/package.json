@@ -17,20 +17,19 @@
   "devDependencies": {
     "@repo/eslint-config": "workspace:*",
     "@repo/typescript-config": "workspace:*",
-    "@storybook/addon-a11y": "^8.6.18",
-    "@storybook/addon-docs": "^8.6.18",
-    "@storybook/addon-essentials": "^8.6.18",
-    "@storybook/react-vite": "^8.6.18",
+    "@storybook/addon-a11y": "^10.6.0",
+    "@storybook/addon-docs": "^10.6.0",
+    "@storybook/react-vite": "^10.6.0",
     "@tailwindcss/postcss": "^4",
     "@tailwindcss/vite": "^4",
     "@types/node": "^22.15.3",
     "@types/react": "19.2.2",
     "@types/react-dom": "19.2.2",
     "eslint": "^9.39.1",
-    "storybook": "^8.6.18",
+    "storybook": "^10.6.0",
     "tailwindcss": "^4",
     "typescript": "5.9.2",
-    "vite": "^8.0.16"
+    "vite": "^8.3.0"
   },
   "dependencies": {
     "@base-ui/react": "^1.6.0",
