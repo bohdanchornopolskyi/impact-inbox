@@ -100,6 +100,16 @@ export { formatPickerDate, shiftYearMonth } from "./lib/picker-date";
 export { Badge, type BadgeProps, type BadgeTone } from "./components/badge/badge";
 export { Avatar, type AvatarProps } from "./components/avatar/avatar";
 export { MetricTile, type MetricTileProps } from "./components/metric-tile/metric-tile";
+export { BarChart, type BarChartProps } from "./components/bar-chart/bar-chart";
+export { DonutChart, type DonutChartProps } from "./components/donut-chart/donut-chart";
+export {
+  HorizontalBarChart,
+  type HorizontalBarChartProps,
+} from "./components/horizontal-bar-chart/horizontal-bar-chart";
+export {
+  formatChartNumber,
+  type ChartDatum,
+} from "./lib/chart-scale";
 export { Progress, type ProgressProps } from "./components/progress/progress";
 export { Skeleton, SkeletonLine, type SkeletonProps, type SkeletonLineProps } from "./components/skeleton/skeleton";
 export { EmptyState, type EmptyStateProps } from "./components/empty-state/empty-state";

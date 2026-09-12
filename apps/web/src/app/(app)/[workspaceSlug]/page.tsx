@@ -1,18 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { Card, CardBody, CardDescription, CardHeader, CardTitle, MetricTile, PageHeader } from "@repo/ui/client";
+import { Card, CardBody, CardDescription, CardHeader, CardTitle, PageHeader } from "@repo/ui/client";
 import { TrialBanner } from "@/components/app/trial-banner";
 import { WorkspacePageShell } from "@/components/app/workspace-page-chrome";
+import { WorkspaceOverviewMetrics } from "@/components/workspace/workspace-overview-metrics";
 import { useSession } from "@/contexts/session-context";
 import { useWorkspace } from "@/contexts/workspace-context";
 import { formatRoleLabel } from "@/lib/members/format-role-label";
-
-const PLACEHOLDER_STATS = [
-  { label: "Contacts", hrefSuffix: "/contacts" },
-  { label: "Templates", hrefSuffix: "/templates" },
-  { label: "Campaigns", hrefSuffix: "/campaigns" },
-] as const;
 
 export default function WorkspaceHomePage() {
   const { workspace } = useWorkspace();
@@ -32,13 +27,7 @@ export default function WorkspaceHomePage() {
         description={`Signed in as ${formatRoleLabel(workspace.role)}.`}
       />
 
-      <div className="grid gap-4 sm:grid-cols-3">
-        {PLACEHOLDER_STATS.map((stat) => (
-          <Link key={stat.label} href={`${basePath}${stat.hrefSuffix}`} className="block">
-            <MetricTile label={stat.label} value="—" period="Coming soon" />
-          </Link>
-        ))}
-      </div>
+      <WorkspaceOverviewMetrics workspaceSlug={workspace.slug} />
 
       <Card>
         <CardHeader>
