@@ -9,6 +9,7 @@ import {
   DropdownMenu,
   EmptyState,
   Input,
+  PageHeader,
   SegmentedControl,
   Skeleton,
 } from "@repo/ui/client";
@@ -25,10 +26,7 @@ import { CreateTemplateModal } from "@/components/template-builder/modals/create
 import { RenameTemplateModal } from "@/components/template-builder/modals/rename-template-modal";
 import { RestoreTemplateModal } from "@/components/template-builder/modals/restore-template-modal";
 import { TemplateThumbnail } from "@/components/template-builder/template-thumbnail";
-import {
-  WorkspacePageHeader,
-  WorkspacePageShell,
-} from "@/components/app/workspace-page-chrome";
+import { WorkspacePageShell } from "@/components/app/workspace-page-chrome";
 
 function toUpdatedAtToken(updatedAt: Date | string): string {
   return updatedAt instanceof Date ? updatedAt.toISOString() : String(updatedAt);
@@ -76,7 +74,8 @@ export function TemplatesListView() {
 
   return (
     <WorkspacePageShell>
-      <WorkspacePageHeader
+      <PageHeader
+        className="mb-5"
         title="Templates"
         description="Design and reuse email layouts for your campaigns."
         actions={

@@ -1,13 +1,11 @@
-import { EmptyState } from "@repo/ui/client";
-import {
-  WorkspacePageHeader,
-  WorkspacePageShell,
-} from "@/components/app/workspace-page-chrome";
+import { EmptyState, PageHeader } from "@repo/ui/client";
+import { WorkspacePageShell } from "@/components/app/workspace-page-chrome";
 
 export default function CampaignsPage() {
   return (
     <WorkspacePageShell>
-      <WorkspacePageHeader
+      <PageHeader
+        className="mb-5"
         title="Campaigns"
         description="Campaign sending arrives in a later phase."
       />

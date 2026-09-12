@@ -1,45 +1,73 @@
 "use client";
 
-import type { ReactNode } from "react";
+import type { ButtonHTMLAttributes, ReactNode } from "react";
 import { Menu as BaseMenu } from "@base-ui/react/menu";
+import { ChevronDown, ChevronUp } from "lucide-react";
 import { cn } from "../../lib/cn";
+import type { DropdownMenuItem } from "../dropdown-menu/dropdown-menu";
 
-export type DropdownMenuItem = {
-  label: string;
-  onSelect: () => void;
-  destructive?: boolean;
-  disabled?: boolean;
-  icon?: ReactNode;
-  separatorBefore?: boolean;
-  shortcut?: string;
+export type SplitButtonItem = DropdownMenuItem;
+
+export type SplitButtonProps = Omit<
+  ButtonHTMLAttributes<HTMLButtonElement>,
+  "children"
+> & {
+  children: ReactNode;
+  items: SplitButtonItem[];
+  menuAlign?: "start" | "center" | "end";
+  defaultOpen?: boolean;
 };
 
-export type DropdownMenuProps = {
-  trigger: ReactNode;
-  items: DropdownMenuItem[];
-  align?: "start" | "center" | "end";
-  className?: string;
-};
-
-export function DropdownMenu({
-  trigger,
+export function SplitButton({
+  children,
   items,
-  align = "end",
+  menuAlign = "end",
+  defaultOpen,
   className,
-}: DropdownMenuProps) {
+  disabled,
+  onClick,
+  type = "button",
+  ...props
+}: SplitButtonProps) {
   return (
-    <BaseMenu.Root>
-      <BaseMenu.Trigger
+    <BaseMenu.Root defaultOpen={defaultOpen}>
+      <div
         className={cn(
-          "inline-flex items-center justify-center rounded-sm p-1.5 text-text-2 transition-[background-color,color] duration-150 ease-out hover:bg-surface-sunken",
+          "inline-flex h-control-md items-center rounded-sm bg-accent text-text-inverse transition-[background-color] duration-150 ease-out hover:bg-accent-hover has-[[data-popup-open]]:bg-accent-hover",
+          disabled && "pointer-events-none bg-neutral-200 text-text-3 hover:bg-neutral-200",
           className,
         )}
       >
-        {trigger}
-      </BaseMenu.Trigger>
+        <button
+          {...props}
+          type={type}
+          disabled={disabled}
+          onClick={onClick}
+          className="h-full pl-3.5 pr-2 text-sm font-semibold leading-none"
+        >
+          {children}
+        </button>
+        <span className="h-4 w-px bg-white/24" aria-hidden />
+        <BaseMenu.Trigger
+          disabled={disabled}
+          aria-label="More options"
+          className="group inline-flex h-full items-center px-2 pr-3.5 text-white/80"
+        >
+          <span className="relative inline-flex size-icon-sm" aria-hidden>
+            <ChevronDown
+              strokeWidth={2}
+              className="size-full group-data-[popup-open]:invisible"
+            />
+            <ChevronUp
+              strokeWidth={2}
+              className="invisible absolute inset-0 size-full group-data-[popup-open]:visible"
+            />
+          </span>
+        </BaseMenu.Trigger>
+      </div>
       <BaseMenu.Portal>
-        <BaseMenu.Positioner align={align} sideOffset={6}>
-          <BaseMenu.Popup className="z-50 flex min-w-40 flex-col gap-0.5 rounded-md border border-border bg-surface p-1.5 shadow-md outline-none">
+        <BaseMenu.Positioner align={menuAlign} sideOffset={6}>
+          <BaseMenu.Popup className="z-50 flex min-w-60 flex-col gap-0.5 rounded-md border border-border bg-surface p-1.5 shadow-md outline-none">
             {items.map((item) => (
               <div key={item.label} className="contents">
                 {item.separatorBefore ? (

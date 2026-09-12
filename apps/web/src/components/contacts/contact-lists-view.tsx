@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { Button, Card, EmptyState, Skeleton } from "@repo/ui/client";
+import { Button, Card, EmptyState, PageHeader, Skeleton } from "@repo/ui/client";
 import { hasWorkspaceRoleAtLeast } from "@repo/shared";
 import { useSession } from "@/contexts/session-context";
 import { useWorkspace } from "@/contexts/workspace-context";
@@ -10,10 +10,7 @@ import { isTemplateAccessMode } from "@/lib/org/template-access-mode";
 import { useContactLists } from "@/lib/contacts/contact-hooks";
 import { FeatureLock } from "@/components/contacts/feature-lock";
 import { CreateListModal } from "@/components/contacts/modals/create-list-modal";
-import {
-  WorkspacePageHeader,
-  WorkspacePageShell,
-} from "@/components/app/workspace-page-chrome";
+import { WorkspacePageShell } from "@/components/app/workspace-page-chrome";
 
 export function ContactListsView() {
   const { workspace } = useWorkspace();
@@ -32,7 +29,8 @@ export function ContactListsView() {
       >
         ← Contacts
       </Link>
-      <WorkspacePageHeader
+      <PageHeader
+        className="mb-5"
         title="Lists"
         description="Group contacts for campaigns and imports."
         actions={

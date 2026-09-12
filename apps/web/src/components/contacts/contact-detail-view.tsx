@@ -2,16 +2,13 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Button, Card, CardBody, CardHeader, CardTitle, Input } from "@repo/ui/client";
+import { Button, Card, CardBody, CardHeader, CardTitle, Input, PageHeader } from "@repo/ui/client";
 import { hasWorkspaceRoleAtLeast } from "@repo/shared";
 import { useWorkspace } from "@/contexts/workspace-context";
 import { useUpdateContact } from "@/lib/contacts/contact-hooks";
 import { useContact } from "@/lib/contacts/contact-hooks";
 import { ContactStatusBadge } from "@/components/contacts/contact-status-badge";
-import {
-  WorkspacePageHeader,
-  WorkspacePageShell,
-} from "@/components/app/workspace-page-chrome";
+import { WorkspacePageShell } from "@/components/app/workspace-page-chrome";
 
 type ContactDetailViewProps = {
   contactId: string;
@@ -51,8 +48,8 @@ export function ContactDetailView({ contactId }: ContactDetailViewProps) {
         ← All contacts
       </Link>
 
-      <WorkspacePageHeader
-        className="mt-4"
+      <PageHeader
+        className="mt-4 mb-5"
         title={contact.email}
         description={
           <div className="flex flex-wrap gap-2">

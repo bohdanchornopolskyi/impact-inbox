@@ -1,12 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { Card, CardBody, CardDescription, CardHeader, CardTitle, MetricTile } from "@repo/ui/client";
+import { Card, CardBody, CardDescription, CardHeader, CardTitle, MetricTile, PageHeader } from "@repo/ui/client";
 import { TrialBanner } from "@/components/app/trial-banner";
-import {
-  WorkspacePageHeader,
-  WorkspacePageShell,
-} from "@/components/app/workspace-page-chrome";
+import { WorkspacePageShell } from "@/components/app/workspace-page-chrome";
 import { useSession } from "@/contexts/session-context";
 import { useWorkspace } from "@/contexts/workspace-context";
 import { formatRoleLabel } from "@/lib/members/format-role-label";
@@ -29,7 +26,7 @@ export default function WorkspaceHomePage() {
     <WorkspacePageShell className="flex flex-col gap-8">
       {organization ? <TrialBanner organization={organization} /> : null}
 
-      <WorkspacePageHeader
+      <PageHeader
         className="mb-0"
         title={workspace.name}
         description={`Signed in as ${formatRoleLabel(workspace.role)}.`}

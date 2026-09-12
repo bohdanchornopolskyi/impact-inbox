@@ -7,13 +7,10 @@ import type {
   WorkspaceListItemData,
 } from "@repo/shared";
 import { hasOrganizationRoleAtLeast } from "@repo/shared";
-import { Button, Card, CardBody } from "@repo/ui/client";
+import { Button, Card, CardBody, PageHeader } from "@repo/ui/client";
 import { CreateWorkspaceModal } from "@/components/org/create-workspace-modal";
 import { OrgMembersSection } from "@/components/org/org-members-section";
-import {
-  WorkspacePageHeader,
-  WorkspacePageShell,
-} from "@/components/app/workspace-page-chrome";
+import { WorkspacePageShell } from "@/components/app/workspace-page-chrome";
 import { formatDateTime } from "@/lib/format-date";
 import { formatRoleLabel } from "@/lib/members/format-role-label";
 
@@ -43,7 +40,8 @@ export function OrganizationSettingsView({
 
   return (
     <WorkspacePageShell className="flex flex-col gap-8">
-      <WorkspacePageHeader
+      <PageHeader
+        className="mb-5"
         title={organization.name}
         description={`Your role: ${formatRoleLabel(organization.role)}`}
       />

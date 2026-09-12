@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { Button, EmptyState, Skeleton, Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@repo/ui/client";
+import { Button, EmptyState, PageHeader, Skeleton, Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@repo/ui/client";
 import { hasWorkspaceRoleAtLeast } from "@repo/shared";
 import { useWorkspace } from "@/contexts/workspace-context";
 import {
@@ -12,10 +12,7 @@ import {
 } from "@/lib/contacts/contact-hooks";
 import { ContactStatusBadge } from "@/components/contacts/contact-status-badge";
 import { ImportWizardModal } from "@/components/contacts/import/import-wizard-modal";
-import {
-  WorkspacePageHeader,
-  WorkspacePageShell,
-} from "@/components/app/workspace-page-chrome";
+import { WorkspacePageShell } from "@/components/app/workspace-page-chrome";
 
 type ContactListDetailViewProps = {
   listId: string;
@@ -53,8 +50,8 @@ export function ContactListDetailView({ listId }: ContactListDetailViewProps) {
         ← Lists
       </Link>
 
-      <WorkspacePageHeader
-        className="mt-4"
+      <PageHeader
+        className="mt-4 mb-5"
         title={list.name}
         description={`${list.memberCount} members`}
         actions={

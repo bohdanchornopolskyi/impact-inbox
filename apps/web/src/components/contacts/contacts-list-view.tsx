@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { Button, EmptyState, Search, Skeleton, Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@repo/ui/client";
+import { Button, EmptyState, PageHeader, Search, Skeleton, Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@repo/ui/client";
 import { hasWorkspaceRoleAtLeast } from "@repo/shared";
 import { useSession } from "@/contexts/session-context";
 import { useWorkspace } from "@/contexts/workspace-context";
@@ -10,10 +10,7 @@ import { isTemplateAccessMode } from "@/lib/org/template-access-mode";
 import { useContacts } from "@/lib/contacts/contact-hooks";
 import { FeatureLock } from "@/components/contacts/feature-lock";
 import { CreateContactModal } from "@/components/contacts/modals/create-contact-modal";
-import {
-  WorkspacePageHeader,
-  WorkspacePageShell,
-} from "@/components/app/workspace-page-chrome";
+import { WorkspacePageShell } from "@/components/app/workspace-page-chrome";
 
 export function ContactsListView() {
   const { workspace } = useWorkspace();
@@ -29,7 +26,8 @@ export function ContactsListView() {
 
   return (
     <WorkspacePageShell>
-      <WorkspacePageHeader
+      <PageHeader
+        className="mb-5"
         title="Contacts"
         description="Manage people in this workspace."
         actions={

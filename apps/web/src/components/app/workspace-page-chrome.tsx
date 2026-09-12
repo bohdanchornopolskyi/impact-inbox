@@ -19,32 +19,3 @@ export function WorkspacePageShell({
     </div>
   );
 }
-
-export function WorkspacePageHeader({
-  title,
-  description,
-  actions,
-  className,
-}: {
-  title: string;
-  description?: ReactNode;
-  actions?: ReactNode;
-  className?: string;
-}) {
-  return (
-    <div
-      className={cn(
-        "mb-5 flex flex-wrap items-end justify-between gap-4",
-        className,
-      )}
-    >
-      <div className="flex min-w-0 flex-col gap-1">
-        <h1 className="text-3xl font-bold text-text">{title}</h1>
-        {description ? (
-          <div className="text-sm text-text-2">{description}</div>
-        ) : null}
-      </div>
-      {actions ? <div className="shrink-0">{actions}</div> : null}
-    </div>
-  );
-}
