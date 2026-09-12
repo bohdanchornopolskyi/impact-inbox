@@ -67,7 +67,7 @@ export function TableRow({
       className={cn(
         "h-13 border-b border-border",
         interactive &&
-          "group transition-[background-color] duration-150 ease-out hover:bg-neutral-50 data-selected:bg-accent-soft data-selected:shadow-[inset_0_0_0_1px_var(--color-brand-200)]",
+          "group transition-[background-color] duration-150 ease-out hover:bg-neutral-25 data-selected:bg-accent-soft",
         className,
       )}
       {...props}
@@ -94,4 +94,4 @@ export function TableCell({
 }
 
 export const tableActionClassName =
-  "opacity-0 transition-opacity duration-150 group-hover:opacity-100 group-data-selected:opacity-100";
+  "inline-flex size-7 items-center justify-center rounded-xs text-text-3 transition-[background-color] duration-150 ease-out group-hover:bg-surface-sunken";

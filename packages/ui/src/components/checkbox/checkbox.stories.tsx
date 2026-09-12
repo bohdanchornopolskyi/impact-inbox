@@ -1,4 +1,4 @@
-import type { Meta, StoryObj } from "@storybook/react";
+import type { Meta, StoryObj } from "@storybook/react-vite";
 import { Checkbox } from "./checkbox";
 
 const meta = {
@@ -22,12 +22,21 @@ export const Disabled: Story = {
   args: { disabled: true },
 };
 
+export const Mixed: Story = {
+  args: { label: "", "aria-label": "Select all", indeterminate: true },
+};
+
 export const States: Story = {
   render: () => (
     <div className="flex flex-col gap-3">
       <Checkbox label="Track clicks" />
       <Checkbox label="Track opens" defaultChecked />
       <Checkbox label="Track clicks" disabled />
+      <div className="flex items-center gap-3">
+        <Checkbox aria-label="Unchecked box" />
+        <Checkbox aria-label="Checked box" defaultChecked />
+        <Checkbox aria-label="Mixed box" indeterminate />
+      </div>
     </div>
   ),
 };

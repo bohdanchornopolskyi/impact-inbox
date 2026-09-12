@@ -11,7 +11,12 @@ const choiceMarkBaseClass =
 
 export const checkboxMarkClass = cn(
   choiceMarkBaseClass,
-  "rounded-xs border-border-strong [&_svg]:opacity-0 peer-checked:border-transparent peer-checked:bg-accent peer-checked:group-hover:border-transparent peer-checked:group-hover:bg-accent peer-checked:[&_svg]:opacity-100 peer-checked:peer-disabled:border-brand-200 peer-checked:peer-disabled:bg-brand-200 peer-checked:peer-disabled:group-hover:border-brand-200 peer-checked:peer-disabled:group-hover:bg-brand-200",
+  "rounded-xs border-border-strong [&_svg]:opacity-0 peer-checked:border-transparent peer-checked:bg-accent peer-checked:group-hover:border-transparent peer-checked:group-hover:bg-accent peer-checked:[&_.check]:opacity-100 peer-checked:peer-disabled:border-brand-200 peer-checked:peer-disabled:bg-brand-200 peer-checked:peer-disabled:group-hover:border-brand-200 peer-checked:peer-disabled:group-hover:bg-brand-200 data-[indeterminate]:border-transparent data-[indeterminate]:bg-accent data-[indeterminate]:group-hover:border-transparent data-[indeterminate]:group-hover:bg-accent data-[indeterminate]:[&_.check]:opacity-0 data-[indeterminate]:[&_.minus]:opacity-100 data-[indeterminate]:peer-checked:[&_.check]:opacity-0",
+);
+
+export const checkboxBoxMarkClass = cn(
+  checkboxMarkClass,
+  "group-hover:border-accent group-hover:bg-surface",
 );
 
 export const radioMarkClass = cn(

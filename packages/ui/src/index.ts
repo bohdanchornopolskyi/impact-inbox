@@ -12,6 +12,25 @@ export { MetricTile, type MetricTileProps } from "./components/metric-tile/metri
 export { Progress, type ProgressProps } from "./components/progress/progress";
 export { Skeleton, SkeletonLine, type SkeletonProps, type SkeletonLineProps } from "./components/skeleton/skeleton";
 export { EmptyState, type EmptyStateProps } from "./components/empty-state/empty-state";
+export { FilterChip, type FilterChipProps } from "./components/filter-chip/filter-chip";
+export {
+  FilterBar,
+  FilterBarCount,
+  FilterBarRule,
+  FilterBarSpacer,
+  type FilterBarProps,
+} from "./components/filter-bar/filter-bar";
+export {
+  BulkAction,
+  BulkActionBar,
+  type BulkActionBarProps,
+  type BulkActionProps,
+} from "./components/bulk-action-bar/bulk-action-bar";
+export { Pagination, type PaginationProps } from "./components/pagination/pagination";
+export {
+  ContactListItem,
+  type ContactListItemProps,
+} from "./components/contact-list-item/contact-list-item";
 export {
   Table,
   TableHeader,
