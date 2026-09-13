@@ -4,6 +4,7 @@ import {
   ChevronLeft,
   CopyPlus,
   Download,
+  Ellipsis,
   Eye,
   History,
   LayoutTemplate,
@@ -14,6 +15,7 @@ import {
 } from "lucide-react";
 import { Button } from "../button/button";
 import { DeviceToggle } from "../device-toggle/device-toggle";
+import { DropdownMenu } from "../dropdown-menu/dropdown-menu";
 import { SaveStatus } from "../save-status/save-status";
 import { SplitButton } from "../split-button/split-button";
 import { ZoomControl } from "../zoom-control/zoom-control";
@@ -67,12 +69,6 @@ export const TemplateEditor: Story = {
         <Button variant="secondary" leftIcon={<Eye strokeWidth={1.5} />}>
           Preview
         </Button>
-        <Button variant="secondary" leftIcon={<MailCheck strokeWidth={1.5} />}>
-          Test send
-        </Button>
-        <Button variant="secondary" leftIcon={<Download strokeWidth={1.5} />}>
-          Export
-        </Button>
         <SplitButton
           items={[
             {
@@ -113,6 +109,24 @@ export const TemplateEditor: Story = {
         >
           Save
         </SplitButton>
+        <DropdownMenu
+          aria-label="More actions"
+          className="size-[30px] p-0 [&_svg]:size-icon-sm"
+          trigger={<Ellipsis strokeWidth={1.5} />}
+          items={[
+            {
+              label: "Test send",
+              icon: <MailCheck strokeWidth={1.5} />,
+              disabled: true,
+              onSelect: () => undefined,
+            },
+            {
+              label: "Export",
+              icon: <Download strokeWidth={1.5} />,
+              onSelect: () => undefined,
+            },
+          ]}
+        />
       </EditorBarEnd>
     </EditorBar>
   ),

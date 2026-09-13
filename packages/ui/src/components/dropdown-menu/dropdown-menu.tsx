@@ -19,6 +19,7 @@ export type DropdownMenuProps = {
   items: DropdownMenuItem[];
   align?: "start" | "center" | "end";
   className?: string;
+  "aria-label"?: string;
 };
 
 export function DropdownMenu({
@@ -26,10 +27,12 @@ export function DropdownMenu({
   items,
   align = "end",
   className,
+  "aria-label": ariaLabel,
 }: DropdownMenuProps) {
   return (
     <BaseMenu.Root>
       <BaseMenu.Trigger
+        aria-label={ariaLabel}
         className={cn(
           "inline-flex items-center justify-center rounded-sm p-1.5 text-text-2 transition-[background-color,color] duration-150 ease-out hover:bg-surface-sunken",
           className,

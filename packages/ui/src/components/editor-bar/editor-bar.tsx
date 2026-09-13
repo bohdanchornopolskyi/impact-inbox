@@ -42,7 +42,7 @@ export function EditorBarEnd({
 }: HTMLAttributes<HTMLDivElement>) {
   return (
     <div
-      className={cn("flex items-center justify-end gap-2", className)}
+      className={cn("flex min-w-0 items-center justify-end gap-2", className)}
       {...props}
     />
   );

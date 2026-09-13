@@ -6,6 +6,7 @@ import {
   Check,
   CopyPlus,
   Download,
+  Ellipsis,
   Eye,
   History,
   LayoutTemplate,
@@ -16,6 +17,7 @@ import {
 } from "lucide-react";
 import {
   Button,
+  DropdownMenu,
   EditorBarDivider,
   SplitButton,
   type SplitButtonItem,
@@ -153,21 +155,6 @@ export function BuilderToolbarActions() {
       </Button>
       {canEdit ? (
         <>
-          <Button
-            variant="secondary"
-            leftIcon={<MailCheck strokeWidth={1.5} />}
-            title="Test send isn't available yet"
-            disabled
-          >
-            Test send
-          </Button>
-          <Button
-            variant="secondary"
-            leftIcon={<Download strokeWidth={1.5} />}
-            onClick={() => setExportOpen(true)}
-          >
-            Export
-          </Button>
           <SplitButton
             disabled={isSaving}
             title="Create a revision snapshot (Ctrl/Cmd+S)"
@@ -178,6 +165,24 @@ export function BuilderToolbarActions() {
           >
             Save
           </SplitButton>
+          <DropdownMenu
+            aria-label="More actions"
+            className="size-[30px] p-0 [&_svg]:size-icon-sm"
+            trigger={<Ellipsis strokeWidth={1.5} />}
+            items={[
+              {
+                label: "Test send",
+                icon: <MailCheck strokeWidth={1.5} />,
+                disabled: true,
+                onSelect: () => undefined,
+              },
+              {
+                label: "Export",
+                icon: <Download strokeWidth={1.5} />,
+                onSelect: () => setExportOpen(true),
+              },
+            ]}
+          />
         </>
       ) : null}
     </>
