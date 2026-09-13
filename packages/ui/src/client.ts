@@ -29,6 +29,8 @@ export {
 } from "./components/settings-nav/settings-nav";
 export {
   SettingsContent,
+  SettingsFooter,
+  SettingsPane,
   SettingsPreview,
   type SettingsContentProps,
 } from "./components/settings-content/settings-content";

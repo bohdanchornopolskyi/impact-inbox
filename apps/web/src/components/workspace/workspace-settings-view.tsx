@@ -1,7 +1,7 @@
 "use client";
 
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { EmptyState, SettingsContent } from "@repo/ui/client";
+import { EmptyState, SettingsContent, SettingsPane } from "@repo/ui/client";
 import { hasWorkspaceRoleAtLeast } from "@repo/shared";
 import { useWorkspace } from "@/contexts/workspace-context";
 import { formatRoleLabel } from "@/lib/members/format-role-label";
@@ -42,22 +42,28 @@ export function WorkspaceSettingsView() {
   }
 
   return (
-    <div className="flex min-h-[calc(100dvh-var(--spacing-topbar))]">
+    <div className="flex h-[calc(100dvh-var(--spacing-topbar))]">
       <WorkspaceSettingsNav
         tab={tab}
         workspaceName={workspace.name}
         onSelect={setTab}
       />
       <p className="sr-only">Your role: {formatRoleLabel(workspace.role)}</p>
-      <div className="min-w-0 flex-1">
-        <SettingsContent>
-          <SettingsSection
-            tab={tab}
-            canManage={canManage}
-            workspaceId={workspace.id}
-            organizationId={workspace.organizationId}
-          />
-        </SettingsContent>
+      <div className="flex min-h-0 min-w-0 flex-1 flex-col">
+        {tab === "general" ? (
+          <WorkspaceGeneralPage />
+        ) : (
+          <SettingsPane>
+            <SettingsContent>
+              <SettingsSection
+                tab={tab}
+                canManage={canManage}
+                workspaceId={workspace.id}
+                organizationId={workspace.organizationId}
+              />
+            </SettingsContent>
+          </SettingsPane>
+        )}
       </div>
     </div>
   );
@@ -74,10 +80,6 @@ function SettingsSection({
   workspaceId: string;
   organizationId: string;
 }) {
-  if (tab === "general") {
-    return <WorkspaceGeneralPage />;
-  }
-
   if (tab === "brand") {
     return <WorkspaceBrandSection />;
   }

@@ -1,8 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import {
-  Button,
   Card,
   CardBody,
   CardDescription,
@@ -12,15 +10,12 @@ import {
   SettingsPreview,
 } from "@repo/ui/client";
 import {
-  formatPhysicalAddress,
   hasWorkspaceRoleAtLeast,
-  normalizePhysicalAddress,
   physicalAddressFromData,
   type PhysicalAddressFields,
 } from "@repo/shared";
 import { useWorkspace } from "@/contexts/workspace-context";
-import { useUpdateWorkspaceSettings } from "@/lib/workspaces/workspace-hooks";
-import { useToastMutation } from "@/lib/use-toast-mutation";
+import { formatAppearsAs } from "./workspace-general-form";
 
 type AddressField = {
   key: keyof PhysicalAddressFields;
@@ -69,61 +64,10 @@ const ADDRESS_ROWS: AddressField[][] = [
   ],
 ];
 
-function formatAppearsAs(name: string, fields: PhysicalAddressFields) {
-  const formatted = formatPhysicalAddress(normalizePhysicalAddress(fields));
-  const parts = [name.trim(), ...(formatted ? formatted.split("\n") : [])].filter(
-    Boolean,
-  );
-
-  return parts.join(", ");
-}
-
-function AddressFields({
-  address,
-  disabled,
-  onChange,
-}: {
-  address: PhysicalAddressFields;
-  disabled?: boolean;
-  onChange: (key: keyof PhysicalAddressFields, value: string) => void;
-}) {
-  return ADDRESS_ROWS.map((row) => (
-    <div
-      key={row.map((field) => field.key).join("-")}
-      className={row.length > 1 ? "grid gap-4 sm:grid-cols-2" : undefined}
-    >
-      {row.map((field) => (
-        <Input
-          key={field.key}
-          label={field.label}
-          value={address[field.key]}
-          placeholder={field.placeholder}
-          disabled={disabled}
-          onChange={(event) => onChange(field.key, event.target.value)}
-        />
-      ))}
-    </div>
-  ));
-}
-
 export function WorkspaceGeneralSection() {
   const { workspace } = useWorkspace();
   const canManage = hasWorkspaceRoleAtLeast(workspace.role, ["admin", "owner"]);
-  const updateWorkspaceSettings = useUpdateWorkspaceSettings();
-  const update = useToastMutation({
-    mutationFn: (input: Parameters<typeof updateWorkspaceSettings.mutateAsync>[0]) =>
-      updateWorkspaceSettings.mutateAsync(input),
-    successMessage: "Workspace updated",
-    errorMessage: "Could not update workspace",
-  });
-  const [address, setAddress] = useState<PhysicalAddressFields>(() =>
-    physicalAddressFromData(workspace.physicalAddress),
-  );
-
-  useEffect(() => {
-    setAddress(physicalAddressFromData(workspace.physicalAddress));
-  }, [workspace.physicalAddress]);
-
+  const address = physicalAddressFromData(workspace.physicalAddress);
   const appearsAs = formatAppearsAs(workspace.name, address);
 
   return (
@@ -136,28 +80,28 @@ export function WorkspaceGeneralSection() {
         </CardDescription>
       </CardHeader>
       <CardBody>
-        <AddressFields
-          address={address}
-          disabled={!canManage}
-          onChange={(key, value) =>
-            setAddress((current) => ({ ...current, [key]: value }))
-          }
-        />
-        <SettingsPreview>Appears as: {appearsAs}</SettingsPreview>
-        {canManage ? (
-          <Button
-            variant="primary"
-            disabled={update.isPending}
-            onClick={() =>
-              update.mutate({
-                workspaceId: workspace.id,
-                input: { physicalAddress: normalizePhysicalAddress(address) },
-              })
-            }
+        {ADDRESS_ROWS.map((row) => (
+          <div
+            key={row.map((field) => field.key).join("-")}
+            className={row.length > 1 ? "grid gap-4 sm:grid-cols-2" : undefined}
           >
-            Save address
-          </Button>
-        ) : null}
+            {row.map((field) => (
+              <Input
+                key={field.key}
+                name={field.key}
+                label={field.label}
+                defaultValue={address[field.key]}
+                placeholder={field.placeholder}
+                disabled={!canManage}
+              />
+            ))}
+          </div>
+        ))}
+        <SettingsPreview>
+          <span data-appears-as>
+            {appearsAs ? `Appears as: ${appearsAs}` : "Appears as:"}
+          </span>
+        </SettingsPreview>
       </CardBody>
     </Card>
   );

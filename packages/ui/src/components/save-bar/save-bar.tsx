@@ -4,6 +4,7 @@ import { Button } from "../button/button";
 
 export type SaveBarProps = HTMLAttributes<HTMLDivElement> & {
   status: ReactNode;
+  form?: string;
   onDiscard?: () => void;
   onSave?: () => void;
   discardLabel?: string;
@@ -14,6 +15,7 @@ export type SaveBarProps = HTMLAttributes<HTMLDivElement> & {
 
 export function SaveBar({
   status,
+  form,
   onDiscard,
   onSave,
   discardLabel = "Discard",
@@ -26,17 +28,29 @@ export function SaveBar({
   return (
     <div
       className={cn(
-        "flex h-16 items-center justify-between border border-border bg-surface px-6",
+        "flex h-16 w-full items-center justify-between gap-4",
         className,
       )}
       {...props}
     >
       {status}
       <div className="flex items-center gap-2.5">
-        <Button variant="secondary" disabled={discardDisabled} onClick={onDiscard}>
+        <Button
+          type={form ? "reset" : "button"}
+          form={form}
+          variant="secondary"
+          disabled={discardDisabled}
+          onClick={onDiscard}
+        >
           {discardLabel}
         </Button>
-        <Button variant="primary" disabled={saveDisabled} onClick={onSave}>
+        <Button
+          type={form ? "submit" : "button"}
+          form={form}
+          variant="primary"
+          disabled={saveDisabled}
+          onClick={onSave}
+        >
           {saveLabel}
         </Button>
       </div>

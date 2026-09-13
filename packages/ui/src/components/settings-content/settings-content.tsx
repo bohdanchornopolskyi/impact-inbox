@@ -16,6 +16,36 @@ export function SettingsContent({ className, ...props }: SettingsContentProps) {
   );
 }
 
+export function SettingsPane({
+  className,
+  ...props
+}: HTMLAttributes<HTMLDivElement>) {
+  return (
+    <div
+      className={cn("min-h-0 flex-1 overflow-auto", className)}
+      {...props}
+    />
+  );
+}
+
+export function SettingsFooter({
+  className,
+  children,
+  ...props
+}: HTMLAttributes<HTMLDivElement>) {
+  return (
+    <div
+      className={cn(
+        "flex h-16 shrink-0 items-center border-t border-border bg-surface px-8",
+        className,
+      )}
+      {...props}
+    >
+      <div className="mx-auto w-full max-w-200">{children}</div>
+    </div>
+  );
+}
+
 export function SettingsPreview({
   children,
   className,

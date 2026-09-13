@@ -10,7 +10,14 @@ import {
 } from "../card/card";
 import { Input } from "../input/input";
 import { PageHeader } from "../page-header/page-header";
-import { SettingsContent, SettingsPreview } from "./settings-content";
+import { SaveBar } from "../save-bar/save-bar";
+import { SaveStatus } from "../save-status/save-status";
+import {
+  SettingsContent,
+  SettingsFooter,
+  SettingsPane,
+  SettingsPreview,
+} from "./settings-content";
 
 const meta = {
   title: "Shell/Settings Content",
@@ -23,57 +30,68 @@ type Story = StoryObj<typeof meta>;
 
 export const General: Story = {
   render: () => (
-    <SettingsContent>
-      <PageHeader
-        title="General"
-        description="Workspace identity and the postal address required on every email you send."
-        actions={
-          <Button variant="secondary" leftIcon={<BookOpen strokeWidth={1.5} />}>
-            Docs
-          </Button>
-        }
-      />
-      <Card>
-        <CardHeader>
-          <CardTitle>Workspace details</CardTitle>
-          <CardDescription>
-            The slug appears in workspace URLs. Old links keep redirecting after
-            a change.
-          </CardDescription>
-        </CardHeader>
-        <CardBody>
-          <div className="grid gap-4 sm:grid-cols-2">
-            <Input label="Name" defaultValue="Bohdan's Workspace" />
-            <Input label="Slug" defaultValue="bohdans-workspace" mono />
-          </div>
-        </CardBody>
-      </Card>
-      <Card>
-        <CardHeader>
-          <CardTitle>Postal address</CardTitle>
-          <CardDescription>
-            Required by CAN-SPAM and shown in the footer of every email sent from
-            this workspace.
-          </CardDescription>
-        </CardHeader>
-        <CardBody>
-          <Input label="Street address" defaultValue="123 Main St" />
-          <Input
-            label="Apt, suite, etc. (optional)"
-            defaultValue="Suite 100"
+    <div className="flex min-h-dvh flex-col">
+      <SettingsPane>
+        <SettingsContent>
+          <PageHeader
+            title="General"
+            description="Workspace identity and the postal address required on every email you send."
+            actions={
+              <Button variant="secondary" leftIcon={<BookOpen strokeWidth={1.5} />}>
+                Docs
+              </Button>
+            }
           />
-          <div className="grid gap-4 sm:grid-cols-2">
-            <Input label="City" defaultValue="San Francisco" />
-            <Input label="State / province (optional)" defaultValue="CA" />
-            <Input label="ZIP / postal code" defaultValue="94102" />
-            <Input label="Country" defaultValue="United States" />
-          </div>
-          <SettingsPreview>
-            Appears as: Bohdan&apos;s Workspace, 123 Main St, Suite 100, San
-            Francisco, CA 94102
-          </SettingsPreview>
-        </CardBody>
-      </Card>
-    </SettingsContent>
+          <Card>
+            <CardHeader>
+              <CardTitle>Workspace details</CardTitle>
+              <CardDescription>
+                The slug appears in workspace URLs. Old links keep redirecting
+                after a change.
+              </CardDescription>
+            </CardHeader>
+            <CardBody>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <Input label="Name" defaultValue="Bohdan's Workspace" />
+                <Input label="Slug" defaultValue="bohdans-workspace" mono />
+              </div>
+            </CardBody>
+          </Card>
+          <Card>
+            <CardHeader>
+              <CardTitle>Postal address</CardTitle>
+              <CardDescription>
+                Required by CAN-SPAM and shown in the footer of every email sent
+                from this workspace.
+              </CardDescription>
+            </CardHeader>
+            <CardBody>
+              <Input label="Street address" defaultValue="123 Main St" />
+              <Input
+                label="Apt, suite, etc. (optional)"
+                defaultValue="Suite 100"
+              />
+              <div className="grid gap-4 sm:grid-cols-2">
+                <Input label="City" defaultValue="San Francisco" />
+                <Input label="State / province (optional)" defaultValue="CA" />
+                <Input label="ZIP / postal code" defaultValue="94102" />
+                <Input label="Country" defaultValue="United States" />
+              </div>
+              <SettingsPreview>
+                Appears as: Bohdan&apos;s Workspace, 123 Main St, Suite 100, San
+                Francisco, CA 94102
+              </SettingsPreview>
+            </CardBody>
+          </Card>
+        </SettingsContent>
+      </SettingsPane>
+      <SettingsFooter>
+        <SaveBar
+          status={<SaveStatus tone="unsaved" label="2 unsaved changes" />}
+          onDiscard={() => undefined}
+          onSave={() => undefined}
+        />
+      </SettingsFooter>
+    </div>
   ),
 };
