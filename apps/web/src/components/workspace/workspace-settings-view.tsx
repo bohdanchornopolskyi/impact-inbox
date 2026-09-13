@@ -1,8 +1,7 @@
 "use client";
 
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { Blocks, Palette, SlidersHorizontal, Users } from "lucide-react";
-import { SidebarItem } from "@repo/ui/client";
+import { EmptyState } from "@repo/ui/client";
 import { hasWorkspaceRoleAtLeast } from "@repo/shared";
 import { useWorkspace } from "@/contexts/workspace-context";
 import { formatRoleLabel } from "@/lib/members/format-role-label";
@@ -12,24 +11,12 @@ import { WorkspaceGeneralSection } from "@/components/workspace/workspace-genera
 import { WorkspaceIdentitySection } from "@/components/workspace/workspace-identity-section";
 import { WorkspaceBrandSection } from "@/components/workspace/workspace-brand-section";
 import { WorkspaceModulesSection } from "@/components/workspace/workspace-modules-section";
-
-const WORKSPACE_ITEMS = [
-  { value: "general", label: "General", icon: SlidersHorizontal },
-  { value: "brand", label: "Brand", icon: Palette },
-  { value: "members", label: "Members", icon: Users },
-] as const;
-
-const PLATFORM_ITEMS = [
-  { value: "modules", label: "Modules", icon: Blocks },
-] as const;
-
-const SETTINGS_TABS = [...WORKSPACE_ITEMS, ...PLATFORM_ITEMS] as const;
-
-type SettingsTab = (typeof SETTINGS_TABS)[number]["value"];
-
-function isSettingsTab(value: string | null): value is SettingsTab {
-  return SETTINGS_TABS.some((tab) => tab.value === value);
-}
+import {
+  isSettingsTab,
+  settingsTabLabel,
+  type SettingsTab,
+} from "@/components/workspace/settings-nav-groups";
+import { WorkspaceSettingsNav } from "@/components/workspace/workspace-settings-nav";
 
 export function WorkspaceSettingsView() {
   const { workspace } = useWorkspace();
@@ -40,8 +27,8 @@ export function WorkspaceSettingsView() {
   const tabParam = searchParams.get("tab");
   const tab: SettingsTab = isSettingsTab(tabParam) ? tabParam : "general";
 
-  function setTab(next: string) {
-    if (!isSettingsTab(next) || next === tab) {
+  function setTab(next: SettingsTab) {
+    if (next === tab) {
       return;
     }
     const params = new URLSearchParams(searchParams.toString());
@@ -58,87 +45,68 @@ export function WorkspaceSettingsView() {
 
   return (
     <div className="flex min-h-[calc(100dvh-var(--spacing-topbar))]">
-      <nav
-        aria-label="Settings"
-        className="flex w-66 shrink-0 flex-col gap-5 border-r border-border bg-surface px-4 py-6"
-      >
-        <div className="flex flex-col gap-0.75 px-2">
-          <p className="text-2xl font-bold text-text">Settings</p>
-          <p className="text-xs text-text-3">{workspace.name}</p>
-        </div>
-
-        <div className="flex flex-col gap-5">
-          <SettingsNavGroup
-            title="Workspace"
-            items={WORKSPACE_ITEMS}
-            tab={tab}
-            onSelect={setTab}
-          />
-          <SettingsNavGroup
-            title="Platform"
-            items={PLATFORM_ITEMS}
-            tab={tab}
-            onSelect={setTab}
-          />
-        </div>
-        <p className="sr-only">Your role: {formatRoleLabel(workspace.role)}</p>
-      </nav>
-
+      <WorkspaceSettingsNav
+        tab={tab}
+        workspaceName={workspace.name}
+        onSelect={setTab}
+      />
+      <p className="sr-only">Your role: {formatRoleLabel(workspace.role)}</p>
       <div className="min-w-0 flex-1">
         <WorkspacePageShell>
-          {tab === "general" ? (
-            <div className="flex flex-col gap-8">
-              <WorkspaceIdentitySection />
-              <WorkspaceGeneralSection />
-            </div>
-          ) : null}
-
-          {tab === "brand" ? <WorkspaceBrandSection /> : null}
-
-          {tab === "modules" ? <WorkspaceModulesSection /> : null}
-
-          {tab === "members" ? (
-            <WorkspaceMembersSection
-              workspaceId={workspace.id}
-              organizationId={workspace.organizationId}
-              canManage={canManage}
-            />
-          ) : null}
+          <SettingsSection
+            tab={tab}
+            canManage={canManage}
+            workspaceId={workspace.id}
+            organizationId={workspace.organizationId}
+          />
         </WorkspacePageShell>
       </div>
     </div>
   );
 }
 
-function SettingsNavGroup({
-  title,
-  items,
+function SettingsSection({
   tab,
-  onSelect,
+  canManage,
+  workspaceId,
+  organizationId,
 }: {
-  title: string;
-  items: typeof WORKSPACE_ITEMS | typeof PLATFORM_ITEMS;
   tab: SettingsTab;
-  onSelect: (value: string) => void;
+  canManage: boolean;
+  workspaceId: string;
+  organizationId: string;
 }) {
-  return (
-    <div className="flex flex-col gap-0.5">
-      <p className="px-2 text-2xs font-semibold text-text-3">{title.toUpperCase()}</p>
-      <div className="h-1.5" />
-      {items.map((item) => {
-        const Icon = item.icon;
+  if (tab === "general") {
+    return (
+      <div className="flex flex-col gap-8">
+        <WorkspaceIdentitySection />
+        <WorkspaceGeneralSection />
+      </div>
+    );
+  }
 
-        return (
-          <SidebarItem
-            key={item.value}
-            active={tab === item.value}
-            icon={<Icon strokeWidth={1.5} />}
-            onClick={() => onSelect(item.value)}
-          >
-            {item.label}
-          </SidebarItem>
-        );
-      })}
-    </div>
+  if (tab === "brand") {
+    return <WorkspaceBrandSection />;
+  }
+
+  if (tab === "modules") {
+    return <WorkspaceModulesSection />;
+  }
+
+  if (tab === "members") {
+    return (
+      <WorkspaceMembersSection
+        workspaceId={workspaceId}
+        organizationId={organizationId}
+        canManage={canManage}
+      />
+    );
+  }
+
+  return (
+    <EmptyState
+      title={settingsTabLabel(tab)}
+      description="This section is not available yet."
+    />
   );
 }

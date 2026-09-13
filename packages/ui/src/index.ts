@@ -18,6 +18,14 @@ export {
   type AppBarUserProps,
 } from "./components/app-bar/app-bar";
 export {
+  SettingsNav,
+  SettingsNavGroup,
+  SettingsNavHeader,
+  type SettingsNavGroupProps,
+  type SettingsNavHeaderProps,
+  type SettingsNavProps,
+} from "./components/settings-nav/settings-nav";
+export {
   WorkspaceAvatar,
   type WorkspaceAvatarProps,
 } from "./components/avatar/workspace-avatar";
