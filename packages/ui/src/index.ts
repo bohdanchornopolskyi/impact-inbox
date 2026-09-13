@@ -26,6 +26,14 @@ export {
   type SettingsNavProps,
 } from "./components/settings-nav/settings-nav";
 export {
+  EditorBar,
+  EditorBarCenter,
+  EditorBarDivider,
+  EditorBarEnd,
+  EditorBarStart,
+  type EditorBarProps,
+} from "./components/editor-bar/editor-bar";
+export {
   WorkspaceAvatar,
   type WorkspaceAvatarProps,
 } from "./components/avatar/workspace-avatar";
