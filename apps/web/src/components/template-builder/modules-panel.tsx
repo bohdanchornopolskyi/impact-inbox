@@ -1,17 +1,28 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import Link from "next/link";
-import { Bookmark, RotateCcw, Trash2 } from "lucide-react";
-import { Button, Input, cn } from "@repo/ui/client";
+import { Bookmark, Ellipsis } from "lucide-react";
 import {
   getPlatformStarterByName,
   hasWorkspaceRoleAtLeast,
   isEmptyModuleSection,
+  isPlatformStarterName,
   summarizeModuleContent,
   type SectionBlock,
   type WorkspaceModuleData,
 } from "@repo/shared";
+import {
+  Button,
+  DropdownMenu,
+  EditorPanelFooter,
+  EditorPanelGroup,
+  EditorPanelListHead,
+  EditorPanelScroll,
+  EditorPanelSearch,
+  Input,
+  SavedTile,
+} from "@repo/ui/client";
 import { useWorkspace } from "@/contexts/workspace-context";
 import {
   useCreateWorkspaceModule,
@@ -22,11 +33,13 @@ import {
 import { useToastMutation } from "@/lib/use-toast-mutation";
 import { showError } from "@/stores/toast-store";
 import { useBuilder, useBuilderStore } from "./builder-provider";
+import { filterEditorPanel } from "./filter-editor-panel";
 import { ConfirmModal } from "./modals/confirm-modal";
 import {
   moduleSaveTargetState,
   resolveSelectedSection,
 } from "./module-save-target";
+import { groupSavedModules } from "./saved-library-groups";
 
 type PendingLibraryAction =
   | { kind: "update"; module: WorkspaceModuleData; content: SectionBlock }
@@ -34,7 +47,23 @@ type PendingLibraryAction =
   | { kind: "delete"; moduleId: string }
   | null;
 
-function SaveToLibraryCard({
+function suggestedSaveName(section: SectionBlock): string {
+  for (const row of section.children) {
+    for (const column of row.children) {
+      for (const block of column.children) {
+        if (block.type === "heading") {
+          const text = block.props.text.trim();
+          if (text) {
+            return text.slice(0, 120);
+          }
+        }
+      }
+    }
+  }
+  return "Section";
+}
+
+function SaveFromCanvas({
   canManage,
   isPending,
   onSave,
@@ -46,214 +75,178 @@ function SaveToLibraryCard({
   const saveTarget = useBuilder((s) =>
     moduleSaveTargetState(s.content, s.selectedBlockId),
   );
-  const [saveName, setSaveName] = useState("");
-  const canSaveSection =
-    canManage && saveTarget === "ready" && Boolean(saveName.trim());
+  const selectedSection = useBuilder((s) =>
+    resolveSelectedSection(s.content, s.selectedBlockId),
+  );
+  const label = selectedSection
+    ? suggestedSaveName(selectedSection)
+    : "section";
 
   return (
-    <div className="mb-4 space-y-2 rounded-lg border border-border-default bg-surface-muted p-3">
-      <p className="text-ui-xs font-medium text-text-secondary">
-        Save canvas section to library
+    <form
+      className="mx-3 mb-1 rounded-md border border-border bg-surface p-2"
+      onSubmit={(event) => {
+        event.preventDefault();
+        const name = String(
+          new FormData(event.currentTarget).get("name") ?? "",
+        ).trim();
+        if (!name) {
+          return;
+        }
+        const form = event.currentTarget;
+        onSave(name, () => form.reset());
+      }}
+    >
+      <p className="mb-1.5 flex items-center gap-1.5 text-xs font-medium text-text">
+        <Bookmark className="size-3.5 shrink-0 text-text-2" strokeWidth={1.5} />
+        Save {label} from canvas
       </p>
-      <Input
-        value={saveName}
-        onChange={(event) => setSaveName(event.target.value)}
-        placeholder="Module name"
-        aria-label="Module name"
-        disabled={saveTarget === "none"}
-      />
-      <Button
-        type="button"
-        size="sm"
-        className="w-full"
-        disabled={!canSaveSection || isPending}
-        onClick={() => onSave(saveName.trim(), () => setSaveName(""))}
-      >
-        Save to library
-      </Button>
+      <div className="flex items-center gap-1.5">
+        <div className="min-w-0 flex-1">
+          <Input
+            key={selectedSection?.id ?? "none"}
+            name="name"
+            defaultValue={label === "section" ? "" : label}
+            placeholder="Name"
+            aria-label="Module name"
+            disabled={!canManage || saveTarget === "none"}
+          />
+        </div>
+        <Button
+          type="submit"
+          size="sm"
+          disabled={!canManage || saveTarget !== "ready" || isPending}
+        >
+          Save
+        </Button>
+      </div>
       {saveTarget === "none" ? (
-        <p className="text-ui-xs text-text-tertiary">
+        <p className="mt-1.5 text-2xs text-text-3">
           Select a section (or a block inside one) first.
         </p>
-      ) : saveTarget === "empty" ? (
-        <p className="text-ui-xs text-text-tertiary">
+      ) : null}
+      {saveTarget === "empty" ? (
+        <p className="mt-1.5 text-2xs text-text-3">
           Selected section is empty — add blocks before saving.
         </p>
       ) : null}
-    </div>
+    </form>
   );
 }
 
-function ModuleList({
-  modules,
-  selectedModuleId,
-  onSelect,
-}: {
-  modules: WorkspaceModuleData[];
-  selectedModuleId: string | null;
-  onSelect: (moduleId: string) => void;
-}) {
-  return (
-    <div className="space-y-2">
-      {modules.map((module) => {
-        const isSelected = module.id === selectedModuleId;
-        return (
-          <button
-            key={module.id}
-            type="button"
-            onClick={() => onSelect(module.id)}
-            className={cn(
-              "flex w-full items-start gap-2 rounded-lg border p-2.5 text-left transition-colors",
-              isSelected
-                ? "border-accent-border bg-accent-soft"
-                : "border-border-default bg-surface-muted hover:border-accent-border",
-            )}
-          >
-            <Bookmark
-              className="mt-0.5 size-4 shrink-0 text-text-secondary"
-              strokeWidth={1.5}
-            />
-            <span className="min-w-0">
-              <span className="block truncate text-ui-sm font-medium text-text-primary">
-                {module.name}
-              </span>
-              <span className="block truncate text-ui-xs text-text-tertiary">
-                {summarizeModuleContent(module.content)}
-              </span>
-            </span>
-          </button>
-        );
-      })}
-    </div>
-  );
-}
-
-function SelectedModuleCard({
+function SavedModuleTile({
   module,
   canManage,
   canEdit,
-  renameValue,
-  starterAvailable,
-  isUpdatePending,
-  isRemovePending,
-  onRenameValueChange,
-  onRename,
+  saveTarget,
   onInsert,
   onUpdateFromSelection,
   onRestoreStarter,
+  onRename,
   onDelete,
 }: {
   module: WorkspaceModuleData;
   canManage: boolean;
   canEdit: boolean;
-  renameValue: string;
-  starterAvailable: boolean;
-  isUpdatePending: boolean;
-  isRemovePending: boolean;
-  onRenameValueChange: (value: string) => void;
-  onRename: (module: WorkspaceModuleData) => void;
+  saveTarget: "none" | "empty" | "ready";
   onInsert: (content: SectionBlock) => void;
   onUpdateFromSelection: (module: WorkspaceModuleData) => void;
   onRestoreStarter: (module: WorkspaceModuleData) => void;
+  onRename: (module: WorkspaceModuleData, name: string) => void;
   onDelete: (moduleId: string) => void;
 }) {
-  const saveTarget = useBuilder((s) =>
-    moduleSaveTargetState(s.content, s.selectedBlockId),
-  );
+  const summary = summarizeModuleContent(module.content);
+  const starterAvailable = isPlatformStarterName(module.name);
+  const dialogId = `rename-module-${module.id}`;
+
   return (
-    <div className="mt-4 space-y-3 rounded-lg border border-border-default bg-surface-card p-3">
-      <div>
-        <p className="text-ui-xs font-medium text-text-secondary">Selected</p>
-        <p className="mt-1 text-ui-sm font-semibold text-text-primary">
-          {module.name}
-        </p>
-        <p className="mt-1 text-ui-xs text-text-tertiary">
-          {summarizeModuleContent(module.content)}
-        </p>
-      </div>
-
-      {canManage ? (
-        <div className="space-y-2">
-          <label className="block space-y-1">
-            <span className="text-ui-xs font-medium text-text-secondary">
-              Name
-            </span>
-            <Input
-              value={renameValue}
-              onChange={(event) => onRenameValueChange(event.target.value)}
-              onBlur={() => onRename(module)}
-              onKeyDown={(event) => {
-                if (event.key === "Enter") {
-                  event.currentTarget.blur();
-                }
-              }}
-            />
-          </label>
-        </div>
-      ) : null}
-
-      <Button
-        type="button"
-        variant="primary"
-        size="sm"
-        className="w-full"
-        disabled={!canEdit || isEmptyModuleSection(module.content)}
-        onClick={() => onInsert(module.content)}
+    <div data-filter={`${module.name} ${summary}`.toLowerCase()}>
+      <SavedTile
+        name={module.name}
+        summary={summary}
+        onInsert={
+          canEdit && !isEmptyModuleSection(module.content)
+            ? () => onInsert(module.content)
+            : undefined
+        }
+        more={
+          <DropdownMenu
+            align="end"
+            aria-label={`Actions for ${module.name}`}
+            trigger={<Ellipsis className="size-4" strokeWidth={1.5} />}
+            items={[
+              {
+                label: "Update from selection",
+                disabled: !canManage || saveTarget !== "ready",
+                onSelect: () => onUpdateFromSelection(module),
+              },
+              {
+                label: "Rename",
+                disabled: !canManage,
+                onSelect: () => {
+                  const dialog = document.getElementById(dialogId);
+                  if (dialog instanceof HTMLDialogElement) {
+                    dialog.showModal();
+                  }
+                },
+              },
+              ...(starterAvailable && canManage
+                ? [
+                    {
+                      label: "Restore starter",
+                      onSelect: () => onRestoreStarter(module),
+                    },
+                  ]
+                : []),
+              {
+                label: "Delete",
+                destructive: true,
+                disabled: !canManage,
+                separatorBefore: true,
+                onSelect: () => onDelete(module.id),
+              },
+            ]}
+          />
+        }
+      />
+      <dialog
+        id={dialogId}
+        aria-labelledby={`${dialogId}-title`}
+        className="w-72 rounded-md border border-border bg-surface p-3 shadow-md backdrop:bg-black/20"
       >
-        Insert into template
-      </Button>
-
-      {canManage ? (
-        <>
-          <Button
-            type="button"
-            variant="secondary"
-            size="sm"
-            className="w-full"
-            disabled={saveTarget !== "ready" || isUpdatePending}
-            onClick={() => onUpdateFromSelection(module)}
-          >
-            Update from selection
-          </Button>
-          {saveTarget === "none" ? (
-            <p className="text-ui-xs text-text-tertiary">
-              Select a canvas section to replace this module’s content.
-            </p>
-          ) : saveTarget === "empty" ? (
-            <p className="text-ui-xs text-text-tertiary">
-              Selected section is empty — library updates need content.
-            </p>
-          ) : (
-            <p className="text-ui-xs text-text-tertiary">
-              Library changes are separate from canvas undo (⌘Z).
-            </p>
-          )}
-          {starterAvailable ? (
-            <Button
-              type="button"
-              variant="secondary"
-              size="sm"
-              className="w-full"
-              disabled={isUpdatePending}
-              onClick={() => onRestoreStarter(module)}
-            >
-              <RotateCcw className="mr-1.5 size-3.5" strokeWidth={1.5} />
-              Restore starter
+        <form
+          method="dialog"
+          className="flex flex-col gap-3"
+          onSubmit={(event) => {
+            const submitter = (event.nativeEvent as SubmitEvent).submitter;
+            if (
+              submitter instanceof HTMLButtonElement &&
+              submitter.value === "cancel"
+            ) {
+              return;
+            }
+            const name = String(
+              new FormData(event.currentTarget).get("name") ?? "",
+            ).trim();
+            if (name) {
+              onRename(module, name);
+            }
+          }}
+        >
+          <p id={`${dialogId}-title`} className="text-sm font-semibold text-text">
+            Rename
+          </p>
+          <Input name="name" label="Name" defaultValue={module.name} />
+          <div className="flex justify-end gap-1.5">
+            <Button type="submit" value="cancel" variant="secondary" size="sm">
+              Cancel
             </Button>
-          ) : null}
-          <Button
-            type="button"
-            variant="secondary"
-            size="sm"
-            className="w-full text-danger"
-            disabled={isRemovePending}
-            onClick={() => onDelete(module.id)}
-          >
-            <Trash2 className="mr-1.5 size-3.5" strokeWidth={1.5} />
-            Delete module
-          </Button>
-        </>
-      ) : null}
+            <Button type="submit" value="save" size="sm">
+              Save
+            </Button>
+          </div>
+        </form>
+      </dialog>
     </div>
   );
 }
@@ -263,6 +256,9 @@ export function ModulesPanel() {
   const store = useBuilderStore();
   const canEdit = useBuilder((s) => s.canEdit);
   const canManage = hasWorkspaceRoleAtLeast(workspace.role, ["admin", "owner"]);
+  const saveTarget = useBuilder((s) =>
+    moduleSaveTargetState(s.content, s.selectedBlockId),
+  );
   const modulesQuery = useWorkspaceModules(workspace.id);
   const createModule = useCreateWorkspaceModule(workspace.id);
   const updateModule = useUpdateWorkspaceModule(workspace.id);
@@ -284,37 +280,10 @@ export function ModulesPanel() {
     successMessage: "Module deleted",
     errorMessage: "Could not delete module",
   });
-  const [selectedModuleId, setSelectedModuleId] = useState<string | null>(null);
-  const [renameValue, setRenameValue] = useState("");
   const [pendingAction, setPendingAction] = useState<PendingLibraryAction>(null);
 
-  const selectedModule =
-    modulesQuery.data?.find((module) => module.id === selectedModuleId) ?? null;
-  const starterForSelected = selectedModule
-    ? getPlatformStarterByName(selectedModule.name, {
-        workspaceName: workspace.name,
-        physicalAddress: workspace.physicalAddress,
-        brandKit: workspace.brandKit,
-      })
-    : undefined;
-
-  useEffect(() => {
-    if (!selectedModule) {
-      setRenameValue("");
-      return;
-    }
-    setRenameValue(selectedModule.name);
-  }, [selectedModule]);
-
-  useEffect(() => {
-    if (
-      selectedModuleId &&
-      modulesQuery.data &&
-      !modulesQuery.data.some((module) => module.id === selectedModuleId)
-    ) {
-      setSelectedModuleId(null);
-    }
-  }, [modulesQuery.data, selectedModuleId]);
+  const modules = modulesQuery.data ?? [];
+  const groups = groupSavedModules(modules);
 
   function handleInsert(moduleContent: SectionBlock) {
     const state = store.getState();
@@ -336,17 +305,11 @@ export function ModulesPanel() {
     }
     create.mutate(
       { name, content: selectedSection },
-      {
-        onSuccess: (created) => {
-          onSaved();
-          setSelectedModuleId(created.id);
-        },
-      },
+      { onSuccess: () => onSaved() },
     );
   }
 
-  function handleRename(module: WorkspaceModuleData) {
-    const nextName = renameValue.trim();
+  function handleRename(module: WorkspaceModuleData, nextName: string) {
     if (!canManage || !nextName || nextName === module.name) {
       return;
     }
@@ -366,7 +329,9 @@ export function ModulesPanel() {
       return;
     }
     if (isEmptyModuleSection(selectedSection)) {
-      showError("Selected section is empty. Add blocks before updating the library.");
+      showError(
+        "Selected section is empty. Add blocks before updating the library.",
+      );
       return;
     }
     setPendingAction({
@@ -407,9 +372,6 @@ export function ModulesPanel() {
     try {
       if (pendingAction.kind === "delete") {
         await remove.mutateAsync(pendingAction.moduleId);
-        if (selectedModuleId === pendingAction.moduleId) {
-          setSelectedModuleId(null);
-        }
         setPendingAction(null);
         return;
       }
@@ -446,73 +408,80 @@ export function ModulesPanel() {
         : "Replace content";
 
   return (
-    <div className="flex h-full min-h-0 flex-col overflow-hidden">
-      <div className="shrink-0 border-b border-border-subtle px-4 py-3">
-        <h2 className="text-ui-sm font-semibold text-text-primary">Saved</h2>
-        <p className="mt-0.5 text-ui-xs text-text-tertiary">
-          Insert a copy into this template.{" "}
-          <Link
-            href={`/${workspace.slug}/settings?tab=modules`}
-            className="text-accent-text underline-offset-2 hover:underline"
-          >
-            Manage library in settings
-          </Link>
-          .
-        </p>
-      </div>
-
-      <div className="min-h-0 flex-1 overflow-y-auto p-3">
-        {canManage ? (
-          <SaveToLibraryCard
-            canManage={canManage}
-            isPending={create.isPending}
-            onSave={handleSave}
-          />
-        ) : null}
-
-        {modulesQuery.isLoading ? (
-          <p className="px-0.5 text-ui-xs text-text-tertiary">Loading modules…</p>
-        ) : null}
-
-        {modulesQuery.error ? (
-          <p className="px-0.5 text-ui-xs text-danger">Could not load modules.</p>
-        ) : null}
-
-        {modulesQuery.data && modulesQuery.data.length === 0 ? (
-          <p className="px-0.5 text-ui-xs text-text-tertiary">
-            No modules yet. Save a section or create a new workspace for starters.
-          </p>
-        ) : null}
-
-        <ModuleList
-          modules={modulesQuery.data ?? []}
-          selectedModuleId={selectedModuleId}
-          onSelect={setSelectedModuleId}
+    <div className="flex h-full min-h-0 flex-col overflow-hidden" data-panel>
+      <EditorPanelSearch
+        placeholder="Search saved"
+        aria-label="Search saved"
+        onInput={(event) => {
+          const root = event.currentTarget.closest("[data-panel]");
+          if (root instanceof HTMLElement) {
+            filterEditorPanel(root, event.currentTarget.value);
+          }
+        }}
+      />
+      {canManage ? (
+        <SaveFromCanvas
+          canManage={canManage}
+          isPending={create.isPending}
+          onSave={handleSave}
         />
-
-        {selectedModule ? (
-          <SelectedModuleCard
-            module={selectedModule}
-            canManage={canManage}
-            canEdit={canEdit}
-            renameValue={renameValue}
-            starterAvailable={Boolean(starterForSelected)}
-            isUpdatePending={update.isPending}
-            isRemovePending={remove.isPending}
-            onRenameValueChange={setRenameValue}
-            onRename={handleRename}
-            onInsert={handleInsert}
-            onUpdateFromSelection={requestUpdateFromSelection}
-            onRestoreStarter={requestRestoreStarter}
-            onDelete={requestDelete}
-          />
-        ) : modulesQuery.data && modulesQuery.data.length > 0 ? (
-          <p className="mt-4 px-0.5 text-ui-xs text-text-tertiary">
-            Select a module to preview and insert.
+      ) : null}
+      <EditorPanelScroll>
+        {modulesQuery.isLoading ? (
+          <p className="px-0.5 text-xs text-text-3">Loading modules…</p>
+        ) : null}
+        {modulesQuery.error ? (
+          <p className="px-0.5 text-xs text-danger">Could not load modules.</p>
+        ) : null}
+        {modulesQuery.data && modulesQuery.data.length === 0 ? (
+          <p className="px-0.5 text-xs text-text-3">
+            No modules yet. Save a section or create a new workspace for
+            starters.
           </p>
         ) : null}
-      </div>
-
+        {modules.length > 0 ? (
+          <>
+            <EditorPanelListHead title="Saved library" count={modules.length} />
+            <p data-filter-empty hidden className="px-0.5 text-xs text-text-3">
+              No saved items match your search.
+            </p>
+            <div className="flex flex-col gap-4.5">
+              {groups.map((group) => (
+                <EditorPanelGroup
+                  key={group.title}
+                  title={group.title}
+                  data-filter-group=""
+                >
+                  <div className="grid grid-cols-2 gap-1.5">
+                    {group.modules.map((module) => (
+                      <SavedModuleTile
+                        key={module.id}
+                        module={module}
+                        canManage={canManage}
+                        canEdit={canEdit}
+                        saveTarget={saveTarget}
+                        onInsert={handleInsert}
+                        onUpdateFromSelection={requestUpdateFromSelection}
+                        onRestoreStarter={requestRestoreStarter}
+                        onRename={handleRename}
+                        onDelete={requestDelete}
+                      />
+                    ))}
+                  </div>
+                </EditorPanelGroup>
+              ))}
+            </div>
+          </>
+        ) : null}
+      </EditorPanelScroll>
+      <EditorPanelFooter>
+        <Link
+          href={`/${workspace.slug}/settings?tab=modules`}
+          className="inline-flex h-7 items-center rounded-sm px-2 text-xs font-medium text-text-2 transition-colors duration-150 hover:bg-surface-sunken hover:text-text"
+        >
+          Manage
+        </Link>
+      </EditorPanelFooter>
       <ConfirmModal
         open={pendingAction !== null}
         onOpenChange={(open) => {

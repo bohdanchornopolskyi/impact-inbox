@@ -43,6 +43,21 @@ export {
   type EditorBarProps,
 } from "./components/editor-bar/editor-bar";
 export {
+  EditorPanel,
+  EditorPanelBody,
+  EditorPanelFooter,
+  EditorPanelGroup,
+  EditorPanelHint,
+  EditorPanelListHead,
+  EditorPanelScroll,
+  EditorPanelSearch,
+  EditorPanelTabs,
+  type EditorPanelGroupProps,
+  type EditorPanelProps,
+  type EditorPanelTab,
+  type EditorPanelTabsProps,
+} from "./components/editor-panel/editor-panel";
+export {
   WorkspaceAvatar,
   type WorkspaceAvatarProps,
 } from "./components/avatar/workspace-avatar";

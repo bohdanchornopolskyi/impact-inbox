@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState, type RefObject } from "react";
-import { MoreHorizontal, Upload } from "lucide-react";
+import { MoreHorizontal, MousePointerClick, Upload } from "lucide-react";
 import {
   ASSET_UPLOAD_ALLOWED_MIME_TYPES,
   findBlock,
@@ -10,7 +10,16 @@ import {
   type OrganizationAssetData,
   type OrganizationAssetUsageData,
 } from "@repo/shared";
-import { Button, BasePopover, DropdownMenu, Input, cn } from "@repo/ui/client";
+import {
+  BasePopover,
+  Button,
+  DropdownMenu,
+  EditorPanelHint,
+  EditorPanelScroll,
+  Input,
+  LibraryTile,
+  Search,
+} from "@repo/ui/client";
 import { useSession } from "@/contexts/session-context";
 import { useWorkspace } from "@/contexts/workspace-context";
 import { getOrganizationAssetUsage } from "@/lib/api/assets-api";
@@ -24,10 +33,21 @@ import { useToastMutation } from "@/lib/use-toast-mutation";
 import { showError, showToast } from "@/stores/toast-store";
 import { useBuilder, useBuilderStore } from "./builder-provider";
 import { canApplyAssetToSelection } from "./asset-apply-target";
+import { filterEditorPanel } from "./filter-editor-panel";
 import { widthForPickedImage } from "./inspector/image-display-width";
 import { ConfirmModal } from "./modals/confirm-modal";
 
 const ACCEPT = ASSET_UPLOAD_ALLOWED_MIME_TYPES.join(",");
+
+function formatBytes(bytes: number) {
+  if (bytes < 1024) {
+    return `${bytes} B`;
+  }
+  if (bytes < 1024 * 1024) {
+    return `${Math.round(bytes / 1024)} KB`;
+  }
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
 
 function formatAssetUsageMessage(usage: OrganizationAssetUsageData): string {
   const parts: string[] = [];
@@ -61,26 +81,29 @@ function formatAssetUsageMessage(usage: OrganizationAssetUsageData): string {
 
 function AssetsPanelHeader({
   canManage,
-  canApplyToBlock,
   isUploading,
   fileInputRef,
   onUpload,
 }: {
   canManage: boolean;
-  canApplyToBlock: boolean;
   isUploading: boolean;
   fileInputRef: RefObject<HTMLInputElement | null>;
   onUpload: (file: File | undefined) => void;
 }) {
   return (
-    <div className="flex shrink-0 items-start justify-between gap-2 border-b border-border-subtle px-4 py-3">
-      <div className="min-w-0">
-        <h2 className="text-ui-sm font-semibold text-text-primary">Assets</h2>
-        <p className="mt-0.5 text-ui-xs text-text-tertiary">
-          {canApplyToBlock
-            ? "Click an image to place it on the selected block"
-            : "Click to copy URL · select an image block to place"}
-        </p>
+    <div className="flex shrink-0 items-center gap-1.5 px-3 pb-1 pt-3">
+      <div className="min-w-0 flex-1">
+        <Search
+          fieldClassName="border-transparent bg-bg"
+          placeholder="Search assets"
+          aria-label="Search assets"
+          onInput={(event) => {
+            const root = event.currentTarget.closest("[data-panel]");
+            if (root instanceof HTMLElement) {
+              filterEditorPanel(root, event.currentTarget.value);
+            }
+          }}
+        />
       </div>
       {canManage ? (
         <>
@@ -96,12 +119,13 @@ function AssetsPanelHeader({
             type="button"
             variant="secondary"
             size="sm"
+            icon
             className="shrink-0"
             disabled={isUploading}
+            aria-label={isUploading ? "Uploading" : "Upload image"}
             onClick={() => fileInputRef.current?.click()}
           >
-            <Upload className="size-3.5" strokeWidth={1.5} />
-            {isUploading ? "…" : "Upload"}
+            <Upload strokeWidth={1.5} />
           </Button>
         </>
       ) : null}
@@ -123,20 +147,13 @@ function AssetsEmptyState({
       type="button"
       disabled={!canManage || isUploading}
       onClick={onUploadClick}
-      className={cn(
-        "flex w-full flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-border-strong px-4 py-10 text-center",
-        canManage
-          ? "hover:border-accent-border hover:bg-surface-muted"
-          : "cursor-default opacity-70",
-      )}
+      className="flex w-full flex-col items-center justify-center gap-1.5 rounded-md border border-dashed border-border px-3 py-8 text-center disabled:cursor-default disabled:opacity-70"
     >
-      <Upload className="size-5 text-text-tertiary" strokeWidth={1.5} />
-      <span className="text-ui-sm font-medium text-text-primary">
+      <Upload className="size-4 text-text-3" strokeWidth={1.5} />
+      <span className="text-xs font-medium text-text">
         {canManage ? "Drop an image here" : "No assets yet"}
       </span>
-      <span className="text-ui-xs text-text-tertiary">
-        JPEG, PNG, GIF, WebP · max 2MB
-      </span>
+      <span className="text-2xs text-text-3">JPEG, PNG, GIF, WebP · max 2MB</span>
     </button>
   );
 }
@@ -201,7 +218,7 @@ function AssetCard({
   ];
 
   return (
-    <li className="group relative min-w-0">
+    <li className="group relative min-w-0" data-filter={asset.name.toLowerCase()}>
       <BasePopover.Root
         open={isRenaming}
         onOpenChange={(open, details) => {
@@ -212,78 +229,45 @@ function AssetCard({
           onCancelRename();
         }}
       >
-        <div
-          className={cn(
-            "overflow-hidden rounded-lg border border-border-default bg-surface-muted transition-colors",
-            "hover:border-accent-border focus-within:border-accent-border",
-            isRenaming && "border-accent-border",
-          )}
-        >
-          <button
-            type="button"
-            className="relative block aspect-square w-full overflow-hidden bg-surface-inset outline-none"
+        <div className="relative">
+          <BasePopover.Trigger
+            render={
+              <button type="button" className="sr-only">
+                Rename {asset.name}
+              </button>
+            }
+          />
+          <LibraryTile
+            filename={asset.name}
+            meta={formatBytes(asset.byteSize)}
+            src={asset.url}
             onClick={() => onPrimaryClick(asset)}
             aria-label={
               canApplyToBlock
                 ? `Use ${asset.name}`
                 : `Copy URL for ${asset.name}`
             }
-          >
-            <img
-              src={asset.url}
-              alt=""
-              className="size-full object-cover"
-            />
-          </button>
-
-          <div className="flex items-center gap-0.5 border-t border-border-subtle px-1.5 py-1">
-            <BasePopover.Trigger
-              render={
-                <button
-                  type="button"
-                  className="min-w-0 flex-1 truncate px-1 text-left text-ui-xs font-medium text-text-primary"
-                  title={asset.name}
-                  onClick={() => onPrimaryClick(asset)}
-                  onDoubleClick={(event) => {
-                    event.preventDefault();
-                    event.stopPropagation();
-                    onStartRename(asset);
-                  }}
-                >
-                  {asset.name}
-                </button>
-              }
-            />
-
+          />
+          <div className="absolute top-1.5 right-1.5">
             <DropdownMenu
               align="end"
-              className="size-7 shrink-0 opacity-70 group-hover:opacity-100 group-focus-within:opacity-100"
-              trigger={
-                <MoreHorizontal
-                  className="size-3.5"
-                  strokeWidth={1.5}
-                />
-              }
+              aria-label={`Actions for ${asset.name}`}
+              className="size-7 bg-surface/90 opacity-0 shadow-xs group-hover:opacity-100 group-focus-within:opacity-100"
+              trigger={<MoreHorizontal className="size-3.5" strokeWidth={1.5} />}
               items={menuItems}
             />
           </div>
         </div>
 
         <BasePopover.Portal>
-          <BasePopover.Positioner
-            align="start"
-            side="bottom"
-            sideOffset={6}
-          >
-            <BasePopover.Popup className="z-50 w-64 rounded-xl border border-border-default bg-surface-card p-3 shadow-pop outline-none">
+          <BasePopover.Positioner align="start" side="bottom" sideOffset={6}>
+            <BasePopover.Popup className="z-50 w-64 rounded-md border border-border bg-surface p-3 shadow-md outline-none">
               <Input
                 label="Name"
                 autoFocus
                 value={renameDraft}
                 onFocus={(event) => event.currentTarget.select()}
-                onChange={(event) =>
-                  onRenameDraftChange(event.target.value)
-                }
+                onChange={(event) => onRenameDraftChange(event.target.value)}
                 onKeyDown={(event) => {
                   if (event.key === "Enter") {
                     event.preventDefault();
@@ -295,7 +279,7 @@ function AssetCard({
                 <Button
                   type="button"
                   variant="secondary"
-                  className="h-8 px-2.5 text-ui-xs"
+                  size="sm"
                   onClick={onCancelRename}
                 >
                   Cancel
@@ -303,7 +287,7 @@ function AssetCard({
                 <Button
                   type="button"
                   variant="primary"
-                  className="h-8 px-2.5 text-ui-xs text-text-on-accent"
+                  size="sm"
                   disabled={!renameDraft.trim() || isUpdatePending}
                   onClick={() => void onConfirmRename()}
                 >
@@ -374,7 +358,6 @@ export function AssetsPanel() {
   const [deleteUsage, setDeleteUsage] =
     useState<OrganizationAssetUsageData | null>(null);
   const [isCheckingUsage, setIsCheckingUsage] = useState(false);
-  const [isDragging, setIsDragging] = useState(false);
 
   const assetsQuery = useOrganizationAssets(
     workspace.id,
@@ -549,53 +532,54 @@ export function AssetsPanel() {
   }
 
   return (
-    <div className="flex h-full min-h-0 flex-col overflow-hidden">
+    <div
+      className="flex h-full min-h-0 flex-col overflow-hidden data-[drag]:bg-accent-soft/40"
+      data-panel
+      onDragEnter={(event) => {
+        if (!canManage) {
+          return;
+        }
+        event.preventDefault();
+        event.currentTarget.dataset.drag = "";
+      }}
+      onDragOver={(event) => {
+        if (!canManage) {
+          return;
+        }
+        event.preventDefault();
+      }}
+      onDragLeave={(event) => {
+        if (event.currentTarget === event.target) {
+          delete event.currentTarget.dataset.drag;
+        }
+      }}
+      onDrop={(event) => {
+        if (!canManage) {
+          return;
+        }
+        event.preventDefault();
+        delete event.currentTarget.dataset.drag;
+        handleUpload(event.dataTransfer.files?.[0]);
+      }}
+    >
       <AssetsPanelHeader
         canManage={canManage}
-        canApplyToBlock={Boolean(canApplyToBlock)}
         isUploading={upload.isPending}
         fileInputRef={fileInputRef}
         onUpload={handleUpload}
       />
-
-      <div
-        className={cn(
-          "min-h-0 flex-1 overflow-y-auto p-3 transition-colors",
-          isDragging && "bg-accent-soft/40",
-        )}
-        onDragEnter={(event) => {
-          if (!canManage) {
-            return;
-          }
-          event.preventDefault();
-          setIsDragging(true);
-        }}
-        onDragOver={(event) => {
-          if (!canManage) {
-            return;
-          }
-          event.preventDefault();
-          setIsDragging(true);
-        }}
-        onDragLeave={(event) => {
-          if (event.currentTarget === event.target) {
-            setIsDragging(false);
-          }
-        }}
-        onDrop={(event) => {
-          if (!canManage) {
-            return;
-          }
-          event.preventDefault();
-          setIsDragging(false);
-          handleUpload(event.dataTransfer.files?.[0]);
-        }}
-      >
+      <EditorPanelHint>
+        <MousePointerClick className="mt-px size-3.25 shrink-0" strokeWidth={1.5} />
+        {canApplyToBlock
+          ? "Click an image to place it on the selected block"
+          : "Select an image block to place, or click to copy the URL"}
+      </EditorPanelHint>
+      <EditorPanelScroll>
         {assetsQuery.isLoading ? (
-          <p className="text-ui-xs text-text-tertiary">Loading assets…</p>
+          <p className="text-xs text-text-3">Loading assets…</p>
         ) : null}
         {assetsQuery.error ? (
-          <p className="text-ui-xs text-danger">Could not load assets.</p>
+          <p className="text-xs text-danger">Could not load assets.</p>
         ) : null}
 
         {!assetsQuery.isLoading && assets.length === 0 ? (
@@ -605,6 +589,10 @@ export function AssetsPanel() {
             onUploadClick={() => fileInputRef.current?.click()}
           />
         ) : null}
+
+        <p data-filter-empty hidden className="text-xs text-text-3">
+          No assets match your search.
+        </p>
 
         {assets.length > 0 ? (
           <ul className="grid grid-cols-2 gap-2">
@@ -629,13 +617,7 @@ export function AssetsPanel() {
             ))}
           </ul>
         ) : null}
-
-        {canManage && assets.length > 0 ? (
-          <p className="mt-3 text-center text-ui-xs text-text-tertiary">
-            Drop files anywhere to upload · double-click name to rename
-          </p>
-        ) : null}
-      </div>
+      </EditorPanelScroll>
 
       <AssetDeleteConfirm
         pendingDelete={pendingDelete}

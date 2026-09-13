@@ -25,8 +25,13 @@ import {
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { GripVertical, Plus } from "lucide-react";
-import { Button } from "@repo/ui/client";
+import { GripVertical } from "lucide-react";
+import {
+  Button,
+  EditorPanelFooter,
+  EditorPanelScroll,
+  EditorPanelSearch,
+} from "@repo/ui/client";
 import { useBuilder, useBuilderStore } from "./builder-provider";
 import { TemplateBlockIcon } from "./block-icons";
 import {
@@ -34,6 +39,7 @@ import {
   getLayersTreeKey,
   type LayersTreeNode,
 } from "./layers-tree";
+import { filterEditorPanel } from "./filter-editor-panel";
 import { useLayoutAddTargets } from "./use-layout-add-targets";
 
 const COLUMN_APPEND_PREFIX = "column-append:";
@@ -111,10 +117,16 @@ function DropPlaceholderGap({ depth }: { depth: number }) {
   return (
     <div
       style={{ marginLeft: `${depth * 12 + 8}px` }}
-      className="my-0.5 h-9 rounded-md border border-dashed border-accent-border/40 bg-accent-soft/30"
+      className="my-0.5 h-8 rounded-sm border border-dashed border-accent-border/40 bg-accent-soft/30"
       aria-hidden
     />
   );
+}
+
+function layerRowClass(selected: boolean, extra?: string) {
+  return `flex w-full items-center gap-1.5 rounded-sm px-2 py-1 text-left text-xs ${
+    selected ? "bg-accent-soft text-accent" : "text-text-2 hover:bg-bg"
+  }${extra ? ` ${extra}` : ""}`;
 }
 
 function ContentNodePreview({
@@ -129,14 +141,10 @@ function ContentNodePreview({
   return (
     <div
       style={{ paddingLeft: `${depth * 12 + 8}px` }}
-      className={`flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-ui-sm shadow-md ${
-        selected
-          ? "bg-accent-soft text-accent-text"
-          : "bg-surface-card text-text-secondary"
-      }`}
+      className={layerRowClass(selected, "bg-surface shadow-md")}
     >
-      <GripVertical className="size-3.5 shrink-0 text-text-tertiary" strokeWidth={1.5} />
-      <TemplateBlockIcon type={node.type} className="size-4" />
+      <GripVertical className="size-3.5 shrink-0 text-text-3" strokeWidth={1.5} />
+      <TemplateBlockIcon type={node.type} className="size-3.5" />
       <span className="font-medium">{node.label}</span>
     </div>
   );
@@ -165,19 +173,16 @@ function SortableContentNode({
         paddingLeft: `${depth * 12 + 8}px`,
         opacity: isDragging ? 0.35 : 1,
       }}
-      className={`flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-ui-sm ${
-        selected
-          ? "bg-accent-soft text-accent-text"
-          : "text-text-secondary hover:bg-surface-muted"
-      }`}
+      className={layerRowClass(selected)}
+      data-filter={node.label.toLowerCase()}
       onClick={() => selectBlock(node.id)}
       {...attributes}
       {...listeners}
     >
       {canEdit ? (
-        <GripVertical className="size-3.5 shrink-0 text-text-tertiary" strokeWidth={1.5} />
+        <GripVertical className="size-3.5 shrink-0 text-text-3" strokeWidth={1.5} />
       ) : null}
-      <TemplateBlockIcon type={node.type} className="size-4" />
+      <TemplateBlockIcon type={node.type} className="size-3.5" />
       <span className="font-medium">{node.label}</span>
     </button>
   );
@@ -212,7 +217,7 @@ function EmptyColumnDropZone({ columnId, depth }: { columnId: string; depth: num
     <div
       ref={setNodeRef}
       style={{ marginLeft: `${depth * 12 + 8}px` }}
-      className="rounded-md border border-dashed border-border-subtle px-2 py-1.5 text-ui-xs text-text-tertiary"
+      className="rounded-sm border border-dashed border-border px-2 py-1 text-2xs text-text-3"
     >
       Drop a block here
     </div>
@@ -237,14 +242,11 @@ function LayoutNodeButton({ node, depth }: { node: LayersTreeNode; depth: number
     <button
       type="button"
       style={{ paddingLeft: `${depth * 12 + 8}px` }}
-      className={`flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-ui-sm ${
-        selected
-          ? "bg-accent-soft text-accent-text"
-          : "text-text-secondary hover:bg-surface-muted"
-      }`}
+      className={layerRowClass(selected)}
+      data-filter={node.label.toLowerCase()}
       onClick={() => selectBlock(node.id)}
     >
-      <TemplateBlockIcon type={node.type} className="size-4" />
+      <TemplateBlockIcon type={node.type} className="size-3.5" />
       <span className="font-medium">{node.label}</span>
     </button>
   );
@@ -420,13 +422,17 @@ export function StructurePanel() {
   }
 
   return (
-    <div className="flex h-full min-h-0 flex-col overflow-hidden">
-      <div className="shrink-0 border-b border-border-subtle px-4 py-3">
-        <h2 className="text-ui-sm font-semibold text-text-primary">Layers</h2>
-        <p className="mt-0.5 text-ui-xs text-text-tertiary">
-          Manage layout and reorder content blocks.
-        </p>
-      </div>
+    <div className="flex h-full min-h-0 flex-col overflow-hidden" data-panel>
+      <EditorPanelSearch
+        placeholder="Search layers"
+        aria-label="Search layers"
+        onInput={(event) => {
+          const root = event.currentTarget.closest("[data-panel]");
+          if (root instanceof HTMLElement) {
+            filterEditorPanel(root, event.currentTarget.value);
+          }
+        }}
+      />
       <DndContext
         sensors={sensors}
         collisionDetection={closestCenter}
@@ -436,59 +442,50 @@ export function StructurePanel() {
         onDragCancel={handleDragCancel}
       >
         <StructureDragContext.Provider value={dragContext}>
-          <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
-            <div className="min-h-0 flex-1 overflow-y-auto p-2">
-              {tree.map((section) => (
-                <div key={section.id} className="mb-2">
-                  <TreeNodeView node={section} depth={0} />
-                </div>
-              ))}
-              {canEdit ? (
-                <button
-                  type="button"
-                  onClick={handleAddSection}
-                  className="mt-2 flex w-full items-center justify-center gap-1.5 rounded-lg border border-dashed border-border-strong bg-surface-muted px-3 py-2 text-ui-sm font-medium text-text-secondary transition-colors hover:border-accent-border hover:bg-accent-soft hover:text-accent-text"
-                >
-                  <Plus className="size-4" strokeWidth={1.5} />
-                  Add section
-                </button>
-              ) : null}
-            </div>
-            <DragOverlay dropAnimation={null}>
-              {activeDragNode ? (
-                <DragOverlayPreview node={activeDragNode} />
-              ) : null}
-            </DragOverlay>
-          </div>
+          <EditorPanelScroll className="px-2">
+            <p data-filter-empty hidden className="px-2 text-xs text-text-3">
+              No layers match your search.
+            </p>
+            {tree.map((section) => (
+              <div key={section.id} className="mb-1.5">
+                <TreeNodeView node={section} depth={0} />
+              </div>
+            ))}
+          </EditorPanelScroll>
+          <DragOverlay dropAnimation={null}>
+            {activeDragNode ? (
+              <DragOverlayPreview node={activeDragNode} />
+            ) : null}
+          </DragOverlay>
         </StructureDragContext.Provider>
       </DndContext>
       {canEdit ? (
-        <div className="flex shrink-0 flex-wrap gap-2 border-t border-border-subtle p-3">
+        <EditorPanelFooter className="flex-wrap gap-1.5">
           <Button
             size="sm"
             variant="secondary"
-            leftIcon={<TemplateBlockIcon type="section" className="size-4" />}
+            leftIcon={<TemplateBlockIcon type="section" className="size-3.5" />}
             onClick={handleAddSection}
           >
-            Add section
+            Section
           </Button>
           <Button
             size="sm"
             variant="secondary"
-            leftIcon={<TemplateBlockIcon type="row" className="size-4" />}
+            leftIcon={<TemplateBlockIcon type="row" className="size-3.5" />}
             onClick={handleAddRow}
           >
-            Add row
+            Row
           </Button>
           <Button
             size="sm"
             variant="secondary"
-            leftIcon={<TemplateBlockIcon type="column" className="size-4" />}
+            leftIcon={<TemplateBlockIcon type="column" className="size-3.5" />}
             onClick={handleAddColumn}
           >
-            Add column
+            Column
           </Button>
-        </div>
+        </EditorPanelFooter>
       ) : null}
     </div>
   );

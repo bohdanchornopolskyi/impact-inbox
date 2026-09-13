@@ -1,17 +1,23 @@
 "use client";
 
-import { useState } from "react";
-import { MousePointerClick, Search } from "lucide-react";
+import { MousePointerClick } from "lucide-react";
 import {
   TEMPLATE_BLOCK_DEFINITIONS,
   resolveTargetColumnId,
   type ContentBlockType,
   type TemplateBlockType,
 } from "@repo/shared";
-import { BlockTile, Input } from "@repo/ui/client";
+import {
+  BlockTile,
+  EditorPanelGroup,
+  EditorPanelHint,
+  EditorPanelScroll,
+  EditorPanelSearch,
+} from "@repo/ui/client";
 import { useBuilder, useBuilderStore } from "./builder-provider";
 import { TemplateBlockIcon } from "./block-icons";
 import { usePaletteCanvasDndApi } from "./canvas/palette-canvas-dnd-context";
+import { filterEditorPanel } from "./filter-editor-panel";
 import { isLayoutBlockType } from "./layout-add-targets";
 import { useLayoutAddTargets } from "./use-layout-add-targets";
 
@@ -42,7 +48,6 @@ export function BlockPalette() {
   const store = useBuilderStore();
   const { handleAddLayoutBlock } = useLayoutAddTargets();
   const { bindPaletteTile } = usePaletteCanvasDndApi();
-  const [query, setQuery] = useState("");
 
   function handleAddContentBlock(blockType: ContentBlockType) {
     const state = store.getState();
@@ -67,74 +72,57 @@ export function BlockPalette() {
     handleAddContentBlock(type);
   }
 
-  const normalizedQuery = query.trim().toLowerCase();
-  const groups = PALETTE_GROUPS.map((group) => ({
-    ...group,
-    types: group.types.filter((type) => {
-      if (!normalizedQuery) {
-        return true;
-      }
-      return TEMPLATE_BLOCK_DEFINITIONS[type].label
-        .toLowerCase()
-        .includes(normalizedQuery);
-    }),
-  })).filter((group) => group.types.length > 0);
-
   return (
-    <div className="flex h-full min-h-0 flex-col overflow-hidden">
-      <div className="shrink-0 px-3 pb-1 pt-3">
-        <Input
-          type="search"
-          value={query}
-          onChange={(event) => setQuery(event.target.value)}
-          placeholder="Search blocks"
-          aria-label="Search blocks"
-          leadingIcon={<Search strokeWidth={1.5} />}
-          fieldClassName="border-transparent bg-bg"
-        />
-      </div>
-      <div className="shrink-0 px-3 pb-2.5 pt-1.5">
-        <p className="flex items-start gap-1.5 rounded-sm bg-accent-soft px-2.25 py-1.75 text-2xs leading-snug text-accent">
-          <MousePointerClick className="mt-px size-3.25 shrink-0" strokeWidth={1.5} />
-          Drag a block onto the canvas, or click to append
+    <div className="flex h-full min-h-0 flex-col overflow-hidden" data-panel>
+      <EditorPanelSearch
+        placeholder="Search blocks"
+        aria-label="Search blocks"
+        onInput={(event) => {
+          const root = event.currentTarget.closest("[data-panel]");
+          if (root instanceof HTMLElement) {
+            filterEditorPanel(root, event.currentTarget.value);
+          }
+        }}
+      />
+      <EditorPanelHint>
+        <MousePointerClick className="mt-px size-3.25 shrink-0" strokeWidth={1.5} />
+        Drag a block onto the canvas, or click to append
+      </EditorPanelHint>
+      <EditorPanelScroll>
+        <p data-filter-empty hidden className="px-0.5 text-xs text-text-3">
+          No blocks match your search.
         </p>
-      </div>
-      <div className="min-h-0 flex-1 overflow-y-auto px-3 pb-4">
-        {groups.length === 0 ? (
-          <p className="px-0.5 text-xs text-text-3">No blocks match your search.</p>
-        ) : (
-          <div className="flex flex-col gap-4.5">
-            {groups.map((group) => (
-              <div key={group.title} className="flex flex-col gap-2">
-                <p className="px-0.5 text-[10.5px] font-semibold tracking-[0.8px] text-text-3 uppercase">
-                  {group.title}
-                </p>
-                <div className="grid grid-cols-2 gap-2">
-                  {group.types.map((type) => {
-                    const definition = TEMPLATE_BLOCK_DEFINITIONS[type];
-                    const tileHandlers = bindPaletteTile(type, () =>
-                      handleAdd(type),
-                    );
+        <div className="flex flex-col gap-4.5">
+          {PALETTE_GROUPS.map((group) => (
+            <EditorPanelGroup
+              key={group.title}
+              title={group.title}
+              data-filter-group=""
+            >
+              <div className="grid grid-cols-2 gap-2">
+                {group.types.map((type) => {
+                  const definition = TEMPLATE_BLOCK_DEFINITIONS[type];
+                  const tileHandlers = bindPaletteTile(type, () => handleAdd(type));
 
-                    return (
-                      <BlockTile
-                        key={type}
-                        label={definition.label}
-                        disabled={!canEdit}
-                        icon={<TemplateBlockIcon type={type} />}
-                        onClick={tileHandlers.onClick}
-                        onPointerDown={
-                          canEdit ? tileHandlers.onPointerDown : undefined
-                        }
-                      />
-                    );
-                  })}
-                </div>
+                  return (
+                    <BlockTile
+                      key={type}
+                      data-filter={definition.label.toLowerCase()}
+                      label={definition.label}
+                      disabled={!canEdit}
+                      icon={<TemplateBlockIcon type={type} />}
+                      onClick={tileHandlers.onClick}
+                      onPointerDown={
+                        canEdit ? tileHandlers.onPointerDown : undefined
+                      }
+                    />
+                  );
+                })}
               </div>
-            ))}
-          </div>
-        )}
-      </div>
+            </EditorPanelGroup>
+          ))}
+        </div>
+      </EditorPanelScroll>
     </div>
   );
 }
