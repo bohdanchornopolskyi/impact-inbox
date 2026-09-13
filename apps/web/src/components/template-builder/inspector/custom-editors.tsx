@@ -1,8 +1,7 @@
 "use client";
 
 import type { SocialBlock, TableBlock } from "@repo/shared";
-import { Button } from "@repo/ui/client";
-import { SelectField, TextField, UrlField } from "./fields";
+import { Button, Input, Select, Textarea } from "@repo/ui/client";
 
 const SOCIAL_PLATFORMS = [
   "facebook",
@@ -36,10 +35,11 @@ export function SocialLinksEditor({
           key={`${link.platform}-${index}`}
           className="space-y-2 rounded-md border border-border-subtle p-3"
         >
-          <SelectField
+          <Select
             label="Platform"
             value={link.platform}
-            onChange={(platform) => {
+            onChange={(event) => {
+              const platform = event.target.value;
               const next = [...links];
               const current = next[index];
               if (!current) {
@@ -56,10 +56,12 @@ export function SocialLinksEditor({
               label: platform,
             }))}
           />
-          <UrlField
+          <Input
             label="URL"
             value={link.url}
-            onChange={(url) => {
+            mono
+            onChange={(event) => {
+              const url = event.target.value;
               const next = [...links];
               const current = next[index];
               if (!current) {
@@ -100,25 +102,24 @@ export function TableEditor({
 }) {
   return (
     <>
-      <TextField
+      <Input
         label="Headers (comma separated)"
         value={block.props.columns.map((column) => column.header).join(", ")}
-        onChange={(value) =>
+        onChange={(event) =>
           updateProps({
-            columns: value
+            columns: event.target.value
               .split(",")
               .map((header) => ({ header: header.trim() }))
               .filter((column) => column.header),
           })
         }
       />
-      <TextField
+      <Textarea
         label="Rows (one row per line, cells comma separated)"
         value={block.props.rows.map((row) => row.join(", ")).join("\n")}
-        multiline
-        onChange={(value) =>
+        onChange={(event) =>
           updateProps({
-            rows: value
+            rows: event.target.value
               .split("\n")
               .map((row) => row.split(",").map((cell) => cell.trim()))
               .filter((row) => row.length > 0),

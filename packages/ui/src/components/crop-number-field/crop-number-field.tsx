@@ -1,5 +1,6 @@
 import type { InputHTMLAttributes } from "react";
 import { cn } from "../../lib/cn";
+import { hideNumberSpinnersClass } from "../../lib/field-control";
 
 export type CropNumberFieldProps = Omit<
   InputHTMLAttributes<HTMLInputElement>,
@@ -26,7 +27,10 @@ export function CropNumberField({
       <span className="text-[11.5px] font-semibold text-text-3">{prefix}</span>
       <input
         type="number"
-        className="min-w-0 flex-1 bg-transparent text-[12.5px] font-medium text-text outline-none"
+        className={cn(
+          "min-w-0 flex-1 bg-transparent text-[12.5px] font-medium tabular-nums text-text outline-none",
+          hideNumberSpinnersClass,
+        )}
         {...props}
         aria-label={ariaLabel ?? prefix}
       />

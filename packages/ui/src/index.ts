@@ -81,7 +81,21 @@ export {
 export { BlockTile, type BlockTileProps } from "./components/block-tile/block-tile";
 export { LibraryTile, type LibraryTileProps } from "./components/library-tile/library-tile";
 export { SavedTile, type SavedTileProps } from "./components/saved-tile/saved-tile";
-export { InspectorRow, type InspectorRowProps } from "./components/inspector-row/inspector-row";
+export { InspectorRow, InspectorStack, inspectorControlClass, type InspectorRowProps, type InspectorStackProps } from "./components/inspector-row/inspector-row";
+export {
+  InspectorPanel,
+  InspectorPanelBody,
+  InspectorPanelFooter,
+  InspectorPanelHeader,
+  InspectorPanelScroll,
+  InspectorPanelTabs,
+  type InspectorPanelHeaderProps,
+  type InspectorPanelProps,
+  type InspectorPanelTabsProps,
+} from "./components/inspector-panel/inspector-panel";
+export { ColorInput, type ColorInputProps } from "./components/color-input/color-input";
+export { UnitField, type UnitFieldProps } from "./components/unit-field/unit-field";
+export { Stepper, type StepperProps } from "./components/stepper/stepper";
 export {
   PaddingControl,
   type PaddingControlProps,

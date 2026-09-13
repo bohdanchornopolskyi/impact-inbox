@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { RotateCcw, Trash2 } from "lucide-react";
-import { Button, Card, CardBody, CardDescription, CardHeader, CardTitle, Input } from "@repo/ui/client";
+import { Button, Card, CardBody, CardDescription, CardHeader, CardTitle, Input, Select } from "@repo/ui/client";
 import {
   buildModuleContentFromSource,
   getPlatformStarterByName,
@@ -21,7 +21,6 @@ import {
 } from "@/lib/workspaces/workspace-hooks";
 import { useToastMutation } from "@/lib/use-toast-mutation";
 import { ConfirmModal } from "@/components/template-builder/modals/confirm-modal";
-import { SelectField } from "@/components/template-builder/inspector/fields";
 
 type PendingAction =
   | { kind: "restore"; module: WorkspaceModuleData }
@@ -193,10 +192,10 @@ export function WorkspaceModulesSection() {
               placeholder="Promo banner"
             />
           </label>
-          <SelectField
+          <Select
             label="Start from"
             value={source}
-            onChange={(value) => setSource(value as ModuleCreateSource)}
+            onChange={(event) => setSource(event.target.value as ModuleCreateSource)}
             options={MODULE_CREATE_SOURCES}
           />
           <Button

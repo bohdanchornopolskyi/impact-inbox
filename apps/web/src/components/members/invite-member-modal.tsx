@@ -1,8 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Button, Input, Modal } from "@repo/ui/client";
-import { SelectField } from "@/components/template-builder/inspector/fields";
+import { Button, Input, Modal, Select } from "@repo/ui/client";
 import type { RoleOption } from "@/components/members/member-role-select";
 
 type InviteMemberModalProps = {
@@ -81,10 +80,10 @@ export function InviteMemberModal({
           placeholder="colleague@company.com"
           autoFocus
         />
-        <SelectField
+        <Select
           label="Role"
           value={role}
-          onChange={setRole}
+          onChange={(event) => setRole(event.target.value)}
           options={roleOptions}
         />
         {inviteHint ? (

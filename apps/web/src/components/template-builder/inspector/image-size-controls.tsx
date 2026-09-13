@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { AlignCenter, AlignLeft, AlignRight } from "lucide-react";
-import { InspectorRow, SegmentedControl } from "@repo/ui/client";
+import { InspectorRow, SegmentedControl, Stepper, inspectorControlClass } from "@repo/ui/client";
 import type { BlockAlign } from "@repo/shared";
 import {
   cappedDisplayWidth,
@@ -92,10 +92,10 @@ export function ImageSizeControls({
   }
 
   return (
-    <div className="space-y-3">
+    <div className="flex flex-col gap-3">
       <InspectorRow label="Sizing">
         <SegmentedControl
-          className="w-full [&_button]:min-w-0 [&_button]:flex-1"
+          className={inspectorControlClass}
           value={mode}
           disabled={disabled}
           onChange={setMode}
@@ -103,49 +103,20 @@ export function ImageSizeControls({
         />
       </InspectorRow>
       <InspectorRow label="Width">
-        <div className="flex h-8 items-center overflow-hidden rounded-sm border border-border-strong bg-surface">
-          <button
-            type="button"
-            aria-label="Decrease width"
-            disabled={disabled || displayWidth <= 1}
-            className="inline-flex size-[30px] shrink-0 items-center justify-center text-text-2 transition-colors duration-150 hover:bg-bg disabled:text-text-3"
-            onClick={() => setPixelWidth(displayWidth - WIDTH_STEP)}
-          >
-            −
-          </button>
-          <div className="flex min-w-0 flex-1 items-center justify-center gap-1">
-            <input
-              type="number"
-              min={1}
-              max={cap}
-              disabled={disabled}
-              aria-label="Image width"
-              value={displayWidth}
-              className="w-10 bg-transparent text-center text-[12.5px] font-medium tabular-nums text-text outline-none [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-              onChange={(event) => {
-                const next = Number(event.target.value);
-                if (Number.isFinite(next)) {
-                  setPixelWidth(next);
-                }
-              }}
-            />
-            <span className="text-[11.5px] text-text-3">px</span>
-          </div>
-          <button
-            type="button"
-            aria-label="Increase width"
-            disabled={disabled || displayWidth >= cap}
-            className="inline-flex size-[30px] shrink-0 items-center justify-center text-text-2 transition-colors duration-150 hover:bg-bg disabled:text-text-3"
-            onClick={() => setPixelWidth(displayWidth + WIDTH_STEP)}
-          >
-            +
-          </button>
-        </div>
+        <Stepper
+          aria-label="Image width"
+          value={displayWidth}
+          min={1}
+          max={cap}
+          step={WIDTH_STEP}
+          disabled={disabled}
+          onValueChange={setPixelWidth}
+        />
       </InspectorRow>
       <InspectorRow label="Align">
         <SegmentedControl
           iconOnly
-          className="w-full [&_button]:min-w-0 [&_button]:flex-1"
+          className={inspectorControlClass}
           disabled={disabled}
           value={align ?? "left"}
           options={ALIGN_OPTIONS}

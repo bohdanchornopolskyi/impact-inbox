@@ -32,10 +32,10 @@ export const InspectorStack: Story = {
         <CollapsibleSection title="Spacing" defaultOpen>
           Padding and gap controls
         </CollapsibleSection>
-        <CollapsibleSection title="Background">
+        <CollapsibleSection title="Background" summary="None">
           Fill and color controls
         </CollapsibleSection>
-        <CollapsibleSection title="Typography">
+        <CollapsibleSection title="Typography" summary="Inter, 16">
           Font and alignment controls
         </CollapsibleSection>
       </div>

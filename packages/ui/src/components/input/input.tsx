@@ -4,6 +4,7 @@ import { Field } from "../../lib/field";
 import {
   fieldControlClass,
   fieldInputClass,
+  hideNumberSpinnersClass,
 } from "../../lib/field-control";
 
 export type InputProps = Omit<InputHTMLAttributes<HTMLInputElement>, "size"> & {
@@ -68,6 +69,7 @@ export function Input({
             className={cn(
               fieldInputClass,
               mono && "font-mono tabular-nums",
+              type === "number" && hideNumberSpinnersClass,
               className,
             )}
             {...props}

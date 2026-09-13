@@ -27,6 +27,9 @@ export function fieldControlClass({
   );
 }
 
+export const hideNumberSpinnersClass =
+  "[appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none";
+
 export const fieldInputClass =
   "h-control-md min-w-0 flex-1 border-none bg-transparent px-3 text-sm leading-none text-text outline-none placeholder:text-text-3 focus-visible:shadow-none disabled:cursor-not-allowed disabled:text-text-3";
 

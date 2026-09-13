@@ -2,8 +2,14 @@
 
 import type { ReactNode, Ref } from "react";
 import { useId } from "react";
-import { Input, Select, Textarea } from "@repo/ui/client";
-import { ColorPickerField } from "./color-picker-field";
+import {
+  Input,
+  InspectorRow,
+  Select,
+  Switch,
+  Textarea,
+  UnitField,
+} from "@repo/ui/client";
 
 export function FieldRow({
   label,
@@ -37,6 +43,7 @@ export function TextField({
   placeholder,
   multiline = false,
   disabled = false,
+  hint,
 }: {
   label: string;
   value: string;
@@ -46,11 +53,12 @@ export function TextField({
   placeholder?: string;
   multiline?: boolean;
   disabled?: boolean;
+  hint?: string;
 }) {
   const id = useId();
 
   return (
-    <FieldRow label={label} htmlFor={id}>
+    <InspectorRow label={label} htmlFor={id} hint={hint}>
       {multiline ? (
         <Textarea
           id={id}
@@ -71,7 +79,7 @@ export function TextField({
           onChange={(event) => onChange(event.target.value)}
         />
       )}
-    </FieldRow>
+    </InspectorRow>
   );
 }
 
@@ -83,6 +91,7 @@ export function NumberField({
   max,
   placeholder,
   disabled = false,
+  unit,
 }: {
   label: string;
   value: number | undefined;
@@ -91,49 +100,40 @@ export function NumberField({
   max?: number;
   placeholder?: string;
   disabled?: boolean;
+  unit?: string;
 }) {
   const id = useId();
 
-  return (
-    <FieldRow label={label} htmlFor={id}>
-      <Input
-        id={id}
-        type="number"
-        value={value ?? ""}
-        min={min}
-        max={max}
-        placeholder={placeholder}
-        disabled={disabled}
-        onChange={(event) => {
-          const next = event.target.value;
-          onChange(next === "" ? undefined : Number(next));
-        }}
-      />
-    </FieldRow>
-  );
-}
+  function handleChange(raw: string) {
+    onChange(raw === "" ? undefined : Number(raw));
+  }
 
-export function ColorField({
-  label,
-  value,
-  fallback,
-  onChange,
-  disabled = false,
-}: {
-  label: string;
-  value: string | undefined;
-  fallback?: string;
-  onChange: (value: string) => void;
-  disabled?: boolean;
-}) {
   return (
-    <ColorPickerField
-      label={label}
-      value={value}
-      fallback={fallback}
-      disabled={disabled}
-      onChange={onChange}
-    />
+    <InspectorRow label={label} htmlFor={id}>
+      {unit ? (
+        <UnitField
+          id={id}
+          value={value ?? ""}
+          min={min}
+          max={max}
+          placeholder={placeholder}
+          disabled={disabled}
+          unit={unit}
+          onChange={(event) => handleChange(event.target.value)}
+        />
+      ) : (
+        <Input
+          id={id}
+          type="number"
+          value={value ?? ""}
+          min={min}
+          max={max}
+          placeholder={placeholder}
+          disabled={disabled}
+          onChange={(event) => handleChange(event.target.value)}
+        />
+      )}
+    </InspectorRow>
   );
 }
 
@@ -151,7 +151,7 @@ export function UrlField({
   const id = useId();
 
   return (
-    <FieldRow label={label} htmlFor={id}>
+    <InspectorRow label={label} htmlFor={id}>
       <Input
         id={id}
         value={value}
@@ -160,7 +160,7 @@ export function UrlField({
         disabled={disabled}
         onChange={(event) => onChange(event.target.value)}
       />
-    </FieldRow>
+    </InspectorRow>
   );
 }
 
@@ -180,7 +180,7 @@ export function SelectField({
   const id = useId();
 
   return (
-    <FieldRow label={label} htmlFor={id}>
+    <InspectorRow label={label} htmlFor={id}>
       <Select
         id={id}
         value={String(value)}
@@ -188,7 +188,34 @@ export function SelectField({
         options={options}
         onChange={(event) => onChange(event.target.value)}
       />
-    </FieldRow>
+    </InspectorRow>
+  );
+}
+
+export function BooleanField({
+  label,
+  checked,
+  onChange,
+  disabled = false,
+}: {
+  label: string;
+  checked: boolean;
+  onChange: (checked: boolean) => void;
+  disabled?: boolean;
+}) {
+  const id = useId();
+
+  return (
+    <InspectorRow label={label} htmlFor={id}>
+      <div className="flex justify-end">
+        <Switch
+          id={id}
+          checked={checked}
+          disabled={disabled}
+          onCheckedChange={onChange}
+        />
+      </div>
+    </InspectorRow>
   );
 }
 

@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { SegmentedControl } from "../segmented-control/segmented-control";
-import { InspectorRow } from "./inspector-row";
+import { InspectorRow, InspectorStack } from "./inspector-row";
 
 const meta = {
   title: "Editor/Inspector Row",
@@ -26,5 +26,21 @@ export const Default: Story = {
         ]}
       />
     ),
+  },
+};
+
+export const Stack: Story = {
+  args: {
+    label: "Padding",
+    children: null,
+  },
+  render: function Render() {
+    return (
+      <div className="w-[308px]">
+        <InspectorStack label="Padding">
+          <div className="h-8 rounded-sm border border-border-strong" />
+        </InspectorStack>
+      </div>
+    );
   },
 };

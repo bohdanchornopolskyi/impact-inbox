@@ -1,8 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Button, Modal } from "@repo/ui/client";
-import { SelectField } from "@/components/template-builder/inspector/fields";
+import { Button, Modal, Select } from "@repo/ui/client";
 import type { RoleOption } from "@/components/members/member-role-select";
 import type { MemberListItem } from "@/components/members/member-list";
 
@@ -80,10 +79,10 @@ export function AssignOrgMemberModal({
           </p>
         ) : (
           <>
-            <SelectField
+            <Select
               label="Member"
               value={userId}
-              onChange={setUserId}
+              onChange={(event) => setUserId(event.target.value)}
               options={[
                 { value: "", label: "Select a member" },
                 ...candidates.map((candidate) => ({
@@ -92,10 +91,10 @@ export function AssignOrgMemberModal({
                 })),
               ]}
             />
-            <SelectField
+            <Select
               label="Workspace role"
               value={role}
-              onChange={setRole}
+              onChange={(event) => setRole(event.target.value)}
               options={roleOptions}
             />
           </>

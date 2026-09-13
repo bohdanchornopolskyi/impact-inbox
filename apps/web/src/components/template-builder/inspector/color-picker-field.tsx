@@ -1,9 +1,8 @@
 "use client";
 
 import { useId, useRef, useState, useSyncExternalStore } from "react";
-import { BasePopover, cn } from "@repo/ui/client";
+import { BasePopover, ColorInput, InspectorRow, cn } from "@repo/ui/client";
 import { useOptionalWorkspace } from "@/contexts/workspace-context";
-import { FieldRow } from "./fields";
 import { ColorPickerPanel } from "./color-picker";
 import {
   type Hsva,
@@ -40,38 +39,6 @@ function createEyeDropper(): EyeDropperApi | null {
     window as unknown as { EyeDropper?: new () => EyeDropperApi }
   ).EyeDropper;
   return ctor ? new ctor() : null;
-}
-
-function ColorTriggerSwatch({
-  hex,
-  alpha,
-}: {
-  hex: string;
-  alpha: number;
-}) {
-  return (
-    <span
-      className={cn(
-        "relative size-5 shrink-0 overflow-hidden rounded-xs shadow-[inset_0_0_0_1px_rgb(15_23_42/0.12)]",
-        hex === "#ffffff" && "border border-border-strong",
-      )}
-    >
-      <span
-        aria-hidden
-        className="absolute inset-0"
-        style={{
-          backgroundImage:
-            "conic-gradient(#d2d6dc 25%, #ffffff 0 50%, #d2d6dc 0 75%, #ffffff 0)",
-          backgroundSize: "8px 8px",
-        }}
-      />
-      <span
-        aria-hidden
-        className="absolute inset-0"
-        style={{ backgroundColor: hex, opacity: alpha }}
-      />
-    </span>
-  );
 }
 
 export function ColorPickerField({
@@ -222,54 +189,48 @@ export function ColorPickerField({
       });
   }
 
+  const picker = (
+    <BasePopover.Root open={open} onOpenChange={handleOpenChange}>
+      <BasePopover.Trigger
+        render={
+          <ColorInput
+            id={id}
+            hex={displayHex}
+            alpha={hsva.a}
+            disabled={disabled}
+            aria-label={`Pick ${label.toLowerCase()}`}
+            className={cn(open && "border-accent")}
+          />
+        }
+      />
+      <BasePopover.Portal>
+        <BasePopover.Positioner align="start" sideOffset={8}>
+          <BasePopover.Popup className="z-50 w-70 rounded-xl border border-border-subtle bg-surface p-4 shadow-pop outline-none">
+            <ColorPickerPanel
+              label={label}
+              hsva={hsva}
+              hexDraft={hexDraft}
+              opacityDraft={opacityDraft}
+              brandColors={brandColors}
+              recentColors={recentColors}
+              hasEyeDropper={hasEyeDropper}
+              onPatch={patchHsva}
+              onHexChange={handleHexChange}
+              onHexBlur={handleHexBlur}
+              onOpacityChange={handleOpacityChange}
+              onOpacityBlur={handleOpacityBlur}
+              onSwatch={(hex) => selectHex(hex, true)}
+              onEyeDropper={handleEyeDropper}
+            />
+          </BasePopover.Popup>
+        </BasePopover.Positioner>
+      </BasePopover.Portal>
+    </BasePopover.Root>
+  );
+
   return (
-    <FieldRow label={label} htmlFor={id}>
-      <BasePopover.Root open={open} onOpenChange={handleOpenChange}>
-        <BasePopover.Trigger
-          id={id}
-          type="button"
-          disabled={disabled}
-          aria-label={`Pick ${label.toLowerCase()}`}
-          className={cn(
-            "flex h-control-md w-full items-center gap-2 rounded-sm border bg-surface px-2.5 text-left transition-[border-color,box-shadow] duration-150 ease-out",
-            open
-              ? "border-accent"
-              : "border-border-strong hover:border-neutral-400",
-            disabled &&
-              "cursor-not-allowed border-neutral-200 bg-neutral-100 text-text-3 hover:border-neutral-200",
-          )}
-        >
-          <ColorTriggerSwatch hex={displayHex} alpha={hsva.a} />
-          <span className="min-w-0 flex-1 font-mono text-sm font-semibold tabular-nums">
-            {toHexDigits(displayHex)}
-          </span>
-          <span className="font-mono text-sm tabular-nums text-text-3">
-            {Math.round(hsva.a * 100)}%
-          </span>
-        </BasePopover.Trigger>
-        <BasePopover.Portal>
-          <BasePopover.Positioner align="start" sideOffset={8}>
-            <BasePopover.Popup className="z-50 w-70 rounded-xl border border-border-subtle bg-surface p-4 shadow-pop outline-none">
-              <ColorPickerPanel
-                label={label}
-                hsva={hsva}
-                hexDraft={hexDraft}
-                opacityDraft={opacityDraft}
-                brandColors={brandColors}
-                recentColors={recentColors}
-                hasEyeDropper={hasEyeDropper}
-                onPatch={patchHsva}
-                onHexChange={handleHexChange}
-                onHexBlur={handleHexBlur}
-                onOpacityChange={handleOpacityChange}
-                onOpacityBlur={handleOpacityBlur}
-                onSwatch={(hex) => selectHex(hex, true)}
-                onEyeDropper={handleEyeDropper}
-              />
-            </BasePopover.Popup>
-          </BasePopover.Positioner>
-        </BasePopover.Portal>
-      </BasePopover.Root>
-    </FieldRow>
+    <InspectorRow label={label} htmlFor={id}>
+      {picker}
+    </InspectorRow>
   );
 }

@@ -19,6 +19,7 @@ export type SegmentedControlProps = {
   className?: string;
   iconOnly?: boolean;
   disabled?: boolean;
+  "aria-label"?: string;
 };
 
 function nextIndex(current: number, key: string, length: number) {
@@ -44,6 +45,7 @@ export function SegmentedControl({
   className,
   iconOnly = false,
   disabled = false,
+  "aria-label": ariaLabel,
 }: SegmentedControlProps) {
   const buttonRefs = useRef<Array<HTMLButtonElement | null>>([]);
 
@@ -72,6 +74,7 @@ export function SegmentedControl({
         className,
       )}
       role="radiogroup"
+      aria-label={ariaLabel}
     >
       {options.map((option, index) => {
         const active = option.value === value;

@@ -1,13 +1,14 @@
 "use client";
 
 import { useRef } from "react";
-import { Button } from "@repo/ui/client";
+import { CollapsibleSection } from "@repo/ui/client";
 import {
   DEFAULT_TEMPLATE_SETTINGS,
   TEMPLATE_DEFAULT_COLORS,
 } from "@repo/shared";
 import { useBuilder } from "../builder-provider";
-import { ColorField, NumberField, TextField } from "./fields";
+import { ColorPickerField } from "./color-picker-field";
+import { NumberField, TextField } from "./fields";
 import { insertAtSelection } from "./insert-at-selection";
 import { MergeTagPicker } from "./merge-tag-picker";
 
@@ -17,7 +18,6 @@ export function TemplateSettingsInspector() {
   const canEdit = useBuilder((s) => s.canEdit);
   const settings = useBuilder((s) => s.content.settings);
   const updateSettingsAction = useBuilder((s) => s.updateSettings);
-  const selectBlock = useBuilder((s) => s.selectBlock);
 
   const subjectRef = useRef<HTMLInputElement>(null);
   const preheaderRef = useRef<HTMLInputElement>(null);
@@ -31,7 +31,6 @@ export function TemplateSettingsInspector() {
     updateSettingsAction(partial);
   }
 
-  /** Writes the tag into whichever of subject/preheader was focused last. */
   function insertMergeTag(formattedTag: string) {
     if (!canEdit) {
       return;
@@ -56,93 +55,96 @@ export function TemplateSettingsInspector() {
   }
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between gap-3">
-        <div>
-          <h2 className="text-ui-sm font-semibold text-text-primary">
-            Template settings
-          </h2>
-          <p className="mt-0.5 text-ui-xs text-text-tertiary">
-            Subject, layout, and default styles for this template.
-          </p>
+    <>
+      <CollapsibleSection title="Email" defaultOpen>
+        <div className="flex flex-col gap-3">
+          <div className="flex justify-end">
+            <MergeTagPicker onInsert={insertMergeTag} />
+          </div>
+          <TextField
+            label="Subject"
+            value={settings.subject ?? ""}
+            inputRef={subjectRef}
+            onFocus={() => {
+              mergeTagFieldRef.current = "subject";
+            }}
+            onChange={(value) => updateSettings({ subject: value })}
+          />
+          <TextField
+            label="Preheader"
+            value={settings.preheader ?? ""}
+            inputRef={preheaderRef}
+            onFocus={() => {
+              mergeTagFieldRef.current = "preheader";
+            }}
+            onChange={(value) => updateSettings({ preheader: value })}
+          />
         </div>
-        <MergeTagPicker onInsert={insertMergeTag} />
-      </div>
-      <TextField
-        label="Subject"
-        value={settings.subject ?? ""}
-        inputRef={subjectRef}
-        onFocus={() => {
-          mergeTagFieldRef.current = "subject";
-        }}
-        onChange={(value) => updateSettings({ subject: value })}
-      />
-      <TextField
-        label="Preheader"
-        value={settings.preheader ?? ""}
-        inputRef={preheaderRef}
-        onFocus={() => {
-          mergeTagFieldRef.current = "preheader";
-        }}
-        onChange={(value) => updateSettings({ preheader: value })}
-      />
-      <NumberField
-        label="Width (px)"
-        value={settings.width}
-        min={480}
-        max={700}
-        onChange={(value) => updateSettings({ width: value ?? 600 })}
-      />
-      <ColorField
-        label="Background color"
-        value={settings.backgroundColor}
-        fallback={DEFAULT_TEMPLATE_SETTINGS.backgroundColor}
-        onChange={(value) => updateSettings({ backgroundColor: value })}
-      />
-      <ColorField
-        label="Content background"
-        value={settings.contentBackgroundColor}
-        fallback={DEFAULT_TEMPLATE_SETTINGS.contentBackgroundColor}
-        onChange={(value) => updateSettings({ contentBackgroundColor: value })}
-      />
-      <TextField
-        label="Font family"
-        value={settings.fontFamily ?? ""}
-        onChange={(value) => updateSettings({ fontFamily: value })}
-      />
-      <NumberField
-        label="Font size"
-        value={settings.fontSize}
-        min={8}
-        max={72}
-        onChange={(value) => updateSettings({ fontSize: value })}
-      />
-      <NumberField
-        label="Line height"
-        value={settings.lineHeight}
-        min={1}
-        max={3}
-        onChange={(value) => updateSettings({ lineHeight: value })}
-      />
-      <ColorField
-        label="Text color"
-        value={settings.textColor}
-        fallback={TEMPLATE_DEFAULT_COLORS.text}
-        onChange={(value) => updateSettings({ textColor: value })}
-      />
-      <ColorField
-        label="Link color"
-        value={settings.linkColor}
-        fallback={TEMPLATE_DEFAULT_COLORS.link}
-        onChange={(value) => updateSettings({ linkColor: value })}
-      />
-      <Button
-        variant="soft"
-        size="sm"
-        onClick={() => selectBlock(null)}
-      >
-        Clear block selection
-      </Button>
-    </div>
+      </CollapsibleSection>
+      <CollapsibleSection title="Layout" defaultOpen>
+        <NumberField
+          label="Width"
+          unit="px"
+          value={settings.width}
+          min={480}
+          max={700}
+          onChange={(value) => updateSettings({ width: value ?? 600 })}
+        />
+      </CollapsibleSection>
+      <CollapsibleSection title="Colors" summary="Canvas">
+        <div className="flex flex-col gap-3">
+          <ColorPickerField
+            label="Canvas"
+            value={settings.backgroundColor}
+            fallback={DEFAULT_TEMPLATE_SETTINGS.backgroundColor}
+            onChange={(value) => updateSettings({ backgroundColor: value })}
+          />
+          <ColorPickerField
+            label="Content"
+            value={settings.contentBackgroundColor}
+            fallback={DEFAULT_TEMPLATE_SETTINGS.contentBackgroundColor}
+            onChange={(value) =>
+              updateSettings({ contentBackgroundColor: value })
+            }
+          />
+          <ColorPickerField
+            label="Text"
+            value={settings.textColor}
+            fallback={TEMPLATE_DEFAULT_COLORS.text}
+            onChange={(value) => updateSettings({ textColor: value })}
+          />
+          <ColorPickerField
+            label="Link"
+            value={settings.linkColor}
+            fallback={TEMPLATE_DEFAULT_COLORS.link}
+            onChange={(value) => updateSettings({ linkColor: value })}
+          />
+        </div>
+      </CollapsibleSection>
+      <CollapsibleSection title="Typography" summary={settings.fontFamily || "Default"}>
+        <div className="flex flex-col gap-3">
+          <TextField
+            label="Font"
+            value={settings.fontFamily ?? ""}
+            onChange={(value) => updateSettings({ fontFamily: value })}
+          />
+          <NumberField
+            label="Size"
+            unit="px"
+            value={settings.fontSize}
+            min={8}
+            max={72}
+            onChange={(value) => updateSettings({ fontSize: value })}
+          />
+          <NumberField
+            label="Line"
+            value={settings.lineHeight}
+            min={1}
+            max={3}
+            onChange={(value) => updateSettings({ lineHeight: value })}
+          />
+        </div>
+      </CollapsibleSection>
+    </>
   );
 }

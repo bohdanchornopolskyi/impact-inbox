@@ -5,15 +5,17 @@ import type {
   RowBlock,
   SectionBlock,
 } from "@repo/shared";
-import { Switch } from "@repo/ui/client";
+import { InspectorRow, SegmentedControl, inspectorControlClass } from "@repo/ui/client";
 import {
   asString,
+  BooleanField,
   NumberField,
   SelectField,
   TextField,
   UrlField,
 } from "./fields";
 
+type LayoutBlock = SectionBlock | RowBlock | ColumnBlock;
 type UpdateProps = (props: Record<string, unknown>) => void;
 
 const BACKGROUND_SIZE_OPTIONS = [
@@ -29,33 +31,18 @@ const BACKGROUND_REPEAT_OPTIONS = [
   { value: "repeat-y", label: "Repeat Y" },
 ];
 
-function BooleanField({
-  label,
-  checked,
-  onChange,
-  disabled = false,
-}: {
-  label: string;
-  checked: boolean;
-  onChange: (checked: boolean) => void;
-  disabled?: boolean;
-}) {
-  return (
-    <Switch
-      label={label}
-      checked={checked}
-      disabled={disabled}
-      onCheckedChange={onChange}
-    />
-  );
-}
+const COLUMN_WIDTH_OPTIONS = [
+  { value: "auto", label: "Auto" },
+  { value: "50", label: "50%" },
+  { value: "custom", label: "Custom" },
+];
 
-export function LayoutBlockPropsInspector({
+export function LayoutSizeFields({
   block,
   updateProps,
   disabled = false,
 }: {
-  block: SectionBlock | RowBlock | ColumnBlock;
+  block: LayoutBlock;
   updateProps: UpdateProps;
   disabled?: boolean;
 }) {
@@ -63,7 +50,7 @@ export function LayoutBlockPropsInspector({
 
   if (block.type === "section") {
     return (
-      <div className="space-y-3">
+      <>
         <BooleanField
           label="Full width"
           checked={Boolean(props.fullWidth)}
@@ -73,7 +60,7 @@ export function LayoutBlockPropsInspector({
           }
         />
         <BooleanField
-          label="Reverse columns on mobile"
+          label="Reverse"
           checked={Boolean(props.reverseColumnsOnMobile)}
           disabled={disabled}
           onChange={(checked) =>
@@ -82,45 +69,7 @@ export function LayoutBlockPropsInspector({
             })
           }
         />
-        <UrlField
-          label="Background image URL"
-          value={asString(props.backgroundImage)}
-          disabled={disabled}
-          onChange={(value) =>
-            updateProps({
-              backgroundImage: value.trim() ? value.trim() : undefined,
-            })
-          }
-        />
-        {props.backgroundImage ? (
-          <>
-            <SelectField
-              label="Background size"
-              value={asString(props.backgroundSize) || "cover"}
-              disabled={disabled}
-              onChange={(value) => updateProps({ backgroundSize: value })}
-              options={BACKGROUND_SIZE_OPTIONS}
-            />
-            <TextField
-              label="Background position"
-              value={asString(props.backgroundPosition)}
-              disabled={disabled}
-              onChange={(value) =>
-                updateProps({
-                  backgroundPosition: value.trim() ? value.trim() : undefined,
-                })
-              }
-            />
-            <SelectField
-              label="Background repeat"
-              value={asString(props.backgroundRepeat) || "no-repeat"}
-              disabled={disabled}
-              onChange={(value) => updateProps({ backgroundRepeat: value })}
-              options={BACKGROUND_REPEAT_OPTIONS}
-            />
-          </>
-        ) : null}
-      </div>
+      </>
     );
   }
 
@@ -131,17 +80,9 @@ export function LayoutBlockPropsInspector({
       : [];
 
     return (
-      <div className="space-y-3">
-        <NumberField
-          label="Column gap (px)"
-          value={typeof props.gap === "number" ? props.gap : undefined}
-          min={0}
-          max={48}
-          disabled={disabled}
-          onChange={(next) => updateProps({ gap: next })}
-        />
+      <>
         <BooleanField
-          label="Reverse on mobile"
+          label="Reverse"
           checked={Boolean(props.reverseOnMobile)}
           disabled={disabled}
           onChange={(checked) =>
@@ -150,7 +91,7 @@ export function LayoutBlockPropsInspector({
         />
         {columnCount > 1 ? (
           <TextField
-            label={`Column widths (%, ${columnCount} columns)`}
+            label="Columns"
             value={columnWidths.join(", ")}
             disabled={disabled}
             onChange={(value) => {
@@ -177,18 +118,162 @@ export function LayoutBlockPropsInspector({
             }}
           />
         ) : null}
-      </div>
+      </>
     );
   }
 
+  const width = typeof props.width === "number" ? props.width : undefined;
+  const mode = width === undefined ? "auto" : width === 50 ? "50" : "custom";
+
+  return (
+    <>
+      <InspectorRow label="Width">
+        <SegmentedControl
+          className={inspectorControlClass}
+          disabled={disabled}
+          value={mode}
+          options={COLUMN_WIDTH_OPTIONS}
+          onChange={(next) => {
+            if (next === "auto") {
+              updateProps({ width: undefined });
+              return;
+            }
+            if (next === "50") {
+              updateProps({ width: 50 });
+              return;
+            }
+            updateProps({ width: width ?? 50 });
+          }}
+        />
+      </InspectorRow>
+      {mode === "custom" ? (
+        <NumberField
+          label="Custom"
+          unit="%"
+          value={width}
+          min={1}
+          max={100}
+          disabled={disabled}
+          onChange={(next) => updateProps({ width: next })}
+        />
+      ) : null}
+    </>
+  );
+}
+
+export function LayoutSpacingFields({
+  block,
+  updateProps,
+  disabled = false,
+}: {
+  block: LayoutBlock;
+  updateProps: UpdateProps;
+  disabled?: boolean;
+}) {
+  if (block.type !== "row") {
+    return null;
+  }
+
+  const gap = block.props.gap;
+
   return (
     <NumberField
-      label="Column width (%)"
-      value={typeof props.width === "number" ? props.width : undefined}
-      min={1}
-      max={100}
+      label="Gap"
+      unit="px"
+      value={typeof gap === "number" ? gap : undefined}
+      min={0}
+      max={48}
       disabled={disabled}
-      onChange={(next) => updateProps({ width: next })}
+      onChange={(next) => updateProps({ gap: next })}
     />
+  );
+}
+
+export function LayoutBackgroundFields({
+  block,
+  updateProps,
+  disabled = false,
+}: {
+  block: LayoutBlock;
+  updateProps: UpdateProps;
+  disabled?: boolean;
+}) {
+  if (block.type !== "section") {
+    return null;
+  }
+
+  const props = block.props as Record<string, unknown>;
+
+  return (
+    <>
+      <UrlField
+        label="Image"
+        value={asString(props.backgroundImage)}
+        disabled={disabled}
+        onChange={(value) =>
+          updateProps({
+            backgroundImage: value.trim() ? value.trim() : undefined,
+          })
+        }
+      />
+      {props.backgroundImage ? (
+        <>
+          <SelectField
+            label="Size"
+            value={asString(props.backgroundSize) || "cover"}
+            disabled={disabled}
+            onChange={(value) => updateProps({ backgroundSize: value })}
+            options={BACKGROUND_SIZE_OPTIONS}
+          />
+          <TextField
+            label="Position"
+            value={asString(props.backgroundPosition)}
+            disabled={disabled}
+            onChange={(value) =>
+              updateProps({
+                backgroundPosition: value.trim() ? value.trim() : undefined,
+              })
+            }
+          />
+          <SelectField
+            label="Repeat"
+            value={asString(props.backgroundRepeat) || "no-repeat"}
+            disabled={disabled}
+            onChange={(value) => updateProps({ backgroundRepeat: value })}
+            options={BACKGROUND_REPEAT_OPTIONS}
+          />
+        </>
+      ) : null}
+    </>
+  );
+}
+
+export function LayoutBlockPropsInspector({
+  block,
+  updateProps,
+  disabled = false,
+}: {
+  block: LayoutBlock;
+  updateProps: UpdateProps;
+  disabled?: boolean;
+}) {
+  return (
+    <div className="flex flex-col gap-3">
+      <LayoutSizeFields
+        block={block}
+        updateProps={updateProps}
+        disabled={disabled}
+      />
+      <LayoutSpacingFields
+        block={block}
+        updateProps={updateProps}
+        disabled={disabled}
+      />
+      <LayoutBackgroundFields
+        block={block}
+        updateProps={updateProps}
+        disabled={disabled}
+      />
+    </div>
   );
 }

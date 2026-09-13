@@ -10,9 +10,10 @@ import {
   Underline,
 } from "lucide-react";
 import { useEffect, useState, type ReactNode } from "react";
+import { InspectorRow } from "@repo/ui/client";
 import { useBuilder } from "../builder-provider";
 import { useRichtextCanvasEdit } from "../canvas/richtext-canvas-edit-context";
-import { FieldRow, SelectField } from "./fields";
+import { SelectField } from "./fields";
 
 const HEADING_OPTIONS = RICHTEXT_HEADING_TAGS.map((tag) => ({
   value: tag,
@@ -43,8 +44,8 @@ function FormatButton({
       disabled={disabled}
       onMouseDown={(event) => event.preventDefault()}
       onClick={onClick}
-      className={`inline-flex size-8 items-center justify-center rounded-md border border-border-strong bg-surface-card text-text-secondary hover:bg-surface-sunken disabled:cursor-not-allowed disabled:opacity-50 ${
-        active ? "border-accent-border bg-accent-soft text-accent" : ""
+      className={`inline-flex size-8 items-center justify-center rounded-sm border border-border-strong bg-surface text-text-2 transition-[background-color,border-color,color] duration-150 hover:bg-bg disabled:cursor-not-allowed disabled:text-text-3 ${
+        active ? "border-accent bg-accent-soft text-accent" : ""
       }`}
     >
       {children}
@@ -93,7 +94,7 @@ export function RichtextFormatFields({
 
   return (
     <>
-      <FieldRow label="Format">
+      <InspectorRow label="Format">
         <div className="flex flex-wrap gap-1.5">
           <FormatButton
             active={showFormatState && formatState.bold}
@@ -141,9 +142,9 @@ export function RichtextFormatFields({
             <ListOrdered className="size-3.5" strokeWidth={2} />
           </FormatButton>
         </div>
-      </FieldRow>
+      </InspectorRow>
       <SelectField
-        label="Text style"
+        label="Style"
         value={headingValue}
         disabled={!canEdit}
         onChange={(value) => {

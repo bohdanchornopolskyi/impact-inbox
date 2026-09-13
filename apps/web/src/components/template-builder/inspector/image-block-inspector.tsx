@@ -60,20 +60,18 @@ export function ImageBlockInspector({
           onAlignChange={(align) => updateProps({ align })}
         />
       </CollapsibleSection>
-      <CollapsibleSection title="Content" defaultOpen className="border-b-0">
-        <div className="space-y-3">
-          <div className="space-y-1.5">
-            <InspectorRow label="Alt text">
-              <Input
-                value={block.props.alt ?? ""}
-                disabled={!canEdit}
-                onChange={(event) => updateProps({ alt: event.target.value })}
-              />
-            </InspectorRow>
-            <p className="pl-[88px] text-[11px] text-text-3">
-              Shown when the recipient blocks images.
-            </p>
-          </div>
+      <CollapsibleSection title="Content" defaultOpen>
+        <div className="flex flex-col gap-3">
+          <InspectorRow
+            label="Alt text"
+            hint="Shown when the recipient blocks images."
+          >
+            <Input
+              value={block.props.alt ?? ""}
+              disabled={!canEdit}
+              onChange={(event) => updateProps({ alt: event.target.value })}
+            />
+          </InspectorRow>
           <InspectorRow label="Link">
             <Input
               value={block.props.href ?? ""}

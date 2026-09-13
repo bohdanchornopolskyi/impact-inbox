@@ -10,10 +10,11 @@ import {
   coercePropValue,
   numberPropBounds,
 } from "@repo/shared";
+import { CollapsibleSection } from "@repo/ui/client";
 import { useBuilder, useSelectedBlock } from "../builder-provider";
+import { ColorPickerField } from "./color-picker-field";
 import {
   asString,
-  ColorField,
   NumberField,
   SelectField,
   TextField,
@@ -26,7 +27,6 @@ import { inheritedFontSize } from "./inherited-typography";
 import { SocialLinksEditor, TableEditor } from "./custom-editors";
 import { RichtextFormatFields } from "./richtext-inspector-toolbar";
 import { BlockAppearanceInspector } from "./block-appearance-inspector";
-import { LayoutBlockPropsInspector } from "./layout-block-inspector";
 
 type UpdateProps = (props: Record<string, unknown>) => void;
 
@@ -38,7 +38,7 @@ export function BlockInspector() {
 
   if (!selectedBlock) {
     return (
-      <p className="text-ui-sm text-text-secondary">
+      <p className="px-4 py-6 text-xs text-text-3">
         Select a block on the canvas to edit its properties.
       </p>
     );
@@ -68,19 +68,14 @@ export function BlockInspector() {
     }
 
     return (
-      <div className="space-y-4">
-        <LayoutBlockPropsInspector
-          block={layoutBlock}
-          updateProps={updateProps}
-          disabled={!canEdit}
-        />
+      <>
         <BlockAppearanceInspector
           block={layoutBlock}
           canEdit={canEdit}
           updateStyles={updateStyles}
           updateProps={updateProps}
         />
-      </div>
+      </>
     );
   }
 
@@ -107,14 +102,12 @@ export function BlockInspector() {
   if (block.type === "image" || block.type === "logo") {
     return (
       <>
-        <div className="-mx-4 -mt-4">
-          <BlockFields
-            block={block}
-            definition={definition}
-            updateProps={updateProps}
-            canEdit={canEdit}
-          />
-        </div>
+        <BlockFields
+          block={block}
+          definition={definition}
+          updateProps={updateProps}
+          canEdit={canEdit}
+        />
         <BlockAppearanceInspector
           block={block}
           canEdit={canEdit}
@@ -126,7 +119,7 @@ export function BlockInspector() {
   }
 
   return (
-    <div className="space-y-4">
+    <>
       <BlockFields
         block={block}
         definition={definition}
@@ -139,7 +132,7 @@ export function BlockInspector() {
         updateStyles={updateStyles}
         updateProps={updateProps}
       />
-    </div>
+    </>
   );
 }
 
@@ -159,16 +152,24 @@ function BlockFields({
   if (definition.customEditor) {
     if (block.type === "social") {
       return (
-        <SocialLinksEditor
-          block={block}
-          updateProps={updateProps}
-          canEdit={canEdit}
-        />
+        <CollapsibleSection title="Content" defaultOpen>
+          <div className="flex flex-col gap-3">
+            <SocialLinksEditor
+              block={block}
+              updateProps={updateProps}
+              canEdit={canEdit}
+            />
+          </div>
+        </CollapsibleSection>
       );
     }
 
     if (block.type === "table") {
-      return <TableEditor block={block} updateProps={updateProps} />;
+      return (
+        <CollapsibleSection title="Content" defaultOpen>
+          <TableEditor block={block} updateProps={updateProps} />
+        </CollapsibleSection>
+      );
     }
 
     return null;
@@ -189,37 +190,39 @@ function BlockFields({
   }
 
   return (
-    <div className="space-y-4">
-      {block.type === "richtext" ? (
-        <RichtextFormatFields blockId={block.id} canEdit={canEdit} />
-      ) : null}
-      {definition.fields.map((field) => {
-        if (block.type === "richtext" && field.prop === "html") {
-          return null;
-        }
+    <CollapsibleSection title="Content" defaultOpen>
+      <div className="flex flex-col gap-3">
+        {block.type === "richtext" ? (
+          <RichtextFormatFields blockId={block.id} canEdit={canEdit} />
+        ) : null}
+        {definition.fields.map((field) => {
+          if (block.type === "richtext" && field.prop === "html") {
+            return null;
+          }
 
-        return (
-          <BlockField
-            key={field.prop}
-            blockType={block.type}
-            field={field}
-            value={props[field.prop]}
-            placeholder={
-              field.prop === "fontSize"
-                ? inheritedFontSize(block.type, settings)?.toString()
-                : undefined
-            }
-            fallback={
-              field.kind === "color" && typeof defaults[field.prop] === "string"
-                ? (defaults[field.prop] as string)
-                : undefined
-            }
-            updateProps={updateProps}
-            disabled={!canEdit}
-          />
-        );
-      })}
-    </div>
+          return (
+            <BlockField
+              key={field.prop}
+              blockType={block.type}
+              field={field}
+              value={props[field.prop]}
+              placeholder={
+                field.prop === "fontSize"
+                  ? inheritedFontSize(block.type, settings)?.toString()
+                  : undefined
+              }
+              fallback={
+                field.kind === "color" && typeof defaults[field.prop] === "string"
+                  ? (defaults[field.prop] as string)
+                  : undefined
+              }
+              updateProps={updateProps}
+              disabled={!canEdit}
+            />
+          );
+        })}
+      </div>
+    </CollapsibleSection>
   );
 }
 
@@ -286,7 +289,7 @@ function BlockField({
       );
     case "color":
       return (
-        <ColorField
+        <ColorPickerField
           label={field.label}
           value={typeof value === "string" ? value : undefined}
           fallback={fallback}

@@ -1,8 +1,16 @@
 "use client";
 
-import { useState } from "react";
-import { Copy, Trash2 } from "lucide-react";
-import { Button, SegmentedControl } from "@repo/ui/client";
+import { Copy, Ellipsis, Trash2 } from "lucide-react";
+import {
+  Button,
+  DropdownMenu,
+  InspectorPanel,
+  InspectorPanelBody,
+  InspectorPanelFooter,
+  InspectorPanelHeader,
+  InspectorPanelScroll,
+  InspectorPanelTabs,
+} from "@repo/ui/client";
 import {
   findBlock,
   getBlockTypeLabel,
@@ -17,6 +25,7 @@ import { widthForPickedImage } from "./inspector/image-display-width";
 import { ImageLibraryProvider } from "./inspector/image-library-context";
 import { ImageLibraryPanel } from "./inspector/image-library-panel";
 import { TemplateSettingsInspector } from "./inspector/template-settings-inspector";
+import { useState } from "react";
 
 function canPickImageFromLibrary(
   type: TemplateBlockType,
@@ -147,42 +156,44 @@ export function BuilderInspectorPanel() {
 
   return (
     <ImageLibraryProvider open={openLibrary}>
-      <div className="flex h-full min-h-0 flex-col overflow-hidden border-l border-border bg-surface">
+      <InspectorPanel>
         <InspectorModeTabs onModeChange={closeLibrary} />
         {showBlockChrome && selectedType ? (
-          <div className="flex shrink-0 items-center gap-2.5 border-b border-border px-4 py-3.5">
-            <span className="inline-flex size-[30px] shrink-0 items-center justify-center rounded-sm bg-accent-soft text-accent [&_svg]:size-3.75">
-              <TemplateBlockIcon type={selectedType} />
-            </span>
-            <div className="min-w-0">
-              <p className="truncate text-md font-semibold text-text">
-                {getBlockTypeLabel(selectedType)}
-              </p>
-              <p className="truncate text-2xs text-text-3">{siblingContext}</p>
-            </div>
-          </div>
+          <InspectorPanelHeader
+            icon={<TemplateBlockIcon type={selectedType} />}
+            title={getBlockTypeLabel(selectedType)}
+            context={siblingContext}
+            actions={
+              canEdit && selectedBlockId ? (
+                <InspectorHeaderActions blockId={selectedBlockId} />
+              ) : undefined
+            }
+          />
         ) : null}
-        {showLibrary ? (
-          <div className="min-h-0 flex-1 overflow-hidden">
+        {inspectorMode === "templateSettings" ? (
+          <InspectorPanelHeader title="Template" context="Subject, layout, and defaults" />
+        ) : null}
+        <InspectorPanelBody>
+          {showLibrary ? (
             <InspectorLibraryPanel
               canEdit={canEdit}
               onBack={closeLibrary}
               onPick={pickLibraryImage}
             />
-          </div>
-        ) : (
-          <div className="min-h-0 flex-1 overflow-y-auto p-4">
-            {inspectorMode === "templateSettings" ? (
-              <TemplateSettingsInspector />
-            ) : (
-              <BlockInspector />
-            )}
-          </div>
-        )}
+          ) : (
+            <InspectorPanelScroll>
+              {inspectorMode === "templateSettings" ? (
+                <TemplateSettingsInspector />
+              ) : (
+                <BlockInspector />
+              )}
+            </InspectorPanelScroll>
+          )}
+        </InspectorPanelBody>
         {showBlockChrome && canEdit && selectedBlockId ? (
           <InspectorBlockActions blockId={selectedBlockId} />
         ) : null}
-      </div>
+      </InspectorPanel>
     </ImageLibraryProvider>
   );
 }
@@ -193,25 +204,60 @@ function InspectorModeTabs({ onModeChange }: { onModeChange: () => void }) {
   const selectBlock = useBuilder((s) => s.selectBlock);
 
   return (
-    <div className="flex h-11.5 shrink-0 items-center border-b border-border px-3">
-      <SegmentedControl
-        className="w-full [&_button]:min-w-0 [&_button]:flex-1"
-        value={inspectorMode}
-        onChange={(value) => {
-          onModeChange();
-          if (value === "templateSettings") {
-            setInspectorMode("templateSettings");
-            selectBlock(null);
-            return;
-          }
-          setInspectorMode("block");
-        }}
-        options={[
-          { value: "block", label: "Block" },
-          { value: "templateSettings", label: "Template" },
+    <InspectorPanelTabs
+      aria-label="Inspector"
+      value={inspectorMode}
+      onChange={(value) => {
+        onModeChange();
+        if (value === "templateSettings") {
+          setInspectorMode("templateSettings");
+          selectBlock(null);
+          return;
+        }
+        setInspectorMode("block");
+      }}
+      options={[
+        { value: "block", label: "Block" },
+        { value: "templateSettings", label: "Template" },
+      ]}
+    />
+  );
+}
+
+function InspectorHeaderActions({ blockId }: { blockId: string }) {
+  const duplicateBlock = useBuilder((s) => s.duplicateBlock);
+  const removeBlock = useBuilder((s) => s.removeBlock);
+
+  return (
+    <>
+      <Button
+        icon
+        variant="ghost"
+        size="sm"
+        aria-label="Duplicate"
+        title="Duplicate (Ctrl/Cmd+D)"
+        onClick={() => duplicateBlock(blockId)}
+      >
+        <Copy strokeWidth={1.5} />
+      </Button>
+      <DropdownMenu
+        align="end"
+        aria-label="Block actions"
+        trigger={<Ellipsis className="size-4" strokeWidth={1.5} />}
+        items={[
+          {
+            label: "Duplicate",
+            onSelect: () => duplicateBlock(blockId),
+          },
+          {
+            label: "Remove",
+            destructive: true,
+            separatorBefore: true,
+            onSelect: () => removeBlock(blockId),
+          },
         ]}
       />
-    </div>
+    </>
   );
 }
 
@@ -220,10 +266,9 @@ function InspectorBlockActions({ blockId }: { blockId: string }) {
   const removeBlock = useBuilder((s) => s.removeBlock);
 
   return (
-    <div className="flex shrink-0 items-center gap-2 border-t border-border px-4 py-3">
+    <InspectorPanelFooter>
       <Button
         variant="secondary"
-        size="sm"
         className="flex-1"
         leftIcon={<Copy className="size-3.5" strokeWidth={1.5} />}
         title="Duplicate (Ctrl/Cmd+D)"
@@ -233,7 +278,6 @@ function InspectorBlockActions({ blockId }: { blockId: string }) {
       </Button>
       <Button
         variant="danger"
-        size="sm"
         className="flex-1"
         leftIcon={<Trash2 className="size-3.5" strokeWidth={1.5} />}
         title="Remove (Delete)"
@@ -241,6 +285,6 @@ function InspectorBlockActions({ blockId }: { blockId: string }) {
       >
         Remove
       </Button>
-    </div>
+    </InspectorPanelFooter>
   );
 }
