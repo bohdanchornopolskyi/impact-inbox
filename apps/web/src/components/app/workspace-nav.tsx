@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { topNavItemClassName } from "@repo/ui";
+import { AppBarNav, topNavItemClassName } from "@repo/ui";
 import { useOptionalWorkspace } from "@/contexts/workspace-context";
 
 const navItems = [
@@ -24,7 +24,7 @@ export function WorkspaceNav() {
   const basePath = `/${workspaceContext.workspace.slug}`;
 
   return (
-    <nav aria-label="Workspace" className="flex items-center gap-1 overflow-x-auto">
+    <AppBarNav aria-label="Workspace">
       {navItems.map((item) => {
         const href = `${basePath}${item.suffix}`;
         const isActive =
@@ -43,6 +43,6 @@ export function WorkspaceNav() {
           </Link>
         );
       })}
-    </nav>
+    </AppBarNav>
   );
 }

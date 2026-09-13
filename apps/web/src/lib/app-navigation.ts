@@ -26,3 +26,19 @@ export function resolveAuthenticatedDestination(
 
   return { kind: "no-access" };
 }
+
+export function resolveHomeHref(
+  workspaceSlug: string | undefined,
+  workspaces: WorkspaceListItemData[],
+): string {
+  if (workspaceSlug) {
+    return `/${workspaceSlug}`;
+  }
+
+  const destination = resolveAuthenticatedDestination(workspaces);
+  if (destination.kind === "workspace") {
+    return destination.path;
+  }
+
+  return "/";
+}

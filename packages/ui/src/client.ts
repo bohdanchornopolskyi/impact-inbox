@@ -8,6 +8,26 @@ export {
   type SplitButtonProps,
 } from "./components/split-button/split-button";
 export { PageHeader, type PageHeaderProps } from "./components/page-header/page-header";
+export {
+  AppBar,
+  AppBarDivider,
+  AppBarEnd,
+  AppBarNav,
+  AppBarStart,
+  AppBarUser,
+  appBarUserClassName,
+  type AppBarProps,
+  type AppBarUserProps,
+} from "./components/app-bar/app-bar";
+export {
+  WorkspaceAvatar,
+  type WorkspaceAvatarProps,
+} from "./components/avatar/workspace-avatar";
+export {
+  WorkspaceSwitcherTrigger,
+  workspaceSwitcherTriggerClassName,
+  type WorkspaceSwitcherTriggerProps,
+} from "./components/workspace-switcher/workspace-switcher-trigger";
 export { ErrorState, type ErrorStateProps } from "./components/error-state/error-state";
 export {
   Breadcrumb,

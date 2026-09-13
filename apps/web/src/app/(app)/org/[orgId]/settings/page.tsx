@@ -25,7 +25,7 @@ export default function OrganizationSettingsPage() {
   if (organizationQuery.isLoading) {
     return (
       <>
-        <AppHeader title="Organization settings" />
+        <AppHeader />
         <div className="flex flex-1 items-center justify-center py-24">
           <p className="text-ui-sm text-text-secondary">Loading organization...</p>
         </div>
@@ -39,7 +39,7 @@ export default function OrganizationSettingsPage() {
   ) {
     return (
       <>
-        <AppHeader title="Organization settings" />
+        <AppHeader />
         <div className="mx-auto flex w-full max-w-5xl flex-col gap-4 px-4 py-8 sm:px-6">
           <ApiFormError
             error={
@@ -69,7 +69,7 @@ export default function OrganizationSettingsPage() {
 
   return (
     <>
-      <AppHeader title={organization.name} subtitle="Organization settings" />
+      <AppHeader />
       <OrganizationSettingsView
         organization={organization}
         organizationWorkspaces={organizationWorkspaces}

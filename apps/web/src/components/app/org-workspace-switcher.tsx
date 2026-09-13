@@ -2,41 +2,18 @@
 
 import { useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { Check, ChevronsUpDown, Plus, Settings } from "lucide-react";
+import { Check, Plus, Settings } from "lucide-react";
 import { hasOrganizationRoleAtLeast } from "@repo/shared";
-import { BasePopover, cn } from "@repo/ui/client";
+import {
+  BasePopover,
+  WorkspaceAvatar,
+  WorkspaceSwitcherTrigger,
+  cn,
+  workspaceSwitcherTriggerClassName,
+} from "@repo/ui/client";
 import { useSession } from "@/contexts/session-context";
 import { useOptionalWorkspace } from "@/contexts/workspace-context";
 import { CreateWorkspaceModal } from "@/components/org/create-workspace-modal";
-
-const avatarFills = ["bg-neutral-900", "bg-brand-500", "bg-success-500"] as const;
-
-function avatarFill(name: string) {
-  let total = 0;
-  for (const character of name) {
-    total += character.charCodeAt(0);
-  }
-  return avatarFills[total % avatarFills.length];
-}
-
-function initialFor(name: string) {
-  const letter = name.trim().charAt(0);
-  return letter ? letter.toUpperCase() : "?";
-}
-
-function WorkspaceAvatar({ name }: { name: string }) {
-  return (
-    <span
-      className={cn(
-        "inline-flex size-[18px] shrink-0 items-center justify-center rounded-xs text-2xs font-semibold text-text-inverse",
-        avatarFill(name),
-      )}
-      aria-hidden
-    >
-      {initialFor(name)}
-    </span>
-  );
-}
 
 export function OrgWorkspaceSwitcher() {
   const router = useRouter();
@@ -67,21 +44,9 @@ export function OrgWorkspaceSwitcher() {
       <BasePopover.Root open={open} onOpenChange={setOpen}>
         <BasePopover.Trigger
           aria-label="Switch workspace"
-          className={cn(
-            "inline-flex items-center gap-2 rounded-sm border border-border px-2.5 py-1.5 text-sm font-medium text-text-2 outline-none transition-[background-color,border-color,color,box-shadow] duration-150 ease-out",
-            "hover:border-border-strong hover:bg-surface-sunken",
-            !open &&
-              "focus-visible:border-accent focus-visible:shadow-(--shadow-ring-accent)",
-            open && "border-border-strong bg-surface-sunken",
-          )}
+          className={workspaceSwitcherTriggerClassName()}
         >
-          <WorkspaceAvatar name={label} />
-          <span className="max-w-40 truncate">{label}</span>
-          <ChevronsUpDown
-            className={cn("size-3.25", open ? "text-text-2" : "text-text-3")}
-            strokeWidth={1.5}
-            aria-hidden
-          />
+          <WorkspaceSwitcherTrigger name={label} />
         </BasePopover.Trigger>
         <BasePopover.Portal>
           <BasePopover.Positioner align="end" sideOffset={6}>
