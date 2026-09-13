@@ -28,6 +28,11 @@ export {
   type SettingsNavProps,
 } from "./components/settings-nav/settings-nav";
 export {
+  SettingsContent,
+  SettingsPreview,
+  type SettingsContentProps,
+} from "./components/settings-content/settings-content";
+export {
   EditorBar,
   EditorBarCenter,
   EditorBarDivider,

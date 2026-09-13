@@ -38,31 +38,6 @@ export function WorkspaceIdentitySection() {
     },
   });
 
-  if (!canManage) {
-    return (
-      <Card>
-        <CardBody>
-          <dl className="grid gap-4 sm:grid-cols-2">
-            <div>
-              <dt className="text-ui-xs font-medium tracking-wide text-text-tertiary uppercase">
-                Name
-              </dt>
-              <dd className="mt-1 text-ui-sm text-text-primary">{workspace.name}</dd>
-            </div>
-            <div>
-              <dt className="text-ui-xs font-medium tracking-wide text-text-tertiary uppercase">
-                Slug
-              </dt>
-              <dd className="mt-1 font-mono text-ui-sm text-text-primary">
-                {workspace.slug}
-              </dd>
-            </div>
-          </dl>
-        </CardBody>
-      </Card>
-    );
-  }
-
   const trimmedName = name.trim();
   const trimmedSlug = slug.trim();
   const hasChanges =
@@ -72,46 +47,52 @@ export function WorkspaceIdentitySection() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Details</CardTitle>
+        <CardTitle>Workspace details</CardTitle>
         <CardDescription>
-          Changing the slug updates workspace URLs. Old links redirect
-          automatically.
+          The slug appears in workspace URLs. Old links keep redirecting after a
+          change.
         </CardDescription>
       </CardHeader>
       <CardBody>
-        <div className="grid gap-3 sm:grid-cols-2">
+        <div className="grid gap-4 sm:grid-cols-2">
           <Input
             label="Name"
             value={name}
+            disabled={!canManage}
             onChange={(event) => setName(event.target.value)}
             placeholder="Acme Marketing"
           />
           <Input
             label="Slug"
             value={slug}
+            disabled={!canManage}
             onChange={(event) => setSlug(event.target.value)}
             placeholder="acme-marketing"
             mono
           />
         </div>
-        <ApiFormError error={update.error} />
-        <Button
-          variant="primary"
-          disabled={!canSave || update.isPending}
-          onClick={() => {
-            const input: UpdateWorkspaceInput = {
-              ...(trimmedName !== workspace.name ? { name: trimmedName } : {}),
-              ...(trimmedSlug !== workspace.slug ? { slug: trimmedSlug } : {}),
-            };
+        {canManage ? (
+          <>
+            <ApiFormError error={update.error} />
+            <Button
+              variant="primary"
+              disabled={!canSave || update.isPending}
+              onClick={() => {
+                const input: UpdateWorkspaceInput = {
+                  ...(trimmedName !== workspace.name ? { name: trimmedName } : {}),
+                  ...(trimmedSlug !== workspace.slug ? { slug: trimmedSlug } : {}),
+                };
 
-            update.mutate({
-              workspaceId: workspace.id,
-              input,
-            });
-          }}
-        >
-          Save details
-        </Button>
+                update.mutate({
+                  workspaceId: workspace.id,
+                  input,
+                });
+              }}
+            >
+              Save details
+            </Button>
+          </>
+        ) : null}
       </CardBody>
     </Card>
   );

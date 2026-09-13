@@ -1,7 +1,16 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Button, Card, CardBody, CardDescription, CardHeader, CardTitle, Input } from "@repo/ui/client";
+import {
+  Button,
+  Card,
+  CardBody,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+  Input,
+  SettingsPreview,
+} from "@repo/ui/client";
 import {
   formatPhysicalAddress,
   hasWorkspaceRoleAtLeast,
@@ -13,45 +22,89 @@ import { useWorkspace } from "@/contexts/workspace-context";
 import { useUpdateWorkspaceSettings } from "@/lib/workspaces/workspace-hooks";
 import { useToastMutation } from "@/lib/use-toast-mutation";
 
-const ADDRESS_FIELDS: {
+type AddressField = {
   key: keyof PhysicalAddressFields;
   label: string;
   placeholder: string;
-  optional?: boolean;
-}[] = [
-  {
-    key: "streetLine1",
-    label: "Street address",
-    placeholder: "123 Main St",
-  },
-  {
-    key: "streetLine2",
-    label: "Apt, suite, etc.",
-    placeholder: "Suite 100",
-    optional: true,
-  },
-  {
-    key: "city",
-    label: "City",
-    placeholder: "San Francisco",
-  },
-  {
-    key: "state",
-    label: "State / province",
-    placeholder: "CA",
-    optional: true,
-  },
-  {
-    key: "postalCode",
-    label: "ZIP / postal code",
-    placeholder: "94102",
-  },
-  {
-    key: "country",
-    label: "Country",
-    placeholder: "United States",
-  },
+};
+
+const ADDRESS_ROWS: AddressField[][] = [
+  [
+    {
+      key: "streetLine1",
+      label: "Street address",
+      placeholder: "123 Main St",
+    },
+  ],
+  [
+    {
+      key: "streetLine2",
+      label: "Apt, suite, etc. (optional)",
+      placeholder: "Suite 100",
+    },
+  ],
+  [
+    {
+      key: "city",
+      label: "City",
+      placeholder: "San Francisco",
+    },
+    {
+      key: "state",
+      label: "State / province (optional)",
+      placeholder: "CA",
+    },
+  ],
+  [
+    {
+      key: "postalCode",
+      label: "ZIP / postal code",
+      placeholder: "94102",
+    },
+    {
+      key: "country",
+      label: "Country",
+      placeholder: "United States",
+    },
+  ],
 ];
+
+function formatAppearsAs(name: string, fields: PhysicalAddressFields) {
+  const formatted = formatPhysicalAddress(normalizePhysicalAddress(fields));
+  const parts = [name.trim(), ...(formatted ? formatted.split("\n") : [])].filter(
+    Boolean,
+  );
+
+  return parts.join(", ");
+}
+
+function AddressFields({
+  address,
+  disabled,
+  onChange,
+}: {
+  address: PhysicalAddressFields;
+  disabled?: boolean;
+  onChange: (key: keyof PhysicalAddressFields, value: string) => void;
+}) {
+  return ADDRESS_ROWS.map((row) => (
+    <div
+      key={row.map((field) => field.key).join("-")}
+      className={row.length > 1 ? "grid gap-4 sm:grid-cols-2" : undefined}
+    >
+      {row.map((field) => (
+        <Input
+          key={field.key}
+          label={field.label}
+          value={address[field.key]}
+          placeholder={field.placeholder}
+          disabled={disabled}
+          onChange={(event) => onChange(field.key, event.target.value)}
+        />
+      ))}
+    </div>
+  ));
+}
 
 export function WorkspaceGeneralSection() {
   const { workspace } = useWorkspace();
@@ -71,69 +124,40 @@ export function WorkspaceGeneralSection() {
     setAddress(physicalAddressFromData(workspace.physicalAddress));
   }, [workspace.physicalAddress]);
 
-  const formattedAddress = formatPhysicalAddress(workspace.physicalAddress);
-
-  if (!canManage) {
-    return (
-      <Card>
-        <CardHeader>
-          <CardTitle>General</CardTitle>
-          <CardDescription className="whitespace-pre-line">
-            {formattedAddress || "Physical address not set"}
-          </CardDescription>
-        </CardHeader>
-      </Card>
-    );
-  }
+  const appearsAs = formatAppearsAs(workspace.name, address);
 
   return (
     <Card>
       <CardHeader>
-        <CardTitle>General</CardTitle>
+        <CardTitle>Postal address</CardTitle>
         <CardDescription>
-          CAN-SPAM postal address used in emails from this workspace.
+          Required by CAN-SPAM and shown in the footer of every email sent from
+          this workspace.
         </CardDescription>
       </CardHeader>
       <CardBody>
-        <div className="grid gap-3 sm:grid-cols-2">
-          {ADDRESS_FIELDS.map((field) => (
-            <label
-              key={field.key}
-              className={
-                field.key === "streetLine1" || field.key === "streetLine2"
-                  ? "space-y-1 sm:col-span-2"
-                  : "space-y-1"
-              }
-            >
-              <span className="text-ui-xs text-text-secondary">
-                {field.label}
-                {field.optional ? " (optional)" : ""}
-              </span>
-              <Input
-                value={address[field.key]}
-                placeholder={field.placeholder}
-                onChange={(event) =>
-                  setAddress((current) => ({
-                    ...current,
-                    [field.key]: event.target.value,
-                  }))
-                }
-              />
-            </label>
-          ))}
-        </div>
-        <Button
-          variant="primary"
-          disabled={update.isPending}
-          onClick={() =>
-            update.mutate({
-              workspaceId: workspace.id,
-              input: { physicalAddress: normalizePhysicalAddress(address) },
-            })
+        <AddressFields
+          address={address}
+          disabled={!canManage}
+          onChange={(key, value) =>
+            setAddress((current) => ({ ...current, [key]: value }))
           }
-        >
-          Save address
-        </Button>
+        />
+        <SettingsPreview>Appears as: {appearsAs}</SettingsPreview>
+        {canManage ? (
+          <Button
+            variant="primary"
+            disabled={update.isPending}
+            onClick={() =>
+              update.mutate({
+                workspaceId: workspace.id,
+                input: { physicalAddress: normalizePhysicalAddress(address) },
+              })
+            }
+          >
+            Save address
+          </Button>
+        ) : null}
       </CardBody>
     </Card>
   );

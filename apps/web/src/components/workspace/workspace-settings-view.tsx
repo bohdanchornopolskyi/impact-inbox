@@ -1,16 +1,14 @@
 "use client";
 
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { EmptyState } from "@repo/ui/client";
+import { EmptyState, SettingsContent } from "@repo/ui/client";
 import { hasWorkspaceRoleAtLeast } from "@repo/shared";
 import { useWorkspace } from "@/contexts/workspace-context";
 import { formatRoleLabel } from "@/lib/members/format-role-label";
-import { WorkspacePageShell } from "@/components/app/workspace-page-chrome";
 import { WorkspaceMembersSection } from "@/components/workspace/workspace-members-section";
-import { WorkspaceGeneralSection } from "@/components/workspace/workspace-general-section";
-import { WorkspaceIdentitySection } from "@/components/workspace/workspace-identity-section";
 import { WorkspaceBrandSection } from "@/components/workspace/workspace-brand-section";
 import { WorkspaceModulesSection } from "@/components/workspace/workspace-modules-section";
+import { WorkspaceGeneralPage } from "@/components/workspace/workspace-general-page";
 import {
   isSettingsTab,
   settingsTabLabel,
@@ -52,14 +50,14 @@ export function WorkspaceSettingsView() {
       />
       <p className="sr-only">Your role: {formatRoleLabel(workspace.role)}</p>
       <div className="min-w-0 flex-1">
-        <WorkspacePageShell>
+        <SettingsContent>
           <SettingsSection
             tab={tab}
             canManage={canManage}
             workspaceId={workspace.id}
             organizationId={workspace.organizationId}
           />
-        </WorkspacePageShell>
+        </SettingsContent>
       </div>
     </div>
   );
@@ -77,12 +75,7 @@ function SettingsSection({
   organizationId: string;
 }) {
   if (tab === "general") {
-    return (
-      <div className="flex flex-col gap-8">
-        <WorkspaceIdentitySection />
-        <WorkspaceGeneralSection />
-      </div>
-    );
+    return <WorkspaceGeneralPage />;
   }
 
   if (tab === "brand") {
