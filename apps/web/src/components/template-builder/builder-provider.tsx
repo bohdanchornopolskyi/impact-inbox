@@ -41,6 +41,7 @@ import {
 } from "@/lib/templates/template-hooks";
 import {
   executeWorkingCopyWrite,
+  nextLoadedTemplateAction,
   handleWriteConflict,
   subscribeAutosave,
   toUpdatedAtToken,
@@ -568,10 +569,20 @@ function BuilderPersistence({
   const autosaveRef = useRef<ReturnType<typeof subscribeAutosave> | null>(null);
 
   useEffect(() => {
-    store.getState().init(template);
+    const state = store.getState();
+    const action = nextLoadedTemplateAction(state, {
+      id: template.id,
+      updatedAt: toToken(template.updatedAt),
+    });
+
+    if (action === "init") {
+      state.init(template);
+    } else if (action === "adopt") {
+      state.applyServerTemplate(template);
+    }
+
     autosaveRef.current?.markInitialized();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [store, template.id]);
+  }, [store, template]);
 
   useEffect(() => {
     const autosave = subscribeAutosave(

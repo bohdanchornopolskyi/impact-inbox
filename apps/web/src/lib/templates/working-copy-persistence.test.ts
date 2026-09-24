@@ -4,6 +4,7 @@ import type { TemplateContentData } from "@repo/shared";
 import {
   handleWriteConflict,
   handleWriteError,
+  nextLoadedTemplateAction,
   persistWorkingCopy,
   subscribeAutosave,
   type WorkingCopyStore,
@@ -140,5 +141,29 @@ describe("working-copy-persistence", () => {
     expect(store.getState().saveState).toBe("error");
     expect(handlers.onError).toHaveBeenCalledWith("Network down");
     expect(handlers.onConflict).not.toHaveBeenCalled();
+  });
+
+  it("adopts a newer saved template and keeps unsaved edits", () => {
+    expect(
+      nextLoadedTemplateAction(
+        {
+          templateId: "tpl-1",
+          updatedAt: "2026-01-01T00:00:00.000Z",
+          saveState: "synced",
+        },
+        { id: "tpl-1", updatedAt: "2026-01-01T00:01:00.000Z" },
+      ),
+    ).toBe("adopt");
+
+    expect(
+      nextLoadedTemplateAction(
+        {
+          templateId: "tpl-1",
+          updatedAt: "2026-01-01T00:00:00.000Z",
+          saveState: "unsaved",
+        },
+        { id: "tpl-1", updatedAt: "2026-01-01T00:01:00.000Z" },
+      ),
+    ).toBe("keep");
   });
 });

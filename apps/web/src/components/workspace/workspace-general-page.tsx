@@ -15,6 +15,7 @@ import { hasWorkspaceRoleAtLeast } from "@repo/shared";
 import { useWorkspace } from "@/contexts/workspace-context";
 import { useUpdateWorkspaceSettings } from "@/lib/workspaces/workspace-hooks";
 import { useToastMutation } from "@/lib/use-toast-mutation";
+import { WorkspaceDangerSection } from "@/components/workspace/workspace-danger-section";
 import { WorkspaceGeneralSection } from "@/components/workspace/workspace-general-section";
 import { WorkspaceIdentitySection } from "@/components/workspace/workspace-identity-section";
 import {
@@ -59,6 +60,7 @@ export function WorkspaceGeneralPage() {
       />
       <WorkspaceIdentitySection />
       <WorkspaceGeneralSection />
+      <WorkspaceDangerSection />
     </SettingsContent>
   );
 
@@ -109,7 +111,7 @@ export function WorkspaceGeneralPage() {
       <SettingsFooter>
         <SaveBar
           form={GENERAL_FORM_ID}
-          status={<SaveStatus tone="unsaved" label="No unsaved changes" />}
+          status={<SaveStatus tone="saved" label="No unsaved changes" />}
         />
       </SettingsFooter>
     </form>

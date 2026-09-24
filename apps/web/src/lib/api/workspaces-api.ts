@@ -146,6 +146,16 @@ export function updateWorkspaceModule(
   );
 }
 
+export function deleteWorkspace(
+  token: string,
+  workspaceId: string,
+): Promise<{ success: true }> {
+  return apiRequest<{ success: true }>(`/workspaces/${workspaceId}`, {
+    token,
+    method: "DELETE",
+  });
+}
+
 export function deleteWorkspaceModule(
   token: string,
   workspaceId: string,

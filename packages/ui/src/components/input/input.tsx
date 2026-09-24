@@ -13,6 +13,7 @@ export type InputProps = Omit<InputHTMLAttributes<HTMLInputElement>, "size"> & {
   error?: string;
   labelAction?: ReactNode;
   leadingIcon?: ReactNode;
+  prefix?: ReactNode;
   suffix?: ReactNode;
   mono?: boolean;
   fieldClassName?: string;
@@ -25,6 +26,7 @@ export function Input({
   error,
   labelAction,
   leadingIcon,
+  prefix,
   suffix,
   mono = false,
   className,
@@ -53,6 +55,11 @@ export function Input({
               {leadingIcon}
             </span>
           ) : null}
+          {prefix ? (
+            <span className="shrink-0 pl-3 font-mono text-sm text-text-3">
+              {prefix}
+            </span>
+          ) : null}
           <input
             id={fieldId}
             ref={ref}
@@ -69,6 +76,7 @@ export function Input({
             className={cn(
               fieldInputClass,
               mono && "font-mono tabular-nums",
+              prefix ? "pl-1.5" : null,
               type === "number" && hideNumberSpinnersClass,
               className,
             )}

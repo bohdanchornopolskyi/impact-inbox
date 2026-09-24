@@ -32,6 +32,7 @@ export function WorkspaceIdentitySection() {
             defaultValue={workspace.slug}
             disabled={!canManage}
             placeholder="acme-marketing"
+            prefix="impactinbox.com/"
             mono
           />
         </div>

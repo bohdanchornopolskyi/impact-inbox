@@ -255,15 +255,20 @@ describe("TemplatesService", () => {
       });
       mockUpdate.mockReturnValue({ set });
 
+      jest.mocked(renderTemplate).mockResolvedValue({
+        html: "<html>headline</html>",
+        text: "headline",
+      });
+
       await service.updateTemplate("ws-1", "tpl-1", {
         content: DEFAULT_TEMPLATE_CONTENT,
         expectedUpdatedAt: templateRow.updatedAt.toISOString(),
       });
 
-      // updatedAt is bumped explicitly on every write.
       const setArg = set.mock.calls[0][0];
       expect(setArg.updatedAt).toBeInstanceOf(Date);
       expect(setArg.content).toEqual(DEFAULT_TEMPLATE_CONTENT);
+      expect(setArg.listPreviewHtml).toBe("<html>headline</html>");
     });
 
     it("throws 409 when the updatedAt token is stale", async () => {

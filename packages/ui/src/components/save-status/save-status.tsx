@@ -19,14 +19,6 @@ const toneIconClass: Record<SaveStatusTone, string> = {
   offline: "text-text-3",
 };
 
-const toneLabelClass: Record<SaveStatusTone, string> = {
-  saved: "text-text-3",
-  saving: "text-text-2",
-  unsaved: "text-text-2",
-  error: "text-danger",
-  offline: "text-text-2",
-};
-
 function CloudCheckIcon() {
   return (
     <svg viewBox="0 0 16 16" fill="none" aria-hidden>
@@ -123,33 +115,65 @@ const toneIcon: Record<SaveStatusTone, () => ReactNode> = {
   offline: CloudOffIcon,
 };
 
+const toneIconVisibility: Record<SaveStatusTone, string> = {
+  saved: "hidden group-data-[tone=saved]/status:inline-flex",
+  saving: "hidden group-data-[tone=saving]/status:inline-flex",
+  unsaved: "hidden group-data-[tone=unsaved]/status:inline-flex",
+  error: "hidden group-data-[tone=error]/status:inline-flex",
+  offline: "hidden group-data-[tone=offline]/status:inline-flex",
+};
+
 export function SaveStatus({
   tone = "saved",
   label,
   onRetry,
   className,
 }: SaveStatusProps) {
-  const Icon = toneIcon[tone];
-
   return (
     <div
       role="status"
-      className={cn("inline-flex h-control-md items-center gap-2", className)}
+      data-tone={tone}
+      className={cn(
+        "group/status inline-flex h-control-md items-center gap-2",
+        className,
+      )}
     >
       <span className="inline-flex items-center gap-1.25">
-        <span
+        {(Object.keys(toneIcon) as SaveStatusTone[]).map((key) => {
+          const Icon = toneIcon[key];
+
+          return (
+            <span
+              key={key}
+              className={cn(
+                "size-icon-sm shrink-0 [&_svg]:size-full",
+                toneIconClass[key],
+                toneIconVisibility[key],
+              )}
+              aria-hidden
+            >
+              <Icon />
+            </span>
+          );
+        })}
+        <p
           className={cn(
-            "inline-flex size-icon-sm shrink-0 [&_svg]:size-full",
-            toneIconClass[tone],
+            "text-xs text-text-3",
+            "group-data-[tone=saving]/status:text-text-2",
+            "group-data-[tone=unsaved]/status:text-text-2",
+            "group-data-[tone=offline]/status:text-text-2",
+            "group-data-[tone=error]/status:text-danger",
           )}
-          aria-hidden
         >
-          <Icon />
-        </span>
-        <p className={cn("text-xs", toneLabelClass[tone])}>{label}</p>
+          {label}
+        </p>
       </span>
-      {tone === "error" && onRetry ? (
-        <Button variant="link" onClick={onRetry}>
+      {onRetry ? (
+        <Button
+          variant="link"
+          className="hidden group-data-[tone=error]/status:inline-flex"
+          onClick={onRetry}
+        >
           Retry
         </Button>
       ) : null}

@@ -49,6 +49,21 @@ export function asPersistenceMessage(error: unknown, fallback: string): string {
   return error instanceof Error ? error.message : fallback;
 }
 
+export function nextLoadedTemplateAction(
+  state: { templateId: string; updatedAt: string; saveState: SaveState },
+  incoming: { id: string; updatedAt: string },
+): "init" | "adopt" | "keep" {
+  if (state.templateId !== incoming.id) {
+    return "init";
+  }
+
+  if (state.saveState !== "synced" || state.updatedAt === incoming.updatedAt) {
+    return "keep";
+  }
+
+  return "adopt";
+}
+
 export function toUpdatedAtToken(updatedAt: Date | string): string {
   return updatedAt instanceof Date ? updatedAt.toISOString() : String(updatedAt);
 }

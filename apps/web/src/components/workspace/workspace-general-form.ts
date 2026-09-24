@@ -106,6 +106,12 @@ export function syncGeneralForm(
   const save = form.querySelector<HTMLButtonElement>('button[type="submit"]');
   const preview = form.querySelector("[data-appears-as]");
 
+  const status = label?.closest<HTMLElement>("[role='status']");
+
+  if (status) {
+    status.dataset.tone = busy ? "saving" : count > 0 ? "unsaved" : "saved";
+  }
+
   if (label) {
     label.textContent = busy ? "Saving" : unsavedLabel(count);
   }

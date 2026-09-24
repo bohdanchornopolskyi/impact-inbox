@@ -17,6 +17,7 @@ import {
 } from "@/lib/api/assets-api";
 import {
   createWorkspaceModule,
+  deleteWorkspace,
   deleteWorkspaceModule,
   listWorkspaceModules,
   updateWorkspace,
@@ -40,6 +41,20 @@ export function useUpdateWorkspaceSettings() {
         queryKey: sessionQueryKeys.workspaces(token),
       });
       queryClient.invalidateQueries({ queryKey: ["workspace"] });
+    },
+  });
+}
+
+export function useDeleteWorkspace() {
+  const { token } = useSession();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (workspaceId: string) => deleteWorkspace(token, workspaceId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: sessionQueryKeys.workspaces(token),
+      });
     },
   });
 }

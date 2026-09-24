@@ -204,6 +204,7 @@ export class TemplatesService {
 
     if (dto.content !== undefined) {
       updates.content = dto.content;
+      updates.listPreviewHtml = await this.renderListPreviewHtml(dto.content);
     }
 
     if (dto.archived !== undefined) {
