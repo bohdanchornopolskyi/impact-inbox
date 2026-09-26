@@ -73,6 +73,16 @@ describe("tree-ops", () => {
     );
   });
 
+  it("adds a row pre-split into the given column widths", () => {
+    const content = addSection(createEmptyTemplateContent()).content;
+
+    const result = addRow(content, content.body[0]!.id, 0, null, [33, 67]);
+    const row = result.content.body[0]!.children[0]!;
+
+    expect(row.children).toHaveLength(2);
+    expect(row.props.columnWidths).toEqual([33, 67]);
+  });
+
   it("updates settings and block props", () => {
     const base = createEmptyTemplateContent();
     const columnId = base.body[0]?.children[0]?.children[0]?.id!;

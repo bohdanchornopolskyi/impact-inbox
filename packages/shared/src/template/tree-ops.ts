@@ -420,13 +420,14 @@ export function addRow(
   sectionId: string,
   index?: number,
   brandKit?: BrandKitData | null,
+  columnWidths?: readonly number[],
 ): TreeMutationResult {
   const targetSection = findBlock(content, sectionId);
   if (!targetSection || targetSection.block.type !== "section") {
     return unchanged(content, "parent_not_found");
   }
 
-  const row = createRowBlock(brandKit);
+  const row = createRowBlock(brandKit, columnWidths);
 
   return changed(
     mapSections(content, (section) => {

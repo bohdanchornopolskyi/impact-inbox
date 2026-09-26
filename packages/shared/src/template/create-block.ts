@@ -29,13 +29,22 @@ export function createSectionBlock(
   };
 }
 
-export function createRowBlock(brandKit?: BrandKitData | null): RowBlock {
+export function createRowBlock(
+  brandKit?: BrandKitData | null,
+  columnWidths: readonly number[] = [],
+): RowBlock {
   const defaults = resolveBlockDefaults("row", brandKit);
+  const columnCount = Math.max(1, columnWidths.length);
   return {
     id: createId(),
     type: "row",
-    props: defaults.props,
-    children: [createColumnBlock(brandKit)],
+    props:
+      columnCount > 1
+        ? { ...defaults.props, columnWidths: [...columnWidths] }
+        : defaults.props,
+    children: Array.from({ length: columnCount }, () =>
+      createColumnBlock(brandKit),
+    ),
     ...(defaults.styles ? { styles: defaults.styles } : {}),
   };
 }
