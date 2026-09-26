@@ -18,6 +18,7 @@ import {
   SplitButton,
   type SplitButtonItem,
 } from "@repo/ui/client";
+import { BuilderIssuesButton } from "./builder-issues-button";
 import { useBuilder, useSaveRevision } from "./builder-provider";
 import { builderShortcutLabel } from "./builder-shortcut";
 
@@ -126,6 +127,7 @@ export function BuilderToolbarActions() {
         </HistoryButton>
       )}
       <EditorBarDivider />
+      <BuilderIssuesButton />
       <Button
         variant="secondary"
         leftIcon={<Eye strokeWidth={1.5} />}

@@ -11,7 +11,6 @@ import { BuilderToolbar } from "./builder-toolbar";
 import { PreviewCanvas } from "./canvas/preview-canvas";
 import { RevisionHistoryDrawer } from "./drawers/revision-history-drawer";
 import { LeftSidebar } from "./left-sidebar";
-import { MergeTagWarnings } from "./merge-tag-warnings";
 import { ExportTemplateModal } from "./modals/export-template-modal";
 import { SaveToLibraryModal } from "./modals/save-to-library-modal";
 import { PreviewOverlay } from "./preview-overlay";
@@ -40,10 +39,7 @@ export function TemplateBuilderView({ templateId }: TemplateBuilderViewProps) {
   return (
     <BuilderProvider template={templateQuery.data} canEdit={canEdit}>
       <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
-        <div className="shrink-0">
-          <BuilderToolbar />
-          <MergeTagWarnings />
-        </div>
+        <BuilderToolbar />
         <RichtextCanvasEditProvider>
           <PaletteCanvasDndProvider>
             <div className="grid min-h-0 flex-1 grid-cols-[var(--spacing-panel-left)_minmax(0,1fr)_var(--spacing-panel-right)] overflow-hidden [&>*]:min-h-0">

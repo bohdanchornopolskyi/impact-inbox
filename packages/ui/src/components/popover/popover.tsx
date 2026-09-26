@@ -9,6 +9,7 @@ export type PopoverProps = {
   children: ReactNode;
   align?: "start" | "center" | "end";
   className?: string;
+  triggerClassName?: string;
 };
 
 export function Popover({
@@ -16,12 +17,14 @@ export function Popover({
   children,
   align = "start",
   className,
+  triggerClassName,
 }: PopoverProps) {
   return (
     <BasePopover.Root>
       <BasePopover.Trigger
         className={cn(
           "inline-flex items-center gap-2 rounded-sm border border-border bg-surface px-3 py-1.5 text-sm text-text-2 transition-[background-color,border-color] duration-150 ease-out hover:border-border-strong hover:bg-surface-sunken",
+          triggerClassName,
         )}
       >
         {trigger}
