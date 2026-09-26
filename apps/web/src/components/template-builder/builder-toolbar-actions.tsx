@@ -19,6 +19,7 @@ import {
   type SplitButtonItem,
 } from "@repo/ui/client";
 import { useBuilder, useSaveRevision } from "./builder-provider";
+import { builderShortcutLabel } from "./builder-shortcut";
 
 function HistoryButton({
   label,
@@ -60,7 +61,7 @@ export function BuilderToolbarActions() {
   const saveItems: SplitButtonItem[] = [
     {
       label: "Save version…",
-      shortcut: "⌘S",
+      shortcut: builderShortcutLabel("save"),
       icon: <Save strokeWidth={1.5} />,
       onSelect: () => {
         void saveRevision();

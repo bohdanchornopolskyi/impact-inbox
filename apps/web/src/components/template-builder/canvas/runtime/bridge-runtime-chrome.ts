@@ -51,43 +51,19 @@ export function getCanvasBridgeChromeRuntime(): string {
     toolbarLabel.textContent = resolvedLabel;
     rebuildToolbarActions(element);
 
-    if (!resolvedLabel && toolbarActions.childElementCount === 0) {
+    if (!canEdit || !toolbarActions || toolbarActions.childElementCount === 0) {
       hideToolbar();
       return;
     }
 
-    var rect = element.getBoundingClientRect();
     toolbar.style.display = "flex";
-    toolbar.style.visibility = "hidden";
-    toolbar.style.top = "0px";
-    toolbar.style.left = "0px";
-    var toolbarWidth = toolbar.offsetWidth;
-    var toolbarHeight = toolbar.offsetHeight;
-    toolbar.style.visibility = "visible";
-
-    var gap = 4;
-    var top = rect.top + window.scrollY - toolbarHeight - gap;
-    var left = rect.right + window.scrollX - toolbarWidth;
-
-    if (top < window.scrollY) {
-      toolbar.classList.add("canvas-bridge-toolbar-below");
-      top = rect.bottom + window.scrollY + gap;
-    } else {
-      toolbar.classList.remove("canvas-bridge-toolbar-below");
-    }
-
-    left = Math.max(rect.left + window.scrollX, left);
-
-    var body = document.querySelector("[data-canvas-body]");
-    if (body) {
-      var bodyRect = body.getBoundingClientRect();
-      var minLeft = bodyRect.left + window.scrollX;
-      var maxLeft = bodyRect.right + window.scrollX - toolbarWidth;
-      left = Math.max(minLeft, Math.min(left, maxLeft));
-    }
-
-    toolbar.style.top = top + "px";
-    toolbar.style.left = left + "px";
+    var gutterGap = 12;
+    var anchor = document.querySelector("[data-canvas-body]") || element;
+    var maxLeft =
+      document.documentElement.clientWidth - toolbar.offsetWidth - gutterGap;
+    var left = Math.min(anchor.getBoundingClientRect().right + gutterGap, maxLeft);
+    toolbar.style.top = element.getBoundingClientRect().top + window.scrollY + "px";
+    toolbar.style.left = left + window.scrollX + "px";
   }
 
   function findBlockElement(blockId) {

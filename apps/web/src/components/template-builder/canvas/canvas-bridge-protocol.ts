@@ -2,6 +2,10 @@ import {
   isCanvasDropTarget,
   type CanvasDropTarget,
 } from "@repo/shared";
+import {
+  BUILDER_SHORTCUT_ACTIONS,
+  type BuilderShortcutAction,
+} from "../builder-shortcut";
 
 export const CANVAS_DRAG_KINDS = [
   "content",
@@ -117,14 +121,7 @@ export type HistoryRedoMessage = {
 
 export type BuilderShortcutMessage = {
   type: "builder-shortcut";
-  action:
-    | "undo"
-    | "redo"
-    | "save"
-    | "preview"
-    | "delete"
-    | "duplicate"
-    | "deselect";
+  action: BuilderShortcutAction;
 };
 
 export type CanvasBridgeInboundMessage =
@@ -469,16 +466,6 @@ export function isHistoryRedoMessage(
 ): data is HistoryRedoMessage {
   return isRecord(data) && data.type === "history-redo";
 }
-
-const BUILDER_SHORTCUT_ACTIONS = [
-  "undo",
-  "redo",
-  "save",
-  "preview",
-  "delete",
-  "duplicate",
-  "deselect",
-] as const;
 
 export function isBuilderShortcutMessage(
   data: unknown,

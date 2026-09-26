@@ -56,15 +56,22 @@ describe("buildCanvasBridgeDocument", () => {
   it("wires duplicate and delete into the selection toolbar", () => {
     const result = buildCanvasBridgeDocument(sampleHtml, { canEdit: true });
 
+    expect(result).toContain("var moveUpSvg");
+    expect(result).toContain("var moveDownSvg");
     expect(result).toContain("var duplicateSvg");
     expect(result).toContain("var deleteSvg");
+    expect(result).toContain(
+      'createToolbarActionButton("Move up", moveUpSvg, "move-up", index > 0)',
+    );
+    expect(result).toContain("index >= 0 && index < siblings.length - 1");
     expect(result).toContain(
       'createToolbarActionButton("Duplicate", duplicateSvg, "duplicate")',
     );
     expect(result).toContain(
       'createToolbarActionButton("Delete", deleteSvg, "delete")',
     );
-    expect(result).toContain('action: "duplicate"');
+    expect(result).toContain('"action":"duplicate"');
+    expect(result).toContain("postBuilderShortcut(action)");
   });
 
   it("serializes canEdit into the bridge script", () => {
@@ -96,7 +103,8 @@ describe("buildCanvasBridgeDocument", () => {
     expect(result).toContain("canvas-bridge-label");
     expect(result).toContain("toolbarLabel");
     expect(result).toContain("resolveLabel");
-    expect(result).toContain("canvas-bridge-toolbar-below");
+    expect(result).toContain("var gutterGap = 12");
+    expect(result).toContain("flex-direction: column");
     expect(result).toContain("startRichtextEdit");
     expect(result).toContain("editKind");
   });

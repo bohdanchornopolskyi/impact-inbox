@@ -63,34 +63,30 @@ ${canEdit ? "[data-editable] { cursor: text; }\n[data-editable][contenteditable=
 .canvas-bridge-toolbar {
   position: absolute;
   display: none;
+  flex-direction: column;
   align-items: center;
   gap: 2px;
-  height: 32px;
-  padding: 0 5px;
+  padding: 4px;
   background: ${neutral900};
   color: ${neutral0};
   font-family: system-ui, -apple-system, sans-serif;
-  border-radius: 10px;
+  border-radius: 6px;
   box-shadow: 0 4px 12px #0f172a33;
-  white-space: nowrap;
   pointer-events: auto;
 }
 .canvas-bridge-label {
   display: none;
 }
-.canvas-bridge-toolbar-below {
-  border-radius: 10px;
-}
 .canvas-bridge-toolbar-btn {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 24px;
-  height: 24px;
+  width: 28px;
+  height: 28px;
   border: none;
   background: transparent;
   color: #ffffffcc;
-  border-radius: 5px;
+  border-radius: 4px;
   padding: 0;
   cursor: pointer;
 }
@@ -112,6 +108,7 @@ ${canEdit ? "[data-editable] { cursor: text; }\n[data-editable][contenteditable=
 }
 .canvas-bridge-actions {
   display: flex;
+  flex-direction: column;
   align-items: center;
   gap: 2px;
 }

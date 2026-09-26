@@ -2,7 +2,11 @@
  * @vitest-environment happy-dom
  */
 import { describe, expect, it } from "vitest";
-import { matchBuilderShortcut } from "./builder-shortcut";
+import {
+  builderShortcutLabel,
+  getBuilderShortcutRuntimeScript,
+  matchBuilderShortcut,
+} from "./builder-shortcut";
 
 function keyEvent(
   init: KeyboardEventInit & { target?: EventTarget | null },
@@ -39,6 +43,25 @@ describe("matchBuilderShortcut", () => {
     expect(matchBuilderShortcut(keyEvent({ key: "d", metaKey: true }))).toBe(
       "duplicate",
     );
+    expect(matchBuilderShortcut(keyEvent({ key: "r", metaKey: true }))).toBe(
+      "save-library",
+    );
+    expect(
+      matchBuilderShortcut(
+        keyEvent({ key: "ç", code: "KeyC", metaKey: true, altKey: true }),
+      ),
+    ).toBe("copy-style");
+    expect(
+      matchBuilderShortcut(
+        keyEvent({ key: "√", code: "KeyV", metaKey: true, altKey: true }),
+      ),
+    ).toBe("paste-style");
+    expect(
+      matchBuilderShortcut(keyEvent({ key: "ArrowUp", metaKey: true })),
+    ).toBe("move-up");
+    expect(
+      matchBuilderShortcut(keyEvent({ key: "ArrowDown", ctrlKey: true })),
+    ).toBe("move-down");
   });
 
   it("keeps save and preview inside editable fields", () => {
@@ -58,5 +81,50 @@ describe("matchBuilderShortcut", () => {
     expect(
       matchBuilderShortcut(keyEvent({ key: "d", metaKey: true, target: input })),
     ).toBeNull();
+    expect(
+      matchBuilderShortcut(keyEvent({ key: "r", metaKey: true, target: input })),
+    ).toBeNull();
+  });
+
+  it("ignores combos with extra modifiers", () => {
+    expect(
+      matchBuilderShortcut(keyEvent({ key: "s", metaKey: true, altKey: true })),
+    ).toBeNull();
+    expect(
+      matchBuilderShortcut(keyEvent({ key: "d", metaKey: true, shiftKey: true })),
+    ).toBeNull();
+  });
+
+  it("matches the same actions in the canvas runtime", () => {
+    const runtimeMatch = new Function(
+      `${getBuilderShortcutRuntimeScript()}; return matchBuilderShortcut;`,
+    )() as (event: KeyboardEvent, inField: boolean) => string | null;
+    const cases: KeyboardEventInit[] = [
+      { key: "z", metaKey: true },
+      { key: "z", metaKey: true, shiftKey: true },
+      { key: "s", ctrlKey: true },
+      { key: "ç", code: "KeyC", metaKey: true, altKey: true },
+      { key: "ArrowDown", metaKey: true },
+      { key: "Backspace" },
+      { key: "s", metaKey: true, altKey: true },
+    ];
+
+    for (const init of cases) {
+      const event = keyEvent(init);
+      expect(runtimeMatch(event, false)).toBe(matchBuilderShortcut(event));
+    }
+    expect(runtimeMatch(keyEvent({ key: "Backspace" }), true)).toBeNull();
+    expect(runtimeMatch(keyEvent({ key: "s", metaKey: true }), true)).toBe(
+      "save",
+    );
+  });
+});
+
+describe("builderShortcutLabel", () => {
+  it("renders the combo from the shortcut table", () => {
+    expect(builderShortcutLabel("duplicate")).toBe("⌘D");
+    expect(builderShortcutLabel("copy-style")).toBe("⌘⌥C");
+    expect(builderShortcutLabel("move-up")).toBe("⌘↑");
+    expect(builderShortcutLabel("delete")).toBe("Del");
   });
 });

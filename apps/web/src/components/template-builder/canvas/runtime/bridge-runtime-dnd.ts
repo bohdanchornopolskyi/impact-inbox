@@ -425,7 +425,7 @@ export function getCanvasBridgeDndRuntime(): string {
     );
   }
 
-  function createToolbarActionButton(label, svg, action) {
+  function createToolbarActionButton(label, svg, action, enabled) {
     var button = document.createElement("button");
     button.type = "button";
     button.className =
@@ -434,6 +434,7 @@ export function getCanvasBridgeDndRuntime(): string {
         : "canvas-bridge-toolbar-btn";
     button.setAttribute("aria-label", label);
     button.title = label;
+    button.disabled = enabled === false;
     button.innerHTML = svg;
     button.addEventListener("click", function (event) {
       event.preventDefault();
@@ -441,6 +442,28 @@ export function getCanvasBridgeDndRuntime(): string {
       postBuilderShortcut(action);
     });
     return button;
+  }
+
+  function blockSiblings(block) {
+    var role = block.getAttribute("data-layout-role");
+    if (role === "section") {
+      return getSectionsInBody();
+    }
+    var parentRole =
+      role === "row" ? "section" : role === "column" ? "row" : "column";
+    var parent =
+      block.parentElement &&
+      block.parentElement.closest('[data-layout-role="' + parentRole + '"]');
+    if (!parent) {
+      return [block];
+    }
+    if (role === "row") {
+      return getRowsInSection(parent);
+    }
+    if (role === "column") {
+      return getColumnsInRow(parent);
+    }
+    return getContentBlocksInColumn(parent);
   }
 
   function rebuildToolbarActions(block) {
@@ -452,15 +475,28 @@ export function getCanvasBridgeDndRuntime(): string {
       return;
     }
 
+    var siblings = blockSiblings(block);
+    var index = siblings.indexOf(block);
     var dragButton = document.createElement("button");
     dragButton.type = "button";
     dragButton.className = "canvas-bridge-toolbar-btn canvas-bridge-drag-handle";
-    dragButton.setAttribute("aria-label", "Move");
-    dragButton.title = "Move";
+    dragButton.setAttribute("aria-label", "Drag");
+    dragButton.title = "Drag";
     dragButton.innerHTML = dragHandleSvg;
     dragButton.addEventListener("pointerdown", onDragHandlePointerDown);
 
     toolbarActions.appendChild(dragButton);
+    toolbarActions.appendChild(
+      createToolbarActionButton("Move up", moveUpSvg, "move-up", index > 0),
+    );
+    toolbarActions.appendChild(
+      createToolbarActionButton(
+        "Move down",
+        moveDownSvg,
+        "move-down",
+        index >= 0 && index < siblings.length - 1,
+      ),
+    );
     toolbarActions.appendChild(
       createToolbarActionButton("Duplicate", duplicateSvg, "duplicate"),
     );
