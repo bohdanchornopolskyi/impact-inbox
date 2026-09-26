@@ -17,6 +17,7 @@ function Mark({ size = 17 }: { size?: number }) {
 export type LogoProps = {
   centered?: boolean;
   compact?: boolean;
+  showWordmark?: boolean;
   href?: string;
   className?: string;
 };
@@ -24,6 +25,7 @@ export type LogoProps = {
 export function Logo({
   centered = false,
   compact = false,
+  showWordmark = true,
   href,
   className,
 }: LogoProps) {
@@ -48,6 +50,7 @@ export function Logo({
         className={cn(
           "font-semibold tracking-tight text-text-primary",
           compact ? "text-[15px] leading-none" : "text-ui-xl",
+          !showWordmark && "sr-only",
         )}
       >
         Impact Inbox

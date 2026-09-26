@@ -9,11 +9,13 @@ import {
   EditorBarDivider,
   EditorBarEnd,
   EditorBarStart,
+  Logo,
   SaveStatus,
   ZoomControl,
 } from "@repo/ui/client";
 import { formatDistanceToNow } from "date-fns";
 import { parseApiDate } from "@/lib/format-date";
+import { AccountMenu } from "@/components/app/account-menu";
 import { useWorkspace } from "@/contexts/workspace-context";
 import { useBuilder, useBuilderFlush } from "./builder-provider";
 import { BuilderToolbarActions } from "./builder-toolbar-actions";
@@ -64,6 +66,16 @@ function BuilderShortcutListener() {
   return null;
 }
 
+function HomeLink() {
+  const { workspace } = useWorkspace();
+
+  return (
+    <Link href={`/${workspace.slug}`} className="shrink-0" title="Home">
+      <Logo compact showWordmark={false} />
+    </Link>
+  );
+}
+
 function TemplatesBackLink() {
   const { workspace } = useWorkspace();
 
@@ -98,6 +110,7 @@ export function BuilderToolbar() {
     <EditorBar>
       <EditorBarStart>
         <BuilderShortcutListener />
+        <HomeLink />
         <TemplatesBackLink />
         <EditorBarDivider />
         <InlineTemplateName />
@@ -108,6 +121,8 @@ export function BuilderToolbar() {
       </EditorBarCenter>
       <EditorBarEnd>
         <BuilderToolbarActions />
+        <EditorBarDivider />
+        <AccountMenu />
       </EditorBarEnd>
     </EditorBar>
   );
