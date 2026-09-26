@@ -206,7 +206,6 @@ const TEMPLATE_BLOCK_DEFINITIONS: TemplateBlockDefinitions = {
       fontSize: 14,
       lineHeight: 1.6,
     },
-    defaultStyles: CONTENT_BLOCK_GAP_STYLES,
     mergeTagProps: ["text"],
     fields: [
       { prop: "text", label: "Text", kind: "multiline" },
@@ -224,7 +223,6 @@ const TEMPLATE_BLOCK_DEFINITIONS: TemplateBlockDefinitions = {
       html: "<p>Add your text here.</p>",
       color: TEMPLATE_DEFAULT_COLORS.text,
     },
-    defaultStyles: CONTENT_BLOCK_GAP_STYLES,
     mergeTagProps: ["html"],
     fields: [
       { prop: "html", label: "HTML", kind: "multiline" },

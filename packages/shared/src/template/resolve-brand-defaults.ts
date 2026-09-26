@@ -78,7 +78,11 @@ export function resolveBlockDefaults(
   const colors = brandKit?.colors;
   const spacing = brandKit?.spacing;
   const gap = resolveContentBlockGap(brandKit);
-  const keepOwnVerticalPadding = type === "divider" || type === "footer";
+  const keepOwnVerticalPadding =
+    type === "divider" ||
+    type === "footer" ||
+    type === "text" ||
+    type === "richtext";
 
   if (type === "section") {
     styles = { padding: resolveSectionPadding(brandKit) };

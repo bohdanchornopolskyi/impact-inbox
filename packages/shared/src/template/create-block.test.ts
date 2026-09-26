@@ -39,6 +39,11 @@ describe("create-block defaults", () => {
     });
   });
 
+  it("creates text and richtext without baked-in padding", () => {
+    expect(createContentBlock("text").styles).toBeUndefined();
+    expect(createContentBlock("richtext").styles).toBeUndefined();
+  });
+
   it("creates sections with edge padding", () => {
     const section = createSectionBlock();
 
