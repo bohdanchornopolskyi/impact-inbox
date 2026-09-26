@@ -1,13 +1,14 @@
 "use client";
 
-import { useRef, type HTMLAttributes, type ReactNode } from "react";
+import { useState, type HTMLAttributes, type ReactNode } from "react";
 import {
-  Link,
+  MoveHorizontal,
+  MoveVertical,
   PanelBottom,
   PanelLeft,
   PanelRight,
   PanelTop,
-  Unlink,
+  Scan,
 } from "lucide-react";
 import { cn } from "../../lib/cn";
 import { fieldControlClass, hideNumberSpinnersClass } from "../../lib/field-control";
@@ -24,22 +25,24 @@ export type PaddingControlProps = Omit<
   "onChange"
 > & {
   value: PaddingSides;
-  linked?: boolean;
-  defaultLinked?: boolean;
+  eachSide?: boolean;
+  defaultEachSide?: boolean;
   disabled?: boolean;
   onChange?: (value: PaddingSides) => void;
-  onLinkedChange?: (linked: boolean) => void;
+  onEachSideChange?: (eachSide: boolean) => void;
 };
 
 function SideField({
   icon,
   value,
+  mixed = false,
   ariaLabel,
   disabled,
   onChange,
 }: {
   icon: ReactNode;
   value: number;
+  mixed?: boolean;
   ariaLabel: string;
   disabled?: boolean;
   onChange?: (value: number) => void;
@@ -48,11 +51,11 @@ function SideField({
     <label
       className={fieldControlClass({
         disabled,
-        className: "h-8 min-w-0 justify-center gap-1.25 overflow-visible px-1",
+        className: "h-8 min-w-0 flex-1 justify-center gap-2 overflow-visible px-2.5",
       })}
     >
       <span
-        className="inline-flex size-icon-sm shrink-0 text-text-3 [&_svg]:size-full"
+        className="inline-flex size-3.5 shrink-0 text-text-3 [&_svg]:size-full"
         aria-hidden
       >
         {icon}
@@ -60,7 +63,8 @@ function SideField({
       <input
         type="number"
         aria-label={ariaLabel}
-        value={value}
+        value={mixed ? "" : value}
+        placeholder={mixed ? "Mixed" : undefined}
         disabled={disabled}
         className={cn(
           "w-auto min-w-[1ch] bg-transparent p-0 text-xs font-medium tabular-nums leading-none text-text outline-none field-sizing-content focus-visible:shadow-none disabled:text-text-3",
@@ -79,88 +83,108 @@ function SideField({
 
 export function PaddingControl({
   value,
-  linked,
-  defaultLinked = true,
+  eachSide,
+  defaultEachSide = false,
   disabled = false,
   onChange,
-  onLinkedChange,
+  onEachSideChange,
   className,
   ...props
 }: PaddingControlProps) {
-  const linkedRef = useRef<HTMLInputElement>(null);
+  const [uncontrolledEachSide, setUncontrolledEachSide] = useState(
+    () => defaultEachSide || value.top !== value.bottom || value.left !== value.right,
+  );
+  const showSides = eachSide ?? uncontrolledEachSide;
+  const verticalMixed = value.top !== value.bottom;
+  const horizontalMixed = value.left !== value.right;
 
-  function isLinked() {
-    if (linked != null) {
-      return linked;
+  function setEachSide(next: boolean) {
+    if (eachSide == null) {
+      setUncontrolledEachSide(next);
     }
-    return linkedRef.current?.checked ?? defaultLinked;
+    onEachSideChange?.(next);
   }
 
   function setSide(side: keyof PaddingSides, next: number) {
-    if (isLinked()) {
-      onChange?.({ top: next, right: next, bottom: next, left: next });
-      return;
-    }
     onChange?.({ ...value, [side]: next });
   }
 
-  return (
-    <div className={cn("grid grid-cols-3 gap-1.5 p-0.5", className)} {...props}>
-      <div />
-      <SideField
-        icon={<PanelTop strokeWidth={1.5} />}
-        value={value.top}
-        ariaLabel="Padding top"
-        disabled={disabled}
-        onChange={(next) => setSide("top", next)}
-      />
-      <div />
-      <SideField
-        icon={<PanelLeft strokeWidth={1.5} />}
-        value={value.left}
-        ariaLabel="Padding left"
-        disabled={disabled}
-        onChange={(next) => setSide("left", next)}
-      />
-      <div className="flex h-8 items-center justify-center">
-        <label className="relative inline-flex size-8 cursor-pointer items-center justify-center rounded-sm border border-border text-text-3 transition-[background-color,border-color,color] duration-150 has-[:checked]:border-transparent has-[:checked]:bg-accent-soft has-[:checked]:text-accent has-[:disabled]:opacity-50">
-          <input
-            ref={linkedRef}
-            type="checkbox"
-            className="peer sr-only"
+  const toggle = (
+    <button
+      type="button"
+      aria-pressed={showSides}
+      aria-label="Each side"
+      disabled={disabled}
+      className={cn(
+        "inline-flex size-8 shrink-0 items-center justify-center rounded-sm text-text-2 transition-[background-color,color] duration-150 disabled:opacity-50",
+        showSides && "bg-accent-soft text-accent",
+      )}
+      onClick={() => setEachSide(!showSides)}
+    >
+      <Scan className="size-[15px]" strokeWidth={1.5} />
+    </button>
+  );
+
+  if (showSides) {
+    return (
+      <div className={cn("flex flex-col gap-2", className)} {...props}>
+        <div className="flex gap-2">
+          <SideField
+            icon={<PanelTop strokeWidth={1.5} />}
+            value={value.top}
+            ariaLabel="Padding top"
             disabled={disabled}
-            aria-label="Link padding sides"
-            {...(linked != null
-              ? { checked: linked }
-              : { defaultChecked: defaultLinked })}
-            onChange={(event) => onLinkedChange?.(event.currentTarget.checked)}
+            onChange={(next) => setSide("top", next)}
           />
-          <Link
-            className="hidden size-icon-sm peer-checked:block"
-            strokeWidth={1.5}
+          <SideField
+            icon={<PanelBottom strokeWidth={1.5} />}
+            value={value.bottom}
+            ariaLabel="Padding bottom"
+            disabled={disabled}
+            onChange={(next) => setSide("bottom", next)}
           />
-          <Unlink
-            className="size-icon-sm peer-checked:hidden"
-            strokeWidth={1.5}
+          {toggle}
+        </div>
+        <div className="flex gap-2">
+          <SideField
+            icon={<PanelLeft strokeWidth={1.5} />}
+            value={value.left}
+            ariaLabel="Padding left"
+            disabled={disabled}
+            onChange={(next) => setSide("left", next)}
           />
-        </label>
+          <SideField
+            icon={<PanelRight strokeWidth={1.5} />}
+            value={value.right}
+            ariaLabel="Padding right"
+            disabled={disabled}
+            onChange={(next) => setSide("right", next)}
+          />
+          <div className="size-8 shrink-0" />
+        </div>
       </div>
+    );
+  }
+
+  return (
+    <div className={cn("flex gap-2", className)} {...props}>
       <SideField
-        icon={<PanelRight strokeWidth={1.5} />}
-        value={value.right}
-        ariaLabel="Padding right"
+        icon={<MoveVertical strokeWidth={1.5} />}
+        value={value.top}
+        mixed={verticalMixed}
+        ariaLabel="Vertical padding"
         disabled={disabled}
-        onChange={(next) => setSide("right", next)}
+        onChange={(next) => onChange?.({ ...value, top: next, bottom: next })}
       />
-      <div />
       <SideField
-        icon={<PanelBottom strokeWidth={1.5} />}
-        value={value.bottom}
-        ariaLabel="Padding bottom"
+        icon={<MoveHorizontal strokeWidth={1.5} />}
+        value={value.left}
+        mixed={horizontalMixed}
+        ariaLabel="Horizontal padding"
         disabled={disabled}
-        onChange={(next) => setSide("bottom", next)}
+        onChange={(next) => onChange?.({ ...value, left: next, right: next })}
       />
-      <div />
+      {toggle}
     </div>
   );
 }

@@ -151,14 +151,6 @@ function hasSizeSection(block: TemplateBlock) {
   );
 }
 
-function sidesEqual(sides: { top: number; right: number; bottom: number; left: number }) {
-  return (
-    sides.top === sides.right &&
-    sides.right === sides.bottom &&
-    sides.bottom === sides.left
-  );
-}
-
 function backgroundFill(
   styles: BlockStyles,
   backgroundImage?: unknown,
@@ -517,7 +509,6 @@ export function SpacingSection({
           <PaddingControl
             key={`${block.id}-padding`}
             value={padding}
-            defaultLinked={sidesEqual(padding)}
             disabled={disabled}
             onChange={(next) =>
               patchStyles({ padding: spacingFromSides(next) })
@@ -528,7 +519,6 @@ export function SpacingSection({
           <PaddingControl
             key={`${block.id}-margin`}
             value={margin}
-            defaultLinked={sidesEqual(margin)}
             disabled={disabled}
             onChange={(next) =>
               patchStyles({ margin: spacingFromSides(next) })
