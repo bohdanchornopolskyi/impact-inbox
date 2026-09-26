@@ -54,7 +54,7 @@ export function CollapsibleSection({
         </span>
       </BaseCollapsible.Trigger>
       <BaseCollapsible.Panel className="h-(--collapsible-panel-height) overflow-hidden transition-[height] duration-150 ease-out data-ending-style:h-0 data-starting-style:h-0 [&[hidden]:not([hidden='until-found'])]:hidden">
-        <div className="px-4 pb-4">{children}</div>
+        <div className="px-4 pt-1 pb-4">{children}</div>
       </BaseCollapsible.Panel>
     </BaseCollapsible.Root>
   );
