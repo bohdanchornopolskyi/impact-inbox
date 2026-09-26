@@ -43,8 +43,13 @@ describe("matchBuilderShortcut", () => {
     expect(matchBuilderShortcut(keyEvent({ key: "d", metaKey: true }))).toBe(
       "duplicate",
     );
+    expect(
+      matchBuilderShortcut(
+        keyEvent({ key: "l", metaKey: true, shiftKey: true }),
+      ),
+    ).toBe("save-library");
     expect(matchBuilderShortcut(keyEvent({ key: "r", metaKey: true }))).toBe(
-      "save-library",
+      null,
     );
     expect(
       matchBuilderShortcut(
@@ -82,7 +87,9 @@ describe("matchBuilderShortcut", () => {
       matchBuilderShortcut(keyEvent({ key: "d", metaKey: true, target: input })),
     ).toBeNull();
     expect(
-      matchBuilderShortcut(keyEvent({ key: "r", metaKey: true, target: input })),
+      matchBuilderShortcut(
+        keyEvent({ key: "l", metaKey: true, shiftKey: true, target: input }),
+      ),
     ).toBeNull();
   });
 
@@ -103,6 +110,8 @@ describe("matchBuilderShortcut", () => {
       { key: "z", metaKey: true },
       { key: "z", metaKey: true, shiftKey: true },
       { key: "s", ctrlKey: true },
+      { key: "l", metaKey: true, shiftKey: true },
+      { key: "r", metaKey: true },
       { key: "ç", code: "KeyC", metaKey: true, altKey: true },
       { key: "ArrowDown", metaKey: true },
       { key: "Backspace" },
@@ -122,6 +131,7 @@ describe("matchBuilderShortcut", () => {
 
 describe("builderShortcutLabel", () => {
   it("renders the combo from the shortcut table", () => {
+    expect(builderShortcutLabel("save-library")).toBe("⌘⇧L");
     expect(builderShortcutLabel("duplicate")).toBe("⌘D");
     expect(builderShortcutLabel("copy-style")).toBe("⌘⌥C");
     expect(builderShortcutLabel("move-up")).toBe("⌘↑");

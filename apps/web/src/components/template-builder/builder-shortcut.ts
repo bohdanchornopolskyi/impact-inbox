@@ -30,7 +30,7 @@ type BuilderShortcut = {
 export const BUILDER_SHORTCUTS: readonly BuilderShortcut[] = [
   { action: "save", key: "s", mod: true, inFields: true },
   { action: "preview", key: "p", mod: true, inFields: true },
-  { action: "save-library", key: "r", mod: true },
+  { action: "save-library", key: "l", mod: true, shift: true },
   { action: "undo", key: "z", mod: true },
   { action: "redo", key: "z", mod: true, shift: true },
   { action: "redo", key: "y", mod: true },
