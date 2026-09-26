@@ -18,6 +18,10 @@ function handlers(
     openPreview: vi.fn(),
     removeBlock: vi.fn(),
     duplicateBlock: vi.fn(),
+    nudgeBlock: vi.fn(),
+    copyBlockStyle: vi.fn(),
+    pasteBlockStyle: vi.fn(),
+    openSaveLibrary: vi.fn(),
     selectBlock: vi.fn(),
     ...overrides,
   };

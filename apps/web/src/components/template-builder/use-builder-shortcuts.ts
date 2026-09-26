@@ -34,6 +34,10 @@ export function useBuilderShortcuts() {
         openPreview: () => state.setPreviewOpen(true),
         removeBlock: state.removeBlock,
         duplicateBlock: state.duplicateBlock,
+        nudgeBlock: state.nudgeBlock,
+        copyBlockStyle: state.copyBlockStyle,
+        pasteBlockStyle: state.pasteBlockStyle,
+        openSaveLibrary: state.openSaveLibrary,
         selectBlock: state.selectBlock,
       });
     }

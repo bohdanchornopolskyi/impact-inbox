@@ -21,6 +21,8 @@ import {
   ensureDefaultStructure,
   findBlock,
   insertSection,
+  nudgeBlock as applyNudgeBlock,
+  type NudgeDirection,
   moveContentBlock,
   moveColumn,
   moveRow,
@@ -28,6 +30,7 @@ import {
   removeBlock,
   stripAssetUrlFromContent,
   templateContentUsesAssetUrl,
+  replaceBlockStyles,
   updateBlockProps,
   updateBlockStyles,
   updateSettings,
@@ -52,7 +55,12 @@ import { TemplateConflictModal } from "./modals/template-conflict-modal";
 import { useSession } from "@/contexts/session-context";
 import { useWorkspace } from "@/contexts/workspace-context";
 import { getTemplate } from "@/lib/api/templates-api";
+import { showError } from "@/stores/toast-store";
 import { applyBuilderMutation } from "./apply-builder-mutation";
+import {
+  EMPTY_SECTION_SAVE_ERROR,
+  moduleSaveTargetState,
+} from "./module-save-target";
 import {
   beginHistorySession,
   clearBuilderHistory,
@@ -113,6 +121,14 @@ type BuilderState = {
   addBlock: (columnId: string, blockType: ContentBlockType, index?: number) => void;
   removeBlock: (blockId: string) => void;
   duplicateBlock: (blockId: string) => void;
+  nudgeBlock: (blockId: string, direction: NudgeDirection) => void;
+  styleClipboard: BlockStyles | null;
+  copyBlockStyle: (blockId: string) => void;
+  pasteBlockStyle: (blockId: string) => void;
+  resetBlockStyles: (blockId: string) => void;
+  saveLibraryOpen: boolean;
+  setSaveLibraryOpen: (open: boolean) => void;
+  openSaveLibrary: () => void;
   moveBlock: (
     blockId: string,
     targetColumnId: string,
@@ -230,6 +246,8 @@ function createBuilderStore(
       conflictOpen: false,
       history: createEmptyBuilderHistory(),
       brandKit,
+      styleClipboard: null,
+      saveLibraryOpen: false,
 
       init: (template) =>
         set({
@@ -303,6 +321,47 @@ function createBuilderStore(
         withRecordedContent("record", undefined, (state) =>
           applyBuilderMutation(state, duplicateBlock(state.content, blockId)),
         ),
+      nudgeBlock: (blockId, direction) =>
+        withRecordedContent("record", undefined, (state) =>
+          applyBuilderMutation(
+            state,
+            applyNudgeBlock(state.content, blockId, direction),
+          ),
+        ),
+      copyBlockStyle: (blockId) => {
+        const found = findBlock(get().content, blockId);
+        if (found) {
+          set({ styleClipboard: found.block.styles ?? {} });
+        }
+      },
+      pasteBlockStyle: (blockId) => {
+        const clipboard = get().styleClipboard;
+        if (!clipboard) {
+          return;
+        }
+        withRecordedContent("record", undefined, (state) =>
+          applyBuilderMutation(
+            state,
+            replaceBlockStyles(state.content, blockId, clipboard),
+          ),
+        );
+      },
+      resetBlockStyles: (blockId) =>
+        withRecordedContent("record", undefined, (state) =>
+          applyBuilderMutation(
+            state,
+            replaceBlockStyles(state.content, blockId, undefined),
+          ),
+        ),
+      setSaveLibraryOpen: (open) => set({ saveLibraryOpen: open }),
+      openSaveLibrary: () => {
+        const { content, selectedBlockId } = get();
+        if (moduleSaveTargetState(content, selectedBlockId) !== "ready") {
+          showError(EMPTY_SECTION_SAVE_ERROR);
+          return;
+        }
+        set({ saveLibraryOpen: true });
+      },
       moveBlock: (blockId, targetColumnId, targetIndex) => {
         let changed = false;
         withRecordedContent("record", undefined, (state) => {

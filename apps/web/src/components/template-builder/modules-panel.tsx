@@ -25,7 +25,6 @@ import {
 } from "@repo/ui/client";
 import { useWorkspace } from "@/contexts/workspace-context";
 import {
-  useCreateWorkspaceModule,
   useDeleteWorkspaceModule,
   useUpdateWorkspaceModule,
   useWorkspaceModules,
@@ -38,30 +37,16 @@ import { ConfirmModal } from "./modals/confirm-modal";
 import {
   moduleSaveTargetState,
   resolveSelectedSection,
+  suggestedSaveName,
 } from "./module-save-target";
 import { groupSavedModules } from "./saved-library-groups";
+import { useSaveSectionToLibrary } from "./use-save-section-to-library";
 
 type PendingLibraryAction =
   | { kind: "update"; module: WorkspaceModuleData; content: SectionBlock }
   | { kind: "restore"; module: WorkspaceModuleData; content: SectionBlock }
   | { kind: "delete"; moduleId: string }
   | null;
-
-function suggestedSaveName(section: SectionBlock): string {
-  for (const row of section.children) {
-    for (const column of row.children) {
-      for (const block of column.children) {
-        if (block.type === "heading") {
-          const text = block.props.text.trim();
-          if (text) {
-            return text.slice(0, 120);
-          }
-        }
-      }
-    }
-  }
-  return "Section";
-}
 
 function SaveFromCanvas({
   canManage,
@@ -260,15 +245,9 @@ export function ModulesPanel() {
     moduleSaveTargetState(s.content, s.selectedBlockId),
   );
   const modulesQuery = useWorkspaceModules(workspace.id);
-  const createModule = useCreateWorkspaceModule(workspace.id);
   const updateModule = useUpdateWorkspaceModule(workspace.id);
   const deleteModule = useDeleteWorkspaceModule(workspace.id);
-  const create = useToastMutation({
-    mutationFn: (input: Parameters<typeof createModule.mutateAsync>[0]) =>
-      createModule.mutateAsync(input),
-    successMessage: "Saved to module library",
-    errorMessage: "Could not save module",
-  });
+  const { saveSelectedSection, isPending: isSaving } = useSaveSectionToLibrary();
   const update = useToastMutation({
     mutationFn: (input: Parameters<typeof updateModule.mutateAsync>[0]) =>
       updateModule.mutateAsync(input),
@@ -291,22 +270,6 @@ export function ModulesPanel() {
       return;
     }
     state.insertSavedModule(moduleContent);
-  }
-
-  function handleSave(name: string, onSaved: () => void) {
-    const { content, selectedBlockId } = store.getState();
-    const selectedSection = resolveSelectedSection(content, selectedBlockId);
-    if (!canManage || !name || !selectedSection) {
-      return;
-    }
-    if (isEmptyModuleSection(selectedSection)) {
-      showError("Choose a section that has content before saving.");
-      return;
-    }
-    create.mutate(
-      { name, content: selectedSection },
-      { onSuccess: () => onSaved() },
-    );
   }
 
   function handleRename(module: WorkspaceModuleData, nextName: string) {
@@ -422,8 +385,8 @@ export function ModulesPanel() {
       {canManage ? (
         <SaveFromCanvas
           canManage={canManage}
-          isPending={create.isPending}
-          onSave={handleSave}
+          isPending={isSaving}
+          onSave={saveSelectedSection}
         />
       ) : null}
       <EditorPanelScroll>

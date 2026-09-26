@@ -2,6 +2,7 @@ import {
   findBlock,
   getBlockLabel,
   getBlockTypeLabel,
+  siblingPosition,
   type TemplateBlockType,
   type TemplateContentData,
 } from "@repo/shared";
@@ -110,6 +111,12 @@ export function selectedBlockLabel(
   return found ? getBlockLabel(found.block) : null;
 }
 
+const SIBLING_PARENT_LABELS: Partial<Record<TemplateBlockType, string>> = {
+  section: "Body",
+  row: "Section",
+  column: "Row",
+};
+
 export function selectionSiblingContext(
   content: TemplateContentData,
   selectedBlockId: string | null,
@@ -119,37 +126,11 @@ export function selectionSiblingContext(
   }
 
   const found = findBlock(content, selectedBlockId);
-  if (!found) {
+  const position = found ? siblingPosition(content, found) : null;
+  if (!found || !position) {
     return null;
   }
 
-  const { path } = found;
-  const section = content.body[path.sectionIndex];
-  if (!section) {
-    return null;
-  }
-
-  if (path.rowIndex === undefined) {
-    return `in Body · ${path.sectionIndex + 1} of ${content.body.length}`;
-  }
-
-  const row = section.children[path.rowIndex];
-  if (!row) {
-    return null;
-  }
-
-  if (path.columnIndex === undefined) {
-    return `in Section · ${path.rowIndex + 1} of ${section.children.length}`;
-  }
-
-  const column = row.children[path.columnIndex];
-  if (!column) {
-    return null;
-  }
-
-  if (path.contentIndex === undefined) {
-    return `in Row · ${path.columnIndex + 1} of ${row.children.length}`;
-  }
-
-  return `in Column · ${path.contentIndex + 1} of ${column.children.length}`;
+  const parent = SIBLING_PARENT_LABELS[found.block.type] ?? "Column";
+  return `in ${parent} · ${position.index + 1} of ${position.count}`;
 }

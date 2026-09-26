@@ -1,6 +1,17 @@
 "use client";
 
-import { Ellipsis } from "lucide-react";
+import { useState } from "react";
+import {
+  ArrowDown,
+  ArrowUp,
+  BookmarkPlus,
+  ClipboardCopy,
+  ClipboardPaste,
+  Copy,
+  Ellipsis,
+  RotateCcw,
+  Trash2,
+} from "lucide-react";
 import {
   DropdownMenu,
   InspectorPanel,
@@ -10,12 +21,14 @@ import {
   InspectorPanelTabs,
 } from "@repo/ui/client";
 import {
+  blockNudgeAvailability,
   findBlock,
   getBlockTypeLabel,
   type TemplateBlockType,
   type TemplateContentData,
 } from "@repo/shared";
 import { useBuilder, useBuilderStore } from "./builder-provider";
+import { builderShortcutLabel } from "./builder-shortcut";
 import { TemplateBlockIcon } from "./block-icons";
 import { selectionSiblingContext } from "./canvas/selection-path";
 import { BlockInspector } from "./inspector/block-inspector";
@@ -24,7 +37,8 @@ import { ImageLibraryProvider } from "./inspector/image-library-context";
 import { ImageLibraryPanel } from "./inspector/image-library-panel";
 import { TemplateSettingsInspector } from "./inspector/template-settings-inspector";
 import { TemplateCampaignSettings } from "./inspector/template-campaign-settings";
-import { useState } from "react";
+import { ConfirmModal } from "./modals/confirm-modal";
+import { moduleSaveTargetState } from "./module-save-target";
 
 function canPickImageFromLibrary(
   type: TemplateBlockType,
@@ -235,24 +249,99 @@ function InspectorModeTabs({ onModeChange }: { onModeChange: () => void }) {
 function InspectorHeaderActions({ blockId }: { blockId: string }) {
   const duplicateBlock = useBuilder((s) => s.duplicateBlock);
   const removeBlock = useBuilder((s) => s.removeBlock);
+  const nudgeBlock = useBuilder((s) => s.nudgeBlock);
+  const copyBlockStyle = useBuilder((s) => s.copyBlockStyle);
+  const pasteBlockStyle = useBuilder((s) => s.pasteBlockStyle);
+  const resetBlockStyles = useBuilder((s) => s.resetBlockStyles);
+  const openSaveLibrary = useBuilder((s) => s.openSaveLibrary);
+  const styleClipboard = useBuilder((s) => s.styleClipboard);
+  const canMoveUp = useBuilder(
+    (s) => blockNudgeAvailability(s.content, blockId).up,
+  );
+  const canMoveDown = useBuilder(
+    (s) => blockNudgeAvailability(s.content, blockId).down,
+  );
+  const saveTarget = useBuilder((s) =>
+    moduleSaveTargetState(s.content, s.selectedBlockId),
+  );
+  const [resetOpen, setResetOpen] = useState(false);
 
   return (
-    <DropdownMenu
-      align="end"
-      aria-label="Block actions"
-      trigger={<Ellipsis className="size-4" strokeWidth={1.5} />}
-      items={[
-        {
-          label: "Duplicate",
-          onSelect: () => duplicateBlock(blockId),
-        },
-        {
-          label: "Remove",
-          destructive: true,
-          separatorBefore: true,
-          onSelect: () => removeBlock(blockId),
-        },
-      ]}
-    />
+    <>
+      <DropdownMenu
+        align="end"
+        aria-label="Block actions"
+        trigger={<Ellipsis className="size-4" strokeWidth={1.5} />}
+        items={[
+          {
+            label: "Duplicate",
+            shortcut: builderShortcutLabel("duplicate"),
+            icon: <Copy strokeWidth={1.5} />,
+            onSelect: () => duplicateBlock(blockId),
+          },
+          {
+            label: "Copy style",
+            shortcut: builderShortcutLabel("copy-style"),
+            icon: <ClipboardCopy strokeWidth={1.5} />,
+            onSelect: () => copyBlockStyle(blockId),
+          },
+          {
+            label: "Paste style",
+            shortcut: builderShortcutLabel("paste-style"),
+            icon: <ClipboardPaste strokeWidth={1.5} />,
+            disabled: styleClipboard === null,
+            onSelect: () => pasteBlockStyle(blockId),
+          },
+          {
+            label: "Move up",
+            shortcut: builderShortcutLabel("move-up"),
+            icon: <ArrowUp strokeWidth={1.5} />,
+            separatorBefore: true,
+            disabled: !canMoveUp,
+            onSelect: () => nudgeBlock(blockId, -1),
+          },
+          {
+            label: "Move down",
+            shortcut: builderShortcutLabel("move-down"),
+            icon: <ArrowDown strokeWidth={1.5} />,
+            disabled: !canMoveDown,
+            onSelect: () => nudgeBlock(blockId, 1),
+          },
+          {
+            label: "Save to library",
+            shortcut: builderShortcutLabel("save-library"),
+            icon: <BookmarkPlus strokeWidth={1.5} />,
+            separatorBefore: true,
+            disabled: saveTarget !== "ready",
+            onSelect: openSaveLibrary,
+          },
+          {
+            label: "Reset styles…",
+            icon: <RotateCcw strokeWidth={1.5} />,
+            onSelect: () => setResetOpen(true),
+          },
+          {
+            label: "Delete block",
+            shortcut: builderShortcutLabel("delete"),
+            icon: <Trash2 strokeWidth={1.5} />,
+            separatorBefore: true,
+            destructive: true,
+            onSelect: () => removeBlock(blockId),
+          },
+        ]}
+      />
+      <ConfirmModal
+        open={resetOpen}
+        onOpenChange={setResetOpen}
+        title="Reset styles?"
+        description="Clears colors, spacing, and borders on this block. Template defaults apply again. You can undo with ⌘Z."
+        confirmLabel="Reset styles"
+        isPending={false}
+        onConfirm={() => {
+          resetBlockStyles(blockId);
+          setResetOpen(false);
+        }}
+      />
+    </>
   );
 }

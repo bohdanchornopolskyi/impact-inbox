@@ -13,6 +13,7 @@ import { RevisionHistoryDrawer } from "./drawers/revision-history-drawer";
 import { LeftSidebar } from "./left-sidebar";
 import { MergeTagWarnings } from "./merge-tag-warnings";
 import { ExportTemplateModal } from "./modals/export-template-modal";
+import { SaveToLibraryModal } from "./modals/save-to-library-modal";
 import { PreviewOverlay } from "./preview-overlay";
 
 type TemplateBuilderViewProps = {
@@ -56,6 +57,7 @@ export function TemplateBuilderView({ templateId }: TemplateBuilderViewProps) {
       <PreviewOverlay />
       <RevisionHistoryDrawer />
       <ExportTemplateModal />
+      <SaveToLibraryModal />
     </BuilderProvider>
   );
 }
