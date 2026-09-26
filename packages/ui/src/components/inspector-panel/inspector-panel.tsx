@@ -82,7 +82,7 @@ export function InspectorPanelHeader({
       <div className="min-w-0 flex-1">
         <p className="truncate text-md font-semibold text-text">{title}</p>
         {context ? (
-          <p className="truncate text-2xs text-text-3">{context}</p>
+          <p className="truncate text-[11.5px] text-text-2">{context}</p>
         ) : null}
       </div>
       {actions ? (

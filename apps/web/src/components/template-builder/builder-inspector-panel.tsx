@@ -229,35 +229,23 @@ function InspectorHeaderActions({ blockId }: { blockId: string }) {
   const removeBlock = useBuilder((s) => s.removeBlock);
 
   return (
-    <>
-      <Button
-        icon
-        variant="ghost"
-        size="sm"
-        aria-label="Duplicate"
-        title="Duplicate (Ctrl/Cmd+D)"
-        onClick={() => duplicateBlock(blockId)}
-      >
-        <Copy strokeWidth={1.5} />
-      </Button>
-      <DropdownMenu
-        align="end"
-        aria-label="Block actions"
-        trigger={<Ellipsis className="size-4" strokeWidth={1.5} />}
-        items={[
-          {
-            label: "Duplicate",
-            onSelect: () => duplicateBlock(blockId),
-          },
-          {
-            label: "Remove",
-            destructive: true,
-            separatorBefore: true,
-            onSelect: () => removeBlock(blockId),
-          },
-        ]}
-      />
-    </>
+    <DropdownMenu
+      align="end"
+      aria-label="Block actions"
+      trigger={<Ellipsis className="size-4" strokeWidth={1.5} />}
+      items={[
+        {
+          label: "Duplicate",
+          onSelect: () => duplicateBlock(blockId),
+        },
+        {
+          label: "Remove",
+          destructive: true,
+          separatorBefore: true,
+          onSelect: () => removeBlock(blockId),
+        },
+      ]}
+    />
   );
 }
 

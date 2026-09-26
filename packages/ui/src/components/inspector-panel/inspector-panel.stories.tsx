@@ -41,14 +41,9 @@ export const Block: Story = {
           title="Column"
           context="in Row · 2 of 2"
           actions={
-            <>
-              <Button icon variant="ghost" size="sm" aria-label="Duplicate">
-                <Copy strokeWidth={1.5} />
-              </Button>
-              <Button icon variant="ghost" size="sm" aria-label="More actions">
-                <Ellipsis strokeWidth={1.5} />
-              </Button>
-            </>
+            <Button icon variant="ghost" size="sm" aria-label="More actions">
+              <Ellipsis strokeWidth={1.5} />
+            </Button>
           }
         />
         <InspectorPanelBody>
