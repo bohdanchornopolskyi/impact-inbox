@@ -9,6 +9,7 @@ import {
   ClipboardPaste,
   Copy,
   Ellipsis,
+  Info,
   RotateCcw,
   Trash2,
 } from "lucide-react";
@@ -184,16 +185,10 @@ export function BuilderInspectorPanel() {
           />
         ) : null}
         {inspectorMode === "templateSettings" ? (
-          <InspectorPanelHeader
-            title="Styles"
-            context="Every block uses these unless you change it in the Block tab."
-          />
-        ) : null}
-        {inspectorMode === "settings" ? (
-          <InspectorPanelHeader
-            title="Settings"
-            context="Sender, tracking, and compliance"
-          />
+          <p className="flex shrink-0 items-center gap-2 border-b border-border bg-bg px-4 py-3 text-xs leading-snug text-text-2">
+            <Info className="size-3.5 shrink-0 text-text-3" strokeWidth={1.5} />
+            Every block uses these unless you change it in the Block tab.
+          </p>
         ) : null}
         <InspectorPanelBody>
           {showLibrary ? (
