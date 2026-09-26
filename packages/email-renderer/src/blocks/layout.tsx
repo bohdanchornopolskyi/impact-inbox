@@ -86,7 +86,9 @@ function renderRowBlock(
         <div key={`${row.id}-empty`} {...{ [CANVAS_EMPTY_PLACEHOLDER_ATTR]: "" }} />
       ) : null}
       {row.children.map((column, index) => {
-        const widthPercent = columnWidths[index];
+        const explicit =
+          typeof column.props.width === "number" ? column.props.width : undefined;
+        const widthPercent = explicit ?? columnWidths[index];
         const columnWithWidth =
           widthPercent !== undefined
             ? {

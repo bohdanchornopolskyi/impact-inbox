@@ -40,6 +40,31 @@ export function resolveRowColumnWidths(row: RowBlock): number[] {
   return distributeEqualColumnWidths(columnCount);
 }
 
+export type RowSplit = "1:1" | "1:2" | "2:1";
+
+export function rowSplitWidths(split: RowSplit): [number, number] {
+  if (split === "1:2") {
+    return [33, 67];
+  }
+  if (split === "2:1") {
+    return [67, 33];
+  }
+  return [50, 50];
+}
+
+export function rowSplitFromWidths(widths: number[] | undefined): RowSplit {
+  if (!widths || widths.length !== 2) {
+    return "1:1";
+  }
+  if (widths[0] < widths[1]) {
+    return "1:2";
+  }
+  if (widths[0] > widths[1]) {
+    return "2:1";
+  }
+  return "1:1";
+}
+
 export function rowWithRedistributedColumnWidths(row: RowBlock): RowBlock {
   const columnCount = row.children.length;
   if (columnCount <= 1) {

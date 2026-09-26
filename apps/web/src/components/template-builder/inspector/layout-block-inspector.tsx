@@ -3,9 +3,12 @@
 import type {
   ColumnBlock,
   RowBlock,
+  RowSplit,
   SectionBlock,
 } from "@repo/shared";
+import { findBlock, rowSplitFromWidths, rowSplitWidths } from "@repo/shared";
 import { InspectorRow, SegmentedControl, inspectorControlClass } from "@repo/ui/client";
+import { useBuilder } from "../builder-provider";
 import {
   asString,
   BooleanField,
@@ -32,9 +35,14 @@ const BACKGROUND_REPEAT_OPTIONS = [
 ];
 
 const COLUMN_WIDTH_OPTIONS = [
-  { value: "auto", label: "Auto" },
-  { value: "50", label: "50%" },
-  { value: "custom", label: "Custom" },
+  { value: "fill", label: "Fill" },
+  { value: "fixed", label: "Fixed" },
+];
+
+const ROW_SPLIT_OPTIONS: { value: RowSplit; label: string }[] = [
+  { value: "1:1", label: "1:1" },
+  { value: "1:2", label: "1:2" },
+  { value: "2:1", label: "2:1" },
 ];
 
 export function LayoutSizeFields({
@@ -123,10 +131,61 @@ export function LayoutSizeFields({
   }
 
   const width = typeof props.width === "number" ? props.width : undefined;
-  const mode = width === undefined ? "auto" : width === 50 ? "50" : "custom";
+  const mode = width === undefined ? "fill" : "fixed";
+
+  return (
+    <ColumnWidthFields
+      block={block}
+      mode={mode}
+      width={width}
+      disabled={disabled}
+      updateProps={updateProps}
+    />
+  );
+}
+
+function ColumnWidthFields({
+  block,
+  mode,
+  width,
+  disabled,
+  updateProps,
+}: {
+  block: ColumnBlock;
+  mode: "fill" | "fixed";
+  width: number | undefined;
+  disabled: boolean;
+  updateProps: UpdateProps;
+}) {
+  const content = useBuilder((s) => s.content);
+  const updateBlockProps = useBuilder((s) => s.updateBlockProps);
+  const found = findBlock(content, block.id);
+  const row =
+    found?.path.sectionIndex !== undefined && found.path.rowIndex !== undefined
+      ? content.body[found.path.sectionIndex]?.children[found.path.rowIndex]
+      : undefined;
+  const split =
+    row && row.children.length === 2
+      ? rowSplitFromWidths(row.props.columnWidths)
+      : null;
 
   return (
     <>
+      {split && row ? (
+        <InspectorRow label="Row">
+          <SegmentedControl
+            className={inspectorControlClass}
+            disabled={disabled}
+            value={split}
+            options={ROW_SPLIT_OPTIONS}
+            onChange={(next) => {
+              updateBlockProps(row.id, {
+                columnWidths: rowSplitWidths(next as RowSplit),
+              });
+            }}
+          />
+        </InspectorRow>
+      ) : null}
       <InspectorRow label="Width">
         <SegmentedControl
           className={inspectorControlClass}
@@ -134,19 +193,15 @@ export function LayoutSizeFields({
           value={mode}
           options={COLUMN_WIDTH_OPTIONS}
           onChange={(next) => {
-            if (next === "auto") {
+            if (next === "fill") {
               updateProps({ width: undefined });
-              return;
-            }
-            if (next === "50") {
-              updateProps({ width: 50 });
               return;
             }
             updateProps({ width: width ?? 50 });
           }}
         />
       </InspectorRow>
-      {mode === "custom" ? (
+      {mode === "fixed" ? (
         <NumberField
           label="Custom"
           unit="%"
