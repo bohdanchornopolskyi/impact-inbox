@@ -284,30 +284,57 @@ export function updateBlockStyles(
   blockId: string,
   styles: Partial<BlockStyles>,
 ): TemplateContentData {
+  return assignBlockStyles(content, blockId, (block) => mergeBlockStyles(block, styles));
+}
+
+export function replaceBlockStyles(
+  content: TemplateContentData,
+  blockId: string,
+  styles: BlockStyles | undefined,
+): TreeMutationResult {
+  const found = findBlock(content, blockId);
+  if (!found) {
+    return unchanged(content, "block_not_found");
+  }
+
+  const nextStyles =
+    styles && Object.keys(styles).length > 0 ? styles : undefined;
+  if (JSON.stringify(found.block.styles ?? null) === JSON.stringify(nextStyles ?? null)) {
+    return unchanged(content, "noop");
+  }
+
+  return changed(assignBlockStyles(content, blockId, () => nextStyles));
+}
+
+function assignBlockStyles(
+  content: TemplateContentData,
+  blockId: string,
+  resolve: (block: TemplateBlock) => BlockStyles | undefined,
+): TemplateContentData {
   return mapSections(content, (section) => {
     if (section.id === blockId) {
-      return { ...section, styles: mergeBlockStyles(section, styles) };
+      return { ...section, styles: resolve(section) };
     }
 
     return {
       ...section,
       children: section.children.map((row) => {
         if (row.id === blockId) {
-          return { ...row, styles: mergeBlockStyles(row, styles) };
+          return { ...row, styles: resolve(row) };
         }
 
         return {
           ...row,
           children: row.children.map((column) => {
             if (column.id === blockId) {
-              return { ...column, styles: mergeBlockStyles(column, styles) };
+              return { ...column, styles: resolve(column) };
             }
 
             return {
               ...column,
               children: column.children.map((child) =>
                 child.id === blockId
-                  ? ({ ...child, styles: mergeBlockStyles(child, styles) } as ContentBlock)
+                  ? ({ ...child, styles: resolve(child) } as ContentBlock)
                   : child,
               ),
             };
@@ -623,6 +650,18 @@ function arrayMove<T>(array: readonly T[], from: number, to: number): T[] {
   return result;
 }
 
+function reorderColumns(row: RowBlock, from: number, to: number): RowBlock {
+  const { columnWidths } = row.props;
+  return {
+    ...row,
+    props:
+      columnWidths?.length === row.children.length
+        ? { ...row.props, columnWidths: arrayMove(columnWidths, from, to) }
+        : row.props,
+    children: arrayMove(row.children, from, to),
+  };
+}
+
 export function isDescendantOf(
   content: TemplateContentData,
   ancestorId: string,
@@ -921,16 +960,11 @@ export function moveColumn(
     return changed(
       mapSections(content, (section) => ({
         ...section,
-        children: section.children.map((row) => {
-          if (row.id !== targetRowId) {
-            return row;
-          }
-
-          return {
-            ...row,
-            children: arrayMove(row.children, sourceIndex, targetIndex),
-          };
-        }),
+        children: section.children.map((row) =>
+          row.id === targetRowId
+            ? reorderColumns(row, sourceIndex, targetIndex)
+            : row,
+        ),
       })),
     );
   }
@@ -1068,6 +1102,99 @@ export function moveContentBlock(
         ),
       })),
     })),
+  );
+}
+
+export type NudgeDirection = -1 | 1;
+
+export function siblingPosition(
+  content: TemplateContentData,
+  found: FoundBlock,
+): { index: number; count: number } | null {
+  const { path } = found;
+  const section = content.body[path.sectionIndex];
+  if (!section) {
+    return null;
+  }
+  if (path.rowIndex === undefined) {
+    return { index: path.sectionIndex, count: content.body.length };
+  }
+
+  const row = section.children[path.rowIndex];
+  if (!row) {
+    return null;
+  }
+  if (path.columnIndex === undefined) {
+    return { index: path.rowIndex, count: section.children.length };
+  }
+
+  const column = row.children[path.columnIndex];
+  if (!column) {
+    return null;
+  }
+  if (path.contentIndex === undefined) {
+    return { index: path.columnIndex, count: row.children.length };
+  }
+
+  return { index: path.contentIndex, count: column.children.length };
+}
+
+export function blockNudgeAvailability(
+  content: TemplateContentData,
+  blockId: string,
+): { up: boolean; down: boolean } {
+  const found = findBlock(content, blockId);
+  const position = found ? siblingPosition(content, found) : null;
+  if (!position) {
+    return { up: false, down: false };
+  }
+
+  return { up: position.index > 0, down: position.index < position.count - 1 };
+}
+
+export function nudgeBlock(
+  content: TemplateContentData,
+  blockId: string,
+  direction: NudgeDirection,
+): TreeMutationResult {
+  const found = findBlock(content, blockId);
+  const position = found ? siblingPosition(content, found) : null;
+  if (!found || !position) {
+    return unchanged(content, "block_not_found");
+  }
+
+  const { index, count } = position;
+  const next = index + direction;
+  if (next < 0 || next >= count) {
+    return unchanged(content, "noop");
+  }
+
+  const { block, path } = found;
+  if (isContentBlock(block)) {
+    return found.parentColumnId
+      ? moveContentBlock(content, blockId, found.parentColumnId, next)
+      : unchanged(content, "block_not_found");
+  }
+
+  if (block.type === "section") {
+    return changed({ ...content, body: arrayMove(content.body, index, next) });
+  }
+
+  return changed(
+    mapSections(content, (section, sectionIndex) => {
+      if (sectionIndex !== path.sectionIndex) {
+        return section;
+      }
+      if (block.type === "row") {
+        return { ...section, children: arrayMove(section.children, index, next) };
+      }
+      return {
+        ...section,
+        children: section.children.map((row, rowIndex) =>
+          rowIndex === path.rowIndex ? reorderColumns(row, index, next) : row,
+        ),
+      };
+    }),
   );
 }
 

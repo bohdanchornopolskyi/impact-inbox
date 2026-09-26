@@ -4,9 +4,12 @@ import {
   addColumn,
   addRow,
   addSection,
+  blockNudgeAvailability,
   duplicateBlock,
   ensureDefaultStructure,
   findBlock,
+  nudgeBlock,
+  replaceBlockStyles,
   isDescendantOf,
   moveColumn,
   moveContentBlock,
@@ -242,6 +245,23 @@ describe("tree-ops", () => {
     ]);
   });
 
+  it("keeps each column's width when columns are reordered", () => {
+    let content = createEmptyTemplateContent();
+    const rowId = content.body[0]!.children[0]!.id;
+    content = addColumn(content, rowId, 1).content;
+    content = updateBlockProps(content, rowId, { columnWidths: [30, 70] });
+    const secondColumnId = content.body[0]!.children[0]!.children[1]!.id;
+
+    const dragged = moveColumn(content, secondColumnId, rowId, 0);
+    const nudged = nudgeBlock(content, secondColumnId, -1);
+
+    for (const result of [dragged, nudged]) {
+      const row = result.content.body[0]!.children[0]!;
+      expect(row.children[0]!.id).toBe(secondColumnId);
+      expect(row.props.columnWidths).toEqual([70, 30]);
+    }
+  });
+
   it("moves columns across rows while preserving content blocks", () => {
     let content = createEmptyTemplateContent();
     content = addRow(content, content.body[0]!.id).content;
@@ -453,5 +473,49 @@ describe("tree-ops", () => {
     expect(result.changed).toBe(false);
     expect(result.reason).toBe("block_not_found");
     expect(result.content).toBe(content);
+  });
+
+  it("nudges a block among its siblings and stops at the ends", () => {
+    let content = createEmptyTemplateContent();
+    const columnId = content.body[0]!.children[0]!.children[0]!.id;
+    content = addContentBlock(content, columnId, "heading").content;
+    content = addContentBlock(content, columnId, "text").content;
+    const heading = content.body[0]!.children[0]!.children[0]!.children[0]!;
+    const text = content.body[0]!.children[0]!.children[0]!.children[1]!;
+
+    expect(blockNudgeAvailability(content, heading.id)).toEqual({
+      up: false,
+      down: true,
+    });
+
+    const moved = nudgeBlock(content, heading.id, 1);
+    expect(moved.changed).toBe(true);
+    expect(
+      moved.content.body[0]!.children[0]!.children[0]!.children.map((child) => child.id),
+    ).toEqual([text.id, heading.id]);
+
+    expect(nudgeBlock(content, heading.id, -1).changed).toBe(false);
+    expect(nudgeBlock(moved.content, text.id, -1).changed).toBe(false);
+  });
+
+  it("replaces block styles and clears them", () => {
+    let content = createEmptyTemplateContent();
+    const columnId = content.body[0]!.children[0]!.children[0]!.id;
+    content = addContentBlock(content, columnId, "heading").content;
+    const headingId = content.body[0]!.children[0]!.children[0]!.children[0]!.id;
+
+    content = replaceBlockStyles(content, headingId, {
+      backgroundColor: "#111111",
+    }).content;
+    expect(findBlock(content, headingId)?.block.styles).toEqual({
+      backgroundColor: "#111111",
+    });
+
+    const cleared = replaceBlockStyles(content, headingId, undefined);
+    expect(cleared.changed).toBe(true);
+    expect(findBlock(cleared.content, headingId)?.block.styles).toBeUndefined();
+    expect(
+      replaceBlockStyles(cleared.content, headingId, undefined).changed,
+    ).toBe(false);
   });
 });
