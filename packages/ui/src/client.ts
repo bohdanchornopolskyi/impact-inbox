@@ -96,6 +96,11 @@ export {
   type InspectorPanelTabsProps,
 } from "./components/inspector-panel/inspector-panel";
 export { ColorInput, type ColorInputProps } from "./components/color-input/color-input";
+export {
+  ColorField,
+  COLOR_FIELD_SWATCHES,
+  type ColorFieldProps,
+} from "./components/color-field/color-field";
 export { UnitField, type UnitFieldProps } from "./components/unit-field/unit-field";
 export { Stepper, type StepperProps } from "./components/stepper/stepper";
 export {

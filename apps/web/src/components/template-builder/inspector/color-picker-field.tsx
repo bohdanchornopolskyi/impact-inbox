@@ -1,7 +1,7 @@
 "use client";
 
 import { useId, useRef, useState, useSyncExternalStore } from "react";
-import { BasePopover, ColorInput, InspectorRow, cn } from "@repo/ui/client";
+import { BasePopover, ColorField, ColorInput, InspectorRow, cn } from "@repo/ui/client";
 import { useOptionalWorkspace } from "@/contexts/workspace-context";
 import { ColorPickerPanel } from "./color-picker";
 import {
@@ -229,8 +229,15 @@ export function ColorPickerField({
   );
 
   return (
-    <InspectorRow label={label} htmlFor={id}>
-      {picker}
+    <InspectorRow label={label} htmlFor={id} className="items-start">
+      <ColorField
+        hex={displayHex}
+        swatches={brandColors.slice(0, 6)}
+        disabled={disabled}
+        onSwatch={(next) => selectHex(next, true)}
+      >
+        {picker}
+      </ColorField>
     </InspectorRow>
   );
 }

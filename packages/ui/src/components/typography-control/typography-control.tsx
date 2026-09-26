@@ -16,7 +16,7 @@ import {
 } from "lucide-react";
 import { cn } from "../../lib/cn";
 import { Badge } from "../badge/badge";
-import { ColorInput } from "../color-input/color-input";
+import { ColorField } from "../color-field/color-field";
 import { InspectorRow, inspectorControlClass } from "../inspector-row/inspector-row";
 import { SegmentedControl } from "../segmented-control/segmented-control";
 import { Select, type SelectOption } from "../select/select";
@@ -204,22 +204,11 @@ export function TypographyControl({
         </div>
       </InspectorRow>
       <InspectorRow label="Color" className="items-start">
-        <div className="flex flex-col gap-1.5">
-          <ColorInput hex={hex} />
-          <div className="flex items-center gap-1">
-            {brandColors.map((color) => (
-              <button
-                key={color}
-                type="button"
-                aria-label={color}
-                className="size-4 rounded-[4px] shadow-[inset_0_0_0_1px_rgb(15_23_42/0.12)]"
-                style={{ backgroundColor: color }}
-                onClick={() => onColorChange?.(color)}
-              />
-            ))}
-            <span className="ml-auto text-[11.5px] text-text-2">Brand</span>
-          </div>
-        </div>
+        <ColorField
+          hex={hex}
+          swatches={brandColors}
+          onSwatch={onColorChange}
+        />
       </InspectorRow>
       <InspectorRow label="Align">
         <SegmentedControl
