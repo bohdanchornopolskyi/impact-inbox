@@ -55,11 +55,8 @@ export function ColorInput({
       {...props}
     >
       <ColorInputSwatch hex={hex.startsWith("#") ? hex : `#${hex}`} alpha={alpha} />
-      <span className="min-w-0 flex-1 font-mono text-xs font-medium tabular-nums text-text">
+      <span className="min-w-0 flex-1 pr-2 font-mono text-xs font-medium tabular-nums text-text">
         {digits}
-      </span>
-      <span className="pr-2 text-[11px] tabular-nums text-text-3">
-        {Math.round(alpha * 100)}%
       </span>
     </button>
   );
