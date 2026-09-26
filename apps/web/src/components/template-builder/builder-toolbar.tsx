@@ -13,8 +13,6 @@ import {
   SaveStatus,
   ZoomControl,
 } from "@repo/ui/client";
-import { formatDistanceToNow } from "date-fns";
-import { parseApiDate } from "@/lib/format-date";
 import { AccountMenu } from "@/components/app/account-menu";
 import { useWorkspace } from "@/contexts/workspace-context";
 import { useBuilder, useBuilderFlush } from "./builder-provider";
@@ -24,7 +22,6 @@ import { useBuilderShortcuts } from "./use-builder-shortcuts";
 
 function WorkingCopySyncStatus() {
   const saveState = useBuilder((s) => s.saveState);
-  const updatedAt = useBuilder((s) => s.updatedAt);
   const flush = useBuilderFlush();
 
   if (saveState === "saving") {
@@ -47,18 +44,7 @@ function WorkingCopySyncStatus() {
     return <SaveStatus tone="unsaved" label="Unsaved changes" />;
   }
 
-  const savedAt = parseApiDate(updatedAt);
-
-  return (
-    <SaveStatus
-      tone="saved"
-      label={
-        savedAt
-          ? `Saved ${formatDistanceToNow(savedAt, { addSuffix: true })}`
-          : "Saved"
-      }
-    />
-  );
+  return <SaveStatus tone="saved" label="All changes saved" />;
 }
 
 function BuilderShortcutListener() {

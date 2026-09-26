@@ -134,7 +134,7 @@ export function BuilderToolbarActions() {
         title="Preview (Ctrl/Cmd+P)"
         onClick={() => setPreviewOpen(true)}
       >
-        Preview
+        Preview as…
       </Button>
       {canEdit ? (
         <>
@@ -146,13 +146,6 @@ export function BuilderToolbarActions() {
           >
             Test send
           </Button>
-          <Button
-            variant="secondary"
-            leftIcon={<Download strokeWidth={1.5} />}
-            onClick={() => setExportOpen(true)}
-          >
-            Export
-          </Button>
           <SplitButton
             disabled={isSaving}
             title="Create a revision snapshot (Ctrl/Cmd+S)"
@@ -161,7 +154,7 @@ export function BuilderToolbarActions() {
               void saveRevision();
             }}
           >
-            Save
+            Save version
           </SplitButton>
         </>
       ) : null}

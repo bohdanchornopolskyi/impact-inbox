@@ -7,7 +7,7 @@ export function EditorBar({ className, ...props }: EditorBarProps) {
   return (
     <div
       className={cn(
-        "grid h-topbar shrink-0 grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-3 border-b border-border bg-surface px-4",
+        "grid h-topbar shrink-0 grid-cols-[minmax(0,1fr)_auto_minmax(max-content,1fr)] items-center gap-3 border-b border-border bg-surface px-4",
         className,
       )}
       {...props}

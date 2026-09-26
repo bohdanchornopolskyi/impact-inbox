@@ -134,7 +134,7 @@ export function SaveStatus({
       role="status"
       data-tone={tone}
       className={cn(
-        "group/status inline-flex h-control-md items-center gap-2",
+        "group/status inline-flex h-control-md shrink-0 items-center gap-2 whitespace-nowrap",
         className,
       )}
     >
