@@ -20,9 +20,10 @@ const meta = {
     lineHeight: "1.5",
     letterSpacing: "0",
     paragraphSpacing: "12",
+    webFont: true,
     colorHex: "0F172A",
     align: "start",
-    styles: ["bold"],
+    styles: [],
   },
 } satisfies Meta<typeof TypographyControl>;
 

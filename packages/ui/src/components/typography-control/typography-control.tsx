@@ -4,7 +4,6 @@ import type { HTMLAttributes, ReactNode } from "react";
 import {
   ALargeSmall,
   AlignVerticalSpaceAround,
-  Bold,
   ChevronUp,
   Italic,
   MoveHorizontal,
@@ -12,22 +11,33 @@ import {
   Strikethrough,
   TextAlignCenter,
   TextAlignEnd,
-  TextAlignJustify,
   TextAlignStart,
   Underline,
 } from "lucide-react";
 import { cn } from "../../lib/cn";
-import { InspectorRow } from "../inspector-row/inspector-row";
+import { Badge } from "../badge/badge";
+import { ColorInput } from "../color-input/color-input";
+import { InspectorRow, inspectorControlClass } from "../inspector-row/inspector-row";
 import { SegmentedControl } from "../segmented-control/segmented-control";
 import { Select, type SelectOption } from "../select/select";
 
-export type TypographyAlign = "start" | "center" | "end" | "justify";
-export type TypographyStyle = "bold" | "italic" | "underline" | "strikethrough";
+export type TypographyAlign = "start" | "center" | "end";
+export type TypographyStyle = "italic" | "underline" | "strikethrough";
+
+const DEFAULT_BRAND_COLORS = [
+  "#0F172A",
+  "#4F46E5",
+  "#F8FAFC",
+  "#E7EBF0",
+  "#15A34A",
+  "#F59E0B",
+];
 
 export type TypographyControlProps = HTMLAttributes<HTMLDivElement> & {
   fontFamily: string;
   fontFamilies: SelectOption[];
   onFontFamilyChange?: (value: string) => void;
+  webFont?: boolean;
   fontWeight: string;
   fontWeights: SelectOption[];
   onFontWeightChange?: (value: string) => void;
@@ -39,9 +49,9 @@ export type TypographyControlProps = HTMLAttributes<HTMLDivElement> & {
   onLetterSpacingChange?: (value: string) => void;
   paragraphSpacing: string;
   onParagraphSpacingChange?: (value: string) => void;
-  colorSwatch?: ReactNode;
   colorHex: string;
-  colorAlpha?: string;
+  brandColors?: string[];
+  onColorChange?: (hex: string) => void;
   align: TypographyAlign;
   onAlignChange?: (value: TypographyAlign) => void;
   styles?: TypographyStyle[];
@@ -77,39 +87,17 @@ function MetricInput({
   );
 }
 
-function StyleToggle({
-  active,
-  label,
-  onClick,
-  children,
-}: {
-  active: boolean;
-  label: string;
-  onClick?: () => void;
-  children: ReactNode;
-}) {
-  return (
-    <button
-      type="button"
-      aria-pressed={active}
-      aria-label={label}
-      className={cn(
-        "inline-flex size-8 items-center justify-center rounded-sm border transition-[background-color,border-color,color] duration-150",
-        active
-          ? "border-accent bg-accent-soft text-accent"
-          : "border-border-strong bg-surface text-text-2",
-      )}
-      onClick={onClick}
-    >
-      {children}
-    </button>
-  );
-}
+const STYLE_OPTIONS: { value: TypographyStyle; label: string; icon: ReactNode }[] = [
+  { value: "italic", label: "Italic", icon: <Italic className="size-icon-sm" strokeWidth={1.5} /> },
+  { value: "underline", label: "Underline", icon: <Underline className="size-icon-sm" strokeWidth={1.5} /> },
+  { value: "strikethrough", label: "Strikethrough", icon: <Strikethrough className="size-icon-sm" strokeWidth={1.5} /> },
+];
 
 export function TypographyControl({
   fontFamily,
   fontFamilies,
   onFontFamilyChange,
+  webFont = false,
   fontWeight,
   fontWeights,
   onFontWeightChange,
@@ -121,9 +109,9 @@ export function TypographyControl({
   onLetterSpacingChange,
   paragraphSpacing,
   onParagraphSpacingChange,
-  colorSwatch,
   colorHex,
-  colorAlpha = "100%",
+  brandColors = DEFAULT_BRAND_COLORS,
+  onColorChange,
   align,
   onAlignChange,
   styles = [],
@@ -131,6 +119,8 @@ export function TypographyControl({
   className,
   ...props
 }: TypographyControlProps) {
+  const hex = colorHex.startsWith("#") ? colorHex : `#${colorHex}`;
+
   return (
     <div
       className={cn(
@@ -143,13 +133,32 @@ export function TypographyControl({
         <p className="text-xs font-semibold text-text">Typography</p>
         <ChevronUp className="size-icon-sm text-text-3" strokeWidth={1.5} aria-hidden />
       </div>
-      <InspectorRow label="Font">
-        <Select
-          aria-label="Font"
-          options={fontFamilies}
-          value={fontFamily}
-          onChange={(event) => onFontFamilyChange?.(event.target.value)}
-        />
+      <InspectorRow label="Font" className="items-start">
+        <div className="flex flex-col gap-1.5">
+          <div className="relative">
+            <Select
+              aria-label="Font"
+              className={webFont ? "pr-24" : undefined}
+              options={fontFamilies}
+              value={fontFamily}
+              onChange={(event) => onFontFamilyChange?.(event.target.value)}
+            />
+            {webFont ? (
+              <Badge
+                tone="warning"
+                icon={false}
+                className="pointer-events-none absolute top-1/2 right-7 h-[18px] -translate-y-1/2 px-1.5 text-[10.5px]"
+              >
+                Web font
+              </Badge>
+            ) : null}
+          </div>
+          {webFont ? (
+            <p className="text-[11.5px] leading-snug text-text-2">
+              Falls back to Arial in Outlook and most Gmail apps.
+            </p>
+          ) : null}
+        </div>
       </InspectorRow>
       <InspectorRow label="Weight">
         <Select
@@ -159,56 +168,62 @@ export function TypographyControl({
           onChange={(event) => onFontWeightChange?.(event.target.value)}
         />
       </InspectorRow>
-      <InspectorRow label="Size" className="items-start">
-        <div className="flex flex-col gap-1.5">
-          <div className="flex gap-1.5">
-            <MetricInput
-              icon={<ALargeSmall strokeWidth={1.5} />}
-              value={fontSize}
-              unit="px"
-              ariaLabel="Font size"
-              onChange={onFontSizeChange}
-            />
-            <MetricInput
-              icon={<AlignVerticalSpaceAround strokeWidth={1.5} />}
-              value={lineHeight}
-              ariaLabel="Line height"
-              onChange={onLineHeightChange}
-            />
-          </div>
-          <div className="flex gap-1.5">
-            <MetricInput
-              icon={<MoveHorizontal strokeWidth={1.5} />}
-              value={letterSpacing}
-              unit="px"
-              ariaLabel="Letter spacing"
-              onChange={onLetterSpacingChange}
-            />
-            <MetricInput
-              icon={<Pilcrow strokeWidth={1.5} />}
-              value={paragraphSpacing}
-              unit="px"
-              ariaLabel="Paragraph spacing"
-              onChange={onParagraphSpacingChange}
-            />
-          </div>
+      <InspectorRow label="Size">
+        <div className="flex gap-1.5">
+          <MetricInput
+            icon={<ALargeSmall strokeWidth={1.5} />}
+            value={fontSize}
+            unit="px"
+            ariaLabel="Font size"
+            onChange={onFontSizeChange}
+          />
+          <MetricInput
+            icon={<AlignVerticalSpaceAround strokeWidth={1.5} />}
+            value={lineHeight}
+            ariaLabel="Line height"
+            onChange={onLineHeightChange}
+          />
         </div>
       </InspectorRow>
-      <InspectorRow label="Color">
-        <div className="flex h-control-md items-center gap-2 rounded-sm border border-border-strong bg-surface px-1">
-          {colorSwatch ?? (
-            <span
-              className="size-[22px] shrink-0 rounded-xs border border-border"
-              style={{ backgroundColor: `#${colorHex}` }}
-              aria-hidden
-            />
-          )}
-          <span className="min-w-0 flex-1 text-xs font-medium text-text">{colorHex}</span>
-          <span className="pr-2 text-2xs text-text-3">{colorAlpha}</span>
+      <InspectorRow label="Spacing">
+        <div className="flex gap-1.5">
+          <MetricInput
+            icon={<MoveHorizontal strokeWidth={1.5} />}
+            value={letterSpacing}
+            unit="px"
+            ariaLabel="Letter spacing"
+            onChange={onLetterSpacingChange}
+          />
+          <MetricInput
+            icon={<Pilcrow strokeWidth={1.5} />}
+            value={paragraphSpacing}
+            unit="px"
+            ariaLabel="Paragraph spacing"
+            onChange={onParagraphSpacingChange}
+          />
+        </div>
+      </InspectorRow>
+      <InspectorRow label="Color" className="items-start">
+        <div className="flex flex-col gap-1.5">
+          <ColorInput hex={hex} />
+          <div className="flex items-center gap-1">
+            {brandColors.map((color) => (
+              <button
+                key={color}
+                type="button"
+                aria-label={color}
+                className="size-4 rounded-[4px] shadow-[inset_0_0_0_1px_rgb(15_23_42/0.12)]"
+                style={{ backgroundColor: color }}
+                onClick={() => onColorChange?.(color)}
+              />
+            ))}
+            <span className="ml-auto text-[11.5px] text-text-2">Brand</span>
+          </div>
         </div>
       </InspectorRow>
       <InspectorRow label="Align">
         <SegmentedControl
+          className={inspectorControlClass}
           value={align}
           onChange={(value) => onAlignChange?.(value as TypographyAlign)}
           options={[
@@ -227,44 +242,35 @@ export function TypographyControl({
               ariaLabel: "Align end",
               icon: <TextAlignEnd strokeWidth={1.5} />,
             },
-            {
-              value: "justify",
-              ariaLabel: "Justify",
-              icon: <TextAlignJustify strokeWidth={1.5} />,
-            },
           ]}
         />
       </InspectorRow>
       <InspectorRow label="Style">
-        <div className="flex gap-1.5">
-          <StyleToggle
-            active={styles.includes("bold")}
-            label="Bold"
-            onClick={() => onStyleToggle?.("bold")}
-          >
-            <Bold className="size-icon-sm" strokeWidth={2} />
-          </StyleToggle>
-          <StyleToggle
-            active={styles.includes("italic")}
-            label="Italic"
-            onClick={() => onStyleToggle?.("italic")}
-          >
-            <Italic className="size-icon-sm" strokeWidth={1.5} />
-          </StyleToggle>
-          <StyleToggle
-            active={styles.includes("underline")}
-            label="Underline"
-            onClick={() => onStyleToggle?.("underline")}
-          >
-            <Underline className="size-icon-sm" strokeWidth={1.5} />
-          </StyleToggle>
-          <StyleToggle
-            active={styles.includes("strikethrough")}
-            label="Strikethrough"
-            onClick={() => onStyleToggle?.("strikethrough")}
-          >
-            <Strikethrough className="size-icon-sm" strokeWidth={1.5} />
-          </StyleToggle>
+        <div
+          className="flex h-control-md w-full items-center gap-0.5 rounded-md bg-bg p-0.75"
+          role="group"
+          aria-label="Style"
+        >
+          {STYLE_OPTIONS.map((option) => {
+            const active = styles.includes(option.value);
+            return (
+              <button
+                key={option.value}
+                type="button"
+                aria-pressed={active}
+                aria-label={option.label}
+                className={cn(
+                  "inline-flex h-control-sm min-w-0 flex-1 items-center justify-center rounded-sm transition-[background-color,color,box-shadow] duration-150 [&_svg]:size-[15px]",
+                  active
+                    ? "bg-surface text-text shadow-xs"
+                    : "bg-transparent text-text-2 hover:text-text",
+                )}
+                onClick={() => onStyleToggle?.(option.value)}
+              >
+                {option.icon}
+              </button>
+            );
+          })}
         </div>
       </InspectorRow>
     </div>
