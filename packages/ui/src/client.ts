@@ -105,6 +105,10 @@ export {
   InspectorNote,
   type InspectorNoteProps,
 } from "./components/inspector-note/inspector-note";
+export {
+  MergeTagPopover,
+  type MergeTagPopoverProps,
+} from "./components/merge-tag-popover/merge-tag-popover";
 export { UnitField, type UnitFieldProps } from "./components/unit-field/unit-field";
 export { Stepper, type StepperProps } from "./components/stepper/stepper";
 export {

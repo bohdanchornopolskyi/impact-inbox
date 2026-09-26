@@ -47,7 +47,7 @@ const MERGE_TAG_PATTERN = /\{\{([^{}]+)\}\}/g;
 export function extractMergeTagNames(text: string): string[] {
   const names: string[] = [];
   for (const match of text.matchAll(MERGE_TAG_PATTERN)) {
-    const name = match[1]?.trim();
+    const name = match[1]?.split("|")[0]?.trim();
     if (name) {
       names.push(name);
     }
@@ -72,6 +72,11 @@ export function findUnknownMergeTags(
   return [...unknown].sort();
 }
 
-export function formatMergeTag(tag: string): string {
-  return `{{${tag}}}`;
+export function formatMergeTag(tag: string, fallback?: string): string {
+  const value = fallback?.trim();
+  if (!value) {
+    return `{{${tag}}}`;
+  }
+
+  return `{{${tag}|${value}}}`;
 }

@@ -41,6 +41,18 @@ describe("merge-tag-scan", () => {
     expect(findUnknownMergeTagsInContent(content)).toEqual(["companyName"]);
   });
 
+  it("treats a fallback suffix as the tag name", () => {
+    const content = {
+      ...createEmptyTemplateContent(),
+      settings: {
+        ...createEmptyTemplateContent().settings,
+        subject: "Hi {{firstName|there}}",
+      },
+    };
+
+    expect(findUnknownMergeTagsInContent(content)).toEqual([]);
+  });
+
   it("returns empty when all tags are known", () => {
     const content = {
       ...createEmptyTemplateContent(),
