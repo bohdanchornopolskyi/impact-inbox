@@ -1,11 +1,12 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
+import { themeColor } from "@repo/shared";
 import { ColorInput } from "./color-input";
 
 const meta = {
   title: "Editor/Color Input",
   component: ColorInput,
   args: {
-    hex: "#4F46E5",
+    hex: themeColor("--color-brand-500"),
     alpha: 1,
   },
 } satisfies Meta<typeof ColorInput>;

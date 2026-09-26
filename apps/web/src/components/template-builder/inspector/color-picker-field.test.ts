@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { themeColor } from "@repo/shared";
 import {
   brandSwatches,
   hexToHsva,
@@ -61,7 +62,7 @@ describe("color palettes", () => {
   it("replaces the first brand swatch when primary is a valid hex", () => {
     expect(brandSwatches("#22c55e")[0]).toBe("#22c55e");
     expect(brandSwatches("#22c55e")).toHaveLength(7);
-    expect(brandSwatches("nope")[0]).toBe("#4f46e5");
+    expect(brandSwatches("nope")[0]).toBe(themeColor("--color-brand-500"));
   });
 
   it("keeps recents unique and most-recent first", () => {

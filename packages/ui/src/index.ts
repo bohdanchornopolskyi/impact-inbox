@@ -96,7 +96,7 @@ export {
 export { ColorInput, type ColorInputProps } from "./components/color-input/color-input";
 export {
   ColorField,
-  COLOR_FIELD_SWATCHES,
+  colorFieldSwatches,
   type ColorFieldProps,
 } from "./components/color-field/color-field";
 export {

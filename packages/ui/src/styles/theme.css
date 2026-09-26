@@ -16,14 +16,16 @@
   --color-neutral-900: #0f172a;
   --color-neutral-950: #080d16;
 
-  --color-brand-50: #eef1fe;
-  --color-brand-100: #e0e4fd;
-  --color-brand-200: #c7cdfb;
-  --color-brand-300: #a5aaf7;
-  --color-brand-400: #8083f0;
-  --color-brand-500: #4f46e5;
-  --color-brand-600: #4338ca;
-  --color-brand-700: #372fa6;
+  --color-brand-50: #eaf7f1;
+  --color-brand-100: #cfeedf;
+  --color-brand-200: #9fdcc1;
+  --color-brand-300: #63c39d;
+  --color-brand-400: #2a9f74;
+  --color-brand-500: #067550;
+  --color-brand-600: #055f42;
+  --color-brand-700: #044d36;
+  --color-brand-800: #05412f;
+  --color-brand-900: #06362a;
 
   --color-success-50: #ecfdf3;
   --color-success-500: #15a34a;
@@ -136,7 +138,7 @@
   --shadow-card: var(--shadow-md);
   --shadow-pop: var(--shadow-lg);
   --shadow-drawer: -10px 0 28px #0f172a14;
-  --shadow-accent: 0 1px 2px #4f46e540;
+  --shadow-accent: 0 1px 2px color-mix(in srgb, var(--color-brand-500) 25%, transparent);
   --shadow-ring-accent: 0 0 0 2px var(--color-focus-ring);
   --shadow-ring-danger: 0 0 0 2px var(--color-danger-200);
 

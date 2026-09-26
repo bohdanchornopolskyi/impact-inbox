@@ -16,22 +16,13 @@ import {
 } from "lucide-react";
 import { cn } from "../../lib/cn";
 import { Badge } from "../badge/badge";
-import { ColorField } from "../color-field/color-field";
+import { ColorField, colorFieldSwatches } from "../color-field/color-field";
 import { InspectorRow, inspectorControlClass } from "../inspector-row/inspector-row";
 import { SegmentedControl } from "../segmented-control/segmented-control";
 import { Select, type SelectOption } from "../select/select";
 
 export type TypographyAlign = "start" | "center" | "end";
 export type TypographyStyle = "italic" | "underline" | "strikethrough";
-
-const DEFAULT_BRAND_COLORS = [
-  "#0F172A",
-  "#4F46E5",
-  "#F8FAFC",
-  "#E7EBF0",
-  "#15A34A",
-  "#F59E0B",
-];
 
 export type TypographyControlProps = HTMLAttributes<HTMLDivElement> & {
   fontFamily: string;
@@ -110,7 +101,7 @@ export function TypographyControl({
   paragraphSpacing,
   onParagraphSpacingChange,
   colorHex,
-  brandColors = DEFAULT_BRAND_COLORS,
+  brandColors = colorFieldSwatches(),
   onColorChange,
   align,
   onAlignChange,

@@ -1,17 +1,20 @@
 "use client";
 
 import type { ReactNode } from "react";
+import { themeColor } from "@repo/shared";
 import { cn } from "../../lib/cn";
 import { ColorInput, type ColorInputProps } from "../color-input/color-input";
 
-export const COLOR_FIELD_SWATCHES = [
-  "#0F172A",
-  "#4F46E5",
-  "#F8FAFC",
-  "#E7EBF0",
-  "#15A34A",
-  "#F59E0B",
-] as const;
+export function colorFieldSwatches(): readonly string[] {
+  return [
+    themeColor("--color-neutral-900"),
+    themeColor("--color-brand-500"),
+    themeColor("--color-neutral-50"),
+    "#E7EBF0",
+    themeColor("--color-success-500"),
+    "#F59E0B",
+  ];
+}
 
 export type ColorFieldProps = Omit<ColorInputProps, "hex"> & {
   hex: string;
@@ -22,7 +25,7 @@ export type ColorFieldProps = Omit<ColorInputProps, "hex"> & {
 
 export function ColorField({
   hex,
-  swatches = COLOR_FIELD_SWATCHES,
+  swatches = colorFieldSwatches(),
   onSwatch,
   children,
   className,

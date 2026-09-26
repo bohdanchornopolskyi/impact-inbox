@@ -1,19 +1,11 @@
+import { themeColor } from "@repo/shared";
+
 export type Hsva = {
   h: number;
   s: number;
   v: number;
   a: number;
 };
-
-export const BRAND_SWATCHES = [
-  "#4f46e5",
-  "#a5aaf7",
-  "#e0e4fd",
-  "#0f172a",
-  "#8a93a0",
-  "#e5e7eb",
-  "#ffffff",
-] as const;
 
 export const RECENT_COLORS_KEY = "impact-inbox.recent-colors";
 export const MAX_RECENT_COLORS = 6;
@@ -146,14 +138,27 @@ export function hueColor(h: number): string {
   return hsvaToHex({ h, s: 100, v: 100, a: 1 });
 }
 
+function brandSwatchList(): readonly string[] {
+  return [
+    themeColor("--color-brand-500"),
+    themeColor("--color-brand-300"),
+    themeColor("--color-brand-100"),
+    themeColor("--color-neutral-900"),
+    themeColor("--color-neutral-500"),
+    themeColor("--color-neutral-200"),
+    themeColor("--color-neutral-0"),
+  ];
+}
+
 export function brandSwatches(primary?: string): string[] {
+  const swatches = brandSwatchList();
   if (!primary || !isValidHex(primary)) {
-    return [...BRAND_SWATCHES];
+    return [...swatches];
   }
   const normalized = normalizeHex(primary);
   return [
     normalized,
-    ...BRAND_SWATCHES.slice(1).filter((color) => color !== normalized),
+    ...swatches.slice(1).filter((color) => color !== normalized),
   ].slice(0, 7);
 }
 

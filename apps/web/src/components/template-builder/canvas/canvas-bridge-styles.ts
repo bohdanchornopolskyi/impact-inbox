@@ -1,4 +1,11 @@
+import { themeColor } from "@repo/shared";
+
 export function getCanvasBridgeStyles(canEdit: boolean): string {
+  const brand300 = themeColor("--color-brand-300");
+  const brand400 = themeColor("--color-brand-400");
+  const brand500 = themeColor("--color-brand-500");
+  const neutral900 = themeColor("--color-neutral-900");
+  const neutral0 = themeColor("--color-neutral-0");
   return `<style id="canvas-bridge-styles">
 [data-block-id] { cursor: pointer; }
 [data-block-id][data-layout-role] { cursor: grab; }
@@ -24,10 +31,10 @@ ${canEdit ? "[data-editable] { cursor: text; }\n[data-editable][contenteditable=
   border-radius: 5px;
 }
 .canvas-bridge-hover {
-  border: 1px solid #a5aaf7;
+  border: 1px solid ${brand300};
 }
 .canvas-bridge-selected {
-  border: 2px solid #4f46e5;
+  border: 2px solid ${brand500};
 }
 .canvas-bridge-dragging {
   opacity: 0.45;
@@ -48,10 +55,10 @@ ${canEdit ? "[data-editable] { cursor: text; }\n[data-editable][contenteditable=
   white-space: nowrap;
 }
 .canvas-bridge-type-tag-hover {
-  background: #8083f0;
+  background: ${brand400};
 }
 .canvas-bridge-type-tag-selected {
-  background: #4f46e5;
+  background: ${brand500};
 }
 .canvas-bridge-toolbar {
   position: absolute;
@@ -60,8 +67,8 @@ ${canEdit ? "[data-editable] { cursor: text; }\n[data-editable][contenteditable=
   gap: 2px;
   height: 32px;
   padding: 0 5px;
-  background: #0f172a;
-  color: #fff;
+  background: ${neutral900};
+  color: ${neutral0};
   font-family: system-ui, -apple-system, sans-serif;
   border-radius: 10px;
   box-shadow: 0 4px 12px #0f172a33;
@@ -120,13 +127,13 @@ ${canEdit ? "[data-editable] { cursor: text; }\n[data-editable][contenteditable=
   width: 8px;
   height: 8px;
   border-radius: 999px;
-  background: #4f46e5;
+  background: ${brand500};
   flex-shrink: 0;
 }
 .canvas-bridge-drop-line {
   flex: 1;
   height: 2px;
-  background: #4f46e5;
+  background: ${brand500};
   border-radius: 999px;
 }
 .canvas-bridge-drop-indicator-vertical {

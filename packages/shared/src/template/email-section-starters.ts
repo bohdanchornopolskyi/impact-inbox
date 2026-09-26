@@ -16,6 +16,7 @@ import type {
   SectionBlock,
 } from "../schemas/template/blocks/layout";
 import type { BlockStyles } from "../schemas/template/styles";
+import { themeColor } from "../theme-colors";
 import { distributeEqualColumnWidths } from "./column-widths";
 import { createContentBlock } from "./create-block";
 import { resolveBlockDefaults } from "./resolve-brand-defaults";
@@ -216,7 +217,7 @@ function teamMember(
       initials,
       { level: 3, fontSize: 14, fontWeight: 700 },
       {
-        backgroundColor: "#eef1fe",
+        backgroundColor: themeColor("--color-brand-50"),
         textAlign: "center",
         padding: { top: 16, bottom: 16 },
         borderRadius: 6,
@@ -252,7 +253,7 @@ export function createHeaderStarterModule(ctx: ModulePrefillContext): SectionBlo
   );
   return stack(ctx, [logoBlock(ctx), name], {
     padding: { top: 20, right: 28, bottom: 20, left: 28 },
-    backgroundColor: "#ffffff",
+    backgroundColor: themeColor("--color-neutral-0"),
   });
 }
 
@@ -263,25 +264,25 @@ export function createHeroStarterModule(ctx: ModulePrefillContext): SectionBlock
       heading(
         ctx.brandKit,
         "New collection",
-        { level: 3, fontSize: 11, color: "#ffffff", textTransform: "uppercase" },
+        { level: 3, fontSize: 11, color: themeColor("--color-neutral-0"), textTransform: "uppercase" },
         { letterSpacing: 1.2, textAlign: "center" },
       ),
       heading(
         ctx.brandKit,
         "Designed for everyday moments",
-        { level: 1, fontSize: 32, color: "#ffffff" },
+        { level: 1, fontSize: 32, color: themeColor("--color-neutral-0") },
         { textAlign: "center" },
       ),
       button(
         ctx.brandKit,
         "Explore the collection",
-        { backgroundColor: "#ffffff", textColor: "#0f172a" },
+        { backgroundColor: themeColor("--color-neutral-0"), textColor: themeColor("--color-neutral-900") },
         { textAlign: "center", padding: { bottom: 0 } },
       ),
     ],
     {
       padding: { top: 48, right: 40, bottom: 32, left: 40 },
-      backgroundColor: "#0f172a",
+      backgroundColor: themeColor("--color-neutral-900"),
       backgroundImage: HERO_IMAGE_URL,
     },
   );
@@ -298,7 +299,7 @@ export function createHeroSplitStarterModule(ctx: ModulePrefillContext): Section
             heading(
               ctx.brandKit,
               "New arrival",
-              { level: 3, fontSize: 11, color: "#8a93a0", textTransform: "uppercase" },
+              { level: 3, fontSize: 11, color: themeColor("--color-neutral-500"), textTransform: "uppercase" },
               { letterSpacing: 1.2 },
             ),
             heading(ctx.brandKit, "Crafted for calm mornings", { level: 1, fontSize: 26 }),
@@ -316,7 +317,7 @@ export function createHeroSplitStarterModule(ctx: ModulePrefillContext): Section
         { reverseOnMobile: true },
       ),
     ],
-    { padding: { top: 36, right: 32, bottom: 36, left: 32 }, backgroundColor: "#ffffff" },
+    { padding: { top: 36, right: 32, bottom: 36, left: 32 }, backgroundColor: themeColor("--color-neutral-0") },
   );
 }
 
@@ -334,7 +335,7 @@ export function createFeatureRowStarterModule(ctx: ModulePrefillContext): Sectio
             heading(
               ctx.brandKit,
               "Featured",
-              { level: 3, fontSize: 11, color: "#8a93a0", textTransform: "uppercase" },
+              { level: 3, fontSize: 11, color: themeColor("--color-neutral-500"), textTransform: "uppercase" },
               { letterSpacing: 1.2 },
             ),
             heading(ctx.brandKit, "Hand-finished stoneware, made to last", { level: 2, fontSize: 22 }),
@@ -349,7 +350,7 @@ export function createFeatureRowStarterModule(ctx: ModulePrefillContext): Sectio
         { columnWidths: [37, 63], gap: 16 },
       ),
     ],
-    { padding: { top: 28, right: 28, bottom: 28, left: 28 }, backgroundColor: "#ffffff" },
+    { padding: { top: 28, right: 28, bottom: 28, left: 28 }, backgroundColor: themeColor("--color-neutral-0") },
   );
 }
 
@@ -362,7 +363,7 @@ export function createTeamStarterModule(ctx: ModulePrefillContext): SectionBlock
           heading(
             ctx.brandKit,
             "Our team",
-            { level: 3, fontSize: 11, color: "#8a93a0", textTransform: "uppercase" },
+            { level: 3, fontSize: 11, color: themeColor("--color-neutral-500"), textTransform: "uppercase" },
             { letterSpacing: 1.2, textAlign: "center" },
           ),
           heading(
@@ -383,7 +384,7 @@ export function createTeamStarterModule(ctx: ModulePrefillContext): SectionBlock
         { gap: 12 },
       ),
     ],
-    { padding: { top: 32, right: 28, bottom: 32, left: 28 }, backgroundColor: "#ffffff" },
+    { padding: { top: 32, right: 28, bottom: 32, left: 28 }, backgroundColor: themeColor("--color-neutral-0") },
   );
 }
 
@@ -413,7 +414,7 @@ export function createTeamGridStarterModule(ctx: ModulePrefillContext): SectionB
         { gap: 12 },
       ),
     ],
-    { padding: { top: 32, right: 28, bottom: 32, left: 28 }, backgroundColor: "#ffffff" },
+    { padding: { top: 32, right: 28, bottom: 32, left: 28 }, backgroundColor: themeColor("--color-neutral-0") },
   );
 }
 
@@ -438,7 +439,7 @@ export function createCtaStarterModule(ctx: ModulePrefillContext): SectionBlock 
         padding: { bottom: 0 },
       }),
     ],
-    { padding: { top: 36, right: 40, bottom: 36, left: 40 }, backgroundColor: "#ffffff" },
+    { padding: { top: 36, right: 40, bottom: 36, left: 40 }, backgroundColor: themeColor("--color-neutral-0") },
   );
 }
 
@@ -449,29 +450,29 @@ export function createCtaBannerStarterModule(ctx: ModulePrefillContext): Section
       heading(
         ctx.brandKit,
         "Member exclusive",
-        { level: 3, fontSize: 11, color: "#c7d2fe", textTransform: "uppercase" },
+        { level: 3, fontSize: 11, color: themeColor("--color-brand-200"), textTransform: "uppercase" },
         { letterSpacing: 1.2, textAlign: "center" },
       ),
       heading(
         ctx.brandKit,
         "20% off ends Sunday",
-        { level: 2, fontSize: 28, color: "#ffffff" },
+        { level: 2, fontSize: 28, color: themeColor("--color-neutral-0") },
         { textAlign: "center" },
       ),
       body(
         ctx.brandKit,
         "Your early access window closes at midnight. Shop the full collection before prices go back up.",
-        { color: "#e0e7ff" },
+        { color: themeColor("--color-brand-100") },
         { textAlign: "center" },
       ),
       button(
         ctx.brandKit,
         "Shop member pricing",
-        { backgroundColor: "#ffffff", textColor: "#0f172a" },
+        { backgroundColor: themeColor("--color-neutral-0"), textColor: themeColor("--color-neutral-900") },
         { textAlign: "center", padding: { bottom: 0 } },
       ),
     ],
-    { padding: { top: 36, right: 32, bottom: 36, left: 32 }, backgroundColor: "#0f172a" },
+    { padding: { top: 36, right: 32, bottom: 36, left: 32 }, backgroundColor: themeColor("--color-neutral-900") },
   );
 }
 
@@ -482,25 +483,25 @@ export function createCtaBackgroundStarterModule(ctx: ModulePrefillContext): Sec
       heading(
         ctx.brandKit,
         "Summer sale ends tonight",
-        { level: 2, fontSize: 28, color: "#ffffff" },
+        { level: 2, fontSize: 28, color: themeColor("--color-neutral-0") },
         { textAlign: "center" },
       ),
       body(
         ctx.brandKit,
         "Up to 40% off sitewide. Members save an extra 10%.",
-        { color: "#ffffff" },
+        { color: themeColor("--color-neutral-0") },
         { textAlign: "center" },
       ),
       button(
         ctx.brandKit,
         "Shop the sale",
-        { backgroundColor: "#ffffff", textColor: "#0f172a" },
+        { backgroundColor: themeColor("--color-neutral-0"), textColor: themeColor("--color-neutral-900") },
         { textAlign: "center", padding: { bottom: 0 } },
       ),
     ],
     {
       padding: { top: 48, right: 40, bottom: 48, left: 40 },
-      backgroundColor: "#0f172a",
+      backgroundColor: themeColor("--color-neutral-900"),
       backgroundImage: HERO_IMAGE_URL,
     },
   );
@@ -519,7 +520,7 @@ export function createCtaImageStripStarterModule(ctx: ModulePrefillContext): Sec
       ),
       button(ctx.brandKit, "Start shopping", undefined, { padding: { bottom: 0 } }),
     ],
-    { padding: { top: 0, right: 0, bottom: 28, left: 0 }, backgroundColor: "#ffffff" },
+    { padding: { top: 0, right: 0, bottom: 28, left: 0 }, backgroundColor: themeColor("--color-neutral-0") },
   );
 }
 
@@ -533,7 +534,7 @@ export function createFaqStarterModule(ctx: ModulePrefillContext): SectionBlock 
       ...faqPair(ctx, "Can I return an item?", "Unopened items can be returned within 30 days. We cover return shipping on your first exchange."),
       ...faqPair(ctx, "Do members get early access?", "Yes — members receive 48-hour early access to every new collection."),
     ],
-    { padding: { top: 32, right: 32, bottom: 32, left: 32 }, backgroundColor: "#ffffff" },
+    { padding: { top: 32, right: 32, bottom: 32, left: 32 }, backgroundColor: themeColor("--color-neutral-0") },
   );
 }
 
@@ -561,7 +562,7 @@ export function createFaqTwoColumnStarterModule(ctx: ModulePrefillContext): Sect
         { gap: 16 },
       ),
     ],
-    { padding: { top: 32, right: 28, bottom: 32, left: 28 }, backgroundColor: "#ffffff" },
+    { padding: { top: 32, right: 28, bottom: 32, left: 28 }, backgroundColor: themeColor("--color-neutral-0") },
   );
 }
 
@@ -584,11 +585,11 @@ export function createTestimonialStarterModule(ctx: ModulePrefillContext): Secti
       body(
         ctx.brandKit,
         "Member since 2022",
-        { fontSize: 12, color: "#8a93a0" },
+        { fontSize: 12, color: themeColor("--color-neutral-500") },
         { textAlign: "center", padding: { bottom: 0 } },
       ),
     ],
-    { padding: { top: 36, right: 40, bottom: 36, left: 40 }, backgroundColor: "#ffffff" },
+    { padding: { top: 36, right: 40, bottom: 36, left: 40 }, backgroundColor: themeColor("--color-neutral-0") },
   );
 }
 
@@ -601,18 +602,18 @@ export function createTestimonialCardStarterModule(ctx: ModulePrefillContext): S
         "Every order feels personal. The packaging alone tells you someone cared.",
         { fontSize: 16 },
       ),
-      body(ctx.brandKit, "★★★★★", { fontSize: 14, color: "#e0a106" }, { padding: { bottom: 8 } }),
+      body(ctx.brandKit, "★★★★★", { fontSize: 14, color: themeColor("--color-warning-500") }, { padding: { bottom: 8 } }),
       heading(ctx.brandKit, "Elena Lopez", { level: 4, fontSize: 14 }, { padding: { bottom: 4 } }),
       body(
         ctx.brandKit,
         "Verified buyer",
-        { fontSize: 12, color: "#8a93a0" },
+        { fontSize: 12, color: themeColor("--color-neutral-500") },
         { padding: { bottom: 0 } },
       ),
     ],
     {
       padding: { top: 24, right: 24, bottom: 24, left: 24 },
-      backgroundColor: "#f8fafc",
+      backgroundColor: themeColor("--color-neutral-50"),
     },
   );
 }
@@ -625,7 +626,7 @@ function journalCard(
 ): ContentBlock[] {
   return [
     image(ctx.brandKit, title, POST_IMAGE_URL),
-    body(ctx.brandKit, date, { fontSize: 12, color: "#8a93a0" }, { padding: { bottom: 4 } }),
+    body(ctx.brandKit, date, { fontSize: 12, color: themeColor("--color-neutral-500") }, { padding: { bottom: 4 } }),
     heading(ctx.brandKit, title, { level: 3, fontSize: 16 }),
     body(ctx.brandKit, excerpt, { fontSize: 13 }, { padding: { bottom: 0 } }),
   ];
@@ -665,7 +666,7 @@ export function createPostsGridStarterModule(ctx: ModulePrefillContext): Section
         { gap: 16 },
       ),
     ],
-    { padding: { top: 32, right: 28, bottom: 32, left: 28 }, backgroundColor: "#ffffff" },
+    { padding: { top: 32, right: 28, bottom: 32, left: 28 }, backgroundColor: themeColor("--color-neutral-0") },
   );
 }
 
@@ -675,7 +676,7 @@ export function createPostsStackStarterModule(ctx: ModulePrefillContext): Sectio
     [
       heading(ctx.brandKit, "Latest from the journal", { level: 2, fontSize: 22 }),
       image(ctx.brandKit, "Inside the studio", POST_IMAGE_URL),
-      body(ctx.brandKit, "Mar 4, 2026", { fontSize: 12, color: "#8a93a0" }, { padding: { bottom: 4 } }),
+      body(ctx.brandKit, "Mar 4, 2026", { fontSize: 12, color: themeColor("--color-neutral-500") }, { padding: { bottom: 4 } }),
       heading(ctx.brandKit, "Inside the studio", { level: 3, fontSize: 18 }),
       body(
         ctx.brandKit,
@@ -685,7 +686,7 @@ export function createPostsStackStarterModule(ctx: ModulePrefillContext): Sectio
       button(ctx.brandKit, "Read article"),
       divider(ctx.brandKit),
       image(ctx.brandKit, "Material sourcing", POST_IMAGE_URL),
-      body(ctx.brandKit, "Feb 18, 2026", { fontSize: 12, color: "#8a93a0" }, { padding: { bottom: 4 } }),
+      body(ctx.brandKit, "Feb 18, 2026", { fontSize: 12, color: themeColor("--color-neutral-500") }, { padding: { bottom: 4 } }),
       heading(ctx.brandKit, "Material sourcing", { level: 3, fontSize: 18 }),
       body(
         ctx.brandKit,
@@ -694,7 +695,7 @@ export function createPostsStackStarterModule(ctx: ModulePrefillContext): Sectio
       ),
       button(ctx.brandKit, "Read article", undefined, { padding: { bottom: 0 } }),
     ],
-    { padding: { top: 32, right: 28, bottom: 32, left: 28 }, backgroundColor: "#ffffff" },
+    { padding: { top: 32, right: 28, bottom: 32, left: 28 }, backgroundColor: themeColor("--color-neutral-0") },
   );
 }
 
@@ -719,7 +720,7 @@ export function createFooterStarterModule(ctx: ModulePrefillContext): SectionBlo
         { padding: { bottom: 0 }, backgroundColor: "transparent" },
       ),
     ],
-    { padding: { top: 22, right: 40, bottom: 26, left: 40 }, backgroundColor: "#f8fafc" },
+    { padding: { top: 22, right: 40, bottom: 26, left: 40 }, backgroundColor: themeColor("--color-neutral-50") },
   );
 }
 
@@ -746,6 +747,6 @@ export function createFooterNavStarterModule(ctx: ModulePrefillContext): Section
         { padding: { bottom: 0 }, backgroundColor: "transparent", textAlign: "center" },
       ),
     ],
-    { padding: { top: 24, right: 28, bottom: 24, left: 28 }, backgroundColor: "#ffffff" },
+    { padding: { top: 24, right: 28, bottom: 24, left: 28 }, backgroundColor: themeColor("--color-neutral-0") },
   );
 }

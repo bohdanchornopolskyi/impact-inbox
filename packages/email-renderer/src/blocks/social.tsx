@@ -1,5 +1,5 @@
 import { Img, Link, Section } from "react-email";
-import type { SocialBlock } from "@repo/shared";
+import { themeColor, type SocialBlock } from "@repo/shared";
 import { getSocialIconSrc } from "../social-icons";
 import { blockStylesToCss } from "../styles";
 import { registerBlock } from "./content-block-registry";
@@ -10,7 +10,7 @@ export function renderSocialBlock(block: SocialBlock) {
   const glyph = Math.max(14, Math.round(circle * 0.5));
   const fill = backgroundColor ?? "rgba(15, 23, 42, 0.05)";
   const spacing = gap ?? 14;
-  const tint = iconColor ?? "#4b5563";
+  const tint = iconColor ?? themeColor("--color-neutral-700");
 
   return (
     <Section

@@ -5,20 +5,21 @@ import type {
 } from "../schemas/template/blocks/content";
 import type { TemplateContentData } from "../schemas/template/content";
 import type { BlockStyles } from "../schemas/template/styles";
+import { themeColor } from "../theme-colors";
 
 const TEMPLATE_CONTENT_VERSION = 1 as const;
 
 const TEMPLATE_DEFAULT_COLORS = {
-  pageBackground: "#ebedf1",
-  contentBackground: "#ffffff",
-  text: "#4b5563",
-  heading: "#0f172a",
-  link: "#4f46e5",
-  buttonBackground: "#0f172a",
-  buttonText: "#ffffff",
-  divider: "#e5e7eb",
+  pageBackground: themeColor("--color-canvas-bg"),
+  contentBackground: themeColor("--color-neutral-0"),
+  text: themeColor("--color-neutral-700"),
+  heading: themeColor("--color-neutral-900"),
+  link: themeColor("--color-brand-500"),
+  buttonBackground: themeColor("--color-neutral-900"),
+  buttonText: themeColor("--color-neutral-0"),
+  divider: themeColor("--color-neutral-200"),
   qrForeground: "#000000",
-  qrBackground: "#ffffff",
+  qrBackground: themeColor("--color-neutral-0"),
 } as const;
 
 const TEMPLATE_DEFAULT_SPACING = {
@@ -363,7 +364,7 @@ const TEMPLATE_BLOCK_DEFINITIONS: TemplateBlockDefinitions = {
       iconSize: 28,
       gap: 14,
       backgroundColor: "rgba(15, 23, 42, 0.05)",
-      iconColor: "#4b5563",
+      iconColor: themeColor("--color-neutral-700"),
     },
     defaultStyles: CONTENT_BLOCK_GAP_STYLES,
     mergeTagProps: [],

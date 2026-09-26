@@ -1,5 +1,6 @@
 export * from "./schemas/index";
 export * from "./constants";
+export { themeColor } from "./theme-colors";
 export * from "./types";
 export * from "./template/index";
 export {

@@ -31,10 +31,10 @@ Full-width bar, height `control-md` (34px), radius `sm` (6px), surface backgroun
 Left to right:
 
 - 20px rounded square swatch of the current color, 1px `black/10` so white reads
-- Hex **without** `#`, uppercase, mono, semibold (`4F46E5`)
+- Hex **without** `#`, uppercase, mono, semibold (`0F172A`)
 - Opacity on the right, `text-3` (`100%`)
 
-Open: same bar, border `accent` (`#4F46E5`). Closed: `border-strong`. Disabled: `neutral-200` border, `neutral-100` fill, no popover.
+Open: same bar, border `accent` (`--color-brand-500`). Closed: `border-strong`. Disabled: `neutral-200` border, `neutral-100` fill, no popover.
 
 The field label stays a `FieldRow` `htmlFor` pointing at this button.
 
@@ -53,9 +53,9 @@ Top to bottom:
 
 | | Hex |
 | --- | --- |
-| 1 | `#4F46E5` (`brand-500`) |
-| 2 | `#A5AAF7` (`brand-300`) |
-| 3 | `#E0E4FD` (`brand-100`) |
+| 1 | `--color-brand-500` |
+| 2 | `--color-brand-300` |
+| 3 | `--color-brand-100` |
 | 4 | `#0F172A` (`neutral-900`) |
 | 5 | `#8A93A0` (`neutral-500`) |
 | 6 | `#E5E7EB` (`neutral-200`) |
@@ -71,7 +71,7 @@ If the workspace brand kit has a `primary`, it may replace swatch 1 when it is a
 
 - Dragging saturation, hue, or alpha updates the field and the canvas live.
 - `onChange` stays **6-digit hex** (`#rrggbb`). Alpha is picker-local. Email HTML does not get `#rrggbbaa`. Closing the popover does not write alpha into the template.
-- Typed hex accepts `4F46E5` or `#4F46E5`. Commit when it is a full 6 digits. Invalid partial values stay in the input until blur, then snap back to the last valid color.
+- Typed hex accepts `0F172A` or `#0F172A`. Commit when it is a full 6 digits. Invalid partial values stay in the input until blur, then snap back to the last valid color.
 - Eyedropper uses `window.EyeDropper`. If the API is missing, omit the icon. Do not ship a dead control.
 - Escape and click-outside close the popover. Focus returns to the field.
 - Disabled: no open, no eyedropper, no typing.

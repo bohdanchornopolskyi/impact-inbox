@@ -1,5 +1,9 @@
 import { Injectable, Logger } from "@nestjs/common";
+import { themeColor } from "@repo/shared";
 import { Resend } from "resend";
+
+const buttonBackground = themeColor("--color-brand-500");
+const buttonText = themeColor("--color-neutral-0");
 
 function getWebOrigin(): string {
   return process.env.WEB_ORIGIN ?? "http://localhost:3000";
@@ -104,7 +108,7 @@ export class EmailService {
         <p style="font-size:13px;color:#52525b;margin:0 0 20px;">
           Confirm your email address to finish setting up your Impact Inbox account.
         </p>
-        <a href="${verifyUrl}" style="display:inline-block;padding:10px 16px;background:#4f46e5;color:#ffffff;text-decoration:none;border-radius:8px;font-size:13px;font-weight:600;">
+        <a href="${verifyUrl}" style="display:inline-block;padding:10px 16px;background:${buttonBackground};color:${buttonText};text-decoration:none;border-radius:8px;font-size:13px;font-weight:600;">
           Verify email
         </a>
         <p style="font-size:12px;color:#71717a;margin:20px 0 0;">
@@ -121,7 +125,7 @@ export class EmailService {
         <p style="font-size:13px;color:#52525b;margin:0 0 20px;">
           Use the link below to choose a new password for your Impact Inbox account.
         </p>
-        <a href="${resetUrl}" style="display:inline-block;padding:10px 16px;background:#4f46e5;color:#ffffff;text-decoration:none;border-radius:8px;font-size:13px;font-weight:600;">
+        <a href="${resetUrl}" style="display:inline-block;padding:10px 16px;background:${buttonBackground};color:${buttonText};text-decoration:none;border-radius:8px;font-size:13px;font-weight:600;">
           Reset password
         </a>
         <p style="font-size:12px;color:#71717a;margin:20px 0 0;">
@@ -138,7 +142,7 @@ export class EmailService {
         <p style="font-size:13px;color:#52525b;margin:0 0 20px;">
           Please confirm that you want to receive emails from the list <strong>${listName}</strong>.
         </p>
-        <a href="${confirmUrl}" style="display:inline-block;padding:10px 16px;background:#4f46e5;color:#ffffff;text-decoration:none;border-radius:8px;font-size:13px;font-weight:600;">
+        <a href="${confirmUrl}" style="display:inline-block;padding:10px 16px;background:${buttonBackground};color:${buttonText};text-decoration:none;border-radius:8px;font-size:13px;font-weight:600;">
           Confirm subscription
         </a>
         <p style="font-size:12px;color:#71717a;margin:20px 0 0;">
@@ -155,7 +159,7 @@ export class EmailService {
         <p style="font-size:13px;color:#52525b;margin:0 0 20px;">
           You've been invited to join a team on Impact Inbox. Accept the invite to get started.
         </p>
-        <a href="${acceptUrl}" style="display:inline-block;padding:10px 16px;background:#4f46e5;color:#ffffff;text-decoration:none;border-radius:8px;font-size:13px;font-weight:600;">
+        <a href="${acceptUrl}" style="display:inline-block;padding:10px 16px;background:${buttonBackground};color:${buttonText};text-decoration:none;border-radius:8px;font-size:13px;font-weight:600;">
           Accept invite
         </a>
         <p style="font-size:12px;color:#71717a;margin:20px 0 0;">
