@@ -1,9 +1,7 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { useRouter } from "next/navigation";
 import {
-  Check,
   CopyPlus,
   Download,
   Eye,
@@ -11,7 +9,7 @@ import {
   LayoutTemplate,
   MailCheck,
   Redo2,
-  Send,
+  Save,
   Undo2,
 } from "lucide-react";
 import {
@@ -20,7 +18,6 @@ import {
   SplitButton,
   type SplitButtonItem,
 } from "@repo/ui/client";
-import { useWorkspace } from "@/contexts/workspace-context";
 import { useBuilder, useSaveRevision } from "./builder-provider";
 
 function HistoryButton({
@@ -50,8 +47,6 @@ function HistoryButton({
 }
 
 export function BuilderToolbarActions() {
-  const router = useRouter();
-  const { workspace } = useWorkspace();
   const canEdit = useBuilder((s) => s.canEdit);
   const canUndo = useBuilder((s) => s.history.past.length > 0);
   const canRedo = useBuilder((s) => s.history.future.length > 0);
@@ -64,19 +59,15 @@ export function BuilderToolbarActions() {
 
   const saveItems: SplitButtonItem[] = [
     {
-      label: "Save and close",
-      shortcut: "⌘⇧S",
-      icon: <Check strokeWidth={1.5} />,
+      label: "Save version…",
+      shortcut: "⌘S",
+      icon: <Save strokeWidth={1.5} />,
       onSelect: () => {
-        void saveRevision().then((saved) => {
-          if (saved) {
-            router.push(`/${workspace.slug}/templates`);
-          }
-        });
+        void saveRevision();
       },
     },
     {
-      label: "Save as copy",
+      label: "Duplicate template",
       icon: <CopyPlus strokeWidth={1.5} />,
       disabled: true,
       onSelect: () => undefined,
@@ -88,24 +79,15 @@ export function BuilderToolbarActions() {
       onSelect: () => undefined,
     },
     {
-      label: "Save and send test",
-      icon: <Send strokeWidth={1.5} />,
-      disabled: true,
-      onSelect: () => undefined,
-      separatorBefore: true,
+      label: "Export HTML",
+      icon: <Download strokeWidth={1.5} />,
+      onSelect: () => setExportOpen(true),
     },
     {
       label: "Version history",
       icon: <History strokeWidth={1.5} />,
-      onSelect: () => setRevisionsOpen(true),
-    },
-    {
-      label: "Discard changes",
-      icon: <Undo2 strokeWidth={1.5} />,
-      disabled: true,
-      onSelect: () => undefined,
-      destructive: true,
       separatorBefore: true,
+      onSelect: () => setRevisionsOpen(true),
     },
   ];
 

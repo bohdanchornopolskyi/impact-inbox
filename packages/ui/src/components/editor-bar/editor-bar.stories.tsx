@@ -1,6 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import {
-  Check,
   ChevronLeft,
   CopyPlus,
   Download,
@@ -10,7 +9,7 @@ import {
   LayoutTemplate,
   MailCheck,
   Redo2,
-  Send,
+  Save,
   Undo2,
 } from "lucide-react";
 import { Button } from "../button/button";
@@ -72,13 +71,13 @@ export const TemplateEditor: Story = {
         <SplitButton
           items={[
             {
-              label: "Save and close",
-              shortcut: "⌘⇧S",
-              icon: <Check strokeWidth={1.5} />,
+              label: "Save version…",
+              shortcut: "⌘S",
+              icon: <Save strokeWidth={1.5} />,
               onSelect: () => undefined,
             },
             {
-              label: "Save as copy",
+              label: "Duplicate template",
               icon: <CopyPlus strokeWidth={1.5} />,
               onSelect: () => undefined,
             },
@@ -88,22 +87,15 @@ export const TemplateEditor: Story = {
               onSelect: () => undefined,
             },
             {
-              label: "Save and send test",
-              icon: <Send strokeWidth={1.5} />,
+              label: "Export HTML",
+              icon: <Download strokeWidth={1.5} />,
               onSelect: () => undefined,
-              separatorBefore: true,
             },
             {
               label: "Version history",
               icon: <History strokeWidth={1.5} />,
-              onSelect: () => undefined,
-            },
-            {
-              label: "Discard changes",
-              icon: <Undo2 strokeWidth={1.5} />,
-              onSelect: () => undefined,
-              destructive: true,
               separatorBefore: true,
+              onSelect: () => undefined,
             },
           ]}
         >
