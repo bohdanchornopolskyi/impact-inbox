@@ -1,12 +1,10 @@
 "use client";
 
-import { Copy, Ellipsis, Trash2 } from "lucide-react";
+import { Ellipsis } from "lucide-react";
 import {
-  Button,
   DropdownMenu,
   InspectorPanel,
   InspectorPanelBody,
-  InspectorPanelFooter,
   InspectorPanelHeader,
   InspectorPanelScroll,
   InspectorPanelTabs,
@@ -25,6 +23,7 @@ import { widthForPickedImage } from "./inspector/image-display-width";
 import { ImageLibraryProvider } from "./inspector/image-library-context";
 import { ImageLibraryPanel } from "./inspector/image-library-panel";
 import { TemplateSettingsInspector } from "./inspector/template-settings-inspector";
+import { TemplateCampaignSettings } from "./inspector/template-campaign-settings";
 import { useState } from "react";
 
 function canPickImageFromLibrary(
@@ -171,7 +170,16 @@ export function BuilderInspectorPanel() {
           />
         ) : null}
         {inspectorMode === "templateSettings" ? (
-          <InspectorPanelHeader title="Template" context="Subject, layout, and defaults" />
+          <InspectorPanelHeader
+            title="Styles"
+            context="Every block uses these unless you change it in the Block tab."
+          />
+        ) : null}
+        {inspectorMode === "settings" ? (
+          <InspectorPanelHeader
+            title="Settings"
+            context="Sender, tracking, and compliance"
+          />
         ) : null}
         <InspectorPanelBody>
           {showLibrary ? (
@@ -184,15 +192,14 @@ export function BuilderInspectorPanel() {
             <InspectorPanelScroll>
               {inspectorMode === "templateSettings" ? (
                 <TemplateSettingsInspector />
+              ) : inspectorMode === "settings" ? (
+                <TemplateCampaignSettings />
               ) : (
                 <BlockInspector />
               )}
             </InspectorPanelScroll>
           )}
         </InspectorPanelBody>
-        {showBlockChrome && canEdit && selectedBlockId ? (
-          <InspectorBlockActions blockId={selectedBlockId} />
-        ) : null}
       </InspectorPanel>
     </ImageLibraryProvider>
   );
@@ -209,8 +216,8 @@ function InspectorModeTabs({ onModeChange }: { onModeChange: () => void }) {
       value={inspectorMode}
       onChange={(value) => {
         onModeChange();
-        if (value === "templateSettings") {
-          setInspectorMode("templateSettings");
+        if (value === "templateSettings" || value === "settings") {
+          setInspectorMode(value);
           selectBlock(null);
           return;
         }
@@ -218,7 +225,8 @@ function InspectorModeTabs({ onModeChange }: { onModeChange: () => void }) {
       }}
       options={[
         { value: "block", label: "Block" },
-        { value: "templateSettings", label: "Template" },
+        { value: "templateSettings", label: "Styles" },
+        { value: "settings", label: "Settings" },
       ]}
     />
   );
@@ -246,33 +254,5 @@ function InspectorHeaderActions({ blockId }: { blockId: string }) {
         },
       ]}
     />
-  );
-}
-
-function InspectorBlockActions({ blockId }: { blockId: string }) {
-  const duplicateBlock = useBuilder((s) => s.duplicateBlock);
-  const removeBlock = useBuilder((s) => s.removeBlock);
-
-  return (
-    <InspectorPanelFooter>
-      <Button
-        variant="secondary"
-        className="flex-1"
-        leftIcon={<Copy className="size-3.5" strokeWidth={1.5} />}
-        title="Duplicate (Ctrl/Cmd+D)"
-        onClick={() => duplicateBlock(blockId)}
-      >
-        Duplicate
-      </Button>
-      <Button
-        variant="danger"
-        className="flex-1"
-        leftIcon={<Trash2 className="size-3.5" strokeWidth={1.5} />}
-        title="Remove (Delete)"
-        onClick={() => removeBlock(blockId)}
-      >
-        Remove
-      </Button>
-    </InspectorPanelFooter>
   );
 }

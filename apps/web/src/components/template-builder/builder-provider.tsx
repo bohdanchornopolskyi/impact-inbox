@@ -66,7 +66,7 @@ import {
 } from "./builder-edit-history";
 
 export type { SaveState } from "@/lib/templates/working-copy-persistence";
-export type InspectorMode = "block" | "templateSettings";
+export type InspectorMode = "block" | "templateSettings" | "settings";
 export type { PreviewDevice } from "@/lib/templates/preview-device";
 
 type ContentHistoryOptions = {

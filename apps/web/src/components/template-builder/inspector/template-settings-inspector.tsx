@@ -1,147 +1,150 @@
 "use client";
 
-import { useRef } from "react";
-import { CollapsibleSection } from "@repo/ui/client";
-import {
-  DEFAULT_TEMPLATE_SETTINGS,
-  TEMPLATE_DEFAULT_COLORS,
-} from "@repo/shared";
+import { CollapsibleSection, InspectorRow, SegmentedControl, inspectorControlClass } from "@repo/ui/client";
 import { useBuilder } from "../builder-provider";
 import { ColorPickerField } from "./color-picker-field";
 import { NumberField, TextField } from "./fields";
-import { insertAtSelection } from "./insert-at-selection";
-import { MergeTagPicker } from "./merge-tag-picker";
 
-type MergeTagField = "subject" | "preheader";
+function isWebFont(font: string | undefined) {
+  const value = font?.toLowerCase() ?? "";
+  return value.includes("inter") || (value.length > 0 && !value.includes("arial") && !value.includes("georgia") && !value.includes("times"));
+}
 
 export function TemplateSettingsInspector() {
   const canEdit = useBuilder((s) => s.canEdit);
   const settings = useBuilder((s) => s.content.settings);
   const updateSettingsAction = useBuilder((s) => s.updateSettings);
 
-  const subjectRef = useRef<HTMLInputElement>(null);
-  const preheaderRef = useRef<HTMLInputElement>(null);
-  const mergeTagFieldRef = useRef<MergeTagField>("subject");
-
   function updateSettings(partial: Partial<typeof settings>) {
     if (!canEdit) {
       return;
     }
-
     updateSettingsAction(partial);
   }
 
-  function insertMergeTag(formattedTag: string) {
-    if (!canEdit) {
-      return;
-    }
-
-    const field = mergeTagFieldRef.current;
-    const input =
-      field === "subject" ? subjectRef.current : preheaderRef.current;
-    const next = insertAtSelection(
-      settings[field] ?? "",
-      formattedTag,
-      input?.selectionStart,
-      input?.selectionEnd,
-    );
-
-    updateSettings({ [field]: next.value });
-
-    requestAnimationFrame(() => {
-      input?.focus();
-      input?.setSelectionRange(next.caret, next.caret);
-    });
-  }
+  const headingFont = settings.headingFontFamily ?? "";
+  const bodyFont = settings.fontFamily ?? "";
+  const showWebFontNote = isWebFont(headingFont) || isWebFont(bodyFont);
 
   return (
     <>
-      <CollapsibleSection title="Email" defaultOpen>
-        <div className="flex flex-col gap-3">
-          <div className="flex justify-end">
-            <MergeTagPicker onInsert={insertMergeTag} />
-          </div>
-          <TextField
-            label="Subject"
-            value={settings.subject ?? ""}
-            inputRef={subjectRef}
-            onFocus={() => {
-              mergeTagFieldRef.current = "subject";
-            }}
-            onChange={(value) => updateSettings({ subject: value })}
-          />
-          <TextField
-            label="Preheader"
-            value={settings.preheader ?? ""}
-            inputRef={preheaderRef}
-            onFocus={() => {
-              mergeTagFieldRef.current = "preheader";
-            }}
-            onChange={(value) => updateSettings({ preheader: value })}
-          />
-        </div>
-      </CollapsibleSection>
       <CollapsibleSection title="Layout" defaultOpen>
-        <NumberField
-          label="Width"
-          unit="px"
-          value={settings.width}
-          min={480}
-          max={700}
-          onChange={(value) => updateSettings({ width: value ?? 600 })}
-        />
-      </CollapsibleSection>
-      <CollapsibleSection title="Colors" summary="Canvas">
         <div className="flex flex-col gap-3">
+          <NumberField
+            label="Width"
+            unit="px"
+            value={settings.width}
+            min={480}
+            max={700}
+            disabled={!canEdit}
+            onChange={(value) => updateSettings({ width: value ?? 600 })}
+          />
           <ColorPickerField
-            label="Canvas"
+            label="Page"
             value={settings.backgroundColor}
-            fallback={DEFAULT_TEMPLATE_SETTINGS.backgroundColor}
+            disabled={!canEdit}
             onChange={(value) => updateSettings({ backgroundColor: value })}
           />
           <ColorPickerField
-            label="Content"
+            label="Email"
             value={settings.contentBackgroundColor}
-            fallback={DEFAULT_TEMPLATE_SETTINGS.contentBackgroundColor}
-            onChange={(value) =>
-              updateSettings({ contentBackgroundColor: value })
-            }
+            disabled={!canEdit}
+            onChange={(value) => updateSettings({ contentBackgroundColor: value })}
           />
-          <ColorPickerField
-            label="Text"
-            value={settings.textColor}
-            fallback={TEMPLATE_DEFAULT_COLORS.text}
-            onChange={(value) => updateSettings({ textColor: value })}
-          />
-          <ColorPickerField
-            label="Link"
-            value={settings.linkColor}
-            fallback={TEMPLATE_DEFAULT_COLORS.link}
-            onChange={(value) => updateSettings({ linkColor: value })}
+          <NumberField
+            label="Corners"
+            unit="px"
+            value={settings.contentRadius}
+            min={0}
+            max={40}
+            disabled={!canEdit}
+            onChange={(value) => updateSettings({ contentRadius: value })}
           />
         </div>
       </CollapsibleSection>
-      <CollapsibleSection title="Typography" summary={settings.fontFamily || "Default"}>
+      <CollapsibleSection title="Text" defaultOpen>
         <div className="flex flex-col gap-3">
           <TextField
-            label="Font"
-            value={settings.fontFamily ?? ""}
+            label="Headings"
+            value={headingFont}
+            disabled={!canEdit}
+            onChange={(value) => updateSettings({ headingFontFamily: value })}
+          />
+          <TextField
+            label="Body"
+            value={bodyFont}
+            disabled={!canEdit}
             onChange={(value) => updateSettings({ fontFamily: value })}
           />
+          {showWebFontNote ? (
+            <p className="text-[11.5px] leading-snug text-text-2">
+              This is a web font. Outlook and most Gmail apps show Arial instead.
+            </p>
+          ) : null}
           <NumberField
-            label="Size"
+            label="Body size"
             unit="px"
             value={settings.fontSize}
             min={8}
             max={72}
+            disabled={!canEdit}
             onChange={(value) => updateSettings({ fontSize: value })}
           />
+          <ColorPickerField
+            label="Text color"
+            value={settings.textColor}
+            disabled={!canEdit}
+            onChange={(value) => updateSettings({ textColor: value })}
+          />
+        </div>
+      </CollapsibleSection>
+      <CollapsibleSection title="Links & buttons" defaultOpen>
+        <div className="flex flex-col gap-3">
+          <ColorPickerField
+            label="Links"
+            value={settings.linkColor}
+            disabled={!canEdit}
+            onChange={(value) => updateSettings({ linkColor: value })}
+          />
+          <InspectorRow label="Underline">
+            <SegmentedControl
+              className={inspectorControlClass}
+              disabled={!canEdit}
+              value={settings.linkUnderline ?? "always"}
+              onChange={(value) =>
+                updateSettings({
+                  linkUnderline: value as "always" | "hover" | "never",
+                })
+              }
+              options={[
+                { value: "always", label: "Always" },
+                { value: "hover", label: "On hover" },
+                { value: "never", label: "Never" },
+              ]}
+            />
+          </InspectorRow>
+          <InspectorRow label="Buttons">
+            <SegmentedControl
+              className={inspectorControlClass}
+              disabled={!canEdit}
+              value={settings.buttonStyle ?? "filled"}
+              onChange={(value) =>
+                updateSettings({ buttonStyle: value as "filled" | "outline" })
+              }
+              options={[
+                { value: "filled", label: "Filled" },
+                { value: "outline", label: "Outline" },
+              ]}
+            />
+          </InspectorRow>
           <NumberField
-            label="Line"
-            value={settings.lineHeight}
-            min={1}
-            max={3}
-            onChange={(value) => updateSettings({ lineHeight: value })}
+            label="Button radius"
+            unit="px"
+            value={settings.buttonRadius}
+            min={0}
+            max={40}
+            disabled={!canEdit}
+            onChange={(value) => updateSettings({ buttonRadius: value })}
           />
         </div>
       </CollapsibleSection>
