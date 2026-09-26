@@ -27,7 +27,7 @@ export function UnitField({
       className={fieldControlClass({
         disabled,
         readOnly,
-        className: "h-control-md",
+        className: cn("h-control-md", className),
       })}
     >
       <input
@@ -36,9 +36,8 @@ export function UnitField({
         readOnly={readOnly}
         className={cn(
           fieldInputClass,
-          "tabular-nums",
+          "h-full tabular-nums",
           hideNumberSpinnersClass,
-          className,
         )}
         {...props}
       />

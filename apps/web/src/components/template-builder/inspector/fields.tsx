@@ -113,6 +113,7 @@ export function NumberField({
       {unit ? (
         <UnitField
           id={id}
+          className="h-8"
           value={value ?? ""}
           min={min}
           max={max}
@@ -124,6 +125,7 @@ export function NumberField({
       ) : (
         <Input
           id={id}
+          className="h-8"
           type="number"
           value={value ?? ""}
           min={min}
