@@ -27,6 +27,7 @@ import {
   InspectorRow,
   InspectorStack,
   PaddingControl,
+  InspectorNote,
   SegmentedControl,
   inspectorControlClass,
 } from "@repo/ui/client";
@@ -661,6 +662,9 @@ export function BorderSection({
           disabled={disabled}
           onChange={(next) => patchStyles({ borderRadius: next })}
         />
+        <InspectorNote>
+          Outlook desktop ignores rounded corners. They show as square there.
+        </InspectorNote>
         {styles.borderStyle && styles.borderStyle !== "none" ? (
           <ColorPickerField
             label="Color"

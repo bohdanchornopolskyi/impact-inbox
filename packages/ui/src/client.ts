@@ -101,6 +101,10 @@ export {
   COLOR_FIELD_SWATCHES,
   type ColorFieldProps,
 } from "./components/color-field/color-field";
+export {
+  InspectorNote,
+  type InspectorNoteProps,
+} from "./components/inspector-note/inspector-note";
 export { UnitField, type UnitFieldProps } from "./components/unit-field/unit-field";
 export { Stepper, type StepperProps } from "./components/stepper/stepper";
 export {
