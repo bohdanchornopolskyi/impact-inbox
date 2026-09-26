@@ -1,9 +1,10 @@
 import { describe, expect, it } from "vitest";
-import type { SectionBlock, TemplateContentData } from "@repo/shared";
 import {
   buildPlatformStarterModules,
   PLATFORM_STARTER_NAMES,
-} from "../../shared/src/template/module-starters";
+  type SectionBlock,
+  type TemplateContentData,
+} from "@repo/shared";
 import { renderTemplate } from "./index";
 
 const SNIPPETS: Record<(typeof PLATFORM_STARTER_NAMES)[number], string> = {
