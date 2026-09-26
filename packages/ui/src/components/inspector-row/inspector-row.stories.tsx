@@ -17,12 +17,11 @@ export const Default: Story = {
   args: {
     children: (
       <SegmentedControl
-        value="50"
+        value="fill"
         onChange={() => undefined}
         options={[
-          { value: "auto", label: "Auto" },
-          { value: "50", label: "50%" },
-          { value: "custom", label: "Custom" },
+          { value: "fill", label: "Fill" },
+          { value: "fixed", label: "Fixed" },
         ]}
       />
     ),

@@ -58,17 +58,16 @@ export const Block: Story = {
                 <InspectorRow label="Width">
                   <SegmentedControl
                     className="w-full [&_button]:min-w-0 [&_button]:flex-1"
-                    value="50"
+                    value="fill"
                     onChange={() => undefined}
                     options={[
-                      { value: "auto", label: "Auto" },
-                      { value: "50", label: "50%" },
-                      { value: "custom", label: "Custom" },
+                      { value: "fill", label: "Fill" },
+                      { value: "fixed", label: "Fixed" },
                     ]}
                   />
                 </InspectorRow>
                 <InspectorRow label="Gap">
-                  <UnitField defaultValue={12} aria-label="Gap" />
+                  <UnitField className="h-8" defaultValue={12} aria-label="Gap" />
                 </InspectorRow>
               </div>
             </CollapsibleSection>
