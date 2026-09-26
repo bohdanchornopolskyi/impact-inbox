@@ -5,7 +5,6 @@ import { previewWidth } from "@/lib/templates/use-rendered-preview";
 import { useBuilder } from "../builder-provider";
 import { CanvasSelectionBar } from "./canvas-selection-bar";
 import { CanvasSubjectCard } from "./canvas-subject-card";
-import { CanvasAddBlockRow } from "./canvas-add-block-row";
 import {
   CanvasIframeSelectionBridge,
   usePreviewCanvasRuntime,
@@ -42,7 +41,6 @@ function CanvasViewport() {
           scrollContainerRef={scrollContainerRef}
           canvasWidth={canvasWidth}
         />
-        <CanvasAddBlockRow width={canvasWidth} />
       </div>
     </div>
   );
