@@ -4,8 +4,8 @@ import {
   ASSET_UPLOAD_ALLOWED_MIME_TYPES,
   type OrganizationAssetData,
 } from "@repo/shared";
-import { Button } from "@repo/ui/client";
-import { Crop, FileImage, FolderOpen, ImageUp, Upload } from "lucide-react";
+import { Button, DropdownMenu } from "@repo/ui/client";
+import { ChevronDown, Crop, FileImage, FolderOpen, ImageUp, Upload } from "lucide-react";
 import { useWorkspace } from "@/contexts/workspace-context";
 import { useWorkspaceImageUpload } from "@/lib/workspaces/use-workspace-image-upload";
 import { useOrganizationAssets } from "@/lib/workspaces/workspace-hooks";
@@ -63,6 +63,7 @@ export function ImageSourceCard({
   onPicked,
   onChange,
   onNaturalSize,
+  onCrop,
 }: {
   value: string;
   disabled?: boolean;
@@ -71,6 +72,7 @@ export function ImageSourceCard({
   onPicked?: (url: string) => void;
   onChange: (url: string) => void;
   onNaturalSize?: (size: ImageNaturalSize) => void;
+  onCrop?: () => void;
 }) {
   const { token, inputRef, isUploading, uploadSelectedFile, openFilePicker } =
     useWorkspaceImageUpload();
@@ -144,35 +146,41 @@ export function ImageSourceCard({
             <PreviewChips size={chips} />
           </div>
           <div className="flex h-9 border-t border-border">
-            <button
-              type="button"
-              disabled={busy || !token}
-              className="flex flex-1 items-center justify-center gap-1.5 text-xs font-medium text-text transition-colors duration-150 hover:bg-bg disabled:text-text-3"
-              onClick={openFilePicker}
-            >
-              <ImageUp className="size-3.5 text-text-2" strokeWidth={1.5} />
-              {isUploading ? "Uploading…" : "Replace"}
-            </button>
+            <DropdownMenu
+              aria-label="Replace image"
+              align="start"
+              className="flex h-full flex-1 items-center justify-center gap-1.5 rounded-none text-xs font-medium text-text hover:bg-bg"
+              trigger={
+                <span className="inline-flex items-center gap-1.5">
+                  <ImageUp className="size-3.5 text-text-2" strokeWidth={1.5} />
+                  {isUploading ? "Uploading…" : "Replace"}
+                  <ChevronDown className="size-3.5 text-text-3" strokeWidth={1.5} />
+                </span>
+              }
+              items={[
+                {
+                  label: "Upload",
+                  disabled: busy || !token,
+                  onSelect: openFilePicker,
+                },
+                {
+                  label: "Library",
+                  disabled: busy,
+                  onSelect: openLibrary,
+                },
+              ]}
+            />
             {showCrop ? (
               <button
                 type="button"
-                disabled
-                title="Coming soon"
-                className="flex flex-1 items-center justify-center gap-1.5 border-x border-border text-xs font-medium text-text-3"
+                disabled={busy}
+                className="flex flex-1 items-center justify-center gap-1.5 border-l border-border text-xs font-medium text-text transition-colors duration-150 hover:bg-bg disabled:text-text-3"
+                onClick={onCrop}
               >
                 <Crop className="size-3.5" strokeWidth={1.5} />
                 Crop
               </button>
             ) : null}
-            <button
-              type="button"
-              disabled={busy}
-              className="flex h-full flex-1 items-center justify-center gap-1.5 text-xs font-medium text-text transition-colors duration-150 hover:bg-bg disabled:text-text-3"
-              onClick={openLibrary}
-            >
-              <FolderOpen className="size-3.5 text-text-2" strokeWidth={1.5} />
-              Library
-            </button>
           </div>
         </div>
       ) : (

@@ -27,6 +27,12 @@ function buildGlobalStyles(content: TemplateContentData): string {
 
   return `
     a { color: ${linkColor}; }
+    @media only screen and (max-width: 480px) {
+      .image-full-mobile {
+        width: 100% !important;
+        max-width: 100% !important;
+      }
+    }
     ${mobileStyles}
   `;
 }

@@ -107,6 +107,14 @@ export const imageBlockSchema = blockBaseSchema.extend({
       height: z.number().min(1).optional(),
       borderRadius: z.number().min(0).optional(),
       align: blockAlignSchema.optional(),
+      fullWidthOnMobile: z.boolean().optional(),
+      decorative: z.boolean().optional(),
+      cropAspect: z
+        .enum(["original", "free", "1:1", "16:9", "3:2", "4:5"])
+        .optional(),
+      focalPoint: z.boolean().optional(),
+      focalX: z.number().min(0).max(100).optional(),
+      focalY: z.number().min(0).max(100).optional(),
     })
     .strict(),
 });
@@ -122,6 +130,17 @@ export const logoBlockSchema = blockBaseSchema.extend({
       maxHeight: z.number().min(1).max(300).optional(),
       borderRadius: z.number().min(0).optional(),
       align: blockAlignSchema.optional(),
+      links: z
+        .array(
+          z
+            .object({
+              text: z.string(),
+              href: z.string(),
+            })
+            .strict(),
+        )
+        .optional(),
+      linkColor: z.string().optional(),
     })
     .strict(),
 });

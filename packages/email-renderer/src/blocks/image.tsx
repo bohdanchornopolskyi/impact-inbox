@@ -12,10 +12,11 @@ export function renderImageBlock(block: ImageBlock, context: RenderContext) {
     href,
     image: buildAlignedImage({
       src,
-      alt: alt ?? "",
+      alt: block.props.decorative ? "" : (alt ?? ""),
       align,
       width,
       borderRadius,
+      className: block.props.fullWidthOnMobile ? "image-full-mobile" : undefined,
     }),
   });
 }

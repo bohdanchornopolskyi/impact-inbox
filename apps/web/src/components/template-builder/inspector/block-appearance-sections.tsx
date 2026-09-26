@@ -137,7 +137,6 @@ function hasBlockAlign(block: TemplateBlock): block is ContentBlock {
 
 function hasSizingControls(block: TemplateBlock): block is ContentBlock {
   return (
-    block.type === "logo" ||
     block.type === "video" ||
     block.type === "shape" ||
     block.type === "qr"
@@ -400,21 +399,6 @@ export function SizeSection({
                 onChange={(next) => updateProps({ width: next })}
               />
             ) : null}
-            {block.type === "logo" ? (
-              <NumberField
-                label="Height"
-                unit="px"
-                value={
-                  typeof props.maxHeight === "number"
-                    ? props.maxHeight
-                    : undefined
-                }
-                min={1}
-                max={300}
-                disabled={disabled}
-                onChange={(next) => updateProps({ maxHeight: next })}
-              />
-            ) : null}
             {block.type === "shape" ? (
               <>
                 <NumberField
@@ -645,15 +629,6 @@ export function BorderSection({
           />
         </InspectorRow>
         <NumberField
-          label="Width"
-          unit="px"
-          value={styles.borderWidth}
-          min={0}
-          max={20}
-          disabled={disabled}
-          onChange={(next) => patchStyles({ borderWidth: next })}
-        />
-        <NumberField
           label="Radius"
           unit="px"
           value={styles.borderRadius}
@@ -665,6 +640,17 @@ export function BorderSection({
         <InspectorNote>
           Outlook desktop ignores rounded corners. They show as square there.
         </InspectorNote>
+        {styles.borderStyle && styles.borderStyle !== "none" ? (
+          <NumberField
+            label="Width"
+            unit="px"
+            value={styles.borderWidth}
+            min={0}
+            max={20}
+            disabled={disabled}
+            onChange={(next) => patchStyles({ borderWidth: next })}
+          />
+        ) : null}
         {styles.borderStyle && styles.borderStyle !== "none" ? (
           <ColorPickerField
             label="Color"
