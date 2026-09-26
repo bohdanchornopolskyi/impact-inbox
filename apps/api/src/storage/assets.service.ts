@@ -351,14 +351,14 @@ export class AssetsService {
       .where(inArray(workspaceModules.workspaceId, workspaceIds));
 
     for (const module of moduleRows) {
-      if (!sectionUsesAssetUrl(module.content as SectionBlock, url)) {
+      if (!sectionUsesAssetUrl(module.content, url)) {
         continue;
       }
       await this.db
         .update(workspaceModules)
         .set({
           content: stripAssetUrlFromSection(
-            module.content as SectionBlock,
+            module.content,
             url,
           ),
         })
@@ -438,7 +438,7 @@ export class AssetsService {
 
     const moduleNames = moduleRows
       .filter((module) =>
-        sectionUsesAssetUrl(module.content as SectionBlock, url),
+        sectionUsesAssetUrl(module.content, url),
       )
       .map((module) => module.name);
 

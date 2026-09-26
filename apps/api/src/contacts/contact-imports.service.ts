@@ -285,7 +285,7 @@ export class ContactImportsService {
     if (mapping.attributes) {
       for (const [key, column] of Object.entries(mapping.attributes)) {
         if (CONTACT_ATTRIBUTE_KEY_PATTERN.test(key) && row[column]) {
-          attributes[key] = row[column]!.trim();
+          attributes[key] = row[column].trim();
         }
       }
     }

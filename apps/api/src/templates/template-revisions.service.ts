@@ -171,7 +171,7 @@ export class TemplateRevisionsService {
     return {
       id: row.id,
       templateId: row.templateId,
-      content: row.content as TemplateContentData,
+      content: row.content,
       createdAt: row.createdAt,
     };
   }
