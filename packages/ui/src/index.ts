@@ -78,7 +78,14 @@ export {
   type DeviceToggleProps,
   type DeviceToggleValue,
 } from "./components/device-toggle/device-toggle";
-export { BlockTile, type BlockTileProps } from "./components/block-tile/block-tile";
+export {
+  BlockTile,
+  ColumnPresetTile,
+  SectionTile,
+  type BlockTileProps,
+  type ColumnPresetTileProps,
+  type SectionTileProps,
+} from "./components/block-tile/block-tile";
 export { LibraryTile, type LibraryTileProps } from "./components/library-tile/library-tile";
 export { SavedTile, type SavedTileProps } from "./components/saved-tile/saved-tile";
 export { InspectorRow, InspectorStack, inspectorControlClass, type InspectorRowProps, type InspectorStackProps } from "./components/inspector-row/inspector-row";

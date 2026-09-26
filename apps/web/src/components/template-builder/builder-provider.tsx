@@ -146,9 +146,13 @@ type BuilderState = {
     targetIndex: number,
   ) => boolean;
   addSection: (index?: number) => void;
-  addRow: (sectionId: string, index?: number) => void;
+  addRow: (
+    sectionId: string,
+    index?: number,
+    columnWidths?: readonly number[],
+  ) => void;
   addColumn: (rowId: string, index?: number) => void;
-  insertSavedModule: (moduleContent: SectionBlock) => void;
+  insertSavedModule: (moduleContent: SectionBlock, index?: number) => void;
   stripAssetUrl: (url: string) => void;
   selectBlock: (blockId: string | null) => void;
   setInspectorMode: (mode: InspectorMode) => void;
@@ -436,13 +440,14 @@ function createBuilderStore(
             selectInsertedBlock: true,
           });
         }),
-      addRow: (sectionId, index) =>
+      addRow: (sectionId, index, columnWidths) =>
         withRecordedContent("record", undefined, (state) => {
           const outcome = addRow(
             state.content,
             sectionId,
             index,
             state.brandKit,
+            columnWidths,
           );
           return applyBuilderMutation(state, outcome, {
             selectInsertedBlock: true,
@@ -460,11 +465,12 @@ function createBuilderStore(
             selectInsertedBlock: true,
           });
         }),
-      insertSavedModule: (moduleContent) =>
+      insertSavedModule: (moduleContent, index) =>
         withRecordedContent("record", undefined, (state) => {
           const outcome = insertSection(
             state.content,
             cloneSectionBlock(moduleContent),
+            index,
           );
           return applyBuilderMutation(state, outcome, {
             selectInsertedBlock: true,

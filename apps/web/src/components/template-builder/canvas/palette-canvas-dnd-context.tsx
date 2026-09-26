@@ -42,8 +42,14 @@ type DocPointerListeners = {
 
 type PaletteDragGhostState = {
   blockType: TemplateBlockType;
+  label: string;
   x: number;
   y: number;
+};
+
+export type PaletteTileOptions = {
+  label?: string;
+  insert?: (target: CanvasDropTarget) => void;
 };
 
 type DragBridge = {
@@ -59,6 +65,7 @@ type PaletteCanvasDndContextValue = {
   bindPaletteTile: (
     blockType: TemplateBlockType,
     onClick: () => void,
+    options?: PaletteTileOptions,
   ) => {
     onPointerDown: (event: ReactPointerEvent<HTMLButtonElement>) => void;
     onClick: (event: MouseEvent<HTMLButtonElement>) => void;
@@ -72,8 +79,6 @@ type PaletteCanvasDndContextValue = {
 };
 
 function PaletteDragGhost({ ghost }: { ghost: PaletteDragGhostState }) {
-  const definition = TEMPLATE_BLOCK_DEFINITIONS[ghost.blockType];
-
   return (
     <div
       className="pointer-events-none fixed z-[10000] flex h-[38px] items-center gap-2 rounded-sm border border-accent bg-surface px-2.5 text-xs font-medium text-text opacity-90 shadow-[0_8px_16px_#0f172a29]"
@@ -86,7 +91,7 @@ function PaletteDragGhost({ ghost }: { ghost: PaletteDragGhostState }) {
       <span className="inline-flex size-[15px] shrink-0 text-text-2 [&_svg]:size-full">
         <TemplateBlockIcon type={ghost.blockType} />
       </span>
-      <span>{definition.label}</span>
+      <span>{ghost.label}</span>
     </div>
   );
 }
@@ -157,8 +162,14 @@ function usePaletteCanvasDndController() {
   }, [finishPaletteDragUi]);
 
   const updateDragGhost = useCallback(
-    (blockType: TemplateBlockType, clientX: number, clientY: number) => {
-      setDragGhost({ blockType, x: clientX, y: clientY });
+    (session: PaletteDragSession, clientX: number, clientY: number) => {
+      setDragGhost({
+        blockType: session.blockType,
+        label:
+          session.label ?? TEMPLATE_BLOCK_DEFINITIONS[session.blockType].label,
+        x: clientX,
+        y: clientY,
+      });
     },
     [],
   );
@@ -204,7 +215,7 @@ function usePaletteCanvasDndController() {
         clientX: coords.clientX,
         clientY: coords.clientY,
       });
-      updateDragGhost(session.blockType, clientX, clientY);
+      updateDragGhost(session, clientX, clientY);
       postPaletteDragPointer(clientX, clientY);
       setIsPaletteDragging(true);
       suppressClickRef.current = true;
@@ -280,7 +291,11 @@ function usePaletteCanvasDndController() {
   );
 
   const bindPaletteTile = useCallback(
-    (blockType: TemplateBlockType, onClick: () => void) => {
+    (
+      blockType: TemplateBlockType,
+      onClick: () => void,
+      options?: PaletteTileOptions,
+    ) => {
       function onPointerDown(event: ReactPointerEvent<HTMLButtonElement>) {
         if (!store.getState().canEdit || event.button !== 0) {
           return;
@@ -299,6 +314,8 @@ function usePaletteCanvasDndController() {
           startX: event.clientX,
           startY: event.clientY,
           active: false,
+          label: options?.label,
+          insert: options?.insert,
         };
         sessionRef.current.paletteSession = session;
 
@@ -320,7 +337,7 @@ function usePaletteCanvasDndController() {
             return;
           }
 
-          updateDragGhost(current.blockType, moveEvent.clientX, moveEvent.clientY);
+          updateDragGhost(current, moveEvent.clientX, moveEvent.clientY);
           postPaletteDragPointer(moveEvent.clientX, moveEvent.clientY);
         }
 
@@ -419,8 +436,8 @@ function usePaletteCanvasDndController() {
   const apiRef = useRef<PaletteCanvasDndApi | null>(null);
   if (!apiRef.current) {
     apiRef.current = {
-      bindPaletteTile: (blockType, onClick) =>
-        bindPaletteTileRef.current(blockType, onClick),
+      bindPaletteTile: (blockType, onClick, options) =>
+        bindPaletteTileRef.current(blockType, onClick, options),
       registerDragBridge: (bridge) => registerDragBridgeRef.current(bridge),
       handleIframeMessage: (data) => handleIframeMessageRef.current(data),
       handleDropTargetChange: (target) =>

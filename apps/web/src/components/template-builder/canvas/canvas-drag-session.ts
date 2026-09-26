@@ -22,6 +22,8 @@ export type PaletteDragSession = {
   startX: number;
   startY: number;
   active: boolean;
+  label?: string;
+  insert?: (target: CanvasDropTarget) => void;
 };
 
 export type CanvasDragSessionState = {
@@ -136,7 +138,11 @@ export function commitPaletteDrop(
     return false;
   }
 
-  applyPaletteInsert(session.blockType, target, actions);
+  if (session.insert) {
+    session.insert(target);
+  } else {
+    applyPaletteInsert(session.blockType, target, actions);
+  }
   return true;
 }
 

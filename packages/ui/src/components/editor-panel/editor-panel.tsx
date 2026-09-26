@@ -80,11 +80,12 @@ export function EditorPanelTabs({
   }
 
   return (
-    <div
-      className="flex h-11.5 shrink-0 items-center gap-px border-b border-border px-2.5"
-      role="tablist"
-      aria-label={ariaLabel}
-    >
+    <div className="flex h-11.5 shrink-0 items-center border-b border-border px-3">
+      <div
+        className="flex w-full gap-0.5 rounded-lg bg-bg p-0.75"
+        role="tablist"
+        aria-label={ariaLabel}
+      >
       {tabs.map((tab, index) => {
         const active = tab.value === value;
 
@@ -101,9 +102,9 @@ export function EditorPanelTabs({
             onClick={() => onChange(tab.value)}
             onKeyDown={(event) => onKeyDown(event, index)}
             className={cn(
-              "inline-flex h-[27px] min-w-0 flex-1 items-center justify-center gap-1 rounded-sm px-1 text-[11px] transition-[background-color,color] duration-150 ease-out",
+              "inline-flex h-7 min-w-0 flex-1 items-center justify-center gap-1 rounded-sm px-1 text-[12.5px] transition-[background-color,color,box-shadow] duration-150 ease-out",
               active
-                ? "bg-accent-soft font-semibold text-accent"
+                ? "bg-surface font-semibold text-text shadow-[0_1px_2px_#0f172a1f]"
                 : "bg-transparent font-medium text-text-2 hover:text-text",
             )}
           >
@@ -116,6 +117,7 @@ export function EditorPanelTabs({
           </button>
         );
       })}
+      </div>
     </div>
   );
 }
@@ -134,11 +136,11 @@ export function EditorPanelBody({
 
 export function EditorPanelSearch({ className, fieldClassName, ...props }: SearchProps) {
   return (
-    <div className="shrink-0 px-3 pb-1 pt-3">
+    <div className="shrink-0 px-3 pb-3.5 pt-3">
       <Search
         {...props}
-        className={className}
-        fieldClassName={cn("border-transparent bg-bg", fieldClassName)}
+        className={cn("h-8", className)}
+        fieldClassName={cn("border-border bg-bg", fieldClassName)}
       />
     </div>
   );
@@ -171,20 +173,37 @@ export function EditorPanelScroll({
   );
 }
 
-export type EditorPanelGroupProps = HTMLAttributes<HTMLDetailsElement> & {
+export type EditorPanelGroupProps = HTMLAttributes<HTMLElement> & {
   title: string;
   count?: number;
   defaultOpen?: boolean;
+  action?: ReactNode;
 };
+
+const groupTitleClass =
+  "flex items-center justify-between gap-2 px-0.5 text-[10.5px] font-semibold tracking-[0.8px] text-text-2 uppercase";
 
 export function EditorPanelGroup({
   title,
   count,
   defaultOpen = true,
+  action,
   className,
   children,
   ...props
 }: EditorPanelGroupProps) {
+  if (action) {
+    return (
+      <section className={className} {...props}>
+        <div className={groupTitleClass}>
+          <h3 className="min-w-0 truncate">{title}</h3>
+          <div className="shrink-0 normal-case tracking-normal">{action}</div>
+        </div>
+        <div className="mt-2">{children}</div>
+      </section>
+    );
+  }
+
   return (
     <details
       className={cn("group/panel open:[&>summary_svg]:rotate-180", className)}
@@ -197,7 +216,12 @@ export function EditorPanelGroup({
       }}
       {...props}
     >
-      <summary className="flex cursor-pointer list-none items-center justify-between gap-2 px-0.5 text-[10.5px] font-semibold tracking-[0.8px] text-text-3 uppercase [&::-webkit-details-marker]:hidden">
+      <summary
+        className={cn(
+          groupTitleClass,
+          "cursor-pointer list-none [&::-webkit-details-marker]:hidden",
+        )}
+      >
         <span className="min-w-0 truncate">
           {title}
           {count != null ? (
@@ -205,7 +229,7 @@ export function EditorPanelGroup({
           ) : null}
         </span>
         <ChevronDown
-          className="size-3.25 shrink-0 transition-transform duration-150 ease-out"
+          className="size-3.25 shrink-0 text-text-3 transition-transform duration-150 ease-out"
           strokeWidth={1.5}
           aria-hidden
         />

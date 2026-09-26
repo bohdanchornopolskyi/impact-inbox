@@ -54,3 +54,91 @@ export function BlockTile({
     </button>
   );
 }
+
+function paletteTileInteractionClass(
+  disabled: boolean | undefined,
+  draggable: boolean,
+) {
+  if (disabled) {
+    return "cursor-not-allowed opacity-60";
+  }
+  return draggable ? "touch-none cursor-grab active:cursor-grabbing" : null;
+}
+
+export type SectionTileProps = ButtonHTMLAttributes<HTMLButtonElement> & {
+  label: string;
+  preview: ReactNode;
+};
+
+export function SectionTile({
+  label,
+  preview,
+  disabled,
+  className,
+  ...props
+}: SectionTileProps) {
+  return (
+    <button
+      type="button"
+      disabled={disabled}
+      className={cn(
+        "group/section flex w-full min-w-0 flex-col gap-1.5 text-left",
+        paletteTileInteractionClass(disabled, Boolean(props.onPointerDown)),
+        className,
+      )}
+      {...props}
+    >
+      <span
+        className={cn(
+          "flex h-[78px] w-full flex-col overflow-hidden rounded-sm border border-border bg-surface p-2 transition-[border-color,box-shadow] duration-150 ease-out",
+          !disabled &&
+            "group-hover/section:border-border-strong group-hover/section:shadow-sm",
+        )}
+        aria-hidden
+      >
+        {preview}
+      </span>
+      <span className="truncate text-xs font-medium text-text">{label}</span>
+    </button>
+  );
+}
+
+export type ColumnPresetTileProps = ButtonHTMLAttributes<HTMLButtonElement> & {
+  label: string;
+  widths: readonly number[];
+};
+
+export function ColumnPresetTile({
+  label,
+  widths,
+  disabled,
+  className,
+  ...props
+}: ColumnPresetTileProps) {
+  return (
+    <button
+      type="button"
+      disabled={disabled}
+      className={cn(
+        "flex w-full min-w-0 flex-col items-center gap-1.5 rounded-sm border border-border bg-surface px-2 pt-2 pb-1.75 transition-[background-color,border-color] duration-150 ease-out",
+        !disabled && "hover:border-border-strong hover:bg-bg",
+        paletteTileInteractionClass(disabled, Boolean(props.onPointerDown)),
+        className,
+      )}
+      {...props}
+    >
+      <span className="flex h-4.5 w-full gap-0.75" aria-hidden>
+        {widths.map((width, index) => (
+          <span
+            key={index}
+            className="h-full min-w-0 rounded-[2px] bg-neutral-200"
+            style={{ flexGrow: width, flexBasis: 0 }}
+          />
+        ))}
+      </span>
+      <span className="truncate text-[11.5px] font-medium text-text-2">
+        {label}
+      </span>
+    </button>
+  );
+}
