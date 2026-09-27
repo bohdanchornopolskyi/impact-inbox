@@ -237,6 +237,7 @@ export class TemplatesService {
         workspaceId,
         templateId,
         parsedContent,
+        updatedTemplate.updatedAt,
       );
       if (listPreviewHtml !== null) {
         return toTemplateData({ ...updatedTemplate, listPreviewHtml });
@@ -265,10 +266,16 @@ export class TemplatesService {
     return rendered.html;
   }
 
+  /**
+   * Writes the list preview for the version stamped `updatedAt`. The token is
+   * set explicitly because the schema's `$onUpdate` would otherwise advance it
+   * behind the client's back and turn its next write into a 409.
+   */
   async syncListPreviewHtml(
     workspaceId: string,
     templateId: string,
     content: TemplateContentData,
+    updatedAt: Date,
   ): Promise<string | null> {
     let html: string;
     try {
@@ -279,11 +286,12 @@ export class TemplatesService {
 
     await this.db
       .update(templates)
-      .set({ listPreviewHtml: html })
+      .set({ listPreviewHtml: html, updatedAt })
       .where(
         and(
           eq(templates.id, templateId),
           eq(templates.workspaceId, workspaceId),
+          eq(templates.updatedAt, updatedAt),
         ),
       );
 

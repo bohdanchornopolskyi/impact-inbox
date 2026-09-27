@@ -275,6 +275,7 @@ describe("TemplatesService", () => {
       expect(setArg.listPreviewHtml).toBeUndefined();
       expect(set.mock.calls[1][0]).toEqual({
         listPreviewHtml: "<html>headline</html>",
+        updatedAt: templateRow.updatedAt,
       });
     });
 

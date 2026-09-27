@@ -51,13 +51,14 @@ export class TemplateRevisionsService {
 
     const { content } = input;
     const expectedUpdatedAt = parseExpectedUpdatedAt(input.expectedUpdatedAt);
+    const updatedAt = nextUpdatedAt(expectedUpdatedAt);
 
     const revision = await this.db.transaction(async (tx) => {
       const [updatedTemplate] = await tx
         .update(templates)
         .set({
           content,
-          updatedAt: nextUpdatedAt(expectedUpdatedAt),
+          updatedAt,
         })
         .where(
           and(
@@ -91,6 +92,7 @@ export class TemplateRevisionsService {
       workspaceId,
       templateId,
       content,
+      updatedAt,
     );
 
     return this.toRevisionData(revision);
