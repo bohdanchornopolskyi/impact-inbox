@@ -57,11 +57,21 @@ export function nextLoadedTemplateAction(
     return "init";
   }
 
-  if (state.saveState !== "synced" || state.updatedAt === incoming.updatedAt) {
+  if (state.saveState !== "synced" || !isNewerUpdatedAt(incoming.updatedAt, state.updatedAt)) {
     return "keep";
   }
 
   return "adopt";
+}
+
+function isNewerUpdatedAt(incoming: string, current: string): boolean {
+  const incomingMs = Date.parse(incoming);
+  const currentMs = Date.parse(current);
+  if (Number.isNaN(incomingMs) || Number.isNaN(currentMs)) {
+    return false;
+  }
+
+  return incomingMs > currentMs;
 }
 
 export function toUpdatedAtToken(updatedAt: Date | string): string {
