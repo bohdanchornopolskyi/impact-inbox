@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import {
+  createBuilderShortcutHandlers,
   runBuilderShortcut,
   type BuilderShortcutHandlers,
 } from "./run-builder-shortcut";
@@ -34,6 +35,35 @@ describe("runBuilderShortcut", () => {
     expect(save).toHaveBeenCalledTimes(1);
 
     runBuilderShortcut("save", handlers({ save, isSaving: true }));
+    expect(save).toHaveBeenCalledTimes(1);
+  });
+
+  it("treats a store save as in flight for every shortcut path", () => {
+    const save = vi.fn();
+    const state = {
+      canEdit: true,
+      saveState: "saving" as const,
+      previewOpen: false,
+      selectedBlockId: null,
+      undo: vi.fn(),
+      redo: vi.fn(),
+      setPreviewOpen: vi.fn(),
+      removeBlock: vi.fn(),
+      duplicateBlock: vi.fn(),
+      nudgeBlock: vi.fn(),
+      copyBlockStyle: vi.fn(),
+      pasteBlockStyle: vi.fn(),
+      openSaveLibrary: vi.fn(),
+      selectBlock: vi.fn(),
+    };
+
+    runBuilderShortcut("save", createBuilderShortcutHandlers(state, save));
+    expect(save).not.toHaveBeenCalled();
+
+    runBuilderShortcut(
+      "save",
+      createBuilderShortcutHandlers({ ...state, saveState: "unsaved" }, save),
+    );
     expect(save).toHaveBeenCalledTimes(1);
   });
 

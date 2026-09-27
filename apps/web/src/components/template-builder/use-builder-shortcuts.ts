@@ -3,15 +3,16 @@
 import { useEffect, useRef } from "react";
 import { matchBuilderShortcut } from "./builder-shortcut";
 import { useBuilderStore, useSaveRevision } from "./builder-provider";
-import { runBuilderShortcut } from "./run-builder-shortcut";
+import {
+  createBuilderShortcutHandlers,
+  runBuilderShortcut,
+} from "./run-builder-shortcut";
 
 export function useBuilderShortcuts() {
   const store = useBuilderStore();
-  const { saveRevision, isPending } = useSaveRevision();
+  const { saveRevision } = useSaveRevision();
   const saveRevisionRef = useRef(saveRevision);
   saveRevisionRef.current = saveRevision;
-  const isPendingRef = useRef(isPending);
-  isPendingRef.current = isPending;
 
   useEffect(() => {
     function onKeyDown(event: KeyboardEvent) {
@@ -20,26 +21,12 @@ export function useBuilderShortcuts() {
         return;
       }
       event.preventDefault();
-      const state = store.getState();
-      runBuilderShortcut(action, {
-        canEdit: state.canEdit,
-        isSaving: isPendingRef.current,
-        previewOpen: state.previewOpen,
-        selectedBlockId: state.selectedBlockId,
-        undo: state.undo,
-        redo: state.redo,
-        save: () => {
+      runBuilderShortcut(
+        action,
+        createBuilderShortcutHandlers(store.getState(), () => {
           void saveRevisionRef.current();
-        },
-        openPreview: () => state.setPreviewOpen(true),
-        removeBlock: state.removeBlock,
-        duplicateBlock: state.duplicateBlock,
-        nudgeBlock: state.nudgeBlock,
-        copyBlockStyle: state.copyBlockStyle,
-        pasteBlockStyle: state.pasteBlockStyle,
-        openSaveLibrary: state.openSaveLibrary,
-        selectBlock: state.selectBlock,
-      });
+        }),
+      );
     }
 
     window.addEventListener("keydown", onKeyDown, true);

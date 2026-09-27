@@ -1,4 +1,5 @@
 import type { NudgeDirection } from "@repo/shared";
+import type { SaveState } from "@/lib/templates/working-copy-persistence";
 import type { BuilderShortcutAction } from "./builder-shortcut";
 
 export type BuilderShortcutHandlers = {
@@ -18,6 +19,46 @@ export type BuilderShortcutHandlers = {
   openSaveLibrary: () => void;
   selectBlock: (blockId: string | null) => void;
 };
+
+type ShortcutSource = {
+  canEdit: boolean;
+  saveState: SaveState;
+  previewOpen: boolean;
+  selectedBlockId: string | null;
+  undo: () => void;
+  redo: () => void;
+  setPreviewOpen: (open: boolean) => void;
+  removeBlock: (blockId: string) => void;
+  duplicateBlock: (blockId: string) => void;
+  nudgeBlock: (blockId: string, direction: NudgeDirection) => void;
+  copyBlockStyle: (blockId: string) => void;
+  pasteBlockStyle: (blockId: string) => void;
+  openSaveLibrary: () => void;
+  selectBlock: (blockId: string | null) => void;
+};
+
+export function createBuilderShortcutHandlers(
+  state: ShortcutSource,
+  save: () => void,
+): BuilderShortcutHandlers {
+  return {
+    canEdit: state.canEdit,
+    isSaving: state.saveState === "saving",
+    previewOpen: state.previewOpen,
+    selectedBlockId: state.selectedBlockId,
+    undo: state.undo,
+    redo: state.redo,
+    save,
+    openPreview: () => state.setPreviewOpen(true),
+    removeBlock: state.removeBlock,
+    duplicateBlock: state.duplicateBlock,
+    nudgeBlock: state.nudgeBlock,
+    copyBlockStyle: state.copyBlockStyle,
+    pasteBlockStyle: state.pasteBlockStyle,
+    openSaveLibrary: state.openSaveLibrary,
+    selectBlock: state.selectBlock,
+  };
+}
 
 export function runBuilderShortcut(
   action: BuilderShortcutAction,
