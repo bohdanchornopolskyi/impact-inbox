@@ -44,6 +44,10 @@ describe("TemplatesService", () => {
   };
 
   beforeEach(async () => {
+    jest.mocked(renderTemplate).mockResolvedValue({
+      html: "<html></html>",
+      text: "",
+    });
     mockSelect.mockReturnValue({ from: mockFrom });
     mockFrom.mockReturnValue({ where: mockWhere });
     mockWhere.mockResolvedValue([]);
