@@ -3,7 +3,9 @@
 import type {
   ChangeEvent,
   FocusEvent,
+  FocusEventHandler,
   KeyboardEvent,
+  KeyboardEventHandler,
   ReactNode,
   Ref,
 } from "react";
@@ -46,6 +48,8 @@ export function TextField({
   value,
   onChange,
   onFocus,
+  onBlur,
+  onKeyDown,
   inputRef,
   placeholder,
   multiline = false,
@@ -56,6 +60,8 @@ export function TextField({
   value: string;
   onChange: (value: string) => void;
   onFocus?: () => void;
+  onBlur?: FocusEventHandler<HTMLInputElement | HTMLTextAreaElement>;
+  onKeyDown?: KeyboardEventHandler<HTMLInputElement | HTMLTextAreaElement>;
   inputRef?: Ref<HTMLInputElement>;
   placeholder?: string;
   multiline?: boolean;
@@ -73,6 +79,8 @@ export function TextField({
           placeholder={placeholder}
           disabled={disabled}
           onFocus={onFocus}
+          onBlur={onBlur}
+          onKeyDown={onKeyDown}
           onChange={(event) => onChange(event.target.value)}
         />
       ) : (
@@ -83,6 +91,8 @@ export function TextField({
           placeholder={placeholder}
           disabled={disabled}
           onFocus={onFocus}
+          onBlur={onBlur}
+          onKeyDown={onKeyDown}
           onChange={(event) => onChange(event.target.value)}
         />
       )}
