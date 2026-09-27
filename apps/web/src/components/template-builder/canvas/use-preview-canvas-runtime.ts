@@ -15,7 +15,10 @@ import {
   useBuilderStore,
   useSaveRevision,
 } from "../builder-provider";
-import { runBuilderShortcut } from "../run-builder-shortcut";
+import {
+  createBuilderShortcutHandlers,
+  runBuilderShortcut,
+} from "../run-builder-shortcut";
 import { buildCanvasBridgeDocument } from "./canvas-bridge";
 import {
   isBuilderShortcutMessage,
@@ -56,7 +59,9 @@ export function usePreviewCanvasRuntime(
     isPaletteDragging,
     isCanvasDragging,
   } = usePaletteCanvasDnd();
-  const { saveRevision, isPending: isSaving } = useSaveRevision();
+  const { saveRevision } = useSaveRevision();
+  const saveRevisionRef = useRef(saveRevision);
+  saveRevisionRef.current = saveRevision;
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const srcDocRef = useRef("");
   const controllerRef = useRef<CanvasPreviewController | null>(null);
@@ -231,26 +236,12 @@ export function usePreviewCanvasRuntime(
 
       const data = event.data;
       if (isBuilderShortcutMessage(data)) {
-        const state = store.getState();
-        runBuilderShortcut(data.action, {
-          canEdit: state.canEdit,
-          isSaving,
-          previewOpen: state.previewOpen,
-          selectedBlockId: state.selectedBlockId,
-          undo: state.undo,
-          redo: state.redo,
-          save: () => {
-            void saveRevision();
-          },
-          openPreview: () => state.setPreviewOpen(true),
-          removeBlock: state.removeBlock,
-          duplicateBlock: state.duplicateBlock,
-          nudgeBlock: state.nudgeBlock,
-          copyBlockStyle: state.copyBlockStyle,
-          pasteBlockStyle: state.pasteBlockStyle,
-          openSaveLibrary: state.openSaveLibrary,
-          selectBlock: state.selectBlock,
-        });
+        runBuilderShortcut(
+          data.action,
+          createBuilderShortcutHandlers(store.getState(), () => {
+            void saveRevisionRef.current();
+          }),
+        );
         return;
       }
 
@@ -263,7 +254,7 @@ export function usePreviewCanvasRuntime(
 
     window.addEventListener("message", onMessage);
     return () => window.removeEventListener("message", onMessage);
-  }, [handleIframeMessage, isSaving, saveRevision, store]);
+  }, [handleIframeMessage, store]);
 
   useEffect(() => {
     if (!richtextSession) {

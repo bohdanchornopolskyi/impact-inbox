@@ -792,7 +792,7 @@ export function useSaveRevision(): {
 
   async function saveRevision(): Promise<boolean> {
     const state = store.getState();
-    if (!state.canEdit) {
+    if (!state.canEdit || state.saveState === "saving") {
       return true;
     }
 

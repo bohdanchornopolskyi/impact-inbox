@@ -57,7 +57,9 @@ export function BuilderToolbarActions() {
   const setPreviewOpen = useBuilder((s) => s.setPreviewOpen);
   const setRevisionsOpen = useBuilder((s) => s.setRevisionsOpen);
   const setExportOpen = useBuilder((s) => s.setExportOpen);
-  const { saveRevision, isPending: isSaving } = useSaveRevision();
+  const saveState = useBuilder((s) => s.saveState);
+  const { saveRevision } = useSaveRevision();
+  const isSaving = saveState === "saving";
 
   const saveItems: SplitButtonItem[] = [
     {
