@@ -20,6 +20,7 @@ describe("TemplateRevisionsService", () => {
     getTemplate: jest.fn(),
     updateTemplate: jest.fn(),
     renderListPreviewHtml: jest.fn(),
+    syncListPreviewHtml: jest.fn(),
   };
 
   const mockDb = {
@@ -82,7 +83,7 @@ describe("TemplateRevisionsService", () => {
     });
     setupTransaction();
     mockTemplatesService.getTemplate.mockResolvedValue(templateData);
-    mockTemplatesService.renderListPreviewHtml.mockResolvedValue(
+    mockTemplatesService.syncListPreviewHtml.mockResolvedValue(
       "<html><body>Preview</body></html>",
     );
 
@@ -112,9 +113,6 @@ describe("TemplateRevisionsService", () => {
     const revision = await service.saveRevision("ws-1", "tpl-1", input);
 
     expect(revision.id).toBe("rev-1");
-    expect(mockTemplatesService.renderListPreviewHtml).toHaveBeenCalledWith(
-      DEFAULT_TEMPLATE_CONTENT,
-    );
     // Single transaction: template UPDATE then revision INSERT.
     expect(mockTransaction).toHaveBeenCalledTimes(1);
     expect(tx.update).toHaveBeenCalled();
@@ -123,10 +121,16 @@ describe("TemplateRevisionsService", () => {
     // Working copy from the client is written and bumps updatedAt.
     const setArg = txSet.mock.calls[0][0];
     expect(setArg.content).toEqual(DEFAULT_TEMPLATE_CONTENT);
-    expect(setArg.listPreviewHtml).toBe(
-      "<html><body>Preview</body></html>",
-    );
+    expect(setArg.listPreviewHtml).toBeUndefined();
     expect(setArg.updatedAt).toBeInstanceOf(Date);
+    expect(mockTemplatesService.syncListPreviewHtml).toHaveBeenCalledWith(
+      "ws-1",
+      "tpl-1",
+      DEFAULT_TEMPLATE_CONTENT,
+    );
+    expect(
+      mockTemplatesService.syncListPreviewHtml.mock.invocationCallOrder[0],
+    ).toBeGreaterThan(mockTransaction.mock.invocationCallOrder[0] ?? 0);
 
     // The same content is snapshotted into the revision.
     expect(txInsertValues).toHaveBeenCalledWith({
@@ -145,6 +149,7 @@ describe("TemplateRevisionsService", () => {
         expectedUpdatedAt: new Date("2020-01-01").toISOString(),
       }),
     ).rejects.toBeInstanceOf(ConflictException);
+    expect(mockTemplatesService.syncListPreviewHtml).not.toHaveBeenCalled();
   });
 
   it("lists revisions for a template", async () => {
