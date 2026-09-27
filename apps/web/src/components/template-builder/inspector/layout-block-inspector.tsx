@@ -1,12 +1,20 @@
 "use client";
 
+import { useState } from "react";
 import type {
   ColumnBlock,
+  ColumnWidthMode,
   RowBlock,
   RowSplit,
   SectionBlock,
 } from "@repo/shared";
-import { findBlock, rowSplitFromWidths, rowSplitWidths } from "@repo/shared";
+import {
+  findBlock,
+  rowSplitFromWidths,
+  rowSplitWidths,
+  shownColumnWidthMode,
+  widthForColumnMode,
+} from "@repo/shared";
 import { InspectorRow, SegmentedControl, inspectorControlClass } from "@repo/ui/client";
 import { useBuilder } from "../builder-provider";
 import { ImageSourceCard } from "./image-source-field";
@@ -41,7 +49,7 @@ const BACKGROUND_REPEAT_OPTIONS = [
   { value: "repeat-y", label: "Repeat Y" },
 ];
 
-const COLUMN_WIDTH_OPTIONS = [
+const COLUMN_WIDTH_OPTIONS: { value: ColumnWidthMode; label: string }[] = [
   { value: "fill", label: "Fill" },
   { value: "fixed", label: "Fixed" },
 ];
@@ -118,6 +126,9 @@ export function LayoutSizeFields({
   updateProps: UpdateProps;
   disabled?: boolean;
 }) {
+  const [chosenWidths, setChosenWidths] = useState<
+    Record<string, { mode: ColumnWidthMode; width: number | undefined }>
+  >({});
   const props = block.props as Record<string, unknown>;
 
   if (block.type === "section") {
@@ -173,7 +184,29 @@ export function LayoutSizeFields({
   }
 
   const width = typeof props.width === "number" ? props.width : undefined;
-  const mode = width === undefined ? "fill" : "fixed";
+  const mode = shownColumnWidthMode(width, chosenWidths[block.id]);
+
+  function selectMode(next: string) {
+    const option = COLUMN_WIDTH_OPTIONS.find((item) => item.value === next);
+    if (!option) {
+      return;
+    }
+
+    const nextWidth = widthForColumnMode(option.value, width);
+    setChosenWidths((current) => ({
+      ...current,
+      [block.id]: { mode: option.value, width: nextWidth },
+    }));
+    updateProps({ width: nextWidth });
+  }
+
+  function changeWidth(next: number | undefined) {
+    setChosenWidths((current) => ({
+      ...current,
+      [block.id]: { mode: "fixed", width: next },
+    }));
+    updateProps({ width: next });
+  }
 
   return (
     <ColumnWidthFields
@@ -181,7 +214,8 @@ export function LayoutSizeFields({
       mode={mode}
       width={width}
       disabled={disabled}
-      updateProps={updateProps}
+      onModeChange={selectMode}
+      onWidthChange={changeWidth}
     />
   );
 }
@@ -191,13 +225,15 @@ function ColumnWidthFields({
   mode,
   width,
   disabled,
-  updateProps,
+  onModeChange,
+  onWidthChange,
 }: {
   block: ColumnBlock;
-  mode: "fill" | "fixed";
+  mode: ColumnWidthMode;
   width: number | undefined;
   disabled: boolean;
-  updateProps: UpdateProps;
+  onModeChange: (mode: string) => void;
+  onWidthChange: (width: number | undefined) => void;
 }) {
   const content = useBuilder((s) => s.content);
   const updateBlockProps = useBuilder((s) => s.updateBlockProps);
@@ -234,13 +270,7 @@ function ColumnWidthFields({
           disabled={disabled}
           value={mode}
           options={COLUMN_WIDTH_OPTIONS}
-          onChange={(next) => {
-            if (next === "fill") {
-              updateProps({ width: undefined });
-              return;
-            }
-            updateProps({ width: width ?? 50 });
-          }}
+          onChange={onModeChange}
         />
       </InspectorRow>
       {mode === "fixed" ? (
@@ -252,7 +282,7 @@ function ColumnWidthFields({
           max={100}
           optional
           disabled={disabled}
-          onChange={(next) => updateProps({ width: next })}
+          onChange={onWidthChange}
         />
       ) : null}
     </>
