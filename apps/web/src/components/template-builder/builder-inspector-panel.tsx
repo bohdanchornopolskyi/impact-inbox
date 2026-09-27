@@ -34,18 +34,17 @@ import { TemplateBlockIcon } from "./block-icons";
 import { selectionSiblingContext } from "./canvas/selection-path";
 import { BlockInspector } from "./inspector/block-inspector";
 import { widthForPickedImage } from "./inspector/image-display-width";
+import {
+  canPickImageFromLibrary,
+  libraryImageProps,
+  libraryImageSrc,
+} from "./inspector/library-image-target";
 import { ImageLibraryProvider } from "./inspector/image-library-context";
 import { ImageLibraryPanel } from "./inspector/image-library-panel";
 import { TemplateSettingsInspector } from "./inspector/template-settings-inspector";
 import { TemplateCampaignSettings } from "./inspector/template-campaign-settings";
 import { ConfirmModal } from "./modals/confirm-modal";
 import { moduleSaveTargetState } from "./module-save-target";
-
-function canPickImageFromLibrary(
-  type: TemplateBlockType,
-): type is "image" | "logo" | "video" {
-  return type === "image" || type === "logo" || type === "video";
-}
 
 function readSelectedType(
   content: TemplateContentData,
@@ -56,30 +55,6 @@ function readSelectedType(
   }
 
   return findBlock(content, selectedBlockId)?.block.type;
-}
-
-function libraryImageSrc(
-  content: TemplateContentData,
-  selectedBlockId: string | null,
-): string {
-  if (!selectedBlockId) {
-    return "";
-  }
-
-  const found = findBlock(content, selectedBlockId);
-  if (!found) {
-    return "";
-  }
-
-  if (found.block.type === "video") {
-    return found.block.props.thumbnailSrc;
-  }
-
-  if (found.block.type === "image" || found.block.type === "logo") {
-    return found.block.props.src;
-  }
-
-  return "";
 }
 
 function InspectorLibraryPanel({
@@ -154,15 +129,37 @@ export function BuilderInspectorPanel() {
       return;
     }
 
+    if (type === "section") {
+      const props = libraryImageProps(type, url);
+      if (props) {
+        const found = findBlock(content, blockId);
+        const hasColor =
+          found?.block.type === "section" &&
+          Boolean(found.block.styles?.backgroundColor);
+        store.getState().updateBlock(blockId, {
+          props,
+          styles: hasColor ? { backgroundColor: undefined } : undefined,
+        });
+      }
+      closeLibrary();
+      return;
+    }
+
     if (type === "video") {
-      updateBlockProps(blockId, { thumbnailSrc: url });
+      const props = libraryImageProps(type, url);
+      if (props) {
+        updateBlockProps(blockId, props);
+      }
       closeLibrary();
       return;
     }
 
     void widthForPickedImage(url, type, content.settings.width).then(
       (width) => {
-        updateBlockProps(blockId, { src: url, width });
+        const props = libraryImageProps(type, url, width);
+        if (props) {
+          updateBlockProps(blockId, props);
+        }
         closeLibrary();
       },
     );

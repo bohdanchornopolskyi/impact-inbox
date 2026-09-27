@@ -18,13 +18,15 @@ function starter(): TemplateContentData {
 }
 
 describe("canApplyAssetToSelection", () => {
-  it("is true only for an editable image or logo block", () => {
+  it("is true for an editable image, logo, or section", () => {
     const content = starter();
+    const sectionId = content.body[0]!.id;
     const headingId = content.body[0]!.children[0]!.children[0]!.children[0]!.id;
     const imageId = content.body[0]!.children[0]!.children[0]!.children[1]!.id;
 
     expect(canApplyAssetToSelection(content, headingId, true)).toBe(false);
     expect(canApplyAssetToSelection(content, imageId, true)).toBe(true);
+    expect(canApplyAssetToSelection(content, sectionId, true)).toBe(true);
     expect(canApplyAssetToSelection(content, imageId, false)).toBe(false);
     expect(canApplyAssetToSelection(content, null, true)).toBe(false);
   });

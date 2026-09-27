@@ -12,6 +12,7 @@ import {
   resolveSpacingSides,
   spacingFromSides,
 } from "@repo/shared";
+import { useState } from "react";
 import {
   AlignCenter,
   AlignJustify,
@@ -35,13 +36,19 @@ import { useOptionalWorkspace } from "@/contexts/workspace-context";
 import { useBuilder } from "../builder-provider";
 import { ColorPickerField } from "./color-picker-field";
 import { brandSwatches, normalizeHex } from "./color";
-import { NumberField, SelectField, asString } from "./fields";
+import { NumberField, SelectField } from "./fields";
 import { inheritedLineHeight } from "./inherited-typography";
 import {
   LayoutBackgroundFields,
   LayoutSizeFields,
   LayoutSpacingFields,
 } from "./layout-block-inspector";
+import {
+  backgroundFillMode,
+  isBackgroundImageUrl,
+  sectionFillChange,
+  type BackgroundFillMode,
+} from "./section-fill";
 
 type UpdateProps = (props: Record<string, unknown>) => void;
 
@@ -151,24 +158,10 @@ function hasSizeSection(block: TemplateBlock) {
   );
 }
 
-function backgroundFill(
-  styles: BlockStyles,
-  backgroundImage?: unknown,
-): "none" | "color" | "image" {
-  if (typeof backgroundImage === "string" && backgroundImage.length > 0) {
-    return "image";
-  }
-  if (styles.backgroundColor) {
-    return "color";
-  }
-  return "none";
-}
-
 function backgroundSummary(
+  fill: BackgroundFillMode,
   styles: BlockStyles,
-  backgroundImage?: unknown,
 ): string {
-  const fill = backgroundFill(styles, backgroundImage);
   if (fill === "image") {
     return "Image";
   }
@@ -522,9 +515,13 @@ export function BackgroundSection({
   updateProps,
 }: AppearanceFields) {
   const workspace = useOptionalWorkspace();
+  const updateBlock = useBuilder((s) => s.updateBlock);
+  const [pendingImageId, setPendingImageId] = useState<string | null>(null);
   const styles = block.styles ?? {};
   const props = blockProps(block);
-  const fill = backgroundFill(styles, props.backgroundImage);
+  const storedFill = backgroundFillMode(styles, props);
+  const fill =
+    pendingImageId === block.id && storedFill === "none" ? "image" : storedFill;
   const swatches = brandSwatches(
     workspace?.workspace.brandKit?.colors?.primary,
   );
@@ -532,7 +529,7 @@ export function BackgroundSection({
   return (
     <CollapsibleSection
       title="Background"
-      summary={backgroundSummary(styles, props.backgroundImage)}
+      summary={backgroundSummary(fill, styles)}
     >
       <div className="flex flex-col gap-3">
         <InspectorRow label="Fill">
@@ -546,29 +543,22 @@ export function BackgroundSection({
                 : FILL_OPTIONS.filter((option) => option.value !== "image")
             }
             onChange={(next) => {
-              if (next === "none") {
-                patchStyles({ backgroundColor: undefined });
-                if (block.type === "section") {
-                  updateProps({ backgroundImage: undefined });
-                }
+              if (
+                disabled ||
+                (next !== "none" && next !== "color" && next !== "image")
+              ) {
                 return;
               }
-              if (next === "color") {
-                if (block.type === "section") {
-                  updateProps({ backgroundImage: undefined });
-                }
-                if (!styles.backgroundColor) {
-                  patchStyles({ backgroundColor: "#F4F6F8" });
-                }
-                return;
+
+              const patch = sectionFillChange(block, next);
+              if (patch) {
+                updateBlock(block.id, patch, { history: "record" });
               }
-              patchStyles({ backgroundColor: undefined });
-              if (block.type === "section") {
-                updateProps({
-                  backgroundImage:
-                    asString(props.backgroundImage) || "https://",
-                });
-              }
+              setPendingImageId(
+                next === "image" && !isBackgroundImageUrl(props.backgroundImage)
+                  ? block.id
+                  : null,
+              );
             }}
           />
         </InspectorRow>
@@ -591,7 +581,12 @@ export function BackgroundSection({
         {isLayoutBlock(block) && fill === "image" ? (
           <LayoutBackgroundFields
             block={block}
-            updateProps={updateProps}
+            updateProps={(next) => {
+              if ("backgroundImage" in next && next.backgroundImage === undefined) {
+                setPendingImageId(block.id);
+              }
+              updateProps(next);
+            }}
             disabled={disabled}
           />
         ) : null}

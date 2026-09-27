@@ -9,13 +9,14 @@ import type {
 import { findBlock, rowSplitFromWidths, rowSplitWidths } from "@repo/shared";
 import { InspectorRow, SegmentedControl, inspectorControlClass } from "@repo/ui/client";
 import { useBuilder } from "../builder-provider";
+import { ImageSourceCard } from "./image-source-field";
+import { isBackgroundImageUrl } from "./section-fill";
 import {
   asString,
   BooleanField,
   NumberField,
   SelectField,
   TextField,
-  UrlField,
 } from "./fields";
 
 type LayoutBlock = SectionBlock | RowBlock | ColumnBlock;
@@ -257,21 +258,27 @@ export function LayoutBackgroundFields({
     return null;
   }
 
-  const props = block.props as Record<string, unknown>;
+  const props = block.props;
+  const imageUrl = isBackgroundImageUrl(props.backgroundImage)
+    ? props.backgroundImage
+    : "";
+
+  function applyImage(url: string) {
+    if (!isBackgroundImageUrl(url)) {
+      return;
+    }
+    updateProps({ backgroundImage: url });
+  }
 
   return (
     <>
-      <UrlField
-        label="Image"
-        value={asString(props.backgroundImage)}
+      <ImageSourceCard
+        value={imageUrl}
         disabled={disabled}
-        onChange={(value) =>
-          updateProps({
-            backgroundImage: value.trim() ? value.trim() : undefined,
-          })
-        }
+        onChange={applyImage}
+        onPicked={applyImage}
       />
-      {props.backgroundImage ? (
+      {isBackgroundImageUrl(props.backgroundImage) ? (
         <>
           <SelectField
             label="Size"

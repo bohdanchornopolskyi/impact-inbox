@@ -33,6 +33,7 @@ import { useToastMutation } from "@/lib/use-toast-mutation";
 import { showError, showToast } from "@/stores/toast-store";
 import { useBuilder, useBuilderStore } from "./builder-provider";
 import { canApplyAssetToSelection } from "./asset-apply-target";
+import { libraryImageProps } from "./inspector/library-image-target";
 import { filterEditorPanel } from "./filter-editor-panel";
 import { widthForPickedImage } from "./inspector/image-display-width";
 import { ConfirmModal } from "./modals/confirm-modal";
@@ -412,17 +413,33 @@ export function AssetsPanel() {
     const { content, selectedBlockId, canEdit, updateBlockProps } =
       store.getState();
     if (!canApplyAssetToSelection(content, selectedBlockId, canEdit)) {
-      showError("Select an image or logo block first");
+      showError("Select an image, logo, or section first");
       return;
     }
 
     const found = selectedBlockId
       ? findBlock(content, selectedBlockId)
       : undefined;
-    if (
-      !found ||
-      (found.block.type !== "image" && found.block.type !== "logo")
-    ) {
+    if (!found) {
+      return;
+    }
+
+    if (found.block.type === "section") {
+      const props = libraryImageProps("section", asset.url);
+      if (!props) {
+        return;
+      }
+      store.getState().updateBlock(found.block.id, {
+        props,
+        styles: found.block.styles?.backgroundColor
+          ? { backgroundColor: undefined }
+          : undefined,
+      });
+      showToast("Applied to selected section");
+      return;
+    }
+
+    if (found.block.type !== "image" && found.block.type !== "logo") {
       return;
     }
 
@@ -572,7 +589,7 @@ export function AssetsPanel() {
         <MousePointerClick className="mt-px size-3.25 shrink-0" strokeWidth={1.5} />
         {canApplyToBlock
           ? "Click an image to place it on the selected block"
-          : "Select an image block to place, or click to copy the URL"}
+          : "Select an image or section to place, or click to copy the URL"}
       </EditorPanelHint>
       <EditorPanelScroll>
         {assetsQuery.isLoading ? (

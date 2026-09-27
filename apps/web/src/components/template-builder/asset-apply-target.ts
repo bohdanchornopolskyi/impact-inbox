@@ -10,5 +10,9 @@ export function canApplyAssetToSelection(
   }
 
   const found = findBlock(content, selectedBlockId);
-  return found?.block.type === "image" || found?.block.type === "logo";
+  return (
+    found?.block.type === "image" ||
+    found?.block.type === "logo" ||
+    found?.block.type === "section"
+  );
 }

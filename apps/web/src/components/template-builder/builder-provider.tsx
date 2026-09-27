@@ -118,6 +118,14 @@ type BuilderState = {
     styles: Partial<BlockStyles>,
     options?: ContentHistoryOptions,
   ) => void;
+  updateBlock: (
+    blockId: string,
+    patch: {
+      props?: Record<string, unknown>;
+      styles?: Partial<BlockStyles>;
+    },
+    options?: ContentHistoryOptions,
+  ) => void;
   addBlock: (columnId: string, blockType: ContentBlockType, index?: number) => void;
   removeBlock: (blockId: string) => void;
   duplicateBlock: (blockId: string) => void;
@@ -300,6 +308,25 @@ function createBuilderStore(
             content: updateBlockStyles(state.content, blockId, styles),
             saveState: "unsaved",
           }),
+        ),
+      updateBlock: (blockId, patch, options) =>
+        withRecordedContent(
+          options?.history ?? "record",
+          options?.coalesceKey,
+          (state) => {
+            if (!patch.props && !patch.styles) {
+              return null;
+            }
+
+            const withStyles = patch.styles
+              ? updateBlockStyles(state.content, blockId, patch.styles)
+              : state.content;
+            const content = patch.props
+              ? updateBlockProps(withStyles, blockId, patch.props)
+              : withStyles;
+
+            return { content, saveState: "unsaved" };
+          },
         ),
       addBlock: (columnId, blockType, index) =>
         withRecordedContent("record", undefined, (state) => {
