@@ -1,6 +1,10 @@
 import { useState } from "react";
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import { ZoomControl, ZOOM_DEFAULT } from "./zoom-control";
+import {
+  ZoomControl,
+  ZOOM_DEFAULT,
+  type ZoomControlProps,
+} from "./zoom-control";
 
 const meta = {
   title: "Editor/ZoomControl",
@@ -10,10 +14,12 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
+function ZoomControlPreview(args: ZoomControlProps) {
+  const [value, setValue] = useState(args.value);
+  return <ZoomControl {...args} value={value} onChange={setValue} />;
+}
+
 export const Default: Story = {
   args: { value: ZOOM_DEFAULT, onChange: () => undefined },
-  render: function Render(args) {
-    const [value, setValue] = useState(args.value);
-    return <ZoomControl {...args} value={value} onChange={setValue} />;
-  },
+  render: (args) => <ZoomControlPreview {...args} />,
 };

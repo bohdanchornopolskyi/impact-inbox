@@ -44,7 +44,7 @@ export function libraryImageSrc(
 export function libraryImageProps(
   type: "image" | "logo" | "video" | "section",
   url: string,
-  width?: number,
+  width?: number | "100%",
 ): Record<string, unknown> | null {
   if (!isBackgroundImageUrl(url)) {
     return null;

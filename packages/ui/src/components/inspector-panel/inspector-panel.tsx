@@ -41,7 +41,7 @@ export function InspectorPanelTabs({
     <div className="flex h-11.5 shrink-0 items-center border-b border-border px-3">
       <SegmentedControl
         aria-label={ariaLabel}
-              className={inspectorControlClass}
+        className={inspectorControlClass}
         value={value}
         disabled={disabled}
         onChange={onChange}
@@ -54,7 +54,7 @@ export function InspectorPanelTabs({
 export type InspectorPanelHeaderProps = HTMLAttributes<HTMLDivElement> & {
   icon?: ReactNode;
   title: string;
-  context?: string;
+  context?: string | null;
   actions?: ReactNode;
 };
 

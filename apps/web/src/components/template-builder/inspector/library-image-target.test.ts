@@ -16,6 +16,12 @@ describe("library image target", () => {
       backgroundImage: "https://cdn.example.com/bg.png",
     });
     expect(libraryImageProps("section", "https://")).toBeNull();
+    expect(
+      libraryImageProps("image", "https://cdn.example.com/photo.png", "100%"),
+    ).toEqual({
+      src: "https://cdn.example.com/photo.png",
+      width: "100%",
+    });
   });
 
   it("reads the section background as the current library image", () => {
