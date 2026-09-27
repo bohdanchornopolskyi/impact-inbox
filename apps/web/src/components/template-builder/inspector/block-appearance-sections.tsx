@@ -267,6 +267,7 @@ export function TypographySection({
             min={1}
             max={3}
             placeholder={inheritedLineHeight(block.type, settings)?.toString()}
+            optional
             disabled={disabled}
             onChange={(next) => updateProps({ lineHeight: next })}
           />
@@ -309,6 +310,7 @@ export function TypographySection({
               value={typeof props.fontSize === "number" ? props.fontSize : undefined}
               min={8}
               max={32}
+              optional
               disabled={disabled}
               onChange={(next) => updateProps({ fontSize: next })}
             />
@@ -318,6 +320,7 @@ export function TypographySection({
               value={typeof props.paddingX === "number" ? props.paddingX : undefined}
               min={0}
               max={80}
+              optional
               disabled={disabled}
               onChange={(next) => updateProps({ paddingX: next })}
             />
@@ -327,6 +330,7 @@ export function TypographySection({
               value={typeof props.paddingY === "number" ? props.paddingY : undefined}
               min={0}
               max={80}
+              optional
               disabled={disabled}
               onChange={(next) => updateProps({ paddingY: next })}
             />
@@ -387,7 +391,8 @@ export function SizeSection({
                 unit="px"
                 value={typeof props.width === "number" ? props.width : undefined}
                 min={1}
-                max={700}
+                max={600}
+                optional
                 disabled={disabled}
                 onChange={(next) => updateProps({ width: next })}
               />
@@ -402,6 +407,7 @@ export function SizeSection({
                   }
                   min={1}
                   max={700}
+                  optional
                   disabled={disabled}
                   onChange={(next) => updateProps({ width: next })}
                 />
@@ -415,6 +421,7 @@ export function SizeSection({
                   }
                   min={1}
                   max={500}
+                  optional
                   disabled={disabled}
                   onChange={(next) => updateProps({ height: next })}
                 />
@@ -427,6 +434,7 @@ export function SizeSection({
                 value={typeof props.size === "number" ? props.size : undefined}
                 min={64}
                 max={512}
+                optional
                 disabled={disabled}
                 onChange={(next) => updateProps({ size: next })}
               />
@@ -437,6 +445,7 @@ export function SizeSection({
               value={typeof styles.width === "number" ? styles.width : undefined}
               min={1}
               max={700}
+              optional
               disabled={disabled}
               onChange={(next) => patchStyles({ width: next })}
             />
@@ -629,6 +638,7 @@ export function BorderSection({
           value={styles.borderRadius}
           min={0}
           max={100}
+          optional
           disabled={disabled}
           onChange={(next) => patchStyles({ borderRadius: next })}
         />
@@ -642,6 +652,7 @@ export function BorderSection({
             value={styles.borderWidth}
             min={0}
             max={20}
+            optional
             disabled={disabled}
             onChange={(next) => patchStyles({ borderWidth: next })}
           />
@@ -669,6 +680,7 @@ export function BorderSection({
             }
             min={0}
             max={100}
+            optional
             disabled={disabled}
             onChange={(next) => updateProps({ borderRadius: next })}
           />

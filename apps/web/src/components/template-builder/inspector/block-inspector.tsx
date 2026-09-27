@@ -8,6 +8,7 @@ import type {
 import {
   TEMPLATE_BLOCK_DEFINITIONS,
   coercePropValue,
+  numberPropAllowsUnset,
   numberPropBounds,
 } from "@repo/shared";
 import { CollapsibleSection } from "@repo/ui/client";
@@ -306,6 +307,7 @@ function BlockField({
           min={min}
           max={max}
           placeholder={placeholder}
+          optional={numberPropAllowsUnset(blockType, field.prop)}
           disabled={disabled}
           onChange={(next) => updateProps({ [field.prop]: next })}
         />
