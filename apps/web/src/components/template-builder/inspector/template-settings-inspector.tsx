@@ -37,7 +37,12 @@ export function TemplateSettingsInspector() {
             min={480}
             max={700}
             disabled={!canEdit}
-            onChange={(value) => updateSettings({ width: value ?? 600 })}
+            onChange={(value) => {
+              if (value === undefined) {
+                return;
+              }
+              updateSettings({ width: value });
+            }}
           />
           <ColorPickerField
             label="Page"
@@ -57,6 +62,7 @@ export function TemplateSettingsInspector() {
             value={settings.contentRadius}
             min={0}
             max={40}
+            optional
             disabled={!canEdit}
             onChange={(value) => updateSettings({ contentRadius: value })}
           />
@@ -87,6 +93,7 @@ export function TemplateSettingsInspector() {
             value={settings.fontSize}
             min={8}
             max={72}
+            optional
             disabled={!canEdit}
             onChange={(value) => updateSettings({ fontSize: value })}
           />
@@ -143,6 +150,7 @@ export function TemplateSettingsInspector() {
             value={settings.buttonRadius}
             min={0}
             max={40}
+            optional
             disabled={!canEdit}
             onChange={(value) => updateSettings({ buttonRadius: value })}
           />

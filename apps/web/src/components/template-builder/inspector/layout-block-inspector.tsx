@@ -209,6 +209,7 @@ function ColumnWidthFields({
           value={width}
           min={1}
           max={100}
+          optional
           disabled={disabled}
           onChange={(next) => updateProps({ width: next })}
         />
@@ -239,6 +240,7 @@ export function LayoutSpacingFields({
       value={typeof gap === "number" ? gap : undefined}
       min={0}
       max={48}
+      optional
       disabled={disabled}
       onChange={(next) => updateProps({ gap: next })}
     />

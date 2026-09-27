@@ -91,7 +91,11 @@ export function ImageCropDialog({
                 min={0}
                 max={100}
                 disabled={disabled}
-                onChange={(next) => setFocalX(next ?? 50)}
+                onChange={(next) => {
+                  if (next !== undefined) {
+                    setFocalX(next);
+                  }
+                }}
               />
               <NumberField
                 label="Y"
@@ -100,7 +104,11 @@ export function ImageCropDialog({
                 min={0}
                 max={100}
                 disabled={disabled}
-                onChange={(next) => setFocalY(next ?? 50)}
+                onChange={(next) => {
+                  if (next !== undefined) {
+                    setFocalY(next);
+                  }
+                }}
               />
             </div>
           ) : null}

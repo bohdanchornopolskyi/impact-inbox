@@ -4,8 +4,17 @@ import { contentBlockSchema } from "../schemas/template/blocks/content";
 import {
   blockPropSchema,
   coercePropValue,
+  numberPropAllowsUnset,
   numberPropBounds,
 } from "../template/block-prop-schema";
+
+describe("numberPropAllowsUnset", () => {
+  it("lets optional number props be cleared and keeps required ones", () => {
+    expect(numberPropAllowsUnset("spacer", "height")).toBe(false);
+    expect(numberPropAllowsUnset("image", "width")).toBe(true);
+    expect(numberPropAllowsUnset("button", "fontSize")).toBe(true);
+  });
+});
 
 describe.each(CONTENT_BLOCK_TYPES)("%s block definition", (type) => {
   const definition = TEMPLATE_BLOCK_DEFINITIONS[type];

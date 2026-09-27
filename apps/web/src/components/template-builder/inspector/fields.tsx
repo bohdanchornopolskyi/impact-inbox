@@ -1,7 +1,13 @@
 "use client";
 
-import type { ReactNode, Ref } from "react";
-import { useId } from "react";
+import type {
+  ChangeEvent,
+  FocusEvent,
+  KeyboardEvent,
+  ReactNode,
+  Ref,
+} from "react";
+import { useId, useState } from "react";
 import {
   Input,
   InspectorRow,
@@ -10,6 +16,7 @@ import {
   Textarea,
   UnitField,
 } from "@repo/ui/client";
+import { commitNumberDraft } from "./number-draft";
 
 export function FieldRow({
   label,
@@ -91,6 +98,7 @@ export function NumberField({
   max,
   placeholder,
   disabled = false,
+  optional = false,
   unit,
 }: {
   label: string;
@@ -100,40 +108,78 @@ export function NumberField({
   max?: number;
   placeholder?: string;
   disabled?: boolean;
+  optional?: boolean;
   unit?: string;
 }) {
   const id = useId();
+  const [draft, setDraft] = useState<{
+    text: string;
+    base: number | undefined;
+  } | null>(null);
+  const shown =
+    draft !== null && Object.is(draft.base, value)
+      ? draft.text
+      : value === undefined
+        ? ""
+        : String(value);
 
-  function handleChange(raw: string) {
-    onChange(raw === "" ? undefined : Number(raw));
+  function commit(raw: string) {
+    const result = commitNumberDraft(raw, { min, max, optional });
+
+    if (result.status === "keep") {
+      setDraft(null);
+      return;
+    }
+
+    if (result.status === "unset") {
+      if (value === undefined) {
+        setDraft(null);
+        return;
+      }
+      setDraft({ text: "", base: value });
+      onChange(undefined);
+      return;
+    }
+
+    if (result.value === value) {
+      setDraft(null);
+      return;
+    }
+
+    setDraft({ text: String(result.value), base: value });
+    onChange(result.value);
   }
+
+  function handleKeyDown(event: KeyboardEvent<HTMLInputElement>) {
+    if (event.key !== "Enter") {
+      return;
+    }
+    event.preventDefault();
+    event.currentTarget.blur();
+  }
+
+  const inputProps = {
+    id,
+    value: shown,
+    min,
+    max,
+    placeholder,
+    disabled,
+    onChange: (event: ChangeEvent<HTMLInputElement>) => {
+      setDraft({ text: event.target.value, base: value });
+    },
+    onBlur: (event: FocusEvent<HTMLInputElement>) => {
+      commit(event.currentTarget.value);
+    },
+    onKeyDown: handleKeyDown,
+  };
 
   return (
     <InspectorRow label={label} htmlFor={id}>
       {unit ? (
-        <UnitField
-          id={id}
-          className="h-8"
-          value={value ?? ""}
-          min={min}
-          max={max}
-          placeholder={placeholder}
-          disabled={disabled}
-          unit={unit}
-          onChange={(event) => handleChange(event.target.value)}
-        />
+        <UnitField className="h-8" unit={unit} {...inputProps} />
       ) : (
-        <Input
-          id={id}
-          className="h-8"
-          type="number"
-          value={value ?? ""}
-          min={min}
-          max={max}
-          placeholder={placeholder}
-          disabled={disabled}
-          onChange={(event) => handleChange(event.target.value)}
-        />
+        <Input className="h-8" type="number" {...inputProps} />
       )}
     </InspectorRow>
   );

@@ -62,6 +62,14 @@ export function numberPropBounds(
   };
 }
 
+export function numberPropAllowsUnset(
+  type: ContentBlockType,
+  prop: string,
+): boolean {
+  const schema = blockPropSchema(type, prop);
+  return schema instanceof z.ZodOptional || schema instanceof z.ZodNullable;
+}
+
 /**
  * A `<select>` always hands back a string; the schema decides whether the prop
  * wants the number behind it (heading `level`) or the string itself.
