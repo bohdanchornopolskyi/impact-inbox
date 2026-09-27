@@ -1,6 +1,6 @@
 import { useState } from "react";
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import { DateField } from "./date-field";
+import { DateField, type DateFieldProps } from "./date-field";
 
 const meta = {
   title: "Pickers/Date Field",
@@ -15,9 +15,11 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
+function DateFieldPreview(args: DateFieldProps) {
+  const [value, setValue] = useState(args.value);
+  return <DateField {...args} value={value} onValueChange={setValue} />;
+}
+
 export const Rest: Story = {
-  render: function Render(args) {
-    const [value, setValue] = useState(args.value);
-    return <DateField {...args} value={value} onValueChange={setValue} />;
-  },
+  render: (args) => <DateFieldPreview {...args} />,
 };

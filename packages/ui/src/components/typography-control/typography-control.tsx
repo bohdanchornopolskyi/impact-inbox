@@ -41,7 +41,7 @@ export type TypographyControlProps = HTMLAttributes<HTMLDivElement> & {
   paragraphSpacing: string;
   onParagraphSpacingChange?: (value: string) => void;
   colorHex: string;
-  brandColors?: string[];
+  brandColors?: readonly string[];
   onColorChange?: (hex: string) => void;
   align: TypographyAlign;
   onAlignChange?: (value: TypographyAlign) => void;

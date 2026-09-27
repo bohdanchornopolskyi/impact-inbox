@@ -18,8 +18,13 @@ function cropPixels(
     return { width: sourceWidth, height: sourceHeight };
   }
 
-  const [widthPart, heightPart] = aspect.split(":").map(Number);
-  const target = widthPart / heightPart;
+  const [widthPart, heightPart] = aspect.split(":");
+  const widthRatio = Number(widthPart);
+  const heightRatio = Number(heightPart);
+  if (!widthRatio || !heightRatio) {
+    return { width: sourceWidth, height: sourceHeight };
+  }
+  const target = widthRatio / heightRatio;
   const current = sourceWidth / sourceHeight;
 
   if (current > target) {

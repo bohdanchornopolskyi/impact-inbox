@@ -13,28 +13,30 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
+function SchedulePopoverRest() {
+  const [date, setDate] = useState("2026-03-18");
+  const [time, setTime] = useState("09:30");
+  return (
+    <SchedulePopover
+      timezone={
+        <TimezoneNote>Sends {time} in Europe/Berlin (CET)</TimezoneNote>
+      }
+    >
+      <DateField
+        value={date}
+        today="2026-03-12"
+        onValueChange={setDate}
+        className="min-w-0 flex-1"
+      />
+      <TimeField
+        value={time}
+        onValueChange={setTime}
+        className="w-[124px] shrink-0"
+      />
+    </SchedulePopover>
+  );
+}
+
 export const Rest: Story = {
-  render: function Render() {
-    const [date, setDate] = useState("2026-03-18");
-    const [time, setTime] = useState("09:30");
-    return (
-      <SchedulePopover
-        timezone={
-          <TimezoneNote>Sends {time} in Europe/Berlin (CET)</TimezoneNote>
-        }
-      >
-        <DateField
-          value={date}
-          today="2026-03-12"
-          onValueChange={setDate}
-          className="min-w-0 flex-1"
-        />
-        <TimeField
-          value={time}
-          onValueChange={setTime}
-          className="w-[124px] shrink-0"
-        />
-      </SchedulePopover>
-    );
-  },
+  render: () => <SchedulePopoverRest />,
 };

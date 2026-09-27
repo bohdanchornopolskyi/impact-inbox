@@ -12,7 +12,7 @@ import {
   authInlineLinkClass,
   authShellLinkClass,
 } from "@repo/ui/client";
-import { AuthShell } from "./auth-shell";
+import { AuthShell, type AuthShellProps } from "./auth-shell";
 import { FormError } from "../form-error/form-error";
 
 const meta = {
@@ -23,6 +23,48 @@ const meta = {
 
 export default meta;
 type Story = StoryObj<typeof meta>;
+
+function SignInForm(args: AuthShellProps) {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+
+  return (
+    <AuthShell {...args}>
+      <form onSubmit={(event) => event.preventDefault()}>
+        <Input
+          id="email"
+          label="Email"
+          type="email"
+          value={email}
+          onChange={(event) => setEmail(event.target.value)}
+          placeholder="you@company.com"
+        />
+        <PasswordInput
+          id="password"
+          label="Password"
+          value={password}
+          onChange={(event) => setPassword(event.target.value)}
+          placeholder="••••••••"
+          labelAction={
+            <a href="#" className={authInlineLinkClass()}>
+              Forgot?
+            </a>
+          }
+        />
+        <FormError message="Invalid email or password." />
+        <Button
+          type="submit"
+          variant="primary"
+          size="lg"
+          fullWidth
+          className="mt-1"
+        >
+          Sign in
+        </Button>
+      </form>
+    </AuthShell>
+  );
+}
 
 export const SignIn: Story = {
   args: {
@@ -39,41 +81,7 @@ export const SignIn: Story = {
     ),
     children: null,
   },
-  render: (args) => {
-    const [email, setEmail] = useState("");
-    const [password, setPassword] = useState("");
-
-    return (
-      <AuthShell {...args}>
-        <form onSubmit={(event) => event.preventDefault()}>
-          <Input
-            id="email"
-            label="Email"
-            type="email"
-            value={email}
-            onChange={(event) => setEmail(event.target.value)}
-            placeholder="you@company.com"
-          />
-          <PasswordInput
-            id="password"
-            label="Password"
-            value={password}
-            onChange={(event) => setPassword(event.target.value)}
-            placeholder="••••••••"
-            labelAction={
-              <a href="#" className={authInlineLinkClass()}>
-                Forgot?
-              </a>
-            }
-          />
-          <FormError message="Invalid email or password." />
-          <Button type="submit" variant="primary" size="lg" fullWidth className="mt-1">
-            Sign in
-          </Button>
-        </form>
-      </AuthShell>
-    );
-  },
+  render: (args) => <SignInForm {...args} />,
 };
 
 export const SignUp: Story = {
@@ -107,7 +115,13 @@ export const SignUp: Story = {
           placeholder="Create a password"
           hint="At least 8 characters."
         />
-        <Button type="submit" variant="primary" size="lg" fullWidth className="mt-1">
+        <Button
+          type="submit"
+          variant="primary"
+          size="lg"
+          fullWidth
+          className="mt-1"
+        >
           Create account
         </Button>
       </form>
@@ -144,6 +158,35 @@ export const VerifyEmail: Story = {
   ),
 };
 
+function ForgotPasswordForm(args: AuthShellProps) {
+  const [email, setEmail] = useState("");
+
+  return (
+    <AuthShell {...args}>
+      <form onSubmit={(event) => event.preventDefault()}>
+        <Input
+          id="email"
+          label="Email"
+          type="email"
+          value={email}
+          onChange={(event) => setEmail(event.target.value)}
+          placeholder="you@company.com"
+        />
+        <Button
+          type="submit"
+          variant="primary"
+          size="lg"
+          fullWidth
+          className="mt-1"
+        >
+          Send reset link
+        </Button>
+      </form>
+      <AuthBackLink href="#" className="mt-4" />
+    </AuthShell>
+  );
+}
+
 export const ForgotPassword: Story = {
   args: {
     title: "Reset your password",
@@ -151,28 +194,7 @@ export const ForgotPassword: Story = {
     logoHref: "#",
     children: null,
   },
-  render: (args) => {
-    const [email, setEmail] = useState("");
-
-    return (
-      <AuthShell {...args}>
-        <form onSubmit={(event) => event.preventDefault()}>
-          <Input
-            id="email"
-            label="Email"
-            type="email"
-            value={email}
-            onChange={(event) => setEmail(event.target.value)}
-            placeholder="you@company.com"
-          />
-          <Button type="submit" variant="primary" size="lg" fullWidth className="mt-1">
-            Send reset link
-          </Button>
-        </form>
-        <AuthBackLink href="#" className="mt-4" />
-      </AuthShell>
-    );
-  },
+  render: (args) => <ForgotPasswordForm {...args} />,
 };
 
 export const ResetPassword: Story = {
@@ -196,7 +218,13 @@ export const ResetPassword: Story = {
           label="Confirm password"
           placeholder="Confirm your password"
         />
-        <Button type="submit" variant="primary" size="lg" fullWidth className="mt-1">
+        <Button
+          type="submit"
+          variant="primary"
+          size="lg"
+          fullWidth
+          className="mt-1"
+        >
           Update password
         </Button>
       </form>

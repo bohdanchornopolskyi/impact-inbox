@@ -1,6 +1,6 @@
 import { useState } from "react";
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import { TimeField } from "./time-field";
+import { TimeField, type TimeFieldProps } from "./time-field";
 
 const meta = {
   title: "Pickers/Time Field",
@@ -14,9 +14,11 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
+function TimeFieldPreview(args: TimeFieldProps) {
+  const [value, setValue] = useState(args.value);
+  return <TimeField {...args} value={value} onValueChange={setValue} />;
+}
+
 export const Rest: Story = {
-  render: function Render(args) {
-    const [value, setValue] = useState(args.value);
-    return <TimeField {...args} value={value} onValueChange={setValue} />;
-  },
+  render: (args) => <TimeFieldPreview {...args} />,
 };

@@ -10,23 +10,25 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-export const Default: Story = {
-  render: function Render() {
-    const [value, setValue] = useState("overview");
+function TabsPreview() {
+  const [value, setValue] = useState("overview");
 
-    return (
-      <Tabs
-        tabs={[
-          { value: "overview", label: "Overview" },
-          { value: "analytics", label: "Analytics" },
-        ]}
-        value={value}
-        onChange={setValue}
-      >
-        <p className="text-sm text-text-2">
-          {value === "overview" ? "Overview" : "Analytics"}
-        </p>
-      </Tabs>
-    );
-  },
+  return (
+    <Tabs
+      tabs={[
+        { value: "overview", label: "Overview" },
+        { value: "analytics", label: "Analytics" },
+      ]}
+      value={value}
+      onChange={setValue}
+    >
+      <p className="text-sm text-text-2">
+        {value === "overview" ? "Overview" : "Analytics"}
+      </p>
+    </Tabs>
+  );
+}
+
+export const Default: Story = {
+  render: () => <TabsPreview />,
 };

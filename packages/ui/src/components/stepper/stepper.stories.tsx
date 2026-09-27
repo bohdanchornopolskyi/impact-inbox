@@ -1,6 +1,6 @@
 import { useState } from "react";
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import { Stepper } from "./stepper";
+import { Stepper, type StepperProps } from "./stepper";
 
 const meta = {
   title: "Editor/Stepper",
@@ -17,9 +17,11 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
+function StepperPreview(args: StepperProps) {
+  const [value, setValue] = useState(args.value);
+  return <Stepper {...args} value={value} onValueChange={setValue} />;
+}
+
 export const Default: Story = {
-  render: function Render(args) {
-    const [value, setValue] = useState(args.value);
-    return <Stepper {...args} value={value} onValueChange={setValue} />;
-  },
+  render: (args) => <StepperPreview {...args} />,
 };

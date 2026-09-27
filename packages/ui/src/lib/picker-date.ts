@@ -6,9 +6,17 @@ export function toISODate(year: number, month: number, day: number) {
   return `${year}-${pad2(month)}-${pad2(day)}`;
 }
 
+export function parseYearMonth(yearMonth: string) {
+  const [yearPart, monthPart] = yearMonth.split("-");
+  return {
+    year: Number(yearPart),
+    month: Number(monthPart),
+  };
+}
+
 export function parseISODate(iso: string) {
-  const [year, month, day] = iso.split("-").map(Number);
-  return { year, month, day };
+  const { year, month } = parseYearMonth(iso);
+  return { year, month, day: Number(iso.split("-")[2]) };
 }
 
 export function formatPickerDate(iso: string) {
@@ -21,7 +29,7 @@ export function formatPickerDate(iso: string) {
 }
 
 export function formatPickerMonth(yearMonth: string) {
-  const [year, month] = yearMonth.split("-").map(Number);
+  const { year, month } = parseYearMonth(yearMonth);
   return new Intl.DateTimeFormat("en-US", {
     month: "long",
     year: "numeric",
@@ -29,7 +37,7 @@ export function formatPickerMonth(yearMonth: string) {
 }
 
 export function shiftYearMonth(yearMonth: string, delta: number) {
-  const [year, month] = yearMonth.split("-").map(Number);
+  const { year, month } = parseYearMonth(yearMonth);
   const next = new Date(year, month - 1 + delta, 1);
   return `${next.getFullYear()}-${pad2(next.getMonth() + 1)}`;
 }
@@ -41,7 +49,7 @@ export type CalendarCell = {
 };
 
 export function monthCells(yearMonth: string): CalendarCell[] {
-  const [year, month] = yearMonth.split("-").map(Number);
+  const { year, month } = parseYearMonth(yearMonth);
   const first = new Date(year, month - 1, 1);
   const mondayIndex = (first.getDay() + 6) % 7;
   const start = new Date(year, month - 1, 1 - mondayIndex);
