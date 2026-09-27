@@ -23,6 +23,7 @@ import {
 } from "@repo/ui/client";
 import {
   blockNudgeAvailability,
+  canRemoveBlock,
   findBlock,
   getBlockTypeLabel,
   type TemplateBlockType,
@@ -253,6 +254,7 @@ function InspectorHeaderActions({ blockId }: { blockId: string }) {
   const canMoveDown = useBuilder(
     (s) => blockNudgeAvailability(s.content, blockId).down,
   );
+  const canRemove = useBuilder((s) => canRemoveBlock(s.content, blockId));
   const saveTarget = useBuilder((s) =>
     moduleSaveTargetState(s.content, s.selectedBlockId),
   );
@@ -318,6 +320,7 @@ function InspectorHeaderActions({ blockId }: { blockId: string }) {
             icon: <Trash2 strokeWidth={1.5} />,
             separatorBefore: true,
             destructive: true,
+            disabled: !canRemove,
             onSelect: () => removeBlock(blockId),
           },
         ]}

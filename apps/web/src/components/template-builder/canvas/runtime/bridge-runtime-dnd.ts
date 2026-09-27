@@ -501,8 +501,31 @@ export function getCanvasBridgeDndRuntime(): string {
       createToolbarActionButton("Duplicate", duplicateSvg, "duplicate"),
     );
     toolbarActions.appendChild(
-      createToolbarActionButton("Delete", deleteSvg, "delete"),
+      createToolbarActionButton(
+        "Delete",
+        deleteSvg,
+        "delete",
+        canRemoveLayoutBlock(block),
+      ),
     );
+  }
+
+  function canRemoveLayoutBlock(block) {
+    var current = block;
+    while (current && current.hasAttribute("data-layout-role")) {
+      if (blockSiblings(current).length > 1) {
+        return true;
+      }
+      var role = current.getAttribute("data-layout-role");
+      if (role === "section") {
+        return false;
+      }
+      var parentRole = role === "column" ? "row" : "section";
+      current =
+        current.parentElement &&
+        current.parentElement.closest('[data-layout-role="' + parentRole + '"]');
+    }
+    return true;
   }
 
   function resolveDragKind(block) {

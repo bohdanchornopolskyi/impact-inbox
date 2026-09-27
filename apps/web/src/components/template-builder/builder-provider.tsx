@@ -342,12 +342,22 @@ function createBuilderStore(
           });
         }),
       removeBlock: (blockId) =>
-        withRecordedContent("record", undefined, (state) => ({
-          content: removeBlock(state.content, blockId),
-          selectedBlockId:
-            state.selectedBlockId === blockId ? null : state.selectedBlockId,
-          saveState: "unsaved",
-        })),
+        withRecordedContent("record", undefined, (state) => {
+          const outcome = removeBlock(state.content, blockId);
+          if (!outcome.changed) {
+            return null;
+          }
+
+          return {
+            content: outcome.content,
+            selectedBlockId:
+              state.selectedBlockId &&
+              findBlock(outcome.content, state.selectedBlockId)
+                ? state.selectedBlockId
+                : null,
+            saveState: "unsaved",
+          };
+        }),
       duplicateBlock: (blockId) =>
         withRecordedContent("record", undefined, (state) =>
           applyBuilderMutation(state, duplicateBlock(state.content, blockId)),
