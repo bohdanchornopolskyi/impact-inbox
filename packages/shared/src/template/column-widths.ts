@@ -40,6 +40,32 @@ export function resolveRowColumnWidths(row: RowBlock): number[] {
   return distributeEqualColumnWidths(columnCount);
 }
 
+export type ColumnWidthMode = "fill" | "fixed";
+
+const DEFAULT_FIXED_COLUMN_WIDTH = 50;
+
+export function shownColumnWidthMode(
+  width: number | undefined,
+  chosen: { mode: ColumnWidthMode; width: number | undefined } | undefined,
+): ColumnWidthMode {
+  if (chosen && Object.is(chosen.width, width)) {
+    return chosen.mode;
+  }
+
+  return width === undefined ? "fill" : "fixed";
+}
+
+export function widthForColumnMode(
+  mode: ColumnWidthMode,
+  width: number | undefined,
+): number | undefined {
+  if (mode === "fill") {
+    return undefined;
+  }
+
+  return width ?? DEFAULT_FIXED_COLUMN_WIDTH;
+}
+
 export type RowSplit = "1:1" | "1:2" | "2:1";
 
 export function rowSplitWidths(split: RowSplit): [number, number] {

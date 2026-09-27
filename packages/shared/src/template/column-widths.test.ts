@@ -4,6 +4,8 @@ import {
   distributeEqualColumnWidths,
   resolveRowColumnWidths,
   rowWithRedistributedColumnWidths,
+  shownColumnWidthMode,
+  widthForColumnMode,
 } from "./column-widths";
 
 function rowWithColumns(count: number, columnWidths?: number[]): RowBlock {
@@ -43,6 +45,28 @@ describe("resolveRowColumnWidths", () => {
   it("keeps valid explicit widths", () => {
     const row = rowWithColumns(2, [60, 40]);
     expect(resolveRowColumnWidths(row)).toEqual([60, 40]);
+  });
+});
+
+describe("shownColumnWidthMode", () => {
+  it("stays fixed when Fill is switched to Fixed, including the default 50", () => {
+    const width = widthForColumnMode("fixed", undefined);
+
+    expect(width).toBe(50);
+    expect(shownColumnWidthMode(width, { mode: "fixed", width })).toBe("fixed");
+  });
+
+  it("stays fixed when the custom width is cleared or set to 50", () => {
+    expect(shownColumnWidthMode(undefined, { mode: "fixed", width: undefined })).toBe(
+      "fixed",
+    );
+    expect(shownColumnWidthMode(50, { mode: "fixed", width: 50 })).toBe("fixed");
+  });
+
+  it("uses the stored width when this column has no choice, or the width changed outside", () => {
+    expect(shownColumnWidthMode(undefined, undefined)).toBe("fill");
+    expect(shownColumnWidthMode(50, undefined)).toBe("fixed");
+    expect(shownColumnWidthMode(undefined, { mode: "fixed", width: 40 })).toBe("fill");
   });
 });
 
