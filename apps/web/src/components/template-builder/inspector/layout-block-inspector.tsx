@@ -18,6 +18,12 @@ import {
   SelectField,
   TextField,
 } from "./fields";
+import {
+  commitBackgroundPosition,
+  formatColumnWidths,
+  parseColumnWidths,
+} from "./text-draft";
+import { useTextDraft } from "./use-text-draft";
 
 type LayoutBlock = SectionBlock | RowBlock | ColumnBlock;
 type UpdateProps = (props: Record<string, unknown>) => void;
@@ -45,6 +51,63 @@ const ROW_SPLIT_OPTIONS: { value: RowSplit; label: string }[] = [
   { value: "1:2", label: "1:2" },
   { value: "2:1", label: "2:1" },
 ];
+
+function RowColumnsField({
+  columnWidths,
+  disabled,
+  updateProps,
+}: {
+  columnWidths: number[];
+  disabled: boolean;
+  updateProps: UpdateProps;
+}) {
+  const value = formatColumnWidths(columnWidths);
+  const draft = useTextDraft(value);
+
+  return (
+    <TextField
+      label="Columns"
+      value={draft.value}
+      disabled={disabled}
+      onChange={draft.onChange}
+      onKeyDown={draft.onEnterBlur}
+      onBlur={(event) => {
+        const widths = parseColumnWidths(event.currentTarget.value);
+        draft.finish(formatColumnWidths(widths), () =>
+          updateProps({ columnWidths: widths }),
+        );
+      }}
+    />
+  );
+}
+
+function BackgroundPositionField({
+  value,
+  disabled,
+  updateProps,
+}: {
+  value: string;
+  disabled: boolean;
+  updateProps: UpdateProps;
+}) {
+  const draft = useTextDraft(value);
+
+  return (
+    <TextField
+      label="Position"
+      value={draft.value}
+      disabled={disabled}
+      onChange={draft.onChange}
+      onKeyDown={draft.onEnterBlur}
+      onBlur={(event) => {
+        const next = commitBackgroundPosition(event.currentTarget.value);
+        draft.finish(next ?? "", () =>
+          updateProps({ backgroundPosition: next }),
+        );
+      }}
+    />
+  );
+}
 
 export function LayoutSizeFields({
   block,
@@ -99,32 +162,10 @@ export function LayoutSizeFields({
           }
         />
         {columnCount > 1 ? (
-          <TextField
-            label="Columns"
-            value={columnWidths.join(", ")}
+          <RowColumnsField
+            columnWidths={columnWidths}
             disabled={disabled}
-            onChange={(value) => {
-              const parts = value
-                .split(",")
-                .map((part) => part.trim())
-                .filter(Boolean);
-
-              if (parts.length === 0) {
-                updateProps({ columnWidths: undefined });
-                return;
-              }
-
-              const parsed = parts
-                .map((part) => Number(part))
-                .filter(
-                  (width) =>
-                    !Number.isNaN(width) && width >= 1 && width <= 100,
-                );
-
-              updateProps({
-                columnWidths: parsed.length > 0 ? parsed : undefined,
-              });
-            }}
+            updateProps={updateProps}
           />
         ) : null}
       </>
@@ -289,15 +330,10 @@ export function LayoutBackgroundFields({
             onChange={(value) => updateProps({ backgroundSize: value })}
             options={BACKGROUND_SIZE_OPTIONS}
           />
-          <TextField
-            label="Position"
+          <BackgroundPositionField
             value={asString(props.backgroundPosition)}
             disabled={disabled}
-            onChange={(value) =>
-              updateProps({
-                backgroundPosition: value.trim() ? value.trim() : undefined,
-              })
-            }
+            updateProps={updateProps}
           />
           <SelectField
             label="Repeat"

@@ -2,6 +2,13 @@
 
 import type { SocialBlock, TableBlock } from "@repo/shared";
 import { Button, Input, Select, Textarea } from "@repo/ui/client";
+import {
+  formatTableHeaders,
+  formatTableRows,
+  parseTableHeaders,
+  parseTableRows,
+} from "./text-draft";
+import { useTextDraft } from "./use-text-draft";
 
 const SOCIAL_PLATFORMS = [
   "facebook",
@@ -100,31 +107,35 @@ export function TableEditor({
   block: TableBlock;
   updateProps: UpdateProps;
 }) {
+  const headerValue = formatTableHeaders(block.props.columns);
+  const rowValue = formatTableRows(block.props.rows);
+  const headers = useTextDraft(headerValue);
+  const rows = useTextDraft(rowValue);
+
   return (
     <>
       <Input
         label="Headers (comma separated)"
-        value={block.props.columns.map((column) => column.header).join(", ")}
-        onChange={(event) =>
-          updateProps({
-            columns: event.target.value
-              .split(",")
-              .map((header) => ({ header: header.trim() }))
-              .filter((column) => column.header),
-          })
-        }
+        value={headers.value}
+        onChange={(event) => headers.onChange(event.target.value)}
+        onKeyDown={headers.onEnterBlur}
+        onBlur={(event) => {
+          const columns = parseTableHeaders(event.currentTarget.value);
+          headers.finish(formatTableHeaders(columns), () =>
+            updateProps({ columns }),
+          );
+        }}
       />
       <Textarea
         label="Rows (one row per line, cells comma separated)"
-        value={block.props.rows.map((row) => row.join(", ")).join("\n")}
-        onChange={(event) =>
-          updateProps({
-            rows: event.target.value
-              .split("\n")
-              .map((row) => row.split(",").map((cell) => cell.trim()))
-              .filter((row) => row.length > 0),
-          })
-        }
+        value={rows.value}
+        onChange={(event) => rows.onChange(event.target.value)}
+        onBlur={(event) => {
+          const nextRows = parseTableRows(event.currentTarget.value);
+          rows.finish(formatTableRows(nextRows), () =>
+            updateProps({ rows: nextRows }),
+          );
+        }}
       />
     </>
   );
