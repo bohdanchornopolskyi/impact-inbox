@@ -1,7 +1,8 @@
 import type { WorkspaceModuleData } from "@repo/shared";
 
 const STARTER_GROUPS = [
-  { title: "Headers", names: ["Header"] },
+  { title: "Basics", names: ["Two Column"] },
+  { title: "Headers", names: ["Header", "Logo Header"] },
   { title: "Hero", names: ["Hero", "Hero Split"] },
   {
     title: "Call to action",
@@ -13,7 +14,10 @@ const STARTER_GROUPS = [
     names: ["Team", "Team Grid", "Testimonial", "Testimonial Card"],
   },
   { title: "Help", names: ["FAQ", "FAQ Two Column"] },
-  { title: "Footers", names: ["Footer", "Footer Nav"] },
+  {
+    title: "Footers",
+    names: ["Social Links", "Footer", "Utility Footer", "Footer Nav"],
+  },
 ] as const;
 
 export function groupSavedModules(modules: WorkspaceModuleData[]) {
@@ -41,6 +45,10 @@ export function groupSavedModules(modules: WorkspaceModuleData[]) {
   for (const group of STARTER_GROUPS) {
     const items = grouped.get(group.title) ?? [];
     if (items.length > 0) {
+      const order = group.names as readonly string[];
+      items.sort(
+        (left, right) => order.indexOf(left.name) - order.indexOf(right.name),
+      );
       result.push({ title: group.title, modules: items });
     }
   }

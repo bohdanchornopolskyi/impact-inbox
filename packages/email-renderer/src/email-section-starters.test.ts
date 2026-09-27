@@ -9,6 +9,8 @@ import { renderTemplate } from "./index";
 
 const SNIPPETS: Record<(typeof PLATFORM_STARTER_NAMES)[number], string> = {
   Header: "Acme",
+  "Logo Header": "Acme",
+  "Two Column": "Everyday totes",
   Hero: "Designed for everyday moments",
   "Hero Split": "Crafted for calm mornings",
   "Feature Row": "Hand-finished stoneware, made to last",
@@ -24,7 +26,9 @@ const SNIPPETS: Record<(typeof PLATFORM_STARTER_NAMES)[number], string> = {
   "Testimonial Card": "Elena Lopez",
   "Posts Grid": "Inside the studio",
   "Posts Stack": "Latest from the journal",
+  "Social Links": "Follow along",
   Footer: "214 Mill Street",
+  "Utility Footer": "All rights reserved",
   "Footer Nav": "Journal",
 };
 

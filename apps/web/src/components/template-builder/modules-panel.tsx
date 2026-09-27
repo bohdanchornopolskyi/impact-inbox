@@ -8,6 +8,7 @@ import {
   hasWorkspaceRoleAtLeast,
   isEmptyModuleSection,
   isPlatformStarterName,
+  modulePreviewCopy,
   summarizeModuleContent,
   type SectionBlock,
   type WorkspaceModuleData,
@@ -40,6 +41,7 @@ import {
   suggestedSaveName,
 } from "./module-save-target";
 import { groupSavedModules } from "./saved-library-groups";
+import { SectionPreview } from "./section-preview";
 import { useSaveSectionToLibrary } from "./use-save-section-to-library";
 
 type PendingLibraryAction =
@@ -47,6 +49,10 @@ type PendingLibraryAction =
   | { kind: "restore"; module: WorkspaceModuleData; content: SectionBlock }
   | { kind: "delete"; moduleId: string }
   | null;
+
+function formatModuleCount(count: number) {
+  return `${count} ${count === 1 ? "module" : "modules"}`;
+}
 
 function SaveFromCanvas({
   canManage,
@@ -140,7 +146,9 @@ function SavedModuleTile({
   onRename: (module: WorkspaceModuleData, name: string) => void;
   onDelete: (moduleId: string) => void;
 }) {
-  const summary = summarizeModuleContent(module.content);
+  const summary = isEmptyModuleSection(module.content)
+    ? summarizeModuleContent(module.content)
+    : modulePreviewCopy(module.content);
   const starterAvailable = isPlatformStarterName(module.name);
   const dialogId = `rename-module-${module.id}`;
 
@@ -149,6 +157,11 @@ function SavedModuleTile({
       <SavedTile
         name={module.name}
         summary={summary}
+        preview={
+          isEmptyModuleSection(module.content) ? undefined : (
+            <SectionPreview section={module.content} />
+          )
+        }
         onInsert={
           canEdit && !isEmptyModuleSection(module.content)
             ? () => onInsert(module.content)
@@ -404,7 +417,10 @@ export function ModulesPanel() {
         ) : null}
         {modules.length > 0 ? (
           <>
-            <EditorPanelListHead title="Saved library" count={modules.length} />
+            <EditorPanelListHead
+              title="Saved library"
+              meta={formatModuleCount(modules.length)}
+            />
             <p data-filter-empty hidden className="px-0.5 text-xs text-text-3">
               No saved items match your search.
             </p>
@@ -413,9 +429,11 @@ export function ModulesPanel() {
                 <EditorPanelGroup
                   key={group.title}
                   title={group.title}
+                  meta={formatModuleCount(group.modules.length)}
+                  defaultOpen={false}
                   data-filter-group=""
                 >
-                  <div className="grid grid-cols-2 gap-1.5">
+                  <div className="flex flex-col gap-2">
                     {group.modules.map((module) => (
                       <SavedModuleTile
                         key={module.id}

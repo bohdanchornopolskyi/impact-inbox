@@ -8,6 +8,7 @@ import type {
   HeadingBlock,
   ImageBlock,
   LogoBlock,
+  SocialBlock,
   TextBlock,
 } from "../schemas/template/blocks/content";
 import type {
@@ -16,6 +17,7 @@ import type {
   SectionBlock,
 } from "../schemas/template/blocks/layout";
 import type { BlockStyles } from "../schemas/template/styles";
+import { PLACEHOLDER_IMAGE_URL } from "../constants/template";
 import { themeColor } from "../theme-colors";
 import { distributeEqualColumnWidths } from "./column-widths";
 import { createContentBlock } from "./create-block";
@@ -27,10 +29,6 @@ export type ModulePrefillContext = {
   brandKit?: BrandKitData | null;
 };
 
-const HERO_IMAGE_URL =
-  "https://placehold.co/600x320/0F172A/E5E7EB?text=Image";
-const POST_IMAGE_URL =
-  "https://placehold.co/600x200/E5E7EB/AEB5C0?text=Image";
 const EXAMPLE_HREF = "https://example.com";
 
 function createId(): string {
@@ -82,14 +80,30 @@ function button(
 function image(
   brandKit: BrandKitData | null | undefined,
   alt: string,
-  src = POST_IMAGE_URL,
   styles?: BlockStyles,
 ): ImageBlock {
   const block = createContentBlock("image", brandKit) as ImageBlock;
   return {
     ...block,
-    props: { ...block.props, src, alt, width: "100%" },
+    props: { ...block.props, src: PLACEHOLDER_IMAGE_URL, alt, width: "100%" },
     styles: { ...block.styles, ...styles },
+  };
+}
+
+function social(
+  brandKit: BrandKitData | null | undefined,
+  platforms: Array<SocialBlock["props"]["links"][number]["platform"]>,
+): SocialBlock {
+  const block = createContentBlock("social", brandKit) as SocialBlock;
+  return {
+    ...block,
+    props: {
+      ...block.props,
+      links: platforms.map((platform) => ({
+        platform,
+        url: `${EXAMPLE_HREF}/${platform}`,
+      })),
+    },
   };
 }
 
@@ -240,27 +254,66 @@ function faqPair(
 }
 
 export function createHeaderStarterModule(ctx: ModulePrefillContext): SectionBlock {
-  const name = heading(
-    ctx.brandKit,
-    ctx.workspaceName || "Company name",
+  const logo = logoBlock(ctx);
+  return stack(
+    ctx,
+    [
+      {
+        ...logo,
+        props: {
+          ...logo.props,
+          links: [
+            { text: "Shop", href: `${EXAMPLE_HREF}/shop` },
+            { text: "New in", href: `${EXAMPLE_HREF}/new` },
+            { text: "Stories", href: `${EXAMPLE_HREF}/stories` },
+          ],
+        },
+      },
+    ],
     {
-      level: 2,
-      fontSize: 18,
-      fontWeight: 700,
-      textTransform: "uppercase",
+      padding: { top: 20, right: 28, bottom: 20, left: 28 },
+      backgroundColor: themeColor("--color-neutral-0"),
     },
-    { letterSpacing: 2, padding: { bottom: 0 } },
   );
-  return stack(ctx, [logoBlock(ctx), name], {
-    padding: { top: 20, right: 28, bottom: 20, left: 28 },
+}
+
+export function createLogoHeaderStarterModule(ctx: ModulePrefillContext): SectionBlock {
+  return stack(ctx, [logoBlock(ctx)], {
+    padding: { top: 24, right: 28, bottom: 24, left: 28 },
     backgroundColor: themeColor("--color-neutral-0"),
   });
+}
+
+export function createTwoColumnStarterModule(ctx: ModulePrefillContext): SectionBlock {
+  function product(title: string, price: string): ContentBlock[] {
+    return [
+      image(ctx.brandKit, title, { padding: { bottom: 12 } }),
+      heading(ctx.brandKit, title, { level: 3, fontSize: 16 }),
+      body(ctx.brandKit, price, { fontSize: 13 }, { padding: { bottom: 0 } }),
+    ];
+  }
+
+  return section(
+    ctx.brandKit,
+    [
+      row(
+        ctx.brandKit,
+        [
+          column(ctx.brandKit, product("Linen shirts", "From $68")),
+          column(ctx.brandKit, product("Everyday totes", "From $94")),
+        ],
+        { gap: 16 },
+      ),
+    ],
+    { padding: { top: 28, right: 28, bottom: 28, left: 28 }, backgroundColor: themeColor("--color-neutral-0") },
+  );
 }
 
 export function createHeroStarterModule(ctx: ModulePrefillContext): SectionBlock {
   return stack(
     ctx,
     [
+      image(ctx.brandKit, "Hero", { padding: { bottom: 24 } }),
       heading(
         ctx.brandKit,
         "New collection",
@@ -281,9 +334,8 @@ export function createHeroStarterModule(ctx: ModulePrefillContext): SectionBlock
       ),
     ],
     {
-      padding: { top: 48, right: 40, bottom: 32, left: 40 },
+      padding: { top: 0, right: 40, bottom: 32, left: 40 },
       backgroundColor: themeColor("--color-neutral-900"),
-      backgroundImage: HERO_IMAGE_URL,
     },
   );
 }
@@ -311,7 +363,7 @@ export function createHeroSplitStarterModule(ctx: ModulePrefillContext): Section
             button(ctx.brandKit, "Browse new arrivals", undefined, { padding: { bottom: 0 } }),
           ]),
           column(ctx.brandKit, [
-            image(ctx.brandKit, "New arrival", HERO_IMAGE_URL, { padding: { bottom: 0 } }),
+            image(ctx.brandKit, "New arrival", { padding: { bottom: 0 } }),
           ]),
         ],
         { reverseOnMobile: true },
@@ -329,7 +381,7 @@ export function createFeatureRowStarterModule(ctx: ModulePrefillContext): Sectio
         ctx.brandKit,
         [
           column(ctx.brandKit, [
-            image(ctx.brandKit, "Featured collection", POST_IMAGE_URL, { padding: { bottom: 0 } }),
+            image(ctx.brandKit, "Featured collection", { padding: { bottom: 0 } }),
           ]),
           column(ctx.brandKit, [
             heading(
@@ -480,6 +532,7 @@ export function createCtaBackgroundStarterModule(ctx: ModulePrefillContext): Sec
   return stack(
     ctx,
     [
+      image(ctx.brandKit, "Summer sale", { padding: { bottom: 24 } }),
       heading(
         ctx.brandKit,
         "Summer sale ends tonight",
@@ -500,9 +553,8 @@ export function createCtaBackgroundStarterModule(ctx: ModulePrefillContext): Sec
       ),
     ],
     {
-      padding: { top: 48, right: 40, bottom: 48, left: 40 },
+      padding: { top: 0, right: 40, bottom: 48, left: 40 },
       backgroundColor: themeColor("--color-neutral-900"),
-      backgroundImage: HERO_IMAGE_URL,
     },
   );
 }
@@ -511,7 +563,7 @@ export function createCtaImageStripStarterModule(ctx: ModulePrefillContext): Sec
   return stack(
     ctx,
     [
-      image(ctx.brandKit, "Sale strip", HERO_IMAGE_URL),
+      image(ctx.brandKit, "Sale strip"),
       heading(ctx.brandKit, "Free shipping on orders over $75", { level: 2, fontSize: 22 }),
       body(
         ctx.brandKit,
@@ -531,7 +583,9 @@ export function createFaqStarterModule(ctx: ModulePrefillContext): SectionBlock 
       heading(ctx.brandKit, "Common questions", { level: 2, fontSize: 24 }),
       body(ctx.brandKit, "Everything you need to know before your first order."),
       ...faqPair(ctx, "How long does shipping take?", "Most orders arrive in 3–5 business days. Express options are available at checkout."),
+      divider(ctx.brandKit),
       ...faqPair(ctx, "Can I return an item?", "Unopened items can be returned within 30 days. We cover return shipping on your first exchange."),
+      divider(ctx.brandKit),
       ...faqPair(ctx, "Do members get early access?", "Yes — members receive 48-hour early access to every new collection."),
     ],
     { padding: { top: 32, right: 32, bottom: 32, left: 32 }, backgroundColor: themeColor("--color-neutral-0") },
@@ -578,6 +632,17 @@ export function createTestimonialStarterModule(ctx: ModulePrefillContext): Secti
       ),
       heading(
         ctx.brandKit,
+        "SK",
+        { level: 4, fontSize: 12, fontWeight: 700 },
+        {
+          backgroundColor: themeColor("--color-brand-50"),
+          textAlign: "center",
+          padding: { top: 12, bottom: 12 },
+          borderRadius: 6,
+        },
+      ),
+      heading(
+        ctx.brandKit,
         "Sarah Klein",
         { level: 4, fontSize: 14 },
         { textAlign: "center", padding: { bottom: 4 } },
@@ -603,6 +668,17 @@ export function createTestimonialCardStarterModule(ctx: ModulePrefillContext): S
         { fontSize: 16 },
       ),
       body(ctx.brandKit, "★★★★★", { fontSize: 14, color: themeColor("--color-warning-500") }, { padding: { bottom: 8 } }),
+      heading(
+        ctx.brandKit,
+        "EL",
+        { level: 4, fontSize: 12, fontWeight: 700 },
+        {
+          backgroundColor: themeColor("--color-neutral-0"),
+          textAlign: "center",
+          padding: { top: 10, bottom: 10 },
+          borderRadius: 6,
+        },
+      ),
       heading(ctx.brandKit, "Elena Lopez", { level: 4, fontSize: 14 }, { padding: { bottom: 4 } }),
       body(
         ctx.brandKit,
@@ -625,7 +701,7 @@ function journalCard(
   excerpt: string,
 ): ContentBlock[] {
   return [
-    image(ctx.brandKit, title, POST_IMAGE_URL),
+    image(ctx.brandKit, title),
     body(ctx.brandKit, date, { fontSize: 12, color: themeColor("--color-neutral-500") }, { padding: { bottom: 4 } }),
     heading(ctx.brandKit, title, { level: 3, fontSize: 16 }),
     body(ctx.brandKit, excerpt, { fontSize: 13 }, { padding: { bottom: 0 } }),
@@ -675,7 +751,7 @@ export function createPostsStackStarterModule(ctx: ModulePrefillContext): Sectio
     ctx,
     [
       heading(ctx.brandKit, "Latest from the journal", { level: 2, fontSize: 22 }),
-      image(ctx.brandKit, "Inside the studio", POST_IMAGE_URL),
+      image(ctx.brandKit, "Inside the studio"),
       body(ctx.brandKit, "Mar 4, 2026", { fontSize: 12, color: themeColor("--color-neutral-500") }, { padding: { bottom: 4 } }),
       heading(ctx.brandKit, "Inside the studio", { level: 3, fontSize: 18 }),
       body(
@@ -685,7 +761,7 @@ export function createPostsStackStarterModule(ctx: ModulePrefillContext): Sectio
       ),
       button(ctx.brandKit, "Read article"),
       divider(ctx.brandKit),
-      image(ctx.brandKit, "Material sourcing", POST_IMAGE_URL),
+      image(ctx.brandKit, "Material sourcing"),
       body(ctx.brandKit, "Feb 18, 2026", { fontSize: 12, color: themeColor("--color-neutral-500") }, { padding: { bottom: 4 } }),
       heading(ctx.brandKit, "Material sourcing", { level: 3, fontSize: 18 }),
       body(
@@ -699,7 +775,45 @@ export function createPostsStackStarterModule(ctx: ModulePrefillContext): Sectio
   );
 }
 
+export function createSocialLinksStarterModule(ctx: ModulePrefillContext): SectionBlock {
+  return stack(
+    ctx,
+    [
+      heading(
+        ctx.brandKit,
+        "Follow along",
+        { level: 3, fontSize: 14 },
+        { textAlign: "center" },
+      ),
+      social(ctx.brandKit, ["instagram", "facebook", "twitter", "youtube", "linkedin"]),
+    ],
+    { padding: { top: 28, right: 28, bottom: 28, left: 28 }, backgroundColor: themeColor("--color-neutral-0") },
+  );
+}
+
 export function createFooterStarterModule(ctx: ModulePrefillContext): SectionBlock {
+  const address =
+    formatPhysicalAddress(ctx.physicalAddress) || "214 Mill Street, Portland, OR 97209";
+  return stack(
+    ctx,
+    [
+      social(ctx.brandKit, ["instagram", "facebook", "twitter", "youtube"]),
+      footerBlock(
+        ctx,
+        {
+          address,
+          unsubscribeLabel: "Unsubscribe",
+          unsubscribeUrl: "",
+          links: [{ text: "Update preferences", href: `${EXAMPLE_HREF}/preferences` }],
+        },
+        { padding: { bottom: 0 }, backgroundColor: "transparent" },
+      ),
+    ],
+    { padding: { top: 22, right: 40, bottom: 26, left: 40 }, backgroundColor: themeColor("--color-neutral-50") },
+  );
+}
+
+export function createUtilityFooterStarterModule(ctx: ModulePrefillContext): SectionBlock {
   const address =
     formatPhysicalAddress(ctx.physicalAddress) || "214 Mill Street, Portland, OR 97209";
   return stack(
@@ -709,7 +823,7 @@ export function createFooterStarterModule(ctx: ModulePrefillContext): SectionBlo
         ctx,
         {
           address,
-          copyright: `© ${new Date().getFullYear()} ${ctx.workspaceName || "Company name"}. All rights reserved.`,
+          copyright: `© ${new Date().getFullYear()} ${ctx.workspaceName || "Verdant Goods"}. All rights reserved.`,
           unsubscribeLabel: "Unsubscribe",
           unsubscribeUrl: "",
           links: [

@@ -53,13 +53,20 @@ export function rowSplitWidths(split: RowSplit): [number, number] {
 }
 
 export function rowSplitFromWidths(widths: number[] | undefined): RowSplit {
-  if (!widths || widths.length !== 2) {
+  const left = widths?.[0];
+  const right = widths?.[1];
+  if (
+    !widths ||
+    widths.length !== 2 ||
+    left === undefined ||
+    right === undefined
+  ) {
     return "1:1";
   }
-  if (widths[0] < widths[1]) {
+  if (left < right) {
     return "1:2";
   }
-  if (widths[0] > widths[1]) {
+  if (left > right) {
     return "2:1";
   }
   return "1:1";

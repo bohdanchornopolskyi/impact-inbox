@@ -39,14 +39,14 @@ function SavedTileMore({
 }
 
 function SavedTilePreview({ preview }: { preview?: ReactNode }) {
+  if (preview) {
+    return <div className="overflow-hidden bg-surface-sunken">{preview}</div>;
+  }
+
   return (
     <div className="flex h-[68px] flex-col justify-center gap-1.5 bg-surface-sunken px-3.5 py-2.5">
-      {preview ?? (
-        <>
-          <span className="h-2 w-full rounded-xs bg-border" />
-          <span className="h-2 w-[120px] rounded-xs bg-border" />
-        </>
-      )}
+      <span className="h-2 w-full rounded-xs bg-border" />
+      <span className="h-2 w-[120px] rounded-xs bg-border" />
     </div>
   );
 }

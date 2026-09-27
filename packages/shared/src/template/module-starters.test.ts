@@ -8,11 +8,14 @@ import {
   isEmptyModuleSection,
   missingPlatformStarterModules,
   PLATFORM_STARTER_NAMES,
+  modulePreviewCopy,
   summarizeModuleContent,
 } from "./module-starters";
 
 const STARTER_SNIPPETS: Record<(typeof PLATFORM_STARTER_NAMES)[number], string> = {
   Header: "Acme",
+  "Logo Header": "Acme",
+  "Two Column": "Linen shirts",
   Hero: "Designed for everyday moments",
   "Hero Split": "Crafted for calm mornings",
   "Feature Row": "Hand-finished stoneware, made to last",
@@ -28,7 +31,9 @@ const STARTER_SNIPPETS: Record<(typeof PLATFORM_STARTER_NAMES)[number], string> 
   "Testimonial Card": "Every order feels personal",
   "Posts Grid": "From the journal",
   "Posts Stack": "Latest from the journal",
+  "Social Links": "Follow along",
   Footer: "214 Mill Street",
+  "Utility Footer": "All rights reserved",
   "Footer Nav": "Shop  ·  Journal  ·  About  ·  Support",
 };
 
@@ -91,10 +96,10 @@ describe("module-starters", () => {
     });
     const header = starters.find((starter) => starter.name === "Header");
     expect(header).toBeDefined();
-    expect(summarizeModuleContent(header!.content)).toBe("Logo, Heading");
+    expect(summarizeModuleContent(header!.content)).toBe("Logo");
     const footer = starters.find((starter) => starter.name === "Footer");
     expect(footer).toBeDefined();
-    expect(summarizeModuleContent(footer!.content)).toBe("Footer");
+    expect(summarizeModuleContent(footer!.content)).toBe("Social Links, Footer");
   });
 
   it("detects empty module sections and resolves starters by name", () => {
@@ -123,11 +128,13 @@ describe("module-starters", () => {
     const header = buildModuleContentFromSource("Header", {
       workspaceName: "Acme",
     });
-    expect(summarizeModuleContent(header)).toBe("Logo, Heading");
+    expect(summarizeModuleContent(header)).toBe("Logo");
+    expect(modulePreviewCopy(header)).toBe("Shop · New in · Stories");
 
     const hero = buildModuleContentFromSource("Hero", {
       workspaceName: "Acme",
     });
+    expect(modulePreviewCopy(hero)).toBe("Designed for everyday moments");
     expect(collectCopy(hero)).toContain("Designed for everyday moments");
   });
 

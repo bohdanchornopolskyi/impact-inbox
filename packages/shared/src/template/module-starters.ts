@@ -17,6 +17,10 @@ import {
   createHeaderStarterModule,
   createHeroSplitStarterModule,
   createHeroStarterModule,
+  createLogoHeaderStarterModule,
+  createSocialLinksStarterModule,
+  createTwoColumnStarterModule,
+  createUtilityFooterStarterModule,
   createPostsGridStarterModule,
   createPostsStackStarterModule,
   createTeamGridStarterModule,
@@ -78,6 +82,8 @@ export function createBlankStarterModule(
 
 export const PLATFORM_STARTER_NAMES = [
   "Header",
+  "Logo Header",
+  "Two Column",
   "Hero",
   "Hero Split",
   "Feature Row",
@@ -93,7 +99,9 @@ export const PLATFORM_STARTER_NAMES = [
   "Testimonial Card",
   "Posts Grid",
   "Posts Stack",
+  "Social Links",
   "Footer",
+  "Utility Footer",
   "Footer Nav",
 ] as const;
 
@@ -106,6 +114,8 @@ const PLATFORM_STARTER_BUILDERS: Record<
   (ctx: ModulePrefillContext) => SectionBlock
 > = {
   Header: createHeaderStarterModule,
+  "Logo Header": createLogoHeaderStarterModule,
+  "Two Column": createTwoColumnStarterModule,
   Hero: createHeroStarterModule,
   "Hero Split": createHeroSplitStarterModule,
   "Feature Row": createFeatureRowStarterModule,
@@ -121,7 +131,9 @@ const PLATFORM_STARTER_BUILDERS: Record<
   "Testimonial Card": createTestimonialCardStarterModule,
   "Posts Grid": createPostsGridStarterModule,
   "Posts Stack": createPostsStackStarterModule,
+  "Social Links": createSocialLinksStarterModule,
   Footer: createFooterStarterModule,
+  "Utility Footer": createUtilityFooterStarterModule,
   "Footer Nav": createFooterNavStarterModule,
 };
 
@@ -174,6 +186,98 @@ export function missingPlatformStarterModules(
 
 export function cloneSectionBlock(section: SectionBlock): SectionBlock {
   return cloneBlockWithNewIds(section);
+}
+
+function cleanCopy(value: string | undefined): string | null {
+  const text = value?.replace(/\s+/g, " ").trim();
+  if (!text) {
+    return null;
+  }
+  if (text.length <= 90) {
+    return text;
+  }
+  return `${text.slice(0, 89).trimEnd()}…`;
+}
+
+function blocksIn(section: SectionBlock): ContentBlock[] {
+  return section.children.flatMap((row) =>
+    row.children.flatMap((column) => column.children),
+  );
+}
+
+export function modulePreviewCopy(section: SectionBlock): string {
+  const blocks = blocksIn(section);
+  const headings = blocks.flatMap((block) => {
+    if (block.type !== "heading") {
+      return [];
+    }
+    const text = cleanCopy(block.props.text);
+    if (!text) {
+      return [];
+    }
+    const fontSize = block.props.fontSize ?? 24;
+    return [
+      {
+        text,
+        prominent: block.props.level <= 2 || fontSize >= 18,
+      },
+    ];
+  });
+  const prominent = headings.find((heading) => heading.prominent);
+  if (prominent) {
+    return prominent.text;
+  }
+  const heading = headings[0];
+  if (heading) {
+    return heading.text;
+  }
+
+  for (const block of blocks) {
+    if (block.type === "text" || block.type === "button") {
+      const text = cleanCopy(block.props.text);
+      if (text) {
+        return text;
+      }
+    }
+    if (block.type === "richtext") {
+      const text = cleanCopy(block.props.html.replace(/<[^>]+>/g, " "));
+      if (text) {
+        return text;
+      }
+    }
+  }
+
+  for (const block of blocks) {
+    if (block.type !== "logo") {
+      continue;
+    }
+    const links = (block.props.links ?? [])
+      .map((link) => link.text.trim())
+      .filter((text) => text.length > 0);
+    if (links.length > 0) {
+      return cleanCopy(links.join(" · ")) ?? links[0]!;
+    }
+    const alt = cleanCopy(block.props.alt);
+    if (alt) {
+      return alt;
+    }
+  }
+
+  for (const block of blocks) {
+    if (block.type !== "footer") {
+      continue;
+    }
+    const line =
+      cleanCopy(block.props.address) ??
+      cleanCopy(block.props.copyright) ??
+      cleanCopy(block.props.companyName) ??
+      cleanCopy(block.props.links?.[0]?.text);
+    if (line) {
+      return line;
+    }
+  }
+
+  return summarizeModuleContent(section);
 }
 
 export function summarizeModuleContent(section: SectionBlock): string {

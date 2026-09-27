@@ -15,7 +15,8 @@ import type {
   UserProfileData,
   WorkspaceListItemData,
 } from "@repo/shared";
-import { isApiErrorCode } from "@/lib/api-error";
+import { Button } from "@repo/ui/client";
+import { getApiErrorMessage, isApiErrorCode } from "@/lib/api-error";
 import { listOrganizations } from "@/lib/api/organizations-api";
 import { getMe } from "@/lib/api/users-api";
 import { listWorkspaces } from "@/lib/api/workspaces-api";
@@ -99,6 +100,16 @@ export function SessionProvider({
   }, [queryClient]);
 
   const signOut = useSessionSignOut(queryClient, clearSession);
+  const sessionError =
+    meQuery.error ?? organizationsQuery.error ?? workspacesQuery.error;
+  const hasSessionError =
+    Boolean(sessionError) && !isApiErrorCode(sessionError, "UNAUTHORIZED");
+
+  const retrySession = useCallback(() => {
+    void meQuery.refetch();
+    void organizationsQuery.refetch();
+    void workspacesQuery.refetch();
+  }, [meQuery.refetch, organizationsQuery.refetch, workspacesQuery.refetch]);
 
   const value = useMemo((): SessionContextValue | null => {
     if (!meQuery.data) {
@@ -123,6 +134,29 @@ export function SessionProvider({
     signOut,
     refreshSession,
   ]);
+
+  if (hasSessionError) {
+    return (
+      <div className="flex flex-1 flex-col items-center justify-center gap-4 px-6 py-24 text-center">
+        <h1 className="text-ui-2xl font-semibold text-text-primary">
+          Could not load your session
+        </h1>
+        <p className="max-w-md text-ui-sm text-text-secondary">
+          {sessionError instanceof TypeError
+            ? "The app could not reach the API. Start the API server, then try again."
+            : getApiErrorMessage(sessionError)}
+        </p>
+        <div className="flex gap-3">
+          <Button variant="secondary" onClick={signOut}>
+            Sign in
+          </Button>
+          <Button variant="primary" onClick={retrySession}>
+            Try again
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   if (isLoading || !value) {
     return (

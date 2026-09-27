@@ -12,6 +12,9 @@ export type CollapsibleSectionProps = {
   className?: string;
 };
 
+export const collapsiblePanelClassName =
+  "h-(--collapsible-panel-height) overflow-hidden transition-[height] duration-150 ease-out data-ending-style:h-0 data-starting-style:h-0 motion-reduce:transition-none [&[hidden]:not([hidden='until-found'])]:hidden";
+
 function ChevronIcon() {
   return (
     <svg viewBox="0 0 16 16" fill="none" aria-hidden>
@@ -53,7 +56,7 @@ export function CollapsibleSection({
           </span>
         </span>
       </BaseCollapsible.Trigger>
-      <BaseCollapsible.Panel className="h-(--collapsible-panel-height) overflow-hidden transition-[height] duration-150 ease-out data-ending-style:h-0 data-starting-style:h-0 [&[hidden]:not([hidden='until-found'])]:hidden">
+      <BaseCollapsible.Panel className={collapsiblePanelClassName}>
         <div className="px-4 pt-1 pb-4">{children}</div>
       </BaseCollapsible.Panel>
     </BaseCollapsible.Root>

@@ -8,6 +8,10 @@ import {
 } from "react";
 import { ChevronDown } from "lucide-react";
 import { cn } from "../../lib/cn";
+import {
+  Collapsible,
+  collapsiblePanelClassName,
+} from "../collapsible/collapsible";
 import { Search, type SearchProps } from "../search/search";
 
 export type EditorPanelProps = HTMLAttributes<HTMLDivElement>;
@@ -173,9 +177,9 @@ export function EditorPanelScroll({
   );
 }
 
-export type EditorPanelGroupProps = HTMLAttributes<HTMLElement> & {
+export type EditorPanelGroupProps = HTMLAttributes<HTMLDivElement> & {
   title: string;
-  count?: number;
+  meta?: ReactNode;
   defaultOpen?: boolean;
   action?: ReactNode;
 };
@@ -185,7 +189,7 @@ const groupTitleClass =
 
 export function EditorPanelGroup({
   title,
-  count,
+  meta,
   defaultOpen = true,
   action,
   className,
@@ -205,48 +209,43 @@ export function EditorPanelGroup({
   }
 
   return (
-    <details
-      className={cn("group/panel open:[&>summary_svg]:rotate-180", className)}
-      ref={(node) => {
-        if (!node || !defaultOpen || node.dataset.opened != null) {
-          return;
-        }
-        node.open = true;
-        node.dataset.opened = "";
-      }}
-      {...props}
-    >
-      <summary
+    <Collapsible.Root defaultOpen={defaultOpen} className={className} {...props}>
+      <Collapsible.Trigger
+        data-group-trigger=""
         className={cn(
           groupTitleClass,
-          "cursor-pointer list-none [&::-webkit-details-marker]:hidden",
+          "group w-full rounded-xs text-left outline-none focus-visible:shadow-(--shadow-ring-accent)",
         )}
       >
-        <span className="min-w-0 truncate">
-          {title}
-          {count != null ? (
-            <span className="ml-1.5 font-medium tracking-normal">{count}</span>
+        <span className="min-w-0 truncate">{title}</span>
+        <span className="inline-flex shrink-0 items-center gap-1.5">
+          {meta ? (
+            <span className="font-medium tracking-normal text-text-3 normal-case">
+              {meta}
+            </span>
           ) : null}
+          <ChevronDown
+            className="size-3.25 text-text-3 transition-transform duration-150 ease-out group-data-panel-open:rotate-180"
+            strokeWidth={1.5}
+            aria-hidden
+          />
         </span>
-        <ChevronDown
-          className="size-3.25 shrink-0 text-text-3 transition-transform duration-150 ease-out"
-          strokeWidth={1.5}
-          aria-hidden
-        />
-      </summary>
-      <div className="mt-2">{children}</div>
-    </details>
+      </Collapsible.Trigger>
+      <Collapsible.Panel keepMounted className={collapsiblePanelClassName}>
+        <div className="pt-2">{children}</div>
+      </Collapsible.Panel>
+    </Collapsible.Root>
   );
 }
 
 export function EditorPanelListHead({
   title,
-  count,
+  meta,
   className,
   ...props
 }: HTMLAttributes<HTMLDivElement> & {
   title: string;
-  count?: number;
+  meta?: ReactNode;
 }) {
   return (
     <div
@@ -257,8 +256,8 @@ export function EditorPanelListHead({
       {...props}
     >
       <span>{title}</span>
-      {count != null ? (
-        <span className="font-medium tracking-normal">{count}</span>
+      {meta ? (
+        <span className="font-medium tracking-normal normal-case">{meta}</span>
       ) : null}
     </div>
   );
