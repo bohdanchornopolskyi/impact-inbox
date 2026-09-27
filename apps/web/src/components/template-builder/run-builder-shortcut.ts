@@ -1,4 +1,8 @@
-import type { NudgeDirection } from "@repo/shared";
+import {
+  canRemoveBlock,
+  type NudgeDirection,
+  type TemplateContentData,
+} from "@repo/shared";
 import type { SaveState } from "@/lib/templates/working-copy-persistence";
 import type { BuilderShortcutAction } from "./builder-shortcut";
 
@@ -18,11 +22,13 @@ export type BuilderShortcutHandlers = {
   pasteBlockStyle: (blockId: string) => void;
   openSaveLibrary: () => void;
   selectBlock: (blockId: string | null) => void;
+  canRemoveSelectedBlock: () => boolean;
 };
 
 type ShortcutSource = {
   canEdit: boolean;
   saveState: SaveState;
+  content: TemplateContentData;
   previewOpen: boolean;
   selectedBlockId: string | null;
   undo: () => void;
@@ -57,6 +63,10 @@ export function createBuilderShortcutHandlers(
     pasteBlockStyle: state.pasteBlockStyle,
     openSaveLibrary: state.openSaveLibrary,
     selectBlock: state.selectBlock,
+    canRemoveSelectedBlock: () =>
+      state.selectedBlockId
+        ? canRemoveBlock(state.content, state.selectedBlockId)
+        : false,
   };
 }
 
@@ -84,7 +94,11 @@ export function runBuilderShortcut(
       handlers.openPreview();
       return;
     case "delete":
-      if (handlers.canEdit && handlers.selectedBlockId) {
+      if (
+        handlers.canEdit &&
+        handlers.selectedBlockId &&
+        handlers.canRemoveSelectedBlock()
+      ) {
         handlers.removeBlock(handlers.selectedBlockId);
       }
       return;

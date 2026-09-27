@@ -67,9 +67,8 @@ describe("buildCanvasBridgeDocument", () => {
     expect(result).toContain(
       'createToolbarActionButton("Duplicate", duplicateSvg, "duplicate")',
     );
-    expect(result).toContain(
-      'createToolbarActionButton("Delete", deleteSvg, "delete")',
-    );
+    expect(result).toContain('"Delete",\n        deleteSvg,\n        "delete",');
+    expect(result).toContain("canRemoveLayoutBlock(block)");
     expect(result).toContain('"action":"duplicate"');
     expect(result).toContain("postBuilderShortcut(action)");
   });

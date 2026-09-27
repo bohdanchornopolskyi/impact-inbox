@@ -188,6 +188,16 @@ export function usePreviewCanvasRuntime(
   }, [postToIframe, registerCommandSink]);
 
   const layoutKey = getPreviewLayoutKey(content);
+  const layoutKeyRef = useRef(layoutKey);
+
+  useLayoutEffect(() => {
+    if (layoutKeyRef.current === layoutKey) {
+      return;
+    }
+    layoutKeyRef.current = layoutKey;
+    syncDebouncedHash();
+    controllerRef.current?.requestStructuralSync();
+  }, [layoutKey, syncDebouncedHash]);
 
   useEffect(() => {
     const controller = controllerRef.current;

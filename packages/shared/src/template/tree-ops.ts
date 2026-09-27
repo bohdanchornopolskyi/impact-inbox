@@ -482,16 +482,19 @@ export function addColumn(
 export function removeBlock(
   content: TemplateContentData,
   blockId: string,
-): TemplateContentData {
+): TreeMutationResult {
   const found = findBlock(content, blockId);
   if (!found) {
-    return content;
+    return unchanged(content, "block_not_found");
   }
 
-  const { path } = found;
+  const path = resolveRemovalPath(content, found.path);
+  if (!path) {
+    return unchanged(content, "noop");
+  }
 
   if (path.contentIndex !== undefined) {
-    return mapSections(content, (section, sectionIndex) => {
+    return changed(mapSections(content, (section, sectionIndex) => {
       if (sectionIndex !== path.sectionIndex) {
         return section;
       }
@@ -518,11 +521,11 @@ export function removeBlock(
           };
         }),
       };
-    });
+    }));
   }
 
-  if (path.columnIndex !== undefined) {
-    return mapSections(content, (section, sectionIndex) => {
+  if (path.columnIndex !== undefined && path.contentIndex === undefined) {
+    return changed(mapSections(content, (section, sectionIndex) => {
       if (sectionIndex !== path.sectionIndex) {
         return section;
       }
@@ -535,33 +538,25 @@ export function removeBlock(
           }
 
           const columns = row.children.filter((_, i) => i !== path.columnIndex);
-          if (columns.length === 0) {
-            return row;
-          }
-
           return rowWithRedistributedColumnWidths({ ...row, children: columns });
         }),
       };
-    });
+    }));
   }
 
-  if (path.rowIndex !== undefined) {
-    return mapSections(content, (section, sectionIndex) => {
+  if (path.rowIndex !== undefined && path.columnIndex === undefined) {
+    return changed(mapSections(content, (section, sectionIndex) => {
       if (sectionIndex !== path.sectionIndex) {
         return section;
       }
 
       const rows = section.children.filter((_, i) => i !== path.rowIndex);
-      if (rows.length === 0) {
-        return section;
-      }
-
       return { ...section, children: rows };
-    });
+    }));
   }
 
   const body = content.body.filter((_, i) => i !== path.sectionIndex);
-  return { ...content, body };
+  return changed({ ...content, body });
 }
 
 /**
@@ -1085,7 +1080,7 @@ export function moveContentBlock(
     );
   }
 
-  const withoutBlock = removeBlock(content, blockId);
+  const withoutBlock = removeBlock(content, blockId).content;
   const clampedIndex = clampIndex(
     targetIndex,
     targetColumn.block.children.length,
@@ -1112,7 +1107,13 @@ export function siblingPosition(
   content: TemplateContentData,
   found: FoundBlock,
 ): { index: number; count: number } | null {
-  const { path } = found;
+  return siblingPositionAt(content, found.path);
+}
+
+function siblingPositionAt(
+  content: TemplateContentData,
+  path: BlockPath,
+): { index: number; count: number } | null {
   const section = content.body[path.sectionIndex];
   if (!section) {
     return null;
@@ -1138,6 +1139,57 @@ export function siblingPosition(
   }
 
   return { index: path.contentIndex, count: column.children.length };
+}
+
+function parentPath(path: BlockPath): BlockPath | null {
+  if (path.contentIndex !== undefined) {
+    return {
+      sectionIndex: path.sectionIndex,
+      rowIndex: path.rowIndex,
+      columnIndex: path.columnIndex,
+    };
+  }
+  if (path.columnIndex !== undefined) {
+    return { sectionIndex: path.sectionIndex, rowIndex: path.rowIndex };
+  }
+  if (path.rowIndex !== undefined) {
+    return { sectionIndex: path.sectionIndex };
+  }
+  return null;
+}
+
+/**
+ * Removing the only column takes its row with it, and the only row takes its
+ * section. Returns null when that would empty the template body.
+ */
+function resolveRemovalPath(
+  content: TemplateContentData,
+  path: BlockPath,
+): BlockPath | null {
+  if (path.contentIndex !== undefined) {
+    return path;
+  }
+
+  let current: BlockPath | null = path;
+  while (current) {
+    const position = siblingPositionAt(content, current);
+    if (!position) {
+      return null;
+    }
+    if (position.count > 1) {
+      return current;
+    }
+    current = parentPath(current);
+  }
+  return null;
+}
+
+export function canRemoveBlock(
+  content: TemplateContentData,
+  blockId: string,
+): boolean {
+  const found = findBlock(content, blockId);
+  return found !== undefined && resolveRemovalPath(content, found.path) !== null;
 }
 
 export function blockNudgeAvailability(

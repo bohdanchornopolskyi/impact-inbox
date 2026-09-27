@@ -15,6 +15,7 @@ import {
   moveContentBlock,
   moveRow,
   moveSection,
+  canRemoveBlock,
   removeBlock,
   resolveStructurePanelContentTarget,
   type TreeMutationResult,
@@ -192,7 +193,52 @@ describe("tree-ops", () => {
     const blockId = withBlock.content.body[0]!.children[0]!.children[0]!.children[0]!.id;
 
     const removed = removeBlock(withBlock.content, blockId);
-    expect(removed.body[0]!.children[0]!.children[0]!.children).toHaveLength(0);
+    expect(removed.changed).toBe(true);
+    expect(removed.content.body[0]!.children[0]!.children[0]!.children).toHaveLength(
+      0,
+    );
+  });
+
+  it("removes a column from a multi-column row", () => {
+    let content = createEmptyTemplateContent();
+    content = addColumn(content, content.body[0]!.children[0]!.id, 1).content;
+
+    const secondColumnId = content.body[0]!.children[0]!.children[1]!.id;
+    expect(canRemoveBlock(content, secondColumnId)).toBe(true);
+
+    const removed = removeBlock(content, secondColumnId);
+    expect(removed.changed).toBe(true);
+    expect(removed.content.body[0]!.children[0]!.children).toHaveLength(1);
+  });
+
+  it("removes the row when deleting its only column", () => {
+    let content = createEmptyTemplateContent();
+    const sectionId = content.body[0]!.id;
+    content = addRow(content, sectionId).content;
+    const columnId = content.body[0]!.children[1]!.children[0]!.id;
+
+    expect(canRemoveBlock(content, columnId)).toBe(true);
+    const removed = removeBlock(content, columnId);
+    expect(removed.changed).toBe(true);
+    expect(removed.content.body[0]!.children).toHaveLength(1);
+  });
+
+  it("removes the section when deleting the column of its only row", () => {
+    let content = createEmptyTemplateContent();
+    content = addSection(content).content;
+    const columnId = content.body[1]!.children[0]!.children[0]!.id;
+
+    const removed = removeBlock(content, columnId);
+    expect(removed.changed).toBe(true);
+    expect(removed.content.body).toHaveLength(1);
+  });
+
+  it("refuses to remove the last column left in the template", () => {
+    const content = createEmptyTemplateContent();
+    const columnId = content.body[0]!.children[0]!.children[0]!.id;
+
+    expect(canRemoveBlock(content, columnId)).toBe(false);
+    expect(removeBlock(content, columnId).changed).toBe(false);
   });
 
   it("reorders sections within the template body", () => {

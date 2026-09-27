@@ -24,6 +24,7 @@ function handlers(
     pasteBlockStyle: vi.fn(),
     openSaveLibrary: vi.fn(),
     selectBlock: vi.fn(),
+    canRemoveSelectedBlock: () => true,
     ...overrides,
   };
 }
@@ -43,6 +44,7 @@ describe("runBuilderShortcut", () => {
     const state = {
       canEdit: true,
       saveState: "saving" as const,
+      content: { version: 1 as const, settings: { width: 600 }, body: [] },
       previewOpen: false,
       selectedBlockId: null,
       undo: vi.fn(),
