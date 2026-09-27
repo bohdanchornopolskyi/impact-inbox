@@ -127,6 +127,7 @@ describe("TemplateRevisionsService", () => {
       "ws-1",
       "tpl-1",
       DEFAULT_TEMPLATE_CONTENT,
+      setArg.updatedAt,
     );
     expect(
       mockTemplatesService.syncListPreviewHtml.mock.invocationCallOrder[0],
