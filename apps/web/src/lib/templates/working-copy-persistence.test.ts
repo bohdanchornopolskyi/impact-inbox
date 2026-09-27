@@ -166,4 +166,17 @@ describe("working-copy-persistence", () => {
       ),
     ).toBe("keep");
   });
+
+  it("keeps the working copy when a refetch is older", () => {
+    expect(
+      nextLoadedTemplateAction(
+        {
+          templateId: "tpl-1",
+          updatedAt: "2026-01-01T00:02:00.000Z",
+          saveState: "synced",
+        },
+        { id: "tpl-1", updatedAt: "2026-01-01T00:01:00.000Z" },
+      ),
+    ).toBe("keep");
+  });
 });
