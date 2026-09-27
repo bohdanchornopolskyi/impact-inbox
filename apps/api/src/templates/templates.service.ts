@@ -202,9 +202,13 @@ export class TemplatesService {
       updates.name = dto.name;
     }
 
-    if (dto.content !== undefined) {
-      updates.content = dto.content;
-      updates.listPreviewHtml = await this.renderListPreviewHtml(dto.content);
+    const parsedContent =
+      dto.content === undefined
+        ? undefined
+        : this.parseTemplateContent(dto.content);
+
+    if (parsedContent !== undefined) {
+      updates.content = parsedContent;
     }
 
     if (dto.archived !== undefined) {
@@ -228,6 +232,17 @@ export class TemplatesService {
       throw new ConflictException(TEMPLATE_CONFLICT_MESSAGE);
     }
 
+    if (parsedContent !== undefined) {
+      const listPreviewHtml = await this.syncListPreviewHtml(
+        workspaceId,
+        templateId,
+        parsedContent,
+      );
+      if (listPreviewHtml !== null) {
+        return toTemplateData({ ...updatedTemplate, listPreviewHtml });
+      }
+    }
+
     return toTemplateData(updatedTemplate);
   }
 
@@ -248,6 +263,31 @@ export class TemplatesService {
   async renderListPreviewHtml(content: TemplateContentData): Promise<string> {
     const rendered = await this.renderValidatedContent(content);
     return rendered.html;
+  }
+
+  async syncListPreviewHtml(
+    workspaceId: string,
+    templateId: string,
+    content: TemplateContentData,
+  ): Promise<string | null> {
+    let html: string;
+    try {
+      html = await this.renderListPreviewHtml(content);
+    } catch {
+      return null;
+    }
+
+    await this.db
+      .update(templates)
+      .set({ listPreviewHtml: html })
+      .where(
+        and(
+          eq(templates.id, templateId),
+          eq(templates.workspaceId, workspaceId),
+        ),
+      );
+
+    return html;
   }
 
   async exportTemplate(

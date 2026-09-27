@@ -272,7 +272,34 @@ describe("TemplatesService", () => {
       const setArg = set.mock.calls[0][0];
       expect(setArg.updatedAt).toBeInstanceOf(Date);
       expect(setArg.content).toEqual(DEFAULT_TEMPLATE_CONTENT);
-      expect(setArg.listPreviewHtml).toBe("<html>headline</html>");
+      expect(setArg.listPreviewHtml).toBeUndefined();
+      expect(set.mock.calls[1][0]).toEqual({
+        listPreviewHtml: "<html>headline</html>",
+      });
+    });
+
+    it("keeps the saved content when list preview rendering fails", async () => {
+      mockWhere.mockResolvedValueOnce([templateRow]);
+      const savedRow = {
+        ...templateRow,
+        listPreviewHtml: "<html>previous</html>",
+      };
+      const set = jest.fn().mockReturnValue({
+        where: jest.fn().mockReturnValue({
+          returning: jest.fn().mockResolvedValue([savedRow]),
+        }),
+      });
+      mockUpdate.mockReturnValue({ set });
+      jest.mocked(renderTemplate).mockRejectedValue(new Error("qr failed"));
+
+      const result = await service.updateTemplate("ws-1", "tpl-1", {
+        content: DEFAULT_TEMPLATE_CONTENT,
+        expectedUpdatedAt: templateRow.updatedAt.toISOString(),
+      });
+
+      expect(result.content).toEqual(DEFAULT_TEMPLATE_CONTENT);
+      expect(result.listPreviewHtml).toBe("<html>previous</html>");
+      expect(set).toHaveBeenCalledTimes(1);
     });
 
     it("throws 409 when the updatedAt token is stale", async () => {
