@@ -1,14 +1,20 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import { Button, Card, CardBody, CardHeader, CardTitle, Input, PageHeader } from "@repo/ui/client";
-import { hasWorkspaceRoleAtLeast } from "@repo/shared";
+import { hasWorkspaceRoleAtLeast, type ContactDetailData } from "@repo/shared";
 import { useWorkspace } from "@/contexts/workspace-context";
-import { useUpdateContact } from "@/lib/contacts/contact-hooks";
-import { useContact } from "@/lib/contacts/contact-hooks";
+import { useContact, useUpdateContact } from "@/lib/contacts/contact-hooks";
 import { ContactStatusBadge } from "@/components/contacts/contact-status-badge";
 import { WorkspacePageShell } from "@/components/app/workspace-page-chrome";
+import {
+  contactNameUpdate,
+  resolveContactNameFields,
+  type ContactNameFields,
+} from "@/components/contacts/contact-name-draft";
+import { showToast } from "@/stores/toast-store";
+import { useToastMutation } from "@/lib/use-toast-mutation";
 
 type ContactDetailViewProps = {
   contactId: string;
@@ -18,16 +24,6 @@ export function ContactDetailView({ contactId }: ContactDetailViewProps) {
   const { workspace } = useWorkspace();
   const canEdit = hasWorkspaceRoleAtLeast(workspace.role, ["admin", "owner"]);
   const contactQuery = useContact(contactId);
-  const updateContact = useUpdateContact(contactId);
-  const [firstName, setFirstName] = useState("");
-  const [lastName, setLastName] = useState("");
-
-  useEffect(() => {
-    if (contactQuery.data) {
-      setFirstName(contactQuery.data.firstName ?? "");
-      setLastName(contactQuery.data.lastName ?? "");
-    }
-  }, [contactQuery.data]);
 
   if (contactQuery.isLoading) {
     return <p className="p-8 text-ui-sm text-text-secondary">Loading…</p>;
@@ -63,46 +59,7 @@ export function ContactDetailView({ contactId }: ContactDetailViewProps) {
 
       <div className="space-y-6">
         {canEdit ? (
-          <Card>
-            <CardBody>
-              <div className="grid gap-4 sm:grid-cols-2">
-                <label className="space-y-1">
-                  <span className="text-ui-xs text-text-secondary">First name</span>
-                  <Input value={firstName} onChange={(e) => setFirstName(e.target.value)} />
-                </label>
-                <label className="space-y-1">
-                  <span className="text-ui-xs text-text-secondary">Last name</span>
-                  <Input value={lastName} onChange={(e) => setLastName(e.target.value)} />
-                </label>
-              </div>
-              <div className="flex flex-wrap gap-2">
-                <Button
-                  variant="primary"
-                  disabled={updateContact.isPending}
-                  onClick={() =>
-                    updateContact.mutate({
-                      firstName: firstName || null,
-                      lastName: lastName || null,
-                    })
-                  }
-                >
-                  Save
-                </Button>
-                <Button
-                  variant="secondary"
-                  onClick={() =>
-                    updateContact.mutate({
-                      globalUnsubscribed: !contact.globalUnsubscribedAt,
-                    })
-                  }
-                >
-                  {contact.globalUnsubscribedAt
-                    ? "Clear global unsub"
-                    : "Global unsubscribe"}
-                </Button>
-              </div>
-            </CardBody>
-          </Card>
+          <ContactIdentityEditor key={contact.id} contact={contact} />
         ) : null}
 
         <Card>
@@ -134,5 +91,82 @@ export function ContactDetailView({ contactId }: ContactDetailViewProps) {
         </Card>
       </div>
     </WorkspacePageShell>
+  );
+}
+
+function ContactIdentityEditor({ contact }: { contact: ContactDetailData }) {
+  const updateContact = useUpdateContact(contact.id);
+  const [nameDraft, setNameDraft] = useState<ContactNameFields | null>(null);
+  const fields = resolveContactNameFields(contact, nameDraft);
+  const saveName = useToastMutation({
+    mutationFn: (input: ReturnType<typeof contactNameUpdate>) =>
+      updateContact.mutateAsync(input),
+    successMessage: "Contact saved",
+    errorMessage: "Could not save contact",
+    onSuccess: () => {
+      setNameDraft(null);
+    },
+  });
+  const toggleUnsubscribe = useToastMutation({
+    mutationFn: (globalUnsubscribed: boolean) =>
+      updateContact.mutateAsync({ globalUnsubscribed }),
+    errorMessage: "Could not update unsubscribe status",
+    onSuccess: (_data, globalUnsubscribed) => {
+      showToast(
+        globalUnsubscribed
+          ? "Contact globally unsubscribed"
+          : "Global unsubscribe cleared",
+      );
+    },
+  });
+  const isUpdating = saveName.isPending || toggleUnsubscribe.isPending;
+
+  function editName(patch: Partial<ContactNameFields>) {
+    setNameDraft({ ...fields, ...patch });
+  }
+
+  return (
+    <Card>
+      <CardBody>
+        <div className="grid gap-4 sm:grid-cols-2">
+          <label className="space-y-1">
+            <span className="text-ui-xs text-text-secondary">First name</span>
+            <Input
+              value={fields.firstName}
+              disabled={saveName.isPending}
+              onChange={(event) => editName({ firstName: event.target.value })}
+            />
+          </label>
+          <label className="space-y-1">
+            <span className="text-ui-xs text-text-secondary">Last name</span>
+            <Input
+              value={fields.lastName}
+              disabled={saveName.isPending}
+              onChange={(event) => editName({ lastName: event.target.value })}
+            />
+          </label>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <Button
+            variant="primary"
+            disabled={isUpdating}
+            onClick={() => saveName.mutate(contactNameUpdate(fields))}
+          >
+            Save
+          </Button>
+          <Button
+            variant="secondary"
+            disabled={isUpdating}
+            onClick={() =>
+              toggleUnsubscribe.mutate(!contact.globalUnsubscribedAt)
+            }
+          >
+            {contact.globalUnsubscribedAt
+              ? "Clear global unsub"
+              : "Global unsubscribe"}
+          </Button>
+        </div>
+      </CardBody>
+    </Card>
   );
 }
