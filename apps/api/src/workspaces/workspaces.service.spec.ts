@@ -1,4 +1,4 @@
-import { ForbiddenException } from "@nestjs/common";
+import { ForbiddenException, NotFoundException } from "@nestjs/common";
 import { Test, TestingModule } from "@nestjs/testing";
 import { DATABASE_TOKEN } from "src/database/database.constants";
 import { InvitesService } from "src/invites/invites.service";
@@ -82,6 +82,56 @@ describe("WorkspacesService", () => {
 
   afterEach(() => {
     jest.clearAllMocks();
+  });
+
+  describe("listModules", () => {
+    it("returns the saved library without inserting starters", async () => {
+      const rows = [
+        {
+          id: "mod-1",
+          workspaceId: "ws-1",
+          name: "Renamed header",
+          content: { id: "section-1", type: "section", children: [] },
+        },
+      ];
+      mockWhere
+        .mockResolvedValueOnce([
+          {
+            id: "ws-1",
+            name: "Acme",
+            physicalAddress: null,
+            brandKit: null,
+          },
+        ])
+        .mockResolvedValueOnce(rows);
+
+      await expect(service.listModules("ws-1")).resolves.toEqual(rows);
+      expect(mockInsert).not.toHaveBeenCalled();
+    });
+
+    it("does not recreate a library the user emptied", async () => {
+      mockWhere.mockResolvedValueOnce([
+        {
+          id: "ws-1",
+          name: "Acme",
+          physicalAddress: null,
+          brandKit: null,
+        },
+      ]);
+      mockWhere.mockResolvedValueOnce([]);
+
+      await expect(service.listModules("ws-1")).resolves.toEqual([]);
+      expect(mockInsert).not.toHaveBeenCalled();
+    });
+
+    it("fails when the workspace does not exist", async () => {
+      mockWhere.mockResolvedValueOnce([]);
+
+      await expect(service.listModules("missing")).rejects.toBeInstanceOf(
+        NotFoundException,
+      );
+      expect(mockInsert).not.toHaveBeenCalled();
+    });
   });
 
   describe("removeMember", () => {

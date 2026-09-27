@@ -21,7 +21,6 @@ import {
 import {
   buildPlatformStarterModules,
   isEmptyModuleSection,
-  missingPlatformStarterModules,
   type AuthenticatedWorkspaceContext,
   type CreateWorkspaceModuleInput,
   type UpdateWorkspaceModuleInput,
@@ -455,33 +454,7 @@ export class WorkspacesService {
   }
 
   async listModules(workspaceId: string): Promise<WorkspaceModuleData[]> {
-    const workspace = await this.getWorkspaceById(workspaceId);
-    const rows = await this.db
-      .select()
-      .from(workspaceModules)
-      .where(eq(workspaceModules.workspaceId, workspaceId));
-
-    const ctx = {
-      workspaceName: workspace.name,
-      physicalAddress: workspace.physicalAddress,
-      brandKit: workspace.brandKit ?? null,
-    };
-    const missing = missingPlatformStarterModules(
-      rows.map((row) => row.name),
-      ctx,
-    );
-
-    if (missing.length === 0) {
-      return rows;
-    }
-
-    await this.db.insert(workspaceModules).values(
-      missing.map((starter) => ({
-        workspaceId,
-        name: starter.name,
-        content: starter.content,
-      })),
-    );
+    await this.getWorkspaceById(workspaceId);
 
     return this.db
       .select()
