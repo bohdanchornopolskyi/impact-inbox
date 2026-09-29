@@ -73,6 +73,7 @@ export function PreviewOverlay() {
           className="bg-white shadow-card"
           style={{ width, minHeight: 720 }}
           srcDoc={html}
+          sandbox=""
         />
       </div>
     </div>
