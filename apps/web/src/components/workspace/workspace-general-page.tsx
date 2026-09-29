@@ -2,6 +2,8 @@
 
 import { BookOpen } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "react-hook-form";
 import {
   Button,
   PageHeader,
@@ -11,7 +13,11 @@ import {
   SettingsFooter,
   SettingsPane,
 } from "@repo/ui/client";
-import { hasWorkspaceRoleAtLeast } from "@repo/shared";
+import {
+  hasWorkspaceRoleAtLeast,
+  workspaceGeneralFormSchema,
+  type WorkspaceGeneralFormValues,
+} from "@repo/shared";
 import { useWorkspace } from "@/contexts/workspace-context";
 import { useUpdateWorkspaceSettings } from "@/lib/workspaces/workspace-hooks";
 import { useToastMutation } from "@/lib/use-toast-mutation";
@@ -19,9 +25,13 @@ import { WorkspaceDangerSection } from "@/components/workspace/workspace-danger-
 import { WorkspaceGeneralSection } from "@/components/workspace/workspace-general-section";
 import { WorkspaceIdentitySection } from "@/components/workspace/workspace-identity-section";
 import {
-  GENERAL_FORM_ID,
+  areGeneralValuesEqual,
   buildGeneralUpdate,
-  syncGeneralForm,
+  countDirtyFields,
+  generalFormValues,
+  GENERAL_FORM_ID,
+  generalSaveStatus,
+  savedGeneralValues,
 } from "./workspace-general-form";
 
 export function WorkspaceGeneralPage() {
@@ -42,6 +52,45 @@ export function WorkspaceGeneralPage() {
     },
   });
 
+  const serverValues = generalFormValues(workspace);
+  const form = useForm<WorkspaceGeneralFormValues>({
+    resolver: zodResolver(workspaceGeneralFormSchema),
+    defaultValues: serverValues,
+    values: serverValues,
+    resetOptions: { keepDirtyValues: true },
+  });
+  const {
+    handleSubmit,
+    reset,
+    getValues,
+    formState: { dirtyFields, errors },
+  } = form;
+
+  const submit = handleSubmit(async (values) => {
+    const input = buildGeneralUpdate(workspace, values);
+    const submitted = { ...getValues() };
+
+    if (input) {
+      try {
+        await update.mutateAsync({ workspaceId: workspace.id, input });
+      } catch {
+        return;
+      }
+    }
+
+    reset(savedGeneralValues(values), {
+      keepDirtyValues: !areGeneralValuesEqual(getValues(), submitted),
+    });
+  });
+
+  const isSaving = update.isPending;
+  const dirtyCount = countDirtyFields(dirtyFields);
+  const status = generalSaveStatus({
+    isSaving,
+    hasErrors: Object.keys(errors).length > 0,
+    dirtyCount,
+  });
+
   const fields = (
     <SettingsContent>
       <PageHeader
@@ -58,8 +107,8 @@ export function WorkspaceGeneralPage() {
           </Button>
         }
       />
-      <WorkspaceIdentitySection />
-      <WorkspaceGeneralSection />
+      <WorkspaceIdentitySection form={form} disabled={!canManage} />
+      <WorkspaceGeneralSection form={form} disabled={!canManage} />
       <WorkspaceDangerSection />
     </SettingsContent>
   );
@@ -70,48 +119,24 @@ export function WorkspaceGeneralPage() {
 
   return (
     <form
-      key={JSON.stringify({
-        name: workspace.name,
-        slug: workspace.slug,
-        physicalAddress: workspace.physicalAddress ?? null,
-      })}
       id={GENERAL_FORM_ID}
-      ref={(form) => {
-        if (form) {
-          syncGeneralForm(form, update.isPending ? "saving" : "idle");
-        }
-      }}
+      noValidate
       className="flex min-h-0 flex-1 flex-col"
-      onInput={(event) => syncGeneralForm(event.currentTarget)}
-      onReset={(event) => {
-        const form = event.currentTarget;
-        queueMicrotask(() => syncGeneralForm(form));
-      }}
       onSubmit={(event) => {
+        void submit(event);
+      }}
+      onReset={(event) => {
         event.preventDefault();
-        const form = event.currentTarget;
-        const input = buildGeneralUpdate(workspace, form);
-
-        if (!input) {
-          return;
-        }
-
-        syncGeneralForm(form, "saving");
-        void update
-          .mutateAsync({
-            workspaceId: workspace.id,
-            input,
-          })
-          .catch(() => {
-            syncGeneralForm(form);
-          });
+        reset();
       }}
     >
       <SettingsPane>{fields}</SettingsPane>
       <SettingsFooter>
         <SaveBar
           form={GENERAL_FORM_ID}
-          status={<SaveStatus tone="saved" label="No unsaved changes" />}
+          status={<SaveStatus tone={status.tone} label={status.label} />}
+          discardDisabled={isSaving || dirtyCount === 0}
+          saveDisabled={isSaving || dirtyCount === 0}
         />
       </SettingsFooter>
     </form>

@@ -1,12 +1,20 @@
 "use client";
 
+import type { UseFormReturn } from "react-hook-form";
 import { Card, CardBody, CardDescription, CardHeader, CardTitle, Input } from "@repo/ui/client";
-import { hasWorkspaceRoleAtLeast } from "@repo/shared";
-import { useWorkspace } from "@/contexts/workspace-context";
+import type { WorkspaceGeneralFormValues } from "@repo/shared";
 
-export function WorkspaceIdentitySection() {
-  const { workspace } = useWorkspace();
-  const canManage = hasWorkspaceRoleAtLeast(workspace.role, ["admin", "owner"]);
+export function WorkspaceIdentitySection({
+  form,
+  disabled,
+}: {
+  form: UseFormReturn<WorkspaceGeneralFormValues>;
+  disabled: boolean;
+}) {
+  const {
+    register,
+    formState: { errors },
+  } = form;
 
   return (
     <Card>
@@ -20,20 +28,20 @@ export function WorkspaceIdentitySection() {
       <CardBody>
         <div className="grid gap-4 sm:grid-cols-2">
           <Input
-            name="name"
             label="Name"
-            defaultValue={workspace.name}
-            disabled={!canManage}
             placeholder="Acme Marketing"
+            error={errors.name?.message}
+            {...register("name")}
+            disabled={disabled}
           />
           <Input
-            name="slug"
             label="Slug"
-            defaultValue={workspace.slug}
-            disabled={!canManage}
             placeholder="acme-marketing"
             prefix="impactinbox.com/"
             mono
+            error={errors.slug?.message}
+            {...register("slug")}
+            disabled={disabled}
           />
         </div>
       </CardBody>

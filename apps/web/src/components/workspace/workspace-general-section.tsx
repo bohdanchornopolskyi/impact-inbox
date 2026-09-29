@@ -1,5 +1,6 @@
 "use client";
 
+import { useWatch, type UseFormReturn } from "react-hook-form";
 import {
   Card,
   CardBody,
@@ -9,13 +10,11 @@ import {
   Input,
   SettingsPreview,
 } from "@repo/ui/client";
-import {
-  hasWorkspaceRoleAtLeast,
-  physicalAddressFromData,
-  type PhysicalAddressFields,
+import type {
+  PhysicalAddressFields,
+  WorkspaceGeneralFormValues,
 } from "@repo/shared";
-import { useWorkspace } from "@/contexts/workspace-context";
-import { formatAppearsAs } from "./workspace-general-form";
+import { addressFieldsFrom, formatAppearsAs } from "./workspace-general-form";
 
 type AddressField = {
   key: keyof PhysicalAddressFields;
@@ -64,11 +63,23 @@ const ADDRESS_ROWS: AddressField[][] = [
   ],
 ];
 
-export function WorkspaceGeneralSection() {
-  const { workspace } = useWorkspace();
-  const canManage = hasWorkspaceRoleAtLeast(workspace.role, ["admin", "owner"]);
-  const address = physicalAddressFromData(workspace.physicalAddress);
-  const appearsAs = formatAppearsAs(workspace.name, address);
+export function WorkspaceGeneralSection({
+  form,
+  disabled,
+}: {
+  form: UseFormReturn<WorkspaceGeneralFormValues>;
+  disabled: boolean;
+}) {
+  const {
+    register,
+    control,
+    formState: { errors },
+  } = form;
+  const values = useWatch({ control });
+  const appearsAs = formatAppearsAs(
+    values.name ?? "",
+    addressFieldsFrom(values),
+  );
 
   return (
     <Card>
@@ -88,19 +99,17 @@ export function WorkspaceGeneralSection() {
             {row.map((field) => (
               <Input
                 key={field.key}
-                name={field.key}
                 label={field.label}
-                defaultValue={address[field.key]}
                 placeholder={field.placeholder}
-                disabled={!canManage}
+                error={errors[field.key]?.message}
+                {...register(field.key)}
+                disabled={disabled}
               />
             ))}
           </div>
         ))}
         <SettingsPreview>
-          <span data-appears-as>
-            {appearsAs ? `Appears as: ${appearsAs}` : "Appears as:"}
-          </span>
+          <span>{appearsAs ? `Appears as: ${appearsAs}` : "Appears as:"}</span>
         </SettingsPreview>
       </CardBody>
     </Card>

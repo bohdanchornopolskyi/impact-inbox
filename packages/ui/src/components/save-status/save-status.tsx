@@ -115,12 +115,12 @@ const toneIcon: Record<SaveStatusTone, () => ReactNode> = {
   offline: CloudOffIcon,
 };
 
-const toneIconVisibility: Record<SaveStatusTone, string> = {
-  saved: "hidden group-data-[tone=saved]/status:inline-flex",
-  saving: "hidden group-data-[tone=saving]/status:inline-flex",
-  unsaved: "hidden group-data-[tone=unsaved]/status:inline-flex",
-  error: "hidden group-data-[tone=error]/status:inline-flex",
-  offline: "hidden group-data-[tone=offline]/status:inline-flex",
+const toneLabelClass: Record<SaveStatusTone, string> = {
+  saved: "text-text-3",
+  saving: "text-text-2",
+  unsaved: "text-text-2",
+  error: "text-danger",
+  offline: "text-text-2",
 };
 
 export function SaveStatus({
@@ -129,51 +129,30 @@ export function SaveStatus({
   onRetry,
   className,
 }: SaveStatusProps) {
+  const Icon = toneIcon[tone];
+
   return (
     <div
       role="status"
-      data-tone={tone}
       className={cn(
-        "group/status inline-flex h-control-md shrink-0 items-center gap-2 whitespace-nowrap",
+        "inline-flex h-control-md shrink-0 items-center gap-2 whitespace-nowrap",
         className,
       )}
     >
       <span className="inline-flex items-center gap-1.25">
-        {(Object.keys(toneIcon) as SaveStatusTone[]).map((key) => {
-          const Icon = toneIcon[key];
-
-          return (
-            <span
-              key={key}
-              className={cn(
-                "size-icon-sm shrink-0 [&_svg]:size-full",
-                toneIconClass[key],
-                toneIconVisibility[key],
-              )}
-              aria-hidden
-            >
-              <Icon />
-            </span>
-          );
-        })}
-        <p
+        <span
           className={cn(
-            "text-xs text-text-3",
-            "group-data-[tone=saving]/status:text-text-2",
-            "group-data-[tone=unsaved]/status:text-text-2",
-            "group-data-[tone=offline]/status:text-text-2",
-            "group-data-[tone=error]/status:text-danger",
+            "inline-flex size-icon-sm shrink-0 [&_svg]:size-full",
+            toneIconClass[tone],
           )}
+          aria-hidden
         >
-          {label}
-        </p>
+          <Icon />
+        </span>
+        <p className={cn("text-xs", toneLabelClass[tone])}>{label}</p>
       </span>
-      {onRetry ? (
-        <Button
-          variant="link"
-          className="hidden group-data-[tone=error]/status:inline-flex"
-          onClick={onRetry}
-        >
+      {onRetry && tone === "error" ? (
+        <Button variant="link" onClick={onRetry}>
           Retry
         </Button>
       ) : null}

@@ -1,15 +1,17 @@
 import {
   formatPhysicalAddress,
   normalizePhysicalAddress,
-  workspaceSlugSchema,
+  physicalAddressFromData,
   type PhysicalAddressFields,
   type UpdateWorkspaceInput,
   type WorkspaceDetailData,
+  type WorkspaceGeneralFormValues,
 } from "@repo/shared";
+import type { SaveStatusTone } from "@repo/ui/client";
 
 export const GENERAL_FORM_ID = "workspace-general-form";
 
-const ADDRESS_KEYS = [
+export const ADDRESS_KEYS = [
   "streetLine1",
   "streetLine2",
   "city",
@@ -18,9 +20,37 @@ const ADDRESS_KEYS = [
   "country",
 ] as const satisfies readonly (keyof PhysicalAddressFields)[];
 
-function fieldValue(form: HTMLFormElement, name: string) {
-  const field = form.elements.namedItem(name);
-  return field instanceof HTMLInputElement ? field.value : "";
+const FIELD_KEYS = [
+  "name",
+  "slug",
+  ...ADDRESS_KEYS,
+] as const satisfies readonly (keyof WorkspaceGeneralFormValues)[];
+
+type GeneralDirtyFields = Partial<
+  Readonly<Record<keyof WorkspaceGeneralFormValues, boolean | undefined>>
+>;
+
+export function generalFormValues(
+  workspace: Pick<WorkspaceDetailData, "name" | "slug" | "physicalAddress">,
+): WorkspaceGeneralFormValues {
+  return {
+    name: workspace.name,
+    slug: workspace.slug,
+    ...physicalAddressFromData(workspace.physicalAddress),
+  };
+}
+
+export function addressFieldsFrom(
+  values: Partial<PhysicalAddressFields>,
+): PhysicalAddressFields {
+  return {
+    streetLine1: values.streetLine1 ?? "",
+    streetLine2: values.streetLine2 ?? "",
+    city: values.city ?? "",
+    state: values.state ?? "",
+    postalCode: values.postalCode ?? "",
+    country: values.country ?? "",
+  };
 }
 
 export function formatAppearsAs(name: string, fields: PhysicalAddressFields) {
@@ -32,54 +62,46 @@ export function formatAppearsAs(name: string, fields: PhysicalAddressFields) {
   return parts.join(", ");
 }
 
-export function readGeneralDraft(form: HTMLFormElement) {
-  const addressFields = {
-    streetLine1: fieldValue(form, "streetLine1"),
-    streetLine2: fieldValue(form, "streetLine2"),
-    city: fieldValue(form, "city"),
-    state: fieldValue(form, "state"),
-    postalCode: fieldValue(form, "postalCode"),
-    country: fieldValue(form, "country"),
-  } satisfies PhysicalAddressFields;
-
+export function savedGeneralValues(
+  values: WorkspaceGeneralFormValues,
+): WorkspaceGeneralFormValues {
   return {
-    name: fieldValue(form, "name"),
-    slug: fieldValue(form, "slug"),
-    addressFields,
+    name: values.name.trim(),
+    slug: values.slug.trim(),
+    ...physicalAddressFromData(
+      normalizePhysicalAddress(addressFieldsFrom(values)),
+    ),
   };
+}
+
+export function areGeneralValuesEqual(
+  a: WorkspaceGeneralFormValues,
+  b: WorkspaceGeneralFormValues,
+) {
+  return FIELD_KEYS.every((key) => a[key] === b[key]);
 }
 
 export function buildGeneralUpdate(
   workspace: WorkspaceDetailData,
-  form: HTMLFormElement,
+  values: WorkspaceGeneralFormValues,
 ): UpdateWorkspaceInput | null {
-  const draft = readGeneralDraft(form);
-  const name = draft.name.trim();
-  const slug = draft.slug.trim();
+  const next = savedGeneralValues(values);
+  const saved = physicalAddressFromData(workspace.physicalAddress);
+  const isAddressChanged = ADDRESS_KEYS.some((key) => next[key] !== saved[key]);
 
-  if (!name || !workspaceSlugSchema.safeParse(slug).success) {
-    return null;
-  }
-
-  const physicalAddress = normalizePhysicalAddress(draft.addressFields);
   const input: UpdateWorkspaceInput = {
-    ...(name !== workspace.name ? { name } : {}),
-    ...(slug !== workspace.slug ? { slug } : {}),
-    ...(JSON.stringify(physicalAddress) !==
-    JSON.stringify(workspace.physicalAddress ?? null)
-      ? { physicalAddress }
+    ...(next.name !== workspace.name ? { name: next.name } : {}),
+    ...(next.slug !== workspace.slug ? { slug: next.slug } : {}),
+    ...(isAddressChanged
+      ? { physicalAddress: normalizePhysicalAddress(addressFieldsFrom(next)) }
       : {}),
   };
 
   return Object.keys(input).length > 0 ? input : null;
 }
 
-function changedFieldCount(form: HTMLFormElement) {
-  const named = ["name", "slug", ...ADDRESS_KEYS];
-  return named.filter((name) => {
-    const field = form.elements.namedItem(name);
-    return field instanceof HTMLInputElement && field.value !== field.defaultValue;
-  }).length;
+export function countDirtyFields(dirtyFields: GeneralDirtyFields) {
+  return FIELD_KEYS.filter((key) => dirtyFields[key]).length;
 }
 
 function unsavedLabel(count: number) {
@@ -90,42 +112,25 @@ function unsavedLabel(count: number) {
   return count === 1 ? "1 unsaved change" : `${count} unsaved changes`;
 }
 
-export function syncGeneralForm(
-  form: HTMLFormElement,
-  mode: "idle" | "saving" = "idle",
-) {
-  const count = changedFieldCount(form);
-  const draft = readGeneralDraft(form);
-  const canSave =
-    Boolean(draft.name.trim()) &&
-    workspaceSlugSchema.safeParse(draft.slug.trim()).success &&
-    count > 0;
-  const busy = mode === "saving";
-  const label = form.querySelector("[role='status'] p");
-  const discard = form.querySelector<HTMLButtonElement>('button[type="reset"]');
-  const save = form.querySelector<HTMLButtonElement>('button[type="submit"]');
-  const preview = form.querySelector("[data-appears-as]");
-
-  const status = label?.closest<HTMLElement>("[role='status']");
-
-  if (status) {
-    status.dataset.tone = busy ? "saving" : count > 0 ? "unsaved" : "saved";
+export function generalSaveStatus({
+  isSaving,
+  hasErrors,
+  dirtyCount,
+}: {
+  isSaving: boolean;
+  hasErrors: boolean;
+  dirtyCount: number;
+}): { tone: SaveStatusTone; label: string } {
+  if (isSaving) {
+    return { tone: "saving", label: "Saving" };
   }
 
-  if (label) {
-    label.textContent = busy ? "Saving" : unsavedLabel(count);
+  if (hasErrors) {
+    return { tone: "error", label: "Fix the highlighted fields" };
   }
 
-  if (discard) {
-    discard.disabled = busy || count === 0;
-  }
-
-  if (save) {
-    save.disabled = busy || !canSave;
-  }
-
-  if (preview) {
-    const appearsAs = formatAppearsAs(draft.name, draft.addressFields);
-    preview.textContent = appearsAs ? `Appears as: ${appearsAs}` : "Appears as:";
-  }
+  return {
+    tone: dirtyCount > 0 ? "unsaved" : "saved",
+    label: unsavedLabel(dirtyCount),
+  };
 }
