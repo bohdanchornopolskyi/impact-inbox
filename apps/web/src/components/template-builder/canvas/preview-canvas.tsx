@@ -67,6 +67,7 @@ function CanvasIframeHost({
         className="block w-full border-0"
         style={{ minHeight: 640 }}
         srcDoc={iframeSrcDoc}
+        sandbox="allow-scripts"
         onLoad={handleIframeLoad}
       />
       <CanvasIframeSelectionBridge postToIframe={postToIframe} />
