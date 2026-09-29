@@ -28,6 +28,10 @@ out/
 build
 dist
 
+# Stray tsc output inside package sources
+packages/*/src/**/*.js
+packages/*/src/**/*.d.ts.map
+
 
 # Debug
 npm-debug.log*
