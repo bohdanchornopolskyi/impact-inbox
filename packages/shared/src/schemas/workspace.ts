@@ -1,15 +1,36 @@
 import { z } from "zod";
 import { WORKSPACE_ROLES } from "../constants";
-import { physicalAddressSchema } from "./physical-address";
+import {
+  physicalAddressFieldsSchema,
+  physicalAddressSchema,
+} from "./physical-address";
 import { brandKitSchema } from "./brand-kit";
 
 export const workspaceRoleSchema = z.enum(WORKSPACE_ROLES);
 
 export const workspaceSlugSchema = z
   .string()
-  .min(1)
-  .max(255)
-  .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/);
+  .min(1, "Enter a slug")
+  .max(255, "Use 255 characters or fewer")
+  .regex(
+    /^[a-z0-9]+(?:-[a-z0-9]+)*$/,
+    "Use lowercase letters, numbers and single hyphens",
+  );
+
+export const workspaceGeneralFormSchema = z
+  .object({
+    name: z
+      .string()
+      .trim()
+      .min(1, "Enter a workspace name")
+      .max(255, "Use 255 characters or fewer"),
+    slug: z.string().trim().pipe(workspaceSlugSchema),
+  })
+  .merge(physicalAddressFieldsSchema);
+
+export type WorkspaceGeneralFormValues = z.infer<
+  typeof workspaceGeneralFormSchema
+>;
 
 export const createWorkspaceSchema = z.object({
   organizationId: z.string().uuid(),
